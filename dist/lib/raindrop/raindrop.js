@@ -10,6 +10,9 @@ const raindrop = {
     },
     rm: (id) => {
         console.log(`Removing a raindrop with id: ${id}`);
+    },
+    search: (id) => {
+        console.log(`Removing a raindrop with id: ${id}`);
     }
 };
 export default raindrop;
