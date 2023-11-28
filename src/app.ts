@@ -1,6 +1,7 @@
 import { Command } from 'commander';
-import { test } from './services/zapier.js';
-import { get_c3 } from './services/c3.js';
+import axios from 'axios';
+import { test } from './services/zapier.js'; // js extension because https://stackoverflow.com/questions/44979976/how-to-resolve-node-js-es6-esm-modules-with-the-typescript-compiler-tsc-tsc/70682797#70682797
+import { get_c3 } from './services/c3.js'; // js extension because https://stackoverflow.com/questions/44979976/how-to-resolve-node-js-es6-esm-modules-with-the-typescript-compiler-tsc-tsc/70682797#70682797
 
 const program = new Command();
 
@@ -34,7 +35,7 @@ program
   .action(async (name, pwd) => {
     try {
       const result = "hello";
-      console.log(`PWD set successfully! ${result}`);
+      console.log("PWD set successfully!");
     } catch (error) {
       console.error('Failed to set the pwd:', error);
     } finally {
@@ -52,7 +53,7 @@ program
       //   create: { name: name, pwd: pwd },
       //   update: { name: name, pwd: pwd },
       // });
-      console.log(`PWD set successfully! ${result}`);
+      console.log(`PWD set successfully!}`);
     } catch (error) {
       console.error('Failed to set the pwd:', error);
     } finally {
@@ -70,7 +71,7 @@ program
       //   create: { name: name, pwd: pwd },
       //   update: { name: name, pwd: pwd },
       // });
-      console.log(`PWD set successfully! ${result}`);
+      console.log(`PWD set successfully!`);
     } catch (error) {
       console.error('Failed to set the pwd:', error);
     } finally {

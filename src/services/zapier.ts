@@ -15,3 +15,5 @@ export async function test() {
         console.error(error);
       }
 }
+
+// module.exports = test;

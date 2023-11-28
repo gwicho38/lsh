@@ -8,11 +8,11 @@
   },
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "build": "ncc build ./src/app.js -o build/out",
-    "watch-build": "ncc build ./src/app.js -o build/out -w",
-    "build-bin": "nexe --build --input ./src/app.js --output ./build/bin/lsh --name lsh",
+    "start": "node dist/app.js",
+    "dev": "nodemon dist/app.js",
+    "build": "ncc build ./dist/app.js -o build/out",
+    "watch-build": "ncc build ./dist/app.js -o build/out -w",
+    "build-bin": "nexe --build --input ./dist/app.js --output ./build/bin/lsh --name lsh",
     "clean": "rm -rf build/"
   },
   "keywords": [
@@ -36,10 +36,12 @@
     "nexe": "^4.0.0-rc.2",
     "nodemon": "^3.0.1",
     "npx": "^10.2.2",
+    "tsc": "^2.0.4",
     "zapier-platform-core": "15.4.1"
   },
   "devDependencies": {
     "@babel/preset-env": "^7.23.2",
-    "babel-jest": "^29.7.0"
+    "babel-jest": "^29.7.0",
+    "typescript": "^5.4.0-dev.20231127"
   }
 }
