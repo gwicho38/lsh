@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Command } from 'commander';
 
 // for additional inspiration - check CloudClusterUtil type
 // export async function get_c3() {
@@ -44,4 +45,13 @@ interface Spec {
 
 export async function get_c3(type: String = "Jvm", spec: Spec = {function: "currentUsage"}) {
 
+}
+
+export async function init_c3(program: Command) {
+  program
+    .command('c3 <type> <action> [spec]')
+    .description('c3 api interface')
+    .action(async (type: String, action: String, spec: Spec) => {
+      console.log(`Calling ${type}/${action}`);
+    })
 }
