@@ -6,15 +6,15 @@
  * This material may be covered by one or more patents or pending patent applications.
  */
 
-const fs = require('fs');
-const fprint = require('fprint');
+import fs from 'fs';
+import fprint from 'fprint';
 
 const IN_MEMORY_FILE_FINGERPRINTS = {};
 const NO_CHANGE_TO_FILE = -1;
 
-const encodeContent = (path) => {
-  const content = fs.readFileSync(path);
-  const fingerprint = fprint.digestSync(content, 'md5');
+const encodeContent = async (path) => {
+  const fileContents = fs.readFileSync(path);
+  const fingerprint = await fprint(fileContents, 'md5');
 
   if (IN_MEMORY_FILE_FINGERPRINTS[path] !== fingerprint) {
     IN_MEMORY_FILE_FINGERPRINTS[path] = fingerprint;
@@ -26,7 +26,7 @@ const encodeContent = (path) => {
   }
 };
 
-module.exports = {
+export const FILE = {
   encodeContent,
   IN_MEMORY_FILE_FINGERPRINTS,
   NO_CHANGE_TO_FILE,

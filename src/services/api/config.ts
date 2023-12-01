@@ -6,7 +6,7 @@
  * This material may be covered by one or more patents or pending patent applications.
  */
 
-module.exports = {
+export const CONFIG = {
     // Path to root repo. Exclude trailing slash
     PATH_TO_PACKAGE_REPO: '/Users/lefv/test/20231115/prov',
   
@@ -18,6 +18,6 @@ module.exports = {
   
     // Basic auth token for BA:BA
     AUTH_TOKEN: 'Basic QkE6QkE=',
-  };
+};
   
   

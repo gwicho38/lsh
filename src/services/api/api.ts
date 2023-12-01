@@ -6,17 +6,17 @@
  * This material may be covered by one or more patents or pending patent applications.
  */
 
-const request = require('request');
-const AsyncLock = require('async-lock');
+import request from 'request';
+import AsyncLock from 'async-lock';
 
-const CONFIG = require('./config.js');
-const FILE = require('./file.js');
+import { CONFIG}  from './config.js';
+import { FILE } from './file.js';
 
 const semaphore = new AsyncLock();
 
 let pkgId;
 
-const makePOSTRequest = async (typeName, method, data, onSuccess) => {
+export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
   const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
 
   // Prevent parallel writes/deletions
@@ -55,7 +55,7 @@ const writeContent = async (path) => {
   const pkgId = await getPkgId();
   const metadataPath = getMetadataPath(path);
   const content = FILE.encodeContent(path);
-  if (content === FILE.NO_CHANGE_TO_FILE) {
+  if (await content === FILE.NO_CHANGE_TO_FILE) {
     return;
   }
   return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {
@@ -69,8 +69,3 @@ const deleteContent = async (path) => {
   const metadataPath = getMetadataPath(path);
   return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log("deleted!"));
 }
-
-module.exports = {
-  writeContent,
-  deleteContent,
-};
