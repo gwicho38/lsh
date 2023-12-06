@@ -4,16 +4,15 @@
   "description": "extendable c3 cli client",
   "main": "src/app.js",
   "bin": {
-    "lsh": "./build/out/index.js"
+    "c3sh": "./build/out/app.js"
   },
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "start": "node dist/app.js",
     "dev": "nodemon dist/app.js",
-    "build": "ncc build ./dist/app.js -o build/out",
+    "build": "tsc -b; ncc build ./dist/app.js -o build/out/lsh",
     "watch-build": "ncc build ./dist/app.js -o build/out -w",
-    "build-bin": "nexe --build --input ./dist/app.js --output ./build/bin/lsh --name lsh",
-    "clean": "rm -rf build/"
+    "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist"
   },
   "keywords": [
     "cli",
