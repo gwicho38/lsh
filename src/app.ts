@@ -8,11 +8,11 @@ const program = new Command();
 
 program
   .version('1.0.0')
-  .description('c3sh | shell utility for personal cli mgmt.')
+  .description('c3sh | extendable cli client.')
   .name('c3sh');
 
 init_c3(program);
-init_ishell(program);
+// init_ishell(program); TODO: Implement interactive shell
 
 program
   .command('ran_i')

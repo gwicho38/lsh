@@ -18,6 +18,7 @@ let pkgId;
 
 export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
   const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
+  console.log(url);
 
   // Prevent parallel writes/deletions
   return semaphore.acquire('request', (done) => {
@@ -29,7 +30,8 @@ export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
         Authorization: CONFIG.AUTH_TOKEN,
       },
     }, (err, response, body) => {
-      onSuccess?.(body);
+      console.log(body);
+      onSuccess?.(response);
       done();
     });
   });

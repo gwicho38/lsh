@@ -8,9 +8,9 @@
   },
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "start": "npm run build; node dist/app.js",
+    "start": "node dist/app.js",
     "dev": "npm run build; nodemon dist/app.js",
-    "build": "tsc -b; ncc build ./dist/app.js -o build/out/c3sh",
+    "build": "tsc -b; ncc build ./dist/app.js -o build/out/lsh",
     "watch-build": "ncc build ./dist/app.js -o build/out -w",
     "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist"
   },
@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.23.2",
-    "@types/jest": "^29.5.11",
     "babel-jest": "^29.7.0",
     "typescript": "^5.4.0-dev.20231127"
   }
