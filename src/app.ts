@@ -8,8 +8,8 @@ const program = new Command();
 
 program
   .version('1.0.0')
-  .description('lsh | shell utility for personal cli mgmt.')
-  .name('lsh');
+  .description('c3sh | shell utility for personal cli mgmt.')
+  .name('c3sh');
 
 init_c3(program);
 init_ishell(program);

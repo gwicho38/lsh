@@ -50,7 +50,7 @@ export async function get_ishell(type: String = "Jvm", spec: Spec = {function: "
 export async function init_ishell(program: Command) {
   program
     .command('interactive')
-    .description('lsh interactive shell')
+    .description('c3sh interactive shell')
     .action(async (type: String, action: String, spec: Spec) => {
       console.log(`Calling ${type}/${action}`);
     })
