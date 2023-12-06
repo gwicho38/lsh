@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { Command, program } from 'commander';
-import { makePOSTRequest } from '../api/api.js';
+import { Command } from 'commander';
+
 // for additional inspiration - check CloudClusterUtil type
 // export async function get_c3() {
 //   const config = {
@@ -40,31 +40,18 @@ import { makePOSTRequest } from '../api/api.js';
 // }
 
 interface Spec {
-  data: [any]
+  function: String
 }
 
-export async function get_c3(type: String = "Jvm", spec: Spec) {
+export async function get_ishell(type: String = "Jvm", spec: Spec = {function: "currentUsage"}) {
 
 }
 
-export async function init_c3(program: Command) {
+export async function init_ishell(program: Command) {
   program
-    .command('c3 <type> [method] [spec]')
-    .description('c3 api interface')
+    .command('interactive')
+    .description('lsh interactive shell')
     .action(async (type: String, action: String, spec: Spec) => {
-      switch (type) {
-        case 'test':
-          test_c3();
-          break;
-      }
+      console.log(`Calling ${type}/${action}`);
     })
 }
-
-export async function test_c3() {
-  c3_post();
-}
-
-export async function c3_post(typeName: String = "Pkg", method: String = "inst", dataSpec: Spec = ({data: ["Pkg"]})) {
-  const result = await makePOSTRequest(typeName, method, dataSpec, () => {console.log("success")});
-  console.log(result);
-} 
