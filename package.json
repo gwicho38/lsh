@@ -1,7 +1,7 @@
 {
-  "name": "lsh",
-  "version": "1.0.0",
-  "description": "lefv convenience shell",
+  "name": "c3sh",
+  "version": "0.0.0",
+  "description": "extendable c3 cli client",
   "main": "src/app.js",
   "bin": {
     "lsh": "./build/out/index.js"
