@@ -6,8 +6,8 @@
 
 const hello = "hello";
 
-// describe('dummy jest test template', () => {
-//   it('', () => {
-//     expect(hello.match("hello"));
-//   });
-// });
+describe('dummy jest test template', () => {
+  it('', () => {
+    expect(hello.match("hello"));
+  });
+});
