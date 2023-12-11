@@ -1,0 +1,18 @@
+#
+# Left here as reference - cluster-admin NOT needed
+#
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: '{{ template "c3Cluster.clusterName" . }}-default-service-account-cluster-admin'
+  labels:
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: '{{ .Release.Namespace }}'

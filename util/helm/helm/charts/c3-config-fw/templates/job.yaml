@@ -1,0 +1,55 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-c3config-fw
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-c3config-fw
+        release: {{ .Release.Name }}-c3config-fw
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: {{ .Release.Name }}-c3config-fw
+          image: '{{ .Values.c3ConfigFW.image.registry }}/{{ .Values.c3ConfigFW.image.repository }}:{{ .Values.c3ConfigFW.image.tag }}'
+          imagePullPolicy: IfNotPresent
+          command:
+            - '/bin/sh'
+            - '-c'
+            - 'base64 -d {{ .Values.c3ConfigFW.data.mountPath }}/config.tgz.b64 | ( cd {{ .Values.c3ConfigFW.config.mountPath }}; tar xvfz - ) &&
+               base64 -d {{ .Values.c3ConfigFW.data.mountPath }}/vault.tgz.b64 | ( cd {{ .Values.c3ConfigFW.vault.mountPath }}; tar xvfz - )'
+          volumeMounts:
+            - name: 'data'
+              mountPath: '{{ .Values.c3ConfigFW.data.mountPath }}'
+            - name: 'c3-config'
+              mountPath: '{{ .Values.c3ConfigFW.config.mountPath }}'
+            - name: 'c3-vault'
+              mountPath: '{{ .Values.c3ConfigFW.vault.mountPath }}'
+      volumes:
+        - name: 'data'
+          configMap:
+            name: {{ .Release.Name }}-c3config-fw
+        {{- if .Values.c3ConfigFW.config.local }}
+        - name: 'c3-config'
+          hostPath:
+            path: '{{ .Values.c3ConfigFW.config.local }}'
+        {{- end }}
+        {{- if .Values.c3ConfigFW.config.nfs }}
+        - name: 'c3-config'
+          nfs:
+            server: '{{ .Values.c3ConfigFW.config.nfs.server }}'
+            path: '{{ .Values.c3ConfigFW.config.nfs.path }}'
+        {{- end }}
+        {{- if .Values.c3ConfigFW.vault.local }}
+        - name: 'c3-vault'
+          hostPath:
+            path: '{{ .Values.c3ConfigFW.vault.local }}'
+        {{- end }}
+        {{- if .Values.c3ConfigFW.vault.nfs }}
+        - name: 'c3-vault'
+          nfs:
+            server: '{{ .Values.c3ConfigFW.vault.nfs.server }}'
+            path: '{{ .Values.c3ConfigFW.vault.nfs.path }}'
+        {{- end }}

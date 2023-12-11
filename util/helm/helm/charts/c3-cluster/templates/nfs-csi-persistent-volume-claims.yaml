@@ -1,0 +1,93 @@
+#
+# Defines the NFS(EFS) CSI Persistent Volume Claims - relevant only if Config Framework uses NFS CSI storage.
+#
+{{- if ((.Values.c3Cluster.configFramework.config).nfs).storageClass }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .Values.c3Cluster.configFramework.config.nfs.persistentVolumeClaimName }}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: '{{ .Values.c3Cluster.configFramework.config.nfs.storageClass }}'
+  {{- if .Values.c3Cluster.configFramework.config.nfs.persistentVolumeName }}
+  volumeName: '{{ .Values.c3Cluster.configFramework.config.nfs.persistentVolumeName }}'
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.c3Cluster.configFramework.config.nfs.storage }}
+{{- end }}
+---
+#
+# Create a different vault persistent volume claim only if the persistent volume claims names are different, otherwise
+# reuse the claim - two different claim names cannot be bound to the same volume
+#
+{{- if and ((.Values.c3Cluster.configFramework.vault).nfs).storageClass (ne ((.Values.c3Cluster.configFramework.config).nfs).persistentVolumeClaimName ((.Values.c3Cluster.configFramework.vault).nfs).persistentVolumeClaimName) }}
+{{- with .Values.c3Cluster.configFramework.vault.nfs }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .persistentVolumeClaimName }}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: '{{ .storageClass }}'
+  {{- if .persistentVolumeName }}
+  volumeName: '{{ .persistentVolumeName }}'
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .storage }}
+{{- end }}
+{{- end }}
+---
+#
+# Create a different shared filesystem persistent volume claim only if the persistent volume claim names are different, otherwise
+# reuse the claim - two different claim names cannot be bound to the same volume
+#
+{{- with .Values.c3Cluster.sharedFileSystem.nfs }}
+{{- if and .storageClass (and (ne .persistentVolumeClaimName ((($.Values.c3Cluster.configFramework.config).nfs).persistentVolumeClaimName)) (ne .persistentVolumeClaimName ((($.Values.c3Cluster.configFramework.vault).nfs).persistentVolumeClaimName))) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .persistentVolumeClaimName }}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: '{{ .storageClass }}'
+  {{- if .persistentVolumeName }}
+  volumeName: '{{ .persistentVolumeName }}'
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .storage }}
+{{- end }}
+{{- end }}
+---
+#
+# If ephemeralStorage is disabled, use persistentStorage
+#
+{{- if and (not .Values.c3Cluster.ephemeralStorage.enabled) .Values.c3Cluster.persistentStorage.storageClass }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .Values.c3Cluster.persistentStorage.persistentVolumeClaimName }}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: '{{ .Values.c3Cluster.persistentStorage.storageClass }}'
+  {{- if .Values.c3Cluster.persistentStorage.persistentVolumeName }}
+  volumeName: '{{ .Values.c3Cluster.persistentStorage.persistentVolumeName }}'
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.c3Cluster.persistentStorage.storage }}
+{{- end }}

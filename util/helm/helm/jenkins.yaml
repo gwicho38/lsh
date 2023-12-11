@@ -1,0 +1,27 @@
+#
+# IMPORTANT: this CPU/memory limit configuration override only works then the builder pod is installed manually with
+#            c3-k8s on a minikube instance, and it will be ignored by the builder pods managed by the Jenkins K8s
+#            pipeline. If you intend to change the CPU and memory limits for a builder pod installed by the Jenkins K8s
+#            pipeline, update the 'BUILDER_POD_CPU_LIMIT' and 'BUILDER_POD_MEMORY_LIMIT_Gi' defaults in Jenkinsfile.k8s,
+#            or use the "Build with Parameters" Jenkins UI option and provide the desired values there. Note there is not
+#            currently a way to specify VM_MIN_MEM as is done in the Jenkins K8s pipeline; it will default to 4GB.
+#            
+#
+c3Builder:
+  resources:
+    requests:
+      cpu: '2000m'
+
+#
+# IMPORTANT: this CPU/memory limit configuration override only works then the tester pod is installed manually with
+#            c3-k8s on a minikube instance, and it will be ignored by the tester pods managed by the Jenkins K8s
+#            pipeline. If you intend to change the CPU and memory limits for the bootstrap master nodes deployed by a
+#            tester pod installed by the Jenkins K8s pipeline, update the 'BOOTSTRAP_MASTER_POD_CPU_LIMIT' and
+#            'BOOTSTRAP_MASTER_POD_MEMORY_LIMIT_Gi' defaults in Jenkinsfile.k8s, or use the "Build with Parameters"
+#            Jenkins UI option and provide the desired values there.
+#
+c3-cluster:
+  c3Cluster:
+    resources:
+      requests:
+        cpu: '2000m'

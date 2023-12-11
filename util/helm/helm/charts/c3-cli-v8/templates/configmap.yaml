@@ -1,0 +1,24 @@
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-c3cli-config
+  namespace: {{ .Release.Namespace }}
+data:
+  run.sh: |
+    set -e
+    set -x
+
+    curl -s -S {{ template "c3cli.clusterEndpoint" . }}/npm-modules/c3-remote.tgz > /npm-module/c3-remote.tgz
+
+    cd /npm-module
+    npm install c3-remote.tgz > npm.log
+
+    trap : TERM INT
+    sleep infinity &
+    wait
+
+  readness.sh: |
+    set -e
+    set -x
+    node --version

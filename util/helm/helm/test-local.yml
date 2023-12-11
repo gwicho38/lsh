@@ -1,0 +1,12 @@
+---
+nginx-ingress:
+  controller:
+    service:
+      annotations:
+        metallb.universe.tf/address-pool: test
+      loadBalancerIP: 192.168.64.101
+
+c3Cluster:
+  env: 'test'
+  # canonical URL is accessed via nginx ingress controller
+  canonicalUrlPortOverride: 80

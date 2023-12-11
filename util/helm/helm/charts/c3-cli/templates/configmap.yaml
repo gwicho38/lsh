@@ -1,0 +1,29 @@
+#
+# C3 Server bootstrap node configuration map
+#
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-c3cli-config
+  namespace: {{ .Release.Namespace }}
+data:
+  run.sh: |
+    set -e
+    set -x
+
+    curl -u {{ .Values.c3cli.c3Server.auth }} {{ template "c3cli.clusterEndpoint" . }}/static/nodejs-apps/cli/cli.tar.gz | tar xvz -C /cli
+    cd /cli
+    ./c3 install
+
+    c3 key -u {{ .Values.c3cli.c3Server.auth }} -e {{ template "c3cli.clusterEndpoint" . }}
+    c3 version -u {{ .Values.c3cli.c3Server.auth }} -s -e {{ template "c3cli.clusterEndpoint" . }}
+
+    trap : TERM INT
+    sleep infinity &
+    wait
+
+  readiness.sh: |
+    set -e
+    set -x
+    c3 version -u {{ .Values.c3cli.c3Server.auth }} -e {{ template "c3cli.clusterEndpoint" . }}

@@ -1,0 +1,11 @@
+apiVersion: v1
+name: c3-builder
+version: '4.2.0'
+description: C3 server build environment capable of running unit and integration tests
+dependencies:
+  - name: c3-persistence
+    version: '3.1.0'
+    repository: file://../c3-persistence
+  - name: c3-selenium
+    version: '4.1.0'
+    repository: file://../c3-selenium

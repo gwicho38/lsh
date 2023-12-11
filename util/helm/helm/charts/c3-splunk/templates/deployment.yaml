@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-splunk-server
+spec:
+  replicas: {{ default 1 .Values.c3splunk.replicas }}
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-splunk-server
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-splunk-server
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Release.Name }}-splunk
+        image: '{{ .Values.c3splunk.image.registry }}/{{ .Values.c3splunk.image.repository }}:{{ .Values.c3splunk.image.tag }}'
+        imagePullPolicy: IfNotPresent
+        resources: {{ toYaml .Values.c3splunk.resources | nindent 10 }}
+        env:
+        - name: SPLUNK_START_ARGS
+          value: "--accept-license"
+        - name: SPLUNK_PASSWORD
+          valueFrom:
+           secretKeyRef:
+              name: splunk-server-password
+              key: password
+        ports:
+        - name: web
+          containerPort: 8000
+          protocol: TCP
+        - name: hec
+          containerPort: 8088
+          protocol: TCP
+        - name: rest
+          containerPort: 8089
+          protocol: TCP
+        - name: index-receiver
+          containerPort: 9997
+          protocol: TCP
+        - name: app-server
+          containerPort: 8065
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 1
+          exec:
+            command: ["bash", "-c", "curl -o /dev/null -skf http://localhost:8000"]
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          successThreshold: 3
+          timeoutSeconds: 5

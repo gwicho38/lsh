@@ -1,0 +1,11 @@
+apiVersion: v1
+name: c3-local
+version: '3.2.0'
+description: The Helm chart for local dependencies of a C3 cluster (PostgreSQL, Cassandra, etc.)
+dependencies:
+  - name: c3-persistence
+    version: '3.1.0'
+    repository: file://../c3-persistence
+  - name: c3-selenium
+    version: '4.1.0'
+    repository: file://../c3-selenium

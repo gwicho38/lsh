@@ -1,0 +1,7 @@
+apiVersion: v2
+name: c3-config-fw
+version: '1.0.0'
+description: >
+  Seeds the config framework to a cluster's specified NFS mount using a k8s pod that contains the necessary access.
+  The cluster's config is placed in a configmap as tarballs. The k8s job mounts this to the pod's filesystem.
+  The pod then untars the config framework in the NFS mount path, allowing the cluster to consume the config framework.

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: c3-cli
+version: '1.0.7'
+description: Container with c3 cli tool

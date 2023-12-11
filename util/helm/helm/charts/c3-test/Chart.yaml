@@ -1,0 +1,4 @@
+apiVersion: v2
+name: c3-test
+version: '2.0.11'
+description: A chart used for experiments

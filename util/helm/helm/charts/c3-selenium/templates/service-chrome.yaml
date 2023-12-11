@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ .Release.Name }}-selenium-chrome'
+  {{- if ((.Values.c3Selenium.chrome.service).loadBalancerIP) }}
+  annotations:
+    metallb.universe.tf/address-pool: test
+  {{- end }}
+spec:
+  type: LoadBalancer
+  {{- if ((.Values.c3Selenium.chrome.service).loadBalancerIP) }}
+  loadBalancerIP: {{ .Values.c3Selenium.chrome.service.loadBalancerIP }}
+  {{- end }}
+  ports:
+    - name: 'selenium-port'
+      port: {{ .Values.c3Selenium.chrome.service.seleniumPort }}
+      targetPort: 4444
+      protocol: TCP
+    - name: 'vnc-port'
+      port: {{ .Values.c3Selenium.chrome.service.vncPort }}
+      protocol: TCP
+      targetPort: 5900
+    - name: 'chrome-debugging-port'
+      port: {{ .Values.c3Selenium.chrome.service.chromeDebuggingPort }}
+      protocol: TCP
+      targetPort: 9222
+  selector:
+    function: 'selenium-chrome'
+  sessionAffinity: None
+  externalTrafficPolicy: Cluster

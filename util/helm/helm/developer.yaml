@@ -1,0 +1,38 @@
+---
+
+c3Cluster:
+  service:
+    web:
+      type: LoadBalancer
+    debug:
+      type: LoadBalancer
+
+c3Builder:
+  memory: '6Gi'
+  cpu: '4000m'
+
+#
+# For use with the tester installation
+#
+c3-cluster:
+  nginx-ingress:
+    controller:
+      service:
+        annotations:
+          metallb.universe.tf/address-pool: test
+  c3Cluster:
+    env: 'test'
+    # canonical URL is accessed via nginx ingress controller
+    canonicalUrlPortOverride: 80
+    service:
+      web:
+        type: LoadBalancer
+      debug:
+        type: LoadBalancer
+
+c3-local:
+  c3-persistence:
+    vault:
+      server:
+        service:
+          type: LoadBalancer

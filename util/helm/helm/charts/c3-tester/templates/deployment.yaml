@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-tester
+spec:
+  replicas: {{ default 1 .Values.c3Tester.replica }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-tester
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-tester
+        release: {{ .Release.Name }}-tester
+        function: 'tester'
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-tester
+          image: '{{ template "c3Tester.image" . }}'
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: '{{ .Values.c3Tester.resources.requests.cpu }}'
+          command:
+          - /bin/sh
+          - -c
+          - '{{ .Values.c3serverMountPath }}/c3 install && trap : TERM INT; sleep infinity & wait'
+          # probe waits up to 15 mins for the C3 cluster master node to report as healthy
+          startupProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - curl -o /dev/null -skfw "%{http_code}\n" {{ template "c3Tester.clusterHealthCheckEndpoint" . }}
+            failureThreshold: 90
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: c3server-root
+              mountPath: {{ .Values.c3serverMountPath }}
+              {{- if .Values.c3Tester.c3AppsRoot  }}
+            - name: c3base-root
+              mountPath: {{ .Values.c3Tester.c3appsMountPath }}
+              {{- end }}
+      volumes:
+        - name: c3server-root
+          hostPath:
+            path: {{ .Values.c3ServerRoot }}
+          {{- if .Values.c3Tester.c3AppsRoot }}
+        - name: c3base-root
+          hostPath:
+            path: {{ .Values.c3Tester.c3AppsRoot }}
+          {{- end }}

@@ -1,0 +1,20 @@
+c3splunk:
+
+  # Replica for splunk pod
+  replicas: 1
+
+  # The coordinates of the tester pod image
+  image:
+    registry: 'ci-artifacts.c3.ai'
+    repository: 'splunk/splunk'
+    tag: '7.3'
+
+  # If not set random password will be generated
+  # It can be obtained by calling:
+  # kubectl get secret/splunk-server-password -o go-template='{{ index .data "password" }}' | base64 -d
+  #password:
+
+  # The resource limits of the tester pod.
+  resources:
+    requests:
+      cpu: 200m

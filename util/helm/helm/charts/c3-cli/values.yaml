@@ -1,0 +1,28 @@
+c3cli:
+
+  # Replica for tester pod
+  replica: 1
+
+  # The coordinates of the tester pod image
+  image:
+    registry: 'ci-artifacts.c3.ai'
+    repository: 'c3-cli'
+    tag: '0.1.1'
+
+  # The resource limits of the tester pod.
+  resources:
+    requests:
+      cpu: 500m
+      ephemeral-storage: 200M
+
+  security:
+    podSecurityContext:
+      runAsUser: 1000640001
+      runAsGroup: 1000640001
+
+  # C3 server configuration to make connection to fetch c3 cli script
+  c3Server:
+    serviceName: 'c3'
+    env: 'dev'
+    pod: 'local'
+    auth: 'BA:BA'

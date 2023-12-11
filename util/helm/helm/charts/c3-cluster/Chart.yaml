@@ -1,0 +1,35 @@
+apiVersion: v2
+name: c3-cluster
+version: '4.19.2'
+description: C3 cluster with a master node that can launch worker nodes
+# Lowest C3 image tag known to work with this chart
+appVersion: '7.28.0.1288'
+kubeVersion: '>=1.21.0-0'
+dependencies:
+  - name: c3-persistence
+    version: '3.1.0'
+    # replace repository to ci-artifacts.c3.ai before publishing
+    # repository: https://ci-artifacts.c3.ai/v1/helm
+    repository: file://../c3-persistence
+  - name: zookeeper
+    version: '5.16.0'
+    # OPS chart
+    # version: '3.5.5'
+    # repository: https://jfrog.c3.ai/artifactory/charts/
+    # Re-published chart from https://charts.bitnami.com/bitnami
+    repository: https://ci-artifacts.c3.ai/v1/helm
+    condition: zookeeper.enabled
+    # Note: known drift to chart used by Operations that is available
+    # in  https://jfrog.c3.ai/artifactory/charts/ (version '3.5.5')
+  - name: nginx-ingress
+    version: '1.28.0'
+    repository: https://ci-artifacts.c3.ai/v1/helm
+    condition: c3Cluster.ingress.install-nginx-controller
+  - name: aws-alb-ingress-controller
+    version: '1.0.0'
+    repository: https://ci-artifacts.c3.ai/v1/helm
+    condition: c3Cluster.ingress.install-aws-alb-ingress-controller
+  - name: internal-ca
+    version: '1.0.37'
+    repository: https://ci-artifacts.c3.ai/v1/helm
+    condition: c3Cluster.tls.internalCaInitContainerEnabled

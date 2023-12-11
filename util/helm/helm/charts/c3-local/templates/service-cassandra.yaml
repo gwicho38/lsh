@@ -1,0 +1,36 @@
+#
+# C3 Server service specification
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ template "c3LocalDeps.cassandraServiceName" . }}-localhost'
+  labels:
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  type: 'LoadBalancer'
+  selector:
+    app: 'cassandra'
+    release: '{{ .Release.Name }}'
+  ports:
+    - name: 'intra'
+      protocol: 'TCP'
+      port: 7000
+      targetPort: 7000
+    - name: 'tls'
+      protocol: 'TCP'
+      port: 7001
+      targetPort: 7001
+    - name: 'jmx'
+      protocol: 'TCP'
+      port: 7199
+      targetPort: 7199
+    - name: 'cql'
+      protocol: 'TCP'
+      port: 9042
+      targetPort: 9042
+    - name: 'thrift'
+      protocol: 'TCP'
+      port: 9160
+      targetPort: 9160
