@@ -1,0 +1,68 @@
+#
+# Defines the NFS(EFS) CSI Persistent Volume Claims - relevant only if Config Framework uses NFS CSI storage.
+#
+{{- if and .Values.c3.configFramework.config.nfs.enabled .Values.c3.configFramework.config.nfs.storageClassName }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .Values.c3.configFramework.config.nfs.persistentVolumeClaimName }}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: '{{ .Values.c3.configFramework.config.nfs.storageClassName }}'
+  {{- if .Values.c3.configFramework.config.nfs.persistentVolumeName }}
+  volumeName: '{{ .Values.c3.configFramework.config.nfs.persistentVolumeName }}'
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.c3.configFramework.config.nfs.storage }}
+{{- end }}
+---
+#
+# Create a different vault persistent volume claim only if the persistent volume claims names are different, otherwise
+# reuse the claim - two different claim names cannot be bound to the same volume
+#
+{{- if and .Values.c3.configFramework.vault.nfs.enabled .Values.c3.configFramework.vault.nfs.storageClassName (ne .Values.c3.configFramework.config.nfs.persistentVolumeClaimName .Values.c3.configFramework.vault.nfs.persistentVolumeClaimName) }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: '{{ .Values.c3.configFramework.vault.nfs.persistentVolumeClaimName }}'
+  annotations:
+    "helm.sh/resource-policy": keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: '{{ .Values.c3.configFramework.vault.nfs.storageClassName }}'
+  {{- if .Values.c3.configFramework.vault.nfs.persistentVolumeName }}
+  volumeName: '{{ .Values.c3.configFramework.vault.nfs.persistentVolumeName }}'
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.c3.configFramework.vault.nfs.storage }}
+{{- end }}
+---
+#
+# Creates a shared filesystem persistent volume claim if defined
+#
+{{- range .Values.c3.sharedFileSystems.volumes }}
+{{- if .persistentVolumeClaim }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .persistentVolumeClaim.claimName }}
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: {{ $.Values.c3.sharedFileSystems.storageClassName }}
+  {{- if $.Values.c3.sharedFileSystems.persistentVolumeName }}
+  volumeName: {{ $.Values.c3.sharedFileSystems.persistentVolumeName }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $.Values.c3.sharedFileSystems.size }}
+{{- end }}
+{{- end }}

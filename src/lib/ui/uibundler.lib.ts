@@ -3,7 +3,7 @@ export async function cleanUiBundler() {
     UiBundlerConfig.inst().setConfigValue('bundleOnProvision', false);  
     UiBundler.removeAll();  
     UiBundlerResult.removeAll();       
-    
+    NodeJsSourceCache.clear();
     UiBundlerPerformanceProfile.removeAll();  
     UiSdlMetadataFileManifest.removeAll()
     

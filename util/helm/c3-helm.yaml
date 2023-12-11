@@ -1,0 +1,1082 @@
+COMPUTED VALUES:
+aws-alb-ingress-controller:
+  affinity: {}
+  autoDiscoverAwsRegion: true
+  autoDiscoverAwsVpcID: true
+  awsRegion: us-east-2
+  awsVpcID: vpc-xxx
+  clusterName: ""
+  containerSecurityContext: {}
+  enableLivenessProbe: false
+  enableReadinessProbe: false
+  extraArgs: {}
+  extraEnv: {}
+  fullnameOverride: ""
+  global: {}
+  image:
+    pullPolicy: IfNotPresent
+    repository: docker.io/amazon/aws-alb-ingress-controller
+    tag: v1.1.6
+  livenessProbeInitialDelay: 30
+  livenessProbeTimeout: 1
+  nameOverride: ""
+  nodeSelector: {}
+  podAnnotations: {}
+  podLabels: {}
+  priorityClassName: ""
+  rbac:
+    create: true
+    serviceAccount:
+      annotations: {}
+      create: true
+      name: default
+  readinessProbeInitialDelay: 30
+  readinessProbeInterval: 60
+  readinessProbeTimeout: 3
+  replicaCount: 1
+  resources: {}
+  scope:
+    ingressClass: alb
+    singleNamespace: false
+    watchNamespace: ""
+  securityContext: {}
+  tolerations: []
+  volumeMounts: []
+  volumes: []
+c3-persistence:
+  c3Persistence:
+    secrets:
+      ciregistryc3iotio: {}
+      registryc3ai: {}
+  cassandra:
+    affinity: {}
+    backupCronJob:
+      aws: {}
+      azure: {}
+      coldStorage: s3
+      coordinator:
+        image:
+          pullPolicy: Never 
+          registry: ci-registry.c3.ai
+          repository: cassandra-backup-trigger
+          tag: 2
+      cronExpression: 0 */24 * * *
+      enabled: false
+      icarus:
+        image:
+          pullPolicy: Never
+          registry: ci-registry.c3.ai
+          repository: icarus
+          tag: 1.0.6
+      snapshotTag: CronJobTriggered
+    cluster:
+      clientEncryption: false
+      datacenter: dc1
+      enableRPC: true
+      endpointSnitch: SimpleSnitch
+      internodeEncryption: none
+      name: cassandra
+      numTokens: 8
+      rack: rack1
+      seedCount: 1
+    clusterDomain: cluster.local
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      enabled: true
+      readOnlyRootFilesystem: true
+      runAsUser: 503
+    dbUser:
+      forcePassword: false
+      password: c3cassandra
+      user: cassandra
+    enabled: true
+    extraEnvVars:
+    - name: JVM_EXTRA_OPTS
+      value: -Dcom.sun.management.jmxremote.authenticate=false
+    - name: LOCAL_JMX
+      value: "no"
+    - name: MAX_HEAP_SIZE
+      value: 2048m
+    - name: HEAP_NEWSIZE
+      value: 700m
+    extraEnvVarsCM: null
+    extraEnvVarsSecret: null
+    extraVolumeMounts: []
+    extraVolumes: []
+    global:
+      cassandra: {}
+    image:
+      debug: false
+      pullPolicy: IfNotPresent
+      registry: ci-artifacts.c3.ai
+      repository: cassandra
+      tag: 3.11.9.2
+    livenessProbe:
+      enabled: true
+      exec:
+        command:
+        - /bin/bash
+        - -ec
+        - |
+          nodetool status
+      failureThreshold: 5
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      successThreshold: 1
+      timeoutSeconds: 5
+    metrics:
+      enabled: false
+      image:
+        pullPolicy: IfNotPresent
+        registry: docker.io
+        repository: bitnami/cassandra-exporter
+        tag: 2.3.4-debian-10-r184
+      podAnnotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      resources:
+        limits: {}
+        requests: {}
+      serviceMonitor:
+        enabled: false
+    nodeSelector: {}
+    pdb:
+      create: false
+      minAvailable: 1
+    persistence:
+      accessModes:
+      - ReadWriteOnce
+      enabled: true
+      size: 30Gi
+    podAnnotations: {}
+    podLabels: {}
+    podManagementPolicy: OrderedReady
+    proxyVars: []
+    rbac:
+      create: true
+      role:
+        rules:
+        - apiGroups:
+          - ""
+          - extensions
+          - apps
+          resources:
+          - pods
+          - services
+          - endpoints
+          - secrets
+          verbs:
+          - get
+          - list
+    readinessProbe:
+      enabled: true
+      exec:
+        command:
+        - /bin/bash
+        - -ec
+        - |
+          nodetool status | grep -E "^UN\\s+${POD_IP}"
+      failureThreshold: 5
+      initialDelaySeconds: 60
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    replicaCount: 1
+    resources:
+      limits:
+        cpu: 2
+        memory: 4Gi
+      requests:
+        cpu: 250m
+        memory: 4Gi
+    securityContext:
+      enabled: true
+      fsGroup: 0
+      runAsGroup: 20
+      runAsUser: 503
+    service:
+      annotations: {}
+      headless:
+        annotations: {}
+      metricsPort: 8080
+      nodePorts:
+        cql: ""
+        metrics: ""
+        thrift: ""
+      port: 9042
+      thriftPort: 9160
+      type: ClusterIP
+    serviceAccount:
+      create: true
+    sidecars: []
+    tolerations: []
+    updateStrategy: RollingUpdate
+  global: {}
+  postgresql:
+    Env: []
+    clusterId: ""
+    commonAnnotations: {}
+    containerSecurityContext:
+      enabled: true
+      runAsUser: 1001
+    enabled: true
+    extraDeploy: []
+    global:
+      postgresql: {}
+    image:
+      debug: false
+      pullPolicy: Never 
+      registry: ci-artifacts.c3.ai
+      repository: postgres
+      tag: 9.6.20.1
+    initdbScripts:
+      create-super-user.sql: |
+        CREATE ROLE pgadminusername LOGIN SUPERUSER PASSWORD 'pgadminpassword';
+    livenessProbe:
+      enabled: true
+      failureThreshold: 6
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    master:
+      affinity: {}
+      annotations: {}
+      labels: {}
+      nodeSelector: {}
+      podAnnotations: {}
+      podLabels: {}
+      priorityClassName: ""
+      service: {}
+      tolerations: []
+    masterAsStandBy:
+      enabled: false
+    metrics:
+      enabled: false
+      extraEnvVars: {}
+      image:
+        pullPolicy: IfNotPresent
+        registry: docker.io
+        repository: bitnami/postgres-exporter
+        tag: 0.8.0-debian-10-r207
+      livenessProbe:
+        enabled: true
+        failureThreshold: 6
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      prometheusRule:
+        additionalLabels: {}
+        enabled: false
+        namespace: ""
+        rules: []
+      readinessProbe:
+        enabled: true
+        failureThreshold: 6
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      securityContext:
+        enabled: false
+        runAsUser: 1001
+      service:
+        annotations:
+          prometheus.io/port: "9187"
+          prometheus.io/scrape: "true"
+        type: ClusterIP
+      serviceMonitor:
+        additionalLabels: {}
+        enabled: false
+    networkPolicy:
+      allowExternal: true
+      enabled: false
+      explicitNamespacesSelector: {}
+    persistence:
+      accessModes:
+      - ReadWriteOnce
+      annotations: {}
+      enabled: true
+      mountPath: /c3/postgresql
+      size: 50Gi
+      subPath: ""
+    postgresqlDataDir: /c3/postgresql/data
+    postgresqlPassword: c3postgres
+    postgresqlPghbaRemoveFilters: null
+    postgresqlUsername: postgres
+    psp:
+      create: false
+    rbac:
+      create: false
+    readinessProbe:
+      enabled: true
+      failureThreshold: 6
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    replication:
+      applicationName: my_application
+      enabled: false
+      numSynchronousReplicas: 0
+      password: repl_password
+      slaveReplicas: 1
+      synchronousCommit: "off"
+      user: repl_user
+    resources:
+      requests:
+        cpu: 250m
+        memory: 256Mi
+    securityContext:
+      enabled: true
+    service:
+      annotations: {}
+      port: 5432
+      type: ClusterIP
+    serviceAccount:
+      enabled: false
+    shmVolume:
+      enabled: true
+    slave:
+      affinity: {}
+      annotations: {}
+      extraInitContainers: |
+        # - name: do-something
+        #   image: busybox
+        #   command: ['do', 'something']
+      extraVolumeMounts: []
+      extraVolumes: []
+      labels: {}
+      nodeSelector: {}
+      persistence:
+        enabled: true
+      podAnnotations: {}
+      podLabels: {}
+      priorityClassName: ""
+      service: {}
+      sidecars: []
+      tolerations: []
+    tls:
+      certFilename: ""
+      certKeyFilename: ""
+      certificatesSecret: ""
+      enabled: false
+      preferServerCiphers: true
+    updateStrategy:
+      type: RollingUpdate
+    vaultExternalSecret:
+      enabled: false
+      keyName: postgresql
+      name: postgresql
+  vault:
+    enabled: false
+    global:
+      enabled: true
+      imagePullSecrets: []
+      openshift: false
+      tlsDisable: true
+    injector:
+      agentImage:
+        repository: vault
+        tag: 1.4.2
+      authPath: auth/kubernetes
+      certs:
+        caBundle: ""
+        certName: tls.crt
+        keyName: tls.key
+      enabled: false
+      externalVaultAddr: ""
+      extraEnvironmentVars: {}
+      image:
+        pullPolicy: IfNotPresent
+        repository: hashicorp/vault-k8s
+        tag: 0.4.0
+      logFormat: standard
+      logLevel: info
+      namespaceSelector: {}
+      priorityClassName: ""
+      resources: {}
+      revokeOnShutdown: false
+    server:
+      affinity: |
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: {{ template "vault.name" . }}
+                  app.kubernetes.io/instance: "{{ .Release.Name }}"
+                  component: server
+              topologyKey: kubernetes.io/hostname
+      annotations: {}
+      auditStorage:
+        accessMode: ReadWriteOnce
+        enabled: false
+        size: 10Gi
+      authDelegator:
+        enabled: true
+      dataStorage:
+        accessMode: ReadWriteOnce
+        enabled: true
+        size: 10Gi
+      dev:
+        enabled: true
+      extraArgs: -dev-plugin-dir=/vault/file/
+      extraEnvironmentVars: {}
+      extraLabels: {}
+      extraSecretEnvironmentVars: []
+      extraVolumes: []
+      ha:
+        config: |
+          ui = true
+
+          listener "tcp" {
+            tls_disable = 1
+            address = "[::]:8200"
+            cluster_address = "[::]:8201"
+          }
+          storage "consul" {
+            path = "vault"
+            address = "HOST_IP:8500"
+          }
+
+          service_registration "kubernetes" {}
+
+          # Example configuration for using auto-unseal, using Google Cloud KMS. The
+          # GKMS keys must already exist, and the cluster must have a service account
+          # that is authorized to access GCP KMS.
+          #seal "gcpckms" {
+          #   project     = "vault-helm-dev-246514"
+          #   region      = "global"
+          #   key_ring    = "vault-helm-unseal-kr"
+          #   crypto_key  = "vault-helm-unseal-key"
+          #}
+        disruptionBudget:
+          enabled: true
+        enabled: false
+        raft:
+          config: |
+            ui = true
+
+            listener "tcp" {
+              tls_disable = 1
+              address = "[::]:8200"
+              cluster_address = "[::]:8201"
+            }
+
+            storage "raft" {
+              path = "/vault/data"
+            }
+
+            service_registration "kubernetes" {}
+          enabled: false
+          setNodeId: false
+        replicas: 3
+      image:
+        pullPolicy: IfNotPresent
+        repository: ci-artifacts.c3.ai/hashicorp/vault
+        tag: 1.4.0
+      ingress:
+        annotations: {}
+        enabled: false
+        hosts:
+        - host: chart-example.local
+          paths: []
+        labels: {}
+        tls: []
+      livenessProbe:
+        enabled: false
+        initialDelaySeconds: 60
+        path: /v1/sys/health?standbyok=true
+      postStart: []
+      preStopSleepSeconds: 5
+      priorityClassName: ""
+      readinessProbe:
+        enabled: true
+      resources: {}
+      route:
+        annotations: {}
+        enabled: false
+        host: chart-example.local
+        labels: {}
+      service:
+        annotations: {}
+        enabled: true
+        port: 8200
+        targetPort: 8200
+      serviceAccount:
+        annotations: {}
+      shareProcessNamespace: false
+      standalone:
+        config: |
+          ui = true
+
+          listener "tcp" {
+            tls_disable = 1
+            address = "[::]:8200"
+            cluster_address = "[::]:8201"
+          }
+          storage "file" {
+            path = "/vault/data"
+          }
+
+          # Example configuration for using auto-unseal, using Google Cloud KMS. The
+          # GKMS keys must already exist, and the cluster must have a service account
+          # that is authorized to access GCP KMS.
+          #seal "gcpckms" {
+          #   project     = "vault-helm-dev"
+          #   region      = "global"
+          #   key_ring    = "vault-helm-unseal-kr"
+          #   crypto_key  = "vault-helm-unseal-key"
+          #}
+        enabled: '-'
+      updateStrategyType: OnDelete
+    ui:
+      annotations: {}
+      enabled: false
+      externalPort: 8200
+      serviceType: ClusterIP
+c3Cluster:
+  aws:
+    accessKey: AWS_ACCESS_KEY_TO_BE_SET_DURING_INSTALLATION
+    artifactS3Bucket: c3--packagemanager
+    artifactS3BucketRegion: us-west-2
+    cloudSecurityId: AWS_CLOUD_SECURITY_ID_TO_BE_SET_DURING_INSTALLATION
+    region: us-west-2
+    secretKey: AWS_SECRET_KEY_TO_BE_SET_DURING_INSTALLATION
+    testRegion: AWS_TEST_REGION_TO_BE_SET_DURING_INSTALLATION
+    testSecurityId: AWS_TEST_SECURITY_ID_TO_BE_SET_DURING_INSTALLATION
+    useMachineCreds: "true"
+  busybox:
+    registry: ci-artifacts.c3.ai
+    repository: ubi/ubi8-gov
+    tag: 8.4.211.1
+  c3AppsRoot: /c3-shared-cluster/c3base
+  canonicalUrlPortOverride: 80
+  cassandra:
+    password: ""
+    username: ""
+  cloudFrameworkIdRole: m
+  conda:
+    configFiles:
+    - /root/.condarc
+    - /home/c3/.condarc
+    - /opt/conda/.condarc
+  configFramework:
+    config:
+      mountPath: /usr/local/share/c3/server/config
+      storage: 1Gi
+    installationConfiguration: ""
+    installationProjectionFileName: .cf-root
+    installationProjectionMountPath: /usr/local/share/c3/server/installation
+    root:
+      ClusterConfig:
+        canonicalUrlDomain: test-local.test
+        canonicalUrlPortOverride: 80
+        canonicalUrlScheme: http
+      KvStoreConfig:
+        cassandra:
+          password: c3cassandra
+          username: cassandra
+      db:
+        JdbcStoreConfig:
+          c3:
+            credentials:
+              adminPassword: pgadminpassword
+              adminUsername: pgadminusername
+              database: c3
+              datastore: postgres
+              password: c3postgres
+              port: 5432
+              serverEndpoint: c3-postgresql-headless.default
+              username: c3
+          secondaryPostgres:
+            credentials:
+              adminPassword: pgadminpassword
+              adminUsername: pgadminusername
+              database: c3
+              datastore: postgres
+              password: c3postgres
+              port: 5432
+              serverEndpoint: c3-postgresql-headless.default
+              username: c3
+          sql:
+            credentials:
+              adminPassword: pgadminpassword
+              adminUsername: pgadminusername
+              database: c32
+              datastore: postgres
+              password: c3postgres
+              port: 5432
+              serverEndpoint: c3-postgresql-headless.default
+              username: c32
+    vault:
+      mountPath: /usr/local/share/c3/server/vault
+      storage: 1Gi
+  domain: test
+  downwardApi:
+    mountPath: /etc/podinfo
+  enableLocalFileSystem: "false"
+  env: test
+  ephemeralStorage:
+    c3Log:
+      mountPath: /home/c3/c3log
+      subPath: c3log
+    c3Tmp:
+      mountPath: /usr/local/share/c3/tmp
+      subPath: tmp
+    cache:
+      mountPath: /usr/local/share/c3/cache
+      subPath: cache
+    enabled: true
+    npm:
+      mountPath: /home/c3/.npm
+      subPath: .npm
+    serverConf:
+      mountPath: /usr/local/share/c3/server/conf
+      subPath: c3-cf-conf
+    tmp:
+      mountPath: /tmp
+      subPath: tmp
+    volumeName: ephemeral-empty-dir
+    zookeeper:
+      mountPath: /usr/local/share/c3/zk/data
+      subPath: zk/data
+  externalVault:
+    auth: ""
+    configOwner: null
+    configRegion: null
+    configRoot: ""
+    isClusterCA: false
+    kind: ""
+    role: ""
+    url: ""
+    vaultRegion: null
+    vaultRoot: ""
+    vaultTokenDir: /usr/local/vault_token
+  image:
+    imagePullSecrets:
+      name: ""
+    registry: ci-artifacts.c3.ai
+    repository: c3server-k8s
+    tag: 8.3.2
+  ingress:
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 250m
+      nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+      nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      nginx.ingress.kubernetes.io/rewrite-target: /$1
+    class: nginx
+    enabled: true
+    install-aws-alb-ingress-controller: false
+    install-nginx-controller: true
+    serviceName: c3
+    servicePort: 8080
+    tls:
+      enabled: false
+      secret:
+        cert: ""
+        hosts: ""
+        key: ""
+        name: c3-tls-secret
+  insecureAccess: true
+  istio:
+    annotations:
+      sidecarIstioIoInject: false
+    enabled: false
+  jvmArgs: ""
+  jvmMaxHeapAbsolute: ""
+  jvmMaxMemFraction: ""
+  jvmMinHeapAbsolute: ""
+  jvmMinMemFraction: ""
+  kafka:
+    truststoreFileName: kafka-truststore.jks
+  launchOptions:
+    debug: ""
+    debugMem: ""
+    dryRun: ""
+    gcLog: ""
+    profile: ""
+    suspend: ""
+    verbose: ""
+  namespace: c3
+  npm:
+    configFiles:
+    - /home/c3/.npmrc
+  persistentStorage:
+    persistentVolumeClaimName: c3-fs-pvc
+    storage: 1Gi
+  pip:
+    configFiles:
+    - /home/c3/.pip/pip.conf
+  pod: local
+  proxy:
+    httpProxy: ""
+    httpsProxy: ""
+    noProxy: ""
+  resources:
+    limits:
+      memory: 8Gi
+    requests:
+      cpu: 1100m
+  security:
+    deployRoles: true
+    pkiDir: /usr/local/share/c3/server/pki
+    podSecurityContext:
+      fsGroup: 4444
+      runAsGroup: 4444
+      runAsUser: 4444
+      supplementalGroups:
+      - 4444
+    role: c3:role
+  service:
+    debug:
+      name: c3-debug
+      ports:
+      - name: debug
+        port: 8787
+        protocol: TCP
+        targetPort: 8787
+      type: ClusterIP
+    web:
+      name: c3
+      ports:
+      - name: web
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+      type: ClusterIP
+  sharedFileSystem:
+    mountPath: /c3-cluster-shared
+    storage: 1Gi
+  tls:
+    certsDir: /usr/local/certs
+    enabled: false
+    keyStorePassword: ""
+    keyStorePath: ""
+    trustStorePassword: ""
+    trustStorePath: ""
+  websecurity:
+    cacheControlHeaderEnabled: false
+    corsEnabled: false
+    cspHeader: ""
+    varyHeader: ""
+    xFrameOptionsHeader: ""
+    xssBlockModeEnabled: false
+    xssHeaderEnabled: false
+  zookeeperClient:
+    maxSessionTimeout: "18000000"
+    password: ""
+    username: ""
+nginx-ingress:
+  controller:
+    addHeaders: {}
+    admissionWebhooks:
+      enabled: false
+      failurePolicy: Fail
+      patch:
+        enabled: true
+        image:
+          pullPolicy: IfNotPresent
+          repository: jettech/kube-webhook-certgen
+          tag: v1.0.0
+        nodeSelector: {}
+        podAnnotations: {}
+        priorityClassName: ""
+      port: 8443
+      service:
+        annotations: {}
+        externalIPs: []
+        loadBalancerIP: ""
+        loadBalancerSourceRanges: []
+        omitClusterIP: false
+        servicePort: 443
+        type: ClusterIP
+    affinity: {}
+    autoscaling:
+      enabled: false
+      maxReplicas: 11
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 50
+      targetMemoryUtilizationPercentage: 50
+    config: {}
+    configMapNamespace: ""
+    containerPort:
+      http: 80
+      https: 443
+    customTemplate:
+      configMapKey: ""
+      configMapName: ""
+    daemonset:
+      hostPorts:
+        http: 80
+        https: 443
+      useHostPort: false
+    defaultBackendService: ""
+    deploymentAnnotations: {}
+    dnsPolicy: ClusterFirst
+    electionID: ingress-controller-leader
+    extraArgs: {}
+    extraContainers: []
+    extraEnvs: []
+    extraInitContainers: []
+    extraVolumeMounts: []
+    extraVolumes: []
+    hostNetwork: false
+    image:
+      allowPrivilegeEscalation: true
+      pullPolicy: IfNotPresent
+      repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
+      runAsUser: 33
+      tag: 0.26.2
+    ingressClass: nginx
+    kind: Deployment
+    lifecycle: {}
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      port: 10254
+      successThreshold: 1
+      timeoutSeconds: 1
+    metrics:
+      enabled: false
+      port: 10254
+      prometheusRule:
+        additionalLabels: {}
+        enabled: false
+        namespace: ""
+        rules: []
+      service:
+        annotations: {}
+        externalIPs: []
+        loadBalancerIP: ""
+        loadBalancerSourceRanges: []
+        omitClusterIP: false
+        servicePort: 9913
+        type: ClusterIP
+      serviceMonitor:
+        additionalLabels: {}
+        enabled: false
+        namespace: ""
+        namespaceSelector: {}
+        scrapeInterval: 30s
+    minAvailable: 1
+    minReadySeconds: 0
+    name: controller
+    nodeSelector: {}
+    podAnnotations: {}
+    podLabels: {}
+    podSecurityContext: {}
+    priorityClassName: ""
+    proxySetHeaders: {}
+    publishService:
+      enabled: false
+      pathOverride: ""
+    readinessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      port: 10254
+      successThreshold: 1
+      timeoutSeconds: 1
+    replicaCount: 1
+    reportNodeInternalIp: false
+    resources: {}
+    scope:
+      enabled: false
+      namespace: ""
+    service:
+      annotations: {}
+      enableHttp: true
+      enableHttps: true
+      enabled: true
+      externalIPs: []
+      externalTrafficPolicy: ""
+      healthCheckNodePort: 0
+      labels: {}
+      loadBalancerIP: 192.168.64.101
+      loadBalancerSourceRanges: []
+      nodePorts:
+        http: ""
+        https: ""
+        tcp: {}
+        udp: {}
+      omitClusterIP: false
+      ports:
+        http: 80
+        https: 443
+      targetPorts:
+        http: http
+        https: https
+      type: LoadBalancer
+    tcp:
+      configMapNamespace: ""
+    terminationGracePeriodSeconds: 60
+    tolerations: []
+    udp:
+      configMapNamespace: ""
+    updateStrategy: {}
+  defaultBackend:
+    affinity: {}
+    enabled: true
+    extraArgs: {}
+    extraEnvs: []
+    image:
+      pullPolicy: IfNotPresent
+      repository: k8s.gcr.io/defaultbackend-amd64
+      runAsUser: 65534
+      tag: "1.5"
+    livenessProbe:
+      failureThreshold: 3
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    minAvailable: 1
+    name: default-backend
+    nodeSelector: {}
+    podAnnotations: {}
+    podLabels: {}
+    podSecurityContext: {}
+    port: 8080
+    priorityClassName: ""
+    readinessProbe:
+      failureThreshold: 6
+      initialDelaySeconds: 0
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 5
+    replicaCount: 1
+    resources: {}
+    service:
+      annotations: {}
+      externalIPs: []
+      loadBalancerIP: ""
+      loadBalancerSourceRanges: []
+      omitClusterIP: false
+      servicePort: 80
+      type: ClusterIP
+    serviceAccount:
+      create: true
+    tolerations: []
+  global: {}
+  imagePullSecrets: []
+  podSecurityPolicy:
+    enabled: false
+  rbac:
+    create: true
+  revisionHistoryLimit: 10
+  serviceAccount:
+    create: true
+  tcp: {}
+  udp: {}
+zookeeper:
+  affinity: {}
+  allowAnonymousLogin: true
+  auth:
+    enabled: false
+  autopurge:
+    purgeInterval: 0
+    snapRetainCount: 3
+  clusterDomain: cluster.local
+  enabled: true
+  fourlwCommandsWhitelist: srvr, mntr
+  global: {}
+  heapSize: 1024
+  image:
+    debug: false
+    pullPolicy: IfNotPresent
+    registry: ci-artifacts.c3.ai
+    repository: bitnami/c3-zookeeper
+    tag: 3.5.6
+  initLimit: 10
+  listenOnAllIPs: false
+  livenessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  logLevel: ERROR
+  maxClientCnxns: 60
+  metrics:
+    enabled: false
+    podAnnotations:
+      prometheus.io/port: '{{ .Values.metrics.port }}'
+      prometheus.io/scrape: "true"
+    port: 9141
+    prometheusRule:
+      enabled: false
+      rules: []
+    serviceMonitor:
+      enabled: false
+  networkPolicy:
+    enabled: false
+  nodeSelector: {}
+  persistence:
+    accessModes:
+    - ReadWriteOnce
+    annotations: {}
+    enabled: true
+    size: 8Gi
+  podAnnotations: {}
+  podDisruptionBudget:
+    maxUnavailable: 1
+  podLabels: {}
+  podManagementPolicy: Parallel
+  priorityClassName: ""
+  readinessProbe:
+    enabled: true
+    failureThreshold: 6
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 5
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  securityContext:
+    enabled: true
+    fsGroup: 1001
+    runAsUser: 1001
+  service:
+    annotations: {}
+    electionPort: 3888
+    followerPort: 2888
+    headless:
+      annotations: {}
+    port: 2181
+    publishNotReadyAddresses: true
+    tls:
+      client_enable: false
+      client_keystore_password: ""
+      client_keystore_path: /tls_key_store/key_store_file
+      client_port: 3181
+      client_truststore_password: ""
+      client_truststore_path: /tls_trust_store/trust_store_file
+      disable_base_client_port: false
+      quorum_enable: false
+      quorum_keystore_password: ""
+      quorum_keystore_path: /tls_key_store/key_store_file
+      quorum_truststore_password: ""
+      quorum_truststore_path: /tls_trust_store/trust_store_file
+    type: ClusterIP
+  serviceAccount:
+    create: false
+  syncLimit: 5
+  tickTime: 2000
+  tolerations: []
+  updateStrategy: RollingUpdate
+  volumePermissions:
+    enabled: false
+    image:
+      pullPolicy: Always
+      registry: docker.io
+      repository: bitnami/minideb
+      tag: buster
+    resources: {}

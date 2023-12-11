@@ -1,0 +1,2 @@
+NAMESPACE=v8 # IMAGE_TAG=0.6.0-SNAPSHOT
+helm uninstall -n $NAMESPACE c3

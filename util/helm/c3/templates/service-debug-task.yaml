@@ -1,0 +1,14 @@
+{{- if .Values.c3.task.jvmDebug -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: debug-task
+spec:
+  ports:
+    - name: debug
+      port: {{ .Values.c3.task.jvmDebugPort }}
+      targetPort: {{ .Values.c3.task.jvmDebugPort }}
+  selector:
+    nodeType: task
+  {{- end }}
+  

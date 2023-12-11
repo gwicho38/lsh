@@ -1,0 +1,63 @@
+{{- $Args :=  dict -}}
+{{- $_01  :=  set   $Args "CloudTags" (include "c3.bootstrapApp.cloudTags" ((merge (dict "func" "k8ssvc" "role" "appleader" "seq" "001") .))) -}}
+{{- $_02  :=  set   $Args "LabelSelector" (include "c3.bootstrapApp.leaderSvcLabelSelectors" .) -}}
+{{- $_00  :=  set . "Args" $Args -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.c3.leader.service.name }}
+  labels:
+    {{ .Args.CloudTags | nindent 4 }}
+  annotations:
+    {{- if .Values.c3.leader.service.loadBalancer.eks.loadBalancerInternal }}
+    service.beta.kubernetes.io/aws-load-balancer-internal: '{{ .Values.c3.leader.service.loadBalancer.eks.loadBalancerInternal }}'
+    {{- end }}
+    {{- if .Values.c3.leader.service.loadBalancer.eks.type }}
+    service.beta.kubernetes.io/aws-load-balancer-type: '{{ .Values.c3.leader.service.loadBalancer.eks.type }}'
+    {{- end }}
+    {{- if .Values.c3.leader.service.loadBalancer.eks.securityGroups }}
+    service.beta.kubernetes.io/aws-load-balancer-security-groups: '{{ .Values.c3.leader.service.loadBalancer.eks.securityGroups }}'
+    {{- end }}
+    {{- if .Values.c3.leader.service.loadBalancer.eks.backendProtocol }}
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: '{{ .Values.c3.leader.service.loadBalancer.eks.backendProtocol }}'
+    {{- end }}
+    {{- if .Values.c3.leader.service.loadBalancer.eks.connectionIdleTimeout }}
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: '{{ .Values.c3.leader.service.loadBalancer.eks.connectionIdleTimeout }}'
+    {{- end }}
+    {{- if .Values.c3.leader.service.loadBalancer.eks.sslCert }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: '{{ .Values.c3.leader.service.loadBalancer.eks.sslCert }}'
+    {{- end }}
+    {{- if and .Values.c3.leader.service.loadBalancer.eks.sslCert .Values.c3.leader.service.loadBalancer.eks.negotiationPolicy }}
+    service.beta.kubernetes.io/aws-load-balancer-ssl-negotiation-policy: '{{ .Values.c3.leader.service.loadBalancer.eks.negotiationPolicy }}'
+    {{- end }}
+    {{- if .Values.c3.leader.service.dnsDomain }}
+    external-dns.alpha.kubernetes.io/hostname: '{{ .Values.c3.leader.service.dnsHost | default .Release.Namespace }}.{{ .Values.c3.leader.service.dnsDomain }}'
+    {{- end }}
+    {{- range $key, $value := .Values.c3.leader.service.annotations }}
+    {{ $key }}: {{ $value }}
+    {{- end }}
+spec:
+  ports:
+    - name: api
+      port: {{ .Values.c3.leader.service.apiPort }}
+      targetPort: {{ .Values.c3.leader.service.apiTargetPort }}
+    {{- if .Values.c3.leader.service.api2Port }}
+    - name: api2
+      port: {{ .Values.c3.leader.service.api2Port }}
+      targetPort:  {{ .Values.c3.leader.service.apiTargetPort }}
+    {{- end }}
+    - name: proxy
+      port: {{ .Values.c3.leader.service.proxyPort }}
+      targetPort:  {{ .Values.c3.leader.service.proxyTargetPort }}
+    {{- if .Values.c3.leader.jvmDebug }}
+    - name: debug
+      port: {{ .Values.c3.leader.jvmDebugPort }}
+      targetPort: {{ .Values.c3.leader.jvmDebugPort }}
+    {{- end }}
+    {{- if .Values.c3.metrics.enabled }}
+    - name: metrics
+      port: {{ .Values.c3.metrics.port }}
+      targetPort: {{ .Values.c3.metrics.targetPort }}
+    {{- end }}
+  selector:
+    {{ .Args.LabelSelector | nindent 4 }}
