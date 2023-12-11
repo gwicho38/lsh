@@ -71,6 +71,8 @@ async function cmd_helm(program: Command) {
       case 'install':
         shell_exec("helm install --create-namespace -n c3 c3kube /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster --values /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster/values.yaml");
         break;
+      case 'uninstall':
+        shell_exec("helm uninstall -n c3 c3kube");
       }
     }
   )
