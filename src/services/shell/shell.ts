@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Command } from 'commander';
+import { shell_exec } from '../../lib/shell/shell.lib';
 
 // for additional inspiration - check CloudClusterUtil type
 // export async function get_c3() {
@@ -47,11 +48,22 @@ export async function get_ishell(type: String = "Jvm", spec: Spec = {function: "
 
 }
 
-export async function init_ishell(program: Command) {
+export async function init_shell(program: Command) {
   program
     .command('interactive')
     .description('c3sh interactive shell')
     .action(async (type: String, action: String, spec: Spec) => {
       console.log(`Calling ${type}/${action}`);
-    })
+    });
+
+  helm_install_lefv_k8s(program);
+}
+
+async function helm_install_lefv_k8s(program: Command) {
+  program
+  .command('helm-install')
+  .description('c3sh interactive shell')
+  .action(async () => {
+    shell_exec();
+  }) 
 }
