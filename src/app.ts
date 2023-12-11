@@ -11,7 +11,7 @@ program
   .name('c3sh');
 
 init_c3(program);
-// init_ishell(program); TODO: Implement interactive shell
+init_shell(program);
 
 program
   .command('ran_i')

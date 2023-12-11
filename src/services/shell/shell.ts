@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Command } from 'commander';
-import { shell_exec } from '../../lib/shell/shell.lib';
+import { shell_exec } from '../../lib/shell/shell.lib.js';
 
 // for additional inspiration - check CloudClusterUtil type
 // export async function get_c3() {
@@ -61,9 +61,9 @@ export async function init_shell(program: Command) {
 
 async function helm_install_lefv_k8s(program: Command) {
   program
-  .command('helm-install')
+  .command('helm-install <cmd>')
   .description('c3sh interactive shell')
-  .action(async () => {
-    shell_exec();
+  .action(async (cmd) => {
+    shell_exec(cmd);
   }) 
 }
