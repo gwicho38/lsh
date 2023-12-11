@@ -49,21 +49,29 @@ export async function get_ishell(type: String = "Jvm", spec: Spec = {function: "
 }
 
 export async function init_shell(program: Command) {
-  program
-    .command('interactive')
-    .description('c3sh interactive shell')
-    .action(async (type: String, action: String, spec: Spec) => {
-      console.log(`Calling ${type}/${action}`);
-    });
-
-  helm_install_lefv_k8s(program);
+  cmd_interactive(program);
+  cmd_helm(program);
 }
 
-async function helm_install_lefv_k8s(program: Command) {
+async function cmd_interactive(program: Command) {
   program
-  .command('helm-install <cmd>')
+  .command('interactive')
   .description('c3sh interactive shell')
-  .action(async (cmd) => {
-    shell_exec(cmd);
-  }) 
+  .action(async (type: String, action: String, spec: Spec) => {
+    console.log(`Calling ${type}/${action}`);
+  });
+}
+
+async function cmd_helm(program: Command) {
+  program
+  .command('helm <cmd>')
+  .description('helm scripts in lsh')
+  .action(async (cmd, options) => {
+    switch (cmd) {
+      case 'install':
+        shell_exec("helm install --create-namespace -n c3 c3kube /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster --values /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster/values.yaml");
+        break;
+      }
+    }
+  )
 }
