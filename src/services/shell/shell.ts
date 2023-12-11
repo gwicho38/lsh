@@ -73,6 +73,9 @@ async function cmd_helm(program: Command) {
         break;
       case 'uninstall':
         shell_exec("helm uninstall -n c3 c3kube");
+        break;
+      // case 'build':
+
       }
     }
   )

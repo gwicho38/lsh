@@ -15,7 +15,7 @@ postgresql:
     registry: docker.io
     repository: postgres
     tag: 11-alpine
-    pullPolicy: IfNotPresent
+    pullPolicy: Never 
 
   #
   # This initializes PostgreSQL admin user password. The value is hardcoded in the C3 code.
@@ -38,14 +38,14 @@ postgresql:
       # because there is no good reason to pull this image every the PostgreSQL pod is created
       #
       tag: bookworm
-      pullPolicy: IfNotPresent
+      pullPolicy: Never 
 
 cassandra:
   image:
     repo: docker.io
     repository: cassandra
     tag: 3.11
-    pullPolicy: IfNotPresent
+    pullPolicy: Never 
   config:
     cluster_size: 1
     seed_size: 1
