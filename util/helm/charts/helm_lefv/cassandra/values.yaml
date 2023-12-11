@@ -3,7 +3,7 @@
 image:
   repo: cassandra
   tag: 3.11.3
-  pullPolicy: IfNotPresent
+  pullPolicy: Never 
   ## Specify ImagePullSecrets for Pods
   ## ref: https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
   # pullSecrets: myregistrykey

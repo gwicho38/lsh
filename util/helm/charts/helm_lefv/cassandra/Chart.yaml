@@ -15,4 +15,4 @@ maintainers:
 - email: maor.friedman@redhat.com
   name: maorfr
 name: cassandra
-version: 0.13.3
+version: 0.0.1

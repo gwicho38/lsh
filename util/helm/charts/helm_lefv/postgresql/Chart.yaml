@@ -19,4 +19,4 @@ maintainers:
 name: postgresql
 sources:
 - https://github.com/bitnami/bitnami-docker-postgresql
-version: 8.1.2
+version: 0.0.1
