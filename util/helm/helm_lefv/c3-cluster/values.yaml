@@ -840,8 +840,12 @@ c3-persistence:
     enabled: false
   cassandra:
     enabled: true
+    image:
+      pullPolicy: Never 
   postgresql:
     enabled: true
+    image:
+      pullPolicy: Never 
 aws-alb-ingress-controller:
   #
   # Set cluster name if you want to do deploy using ALB

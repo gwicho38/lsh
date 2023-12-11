@@ -24,3 +24,8 @@ helm install c3kube --debug --repo https://ci-artifacts.c3.ai/v1/helm --version=
 --set 'c3Cluster.resources.limits.memory=8Gi' \
 --values https://ci-artifacts.c3.ai/v1/artifacts/file-repo/files/test-local.yml \
 c3-cluster
+
+
+ helm dependency build 
+
+ copied lsh/util/helm/c3-cluster
