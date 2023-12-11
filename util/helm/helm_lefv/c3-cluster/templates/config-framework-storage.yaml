@@ -1,0 +1,39 @@
+{{- range tuple "config" "vault" }}
+{{ $cfVolName := . }}
+{{ $cfVol := index $.Values.c3Cluster.configFramework . }}
+{{- if not (or (hasKey $cfVol "local") (hasKey (index $cfVol "nfs") "storageClass")) }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{ (printf "c3-%s" $cfVolName) | quote }}
+  labels:
+    release: {{ $.Release.Name | quote }}
+    heritage: {{ $.Release.Service | quote }}
+    type: {{ $cfVolName | quote }}
+spec:
+  capacity:
+    storage: {{ index $cfVol "storage" }}
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Delete
+  hostPath:
+    type: DirectoryOrCreate
+    path: {{ $cfVolName }}
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ (printf "c3-%s-pvc" $cfVolName) | quote }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ index $cfVol "storage" }}
+  selector:
+    matchLabels:
+      type: {{ $cfVolName | quote }}
+      release: {{ $.Release.Name | quote }}
+---
+{{- end }}
+{{- end }}

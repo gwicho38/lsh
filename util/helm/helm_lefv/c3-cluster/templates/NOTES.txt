@@ -1,0 +1,6 @@
+Starting C3 cluster {{ template "c3Cluster.clusterName" . }}.
+
+Use the following command to wait until the master node is ready:
+kubectl get pod -l role=master,function=cluster --watch
+
+Once ready, you can access the console at {{ template "c3Cluster.canonicalUrl" . }}/static/console

@@ -1,0 +1,276 @@
+#
+# C3 Server bootstrap node Deployment specification
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: '{{ template "c3Cluster.clusterName" . }}-k8sdeploy-{{ .Values.c3Cluster.cloudFrameworkIdRole }}-01'
+  labels:
+    release: {{ .Release.Name | quote }}
+    heritage: {{ .Release.Service | quote }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      hostname: '{{ template "c3Cluster.clusterName" . }}-app-{{ .Values.c3Cluster.cloudFrameworkIdRole }}-01'
+  template:
+    metadata:
+      name: '{{ template "c3Cluster.clusterName" . }}-app-{{ .Values.c3Cluster.cloudFrameworkIdRole }}-01'
+      labels:
+        hostname: '{{ template "c3Cluster.clusterName" . }}-app-{{ .Values.c3Cluster.cloudFrameworkIdRole }}-01'
+        app: 'c3-app'
+        function: 'cluster'
+        role: 'master'
+      annotations:
+        {{- if .Values.c3Cluster.istio.annotations }}{{ if .Values.c3Cluster.istio.annotations.sidecarIstioIoInject }}
+        sidecar.istio.io/inject: "{{ .Values.c3Cluster.istio.annotations.sidecarIstioIoInject }}"
+        {{- end }}{{ end }}
+    spec:
+      {{- if .Values.c3Cluster.image.imagePullSecrets.name }}
+      imagePullSecrets:
+        - name: '{{ .Values.c3Cluster.image.imagePullSecrets.name }}'
+      {{- end }}
+      hostname: '{{ template "c3Cluster.clusterName" . }}-app-{{ .Values.c3Cluster.cloudFrameworkIdRole }}-01'
+      subdomain: '{{ .Values.c3Cluster.service.web.name }}'
+      restartPolicy: 'Always'
+      {{- if .Values.c3Cluster.security.serviceAccountName }}
+      serviceAccountName: '{{ .Values.c3Cluster.security.serviceAccountName }}'
+      {{- end }}
+      securityContext:
+        # Set user/group/fsGroup to random if unspecified
+        runAsUser: {{ template "c3Cluster.toUid" .Values.c3Cluster.security.podSecurityContext.runAsUser }}
+        runAsGroup: {{ template "c3Cluster.toGid" .Values.c3Cluster.security.podSecurityContext.runAsGroup }}
+        fsGroup: {{ template "c3Cluster.toGid" .Values.c3Cluster.security.podSecurityContext.fsGroup }}
+        {{- if .Values.c3Cluster.security.podSecurityContext.supplementalGroups }}
+        supplementalGroups:
+        {{- range .Values.c3Cluster.security.podSecurityContext.supplementalGroups }}
+          - {{ . }}
+        {{- end }}
+        {{- end }}
+      containers:
+        - name: 'server-app-m'
+          image: '{{ .Values.c3Cluster.image.registry }}/{{ .Values.c3Cluster.image.repository }}:{{ default .Chart.AppVersion .Values.c3Cluster.image.tag }}'
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: 'web'
+              containerPort: {{ if .Values.c3Cluster.tls.enabled }}8443{{ else }}8080{{ end }}
+            - name: 'debug'
+              containerPort: 8787
+          command: [ "c3-launch" ]
+          resources:
+            {{- if .Values.c3Cluster.resources.limits }}
+            limits:
+              {{- if .Values.c3Cluster.resources.limits.memory }}
+              memory: '{{ .Values.c3Cluster.resources.limits.memory }}'
+              {{- end }}
+              {{- if .Values.c3Cluster.resources.limits.cpu }}
+              cpu: '{{ .Values.c3Cluster.resources.limits.cpu }}'
+              {{- end }}
+            {{- end }}
+            {{- if .Values.c3Cluster.resources.requests }}
+            requests:
+              {{- if .Values.c3Cluster.resources.requests.memory }}
+              memory: '{{ .Values.c3Cluster.resources.requests.memory }}'
+              {{- end }}
+              {{- if .Values.c3Cluster.resources.requests.cpu }}
+              cpu: '{{ .Values.c3Cluster.resources.requests.cpu }}'
+              {{- end }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: 'c3-cluster'
+          readinessProbe:
+            httpGet:
+              path: /health/1
+              port: {{ if .Values.c3Cluster.tls.enabled }}8443{{ else }}8080{{ end }}
+              scheme: '{{ include "c3Cluster.podScheme" . | upper }}'
+            initialDelaySeconds: 180
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 5
+            successThreshold: 3
+          volumeMounts:
+            - name: 'c3-config'
+              mountPath: '{{ .Values.c3Cluster.configFramework.config.mountPath }}'
+              {{- if (.Values.c3Cluster.configFramework.config.nfs).storageClass }}
+              subPath: '{{ .Values.c3Cluster.configFramework.config.nfs.subPath }}'
+              {{- end }}
+              {{- /* reuse the same volume for NFS CSI and if the claim names are the same*/}}
+            - name: 'c3-{{ if and (.Values.c3Cluster.configFramework.config.nfs).storageClass (eq (.Values.c3Cluster.configFramework.vault.nfs).persistentVolumeClaimName (.Values.c3Cluster.configFramework.config.nfs).persistentVolumeClaimName) }}config{{ else }}vault{{ end }}'
+              mountPath: '{{ .Values.c3Cluster.configFramework.vault.mountPath }}'
+              {{- if (.Values.c3Cluster.configFramework.vault.nfs).storageClass }}
+              subPath: '{{ .Values.c3Cluster.configFramework.vault.nfs.subPath }}'
+              {{- end }}
+            - name: installation-configuration
+              mountPath: '{{ .Values.c3Cluster.configFramework.installationProjectionMountPath }}'
+              readOnly: true
+            {{- if or .Values.c3Cluster.sharedFileSystem.local .Values.c3Cluster.sharedFileSystem.nfs }}
+              #
+              # reuse the same volume for NFS CSI and if the claim names are the same.
+              # In addition to c3-config's mountPaths for config framework contents, this shared filesystem volumeMount
+              # contains the only mountPath this volume can currently have. Additional mountPaths will break the
+              # configuration transfer logic and result in an error when deploying C3 (worker/master/tag) nodes via console.
+              #
+            - name: 'c3-{{ if and (.Values.c3Cluster.sharedFileSystem.nfs).storageClass (and (eq (.Values.c3Cluster.sharedFileSystem.nfs).persistentVolumeClaimName (.Values.c3Cluster.configFramework.config.nfs).persistentVolumeClaimName) (eq (.Values.c3Cluster.sharedFileSystem.nfs).persistentVolumeClaimName (.Values.c3Cluster.configFramework.vault.nfs).persistentVolumeClaimName)) }}config{{ else }}cluster-shared{{ end }}'
+              mountPath: '{{ .Values.c3Cluster.sharedFileSystem.mountPath }}'
+              {{- if (.Values.c3Cluster.sharedFileSystem.nfs).storageClass }}
+              subPath: '{{ .Values.c3Cluster.sharedFileSystem.nfs.subPath }}'
+              {{- end }}
+            {{- end }}
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.tmp.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.tmp.subPath }}'
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.zookeeper.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.zookeeper.subPath }}'
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.cache.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.cache.subPath }}'
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.c3Log.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.c3Log.subPath }}'
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.serverConf.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.serverConf.subPath }}'
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.npm.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.npm.subPath }}'
+            - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+              mountPath: '{{ .Values.c3Cluster.ephemeralStorage.c3Tmp.mountPath }}'
+              subPath: '{{ .Values.c3Cluster.ephemeralStorage.c3Tmp.subPath }}'
+            - name: 'podinfo'
+              mountPath: '{{ .Values.c3Cluster.downwardApi.mountPath }}'
+            - name: 'pki'
+              mountPath: {{  .Values.c3Cluster.security.pkiDir }}
+              readOnly: true
+            {{- if .Values.c3Cluster.externalVault.isClusterCA }}
+            - name: 'vault-token'
+              mountPath: '{{ .Values.c3Cluster.externalVault.vaultTokenDir }}'
+              readOnly: true
+            {{- end }}
+            - name: 'tls-certs'
+              mountPath: '{{ .Values.c3Cluster.tls.certsDir }}'
+
+      initContainers:
+        #
+        # The bootstrap node is not operational until its dependencies are fully up. We check that by attempting
+        # to resolve the DNS names of the dependency services - if they show up in DNS it means the services
+        # have been associated with endpoints, which means the dependency pods passed their readiness checks
+        #
+        {{- if index .Values "c3-persistence" "postgresql" "enabled" }}
+          #
+          # We only check PostgreSQL service availability if PostgreSQL was deployed as part of the same chart
+          # C3 server is deployed with.
+          #
+        - name: 'wait-on-postgresql'
+          image: '{{ .Values.c3Cluster.busybox.registry }}/{{ .Values.c3Cluster.busybox.repository }}:{{ .Values.c3Cluster.busybox.tag }}'
+          command: [ 'sh', '-c', 'until nslookup {{ template "c3Cluster.postgresqlServiceName" . }}; do echo waiting on PostgreSQL service {{ template "c3Cluster.postgresqlServiceName" . }} to become available ...; sleep 2; done' ]
+          resources:
+            requests:
+              cpu: 200m
+        {{- end }}
+        {{- if not .Values.c3Cluster.cassandra.knownNode }}
+        - name: 'wait-on-cassandra'
+          image: '{{ .Values.c3Cluster.busybox.registry }}/{{ .Values.c3Cluster.busybox.repository }}:{{ .Values.c3Cluster.busybox.tag }}'
+          command: [ 'sh', '-c', 'until nslookup {{ template "c3Cluster.cassandraServiceName" . }}; do echo waiting on Cassandra service {{ template "c3Cluster.cassandraServiceName" . }} to become available ...; sleep 2; done' ]
+          resources:
+            requests:
+              cpu: 200m
+        {{- end }}
+        {{- if not .Values.c3Cluster.zookeeperClient.hosts }}
+          #
+          # We only check Zookeeper service availability if Zookeeper was deployed as part of the same chart
+          # C3 server is deployed with.
+          #
+        - name: 'wait-on-zookeeper'
+          image: '{{ .Values.c3Cluster.busybox.registry }}/{{ .Values.c3Cluster.busybox.repository }}:{{ .Values.c3Cluster.busybox.tag }}'
+          command: [ 'sh', '-c', 'for i in `seq 0 $(( {{ .Values.zookeeper.replicaCount }}-1 ))`; do until nslookup {{ template "c3Cluster.zookeeperHeadlessServiceNamePrefix" . }}$i{{ template "c3Cluster.zookeeperHeadlessServiceNamePostfix" . }}; do echo waiting on Zookeeper service {{ template "c3Cluster.zookeeperHeadlessServiceNamePrefix" . }}$i{{ template "c3Cluster.zookeeperHeadlessServiceNamePostfix" . }} to become available ...; sleep 2; done; done' ]
+          resources:
+            requests:
+              cpu: 200m
+        {{- end }}
+        {{- if .Values.c3Cluster.tls.internalCaInitContainerEnabled }}
+        {{ template "c3Cluster.ca-init-initcontainer" . }}
+        {{- end }}
+      volumes:
+        #
+        # 'c3-config' and 'c3-vault' volume configuration will be transferred to master and worker Kubernetes pods
+        #  created by the bootstrap node
+        #
+        {{- range tuple "config" "vault" }}
+        {{- $cfVolName := . }}
+        {{- $cfVol := index $.Values.c3Cluster.configFramework . }}
+        - name: '{{ printf "c3-%s" $cfVolName }}'
+          {{- if hasKey $cfVol "local" }}
+          hostPath:
+            path: '{{ index $cfVol "local" }}'
+            type: DirectoryOrCreate
+          {{- else if hasKey $cfVol "nfs" }}
+          {{- $nfsVolume := index $cfVol "nfs" }}
+          nfs:
+            server: '{{ index $nfsVolume "server" }}'
+            path: '{{ index $nfsVolume "path" }}'
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: '{{ printf "c3-%s-pvc" $cfVolName }}'
+          {{- end }}
+        {{- end }}
+        - name: 'installation-configuration'
+          secret:
+            secretName: c3-installation-configuration
+            defaultMode: 0400
+        {{- if or .Values.c3Cluster.sharedFileSystem.local .Values.c3Cluster.sharedFileSystem.nfs }}
+        - name: 'c3-cluster-shared'
+        {{- if .Values.c3Cluster.sharedFileSystem.local }}
+          hostPath:
+            path: '{{ .Values.c3Cluster.sharedFileSystem.local }}'
+            type: DirectoryOrCreate
+        {{- else if and (.Values.c3Cluster.sharedFileSystem.nfs).storageClass (and (ne (.Values.c3Cluster.sharedFileSystem.nfs).persistentVolumeClaimName (.Values.c3Cluster.configFramework.config.nfs).persistentVolumeClaimName) (ne (.Values.c3Cluster.sharedFileSystem.nfs).persistentVolumeClaimName (.Values.c3Cluster.configFramework.vault.nfs).persistentVolumeClaimName)) }}
+        # Declare a different shared filesystem volume only if the claim name is different - there cannot be two claim-based
+        # volumes with the same persistent volume claim name
+          persistentVolumeClaim:
+            claimName: '{{ .Values.c3Cluster.sharedFileSystem.nfs.persistentVolumeClaimName }}'
+        {{- end }}
+        {{- end }}
+        # Declare volume for files generated during c3server bootstrap phase to enable read-only root filesystem
+        - name: '{{ template "c3Cluster.fileSystemStorageName" . }}'
+          {{- if or .Values.c3Cluster.ephemeralStorage.enabled (not .Values.c3Cluster.persistentStorage.storageClass) }}
+          emptyDir: {}
+          {{- else }}
+          persistentVolumeClaim:
+            claimName: '{{ .Values.c3Cluster.persistentStorage.persistentVolumeClaimName }}'
+          {{- end }}
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: "metadata/name"
+                fieldRef:
+                  fieldPath: metadata.name
+              - path: "metadata/namespace"
+                fieldRef:
+                  fieldPath: metadata.namespace
+        - name: 'pki'
+          secret:
+            secretName: pki
+            defaultMode: 0400
+        - name: 'vault-token'
+          {{- if .Values.c3Cluster.externalVault.isClusterCA }}
+          secret:
+            secretName: vault
+          {{- else }}
+          emptyDir: { }
+          {{- end }}
+        - name: 'tls-certs'
+          {{- if .Values.c3Cluster.tls.local }}
+          hostPath:
+            path: '{{ .Values.c3Cluster.tls.local }}'
+            type: DirectoryOrCreate
+          {{- else if .Values.c3Cluster.tls.secretName }}
+          secret:
+            secretName: '{{ .Values.c3Cluster.tls.secretName }}'
+          {{- else }}
+          emptyDir: { }
+          {{- end }}
+        {{- if .Values.c3Cluster.tls.internalCaInitContainerEnabled }}
+        {{ template "c3Cluster.ca-init-volumes" . }}
+        {{- end }}
