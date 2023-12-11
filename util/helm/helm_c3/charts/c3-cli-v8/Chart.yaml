@@ -1,4 +1,0 @@
-apiVersion: v1
-name: c3-cli-v8
-version: '0.1.0'
-description: Container with c3 cli tool for V8

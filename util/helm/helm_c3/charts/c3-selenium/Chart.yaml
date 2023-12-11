@@ -1,5 +1,0 @@
-apiVersion: v1
-name: c3-selenium
-version: '4.1.0'
-description: The C3 Helm chart for Selenium. The sole reason this chart exist is to expose shared configuration to its dependents.
-appVersion: '3.141.59-20200525'

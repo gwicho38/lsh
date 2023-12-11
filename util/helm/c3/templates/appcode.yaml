@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: '{{ .Values.c3.cluster.name }}-c3-c3-k8scmp-001'
-data:
-  key: "1"

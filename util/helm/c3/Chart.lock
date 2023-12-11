@@ -1,6 +1,0 @@
-dependencies:
-- name: c3-nginx-ingress
-  repository: https://ci-artifacts.c3.ai/v1/helm
-  version: 4.0.1
-digest: sha256:4b3a0140a53d6f101cb25dff788dc43c9b645a330f2aba3a05efa9b9893a7435
-generated: "2023-04-11T19:17:18.849337-07:00"
