@@ -142,3 +142,4 @@ dist
 .tern-port
 
 # Stores VSCo
+util/helm/.DS_Store
