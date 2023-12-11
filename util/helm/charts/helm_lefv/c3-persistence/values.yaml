@@ -42,7 +42,8 @@ postgresql:
 
 cassandra:
   image:
-    repo: docker.io/cassandra
+    repo: docker.io
+    repository: cassandra
     tag: 3.11
     pullPolicy: IfNotPresent
   config:

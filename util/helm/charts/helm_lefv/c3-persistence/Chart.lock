@@ -5,5 +5,8 @@ dependencies:
 - name: cassandra
   repository: file://../cassandra
   version: 0.0.1
-digest: sha256:e9e03c2b4d8899ae318eb1cbb54261e59e564e7e7f9f24978475532e8dec090f
-generated: "2023-12-11T13:06:37.50921-05:00"
+- name: vault
+  repository: file://../vault
+  version: 0.0.1
+digest: sha256:f65100d639d7e799689aa20a8a3c7d1e649d874937be8a9485b76dde3079236d
+generated: "2023-12-11T13:07:47.938852-05:00"

@@ -15,4 +15,4 @@ dependencies:
   repository: https://ci-artifacts.c3.ai/v1/helm
   version: 1.0.37
 digest: sha256:ed3c6ae410e77a8dbf18d2272cb350b266e5b37f48c79fd738d9b77a1c9e0807
-generated: "2023-12-11T00:51:18.955261-05:00"
+generated: "2023-12-11T13:11:38.601003-05:00"
