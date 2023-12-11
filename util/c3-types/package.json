@@ -1,0 +1,9 @@
+{
+  "name" : "@c3/types",
+  "version" : "1.0.0",
+  "main" : "index.d.ts",
+  "types" : "index",
+  "private" : true,
+  "author" : "C3, Inc.",
+  "license" : "ISC"
+}
