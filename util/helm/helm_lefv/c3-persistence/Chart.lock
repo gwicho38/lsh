@@ -1,0 +1,12 @@
+dependencies:
+- name: vault
+  repository: https://ci-artifacts.c3.ai/v1/helm
+  version: 0.8.0
+- name: postgresql
+  repository: https://ci-artifacts.c3.ai/v1/helm
+  version: 11.10+2
+- name: cassandra
+  repository: https://ci-artifacts.c3.ai/v1/helm
+  version: 3.11.9+2
+digest: sha256:a2dfc2cb58695644ceb4d01d795e66816c8bc81afaeaf2e5d541c3342f20e0e6
+generated: "2023-12-11T00:47:40.927969-05:00"
