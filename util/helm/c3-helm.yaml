@@ -55,7 +55,7 @@ c3-persistence:
       coldStorage: s3
       coordinator:
         image:
-          pullPolicy: Never 
+          pullPolicy: IfNotPresent 
           registry: ci-registry.c3.ai
           repository: cassandra-backup-trigger
           tag: 2
@@ -63,7 +63,7 @@ c3-persistence:
       enabled: false
       icarus:
         image:
-          pullPolicy: Never
+          pullPolicy: IfNotPresent
           registry: ci-registry.c3.ai
           repository: icarus
           tag: 1.0.6
@@ -106,7 +106,7 @@ c3-persistence:
       cassandra: {}
     image:
       debug: false
-      pullPolicy: Never 
+      pullPolicy: IfNotPresent 
       registry: ci-artifacts.c3.ai
       repository: cassandra
       tag: 3.11.9.2
@@ -126,7 +126,7 @@ c3-persistence:
     metrics:
       enabled: false
       image:
-        pullPolicy: Never
+        pullPolicy: IfNotPresent
         registry: docker.io
         repository: bitnami/cassandra-exporter
         tag: 2.3.4-debian-10-r184
@@ -224,7 +224,7 @@ c3-persistence:
       postgresql: {}
     image:
       debug: false
-      pullPolicy: Never 
+      pullPolicy: IfNotPresent 
       registry: ci-artifacts.c3.ai
       repository: postgres
       tag: 9.6.20.1
