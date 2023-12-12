@@ -41,7 +41,6 @@
     "npx": "^10.2.2",
     "request": "^2.88.2",
     "sendgrid": "^5.2.3",
-    "tsc": "^2.0.4",
     "zapier-platform-core": "15.4.1"
   },
   "devDependencies": {

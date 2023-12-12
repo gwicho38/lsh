@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Command } from 'commander';
-import { shell_exec } from '../../lib/shell/shell.lib.js';
+// import { shell_exec } from '../../lib/shell/shell.lib.js';
 
 // for additional inspiration - check CloudClusterUtil type
 // export async function get_c3() {
@@ -69,10 +69,10 @@ async function cmd_helm(program: Command) {
   .action(async (cmd, options) => {
     switch (cmd) {
       case 'install':
-        shell_exec("helm install --create-namespace -n c3 c3kube /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster --values /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster/values.yaml");
+        // shell_exec("helm install --create-namespace -n c3 c3kube /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster --values /Users/lefv/lsh/util/helm/charts/helm_lefv/c3-cluster/values.yaml");
         break;
       case 'uninstall':
-        shell_exec("helm uninstall -n c3 c3kube");
+        // shell_exec("helm uninstall -n c3 c3kube");
         break;
       // case 'build':
 
