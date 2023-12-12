@@ -9,15 +9,16 @@
 import { URL } from "url";
 import https from "https";
 import http from "http";
+import * as c3_thin from 'c3-thin';
 
 import type { AsyncThinTypeSystem as AsyncThinTypeSystemV7 } from "c3-thin";
 import type { AsyncThinTypeSystem as AsyncThinTypeSystemV8 } from "@c3/remote";
 
-import Logger, { LogLevel } from "./lib/Logger";
-import { Package } from "./subProcesses/repoWatcher/repository";
+// import Logger, { LogLevel } from "./lib/Logger";
+// import { Package } from "./subProcesses/repoWatcher/repository";
 // import { findSSLCertificate } from "./util/BundlerUtils";
 
-const logger = new Logger(LogLevel.INFO);
+// const logger = new Logger(LogLevel.INFO);
 
 const POLLING_AUTH_TOKEN_TIMEOUT = 120000;
 const POLLING_AUTH_TOKEN_INTERVAL = 3000;
@@ -110,13 +111,13 @@ async function getMajorServerVersion(
   versionUrl.pathname =
     (versionUrl.pathname || "").replace(/\/+$/, "") + "/version";
   const method = "GET";
-  const sslCertificate = findSSLCertificate();
+  // const sslCertificate = findSSLCertificate();
   const headers = {
     Authorization: authToken,
     Accept: "text/html",
     "Accept-Encoding": "gzip",
   };
-  const options = { method, headers, ca: sslCertificate };
+  const options = { method, headers };
   try {
     const response = await retryFetch(versionUrl.toString(), options);
     return response;
@@ -197,7 +198,7 @@ export type App = {
   serverVersion: string;
 };
 
-export default class CliClient {
+export class CliClient {
   static typeName = "UiBundlerCli";
 
   static defaultNpmRegistryUrl = "https://registry.npmjs.org/";
@@ -250,7 +251,7 @@ export default class CliClient {
     // Different code is needed for v7 and v8, that will be taken care of as an abstraction of the type system.
     switch (this.version) {
       case ServerVersions.V7:
-        ServerConnectionV7 = (await import("c3-thin")).ServerConnection;
+        ServerConnectionV7 = c3_thin.ServerConnection;
         conn = new ServerConnectionV7(
           this.url,
           this.token,
@@ -261,7 +262,7 @@ export default class CliClient {
         return conn.asyncThinTypeSys();
 
       case ServerVersions.V8:
-        await import("@c3/remote");
+        // await import("@c3/remote");
         connectSpec = {
           numRetries: 3,
           async: true,
@@ -279,7 +280,7 @@ export default class CliClient {
               process.send?.({ type: "REFRESH_AUTH_TOKEN", url: redirectUrl });
               return new Promise((resolve, reject) => {
                 const intervalId = setInterval(() => {
-                  logger.info("Polling for new auth token");
+                  // logger.info("Polling for new auth token");
                   if (oldToken !== this.token) {
                     clearInterval(intervalId);
                     resolve(this.token);
@@ -347,7 +348,7 @@ export default class CliClient {
       const msg = `Error from server: ${
         e instanceof Error ? e.stack || "Unknown Error" : JSON.stringify(e)
       }`;
-      logger.error(msg);
+      // logger.error(msg);
       throw new Error(msg);
     }
   }
@@ -372,12 +373,12 @@ export default class CliClient {
           "TagMetadataStore",
           "rootPackage"
         );
-        const allDependencies = (await this.sendTypeRequest(
-          "MetadataPackage",
-          "allDependencies",
-          { this: rootPackage }
-        )) as Package[];
-        dependencies = allDependencies.map((dependency) => dependency.name);
+        // const allDependencies = (await this.sendTypeRequest(
+        //   "MetadataPackage",
+        //   "allDependencies",
+        //   { this: rootPackage }
+        // )) as Package[];
+        // dependencies = allDependencies.map((dependency) => dependency.name);
         break;
       }
       case ServerVersions.V8: {
