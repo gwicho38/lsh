@@ -1,0 +1,54 @@
+{
+  "name": "c3sh",
+  "version": "0.0.0",
+  "description": "extendable c3 cli client",
+  "main": "src/app.js",
+  "bin": {
+    "c3sh": "./build/out/app.js"
+  },
+  "scripts": {
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "start": "node dist/app.js",
+    "dev": "npm run build; nodemon dist/app.js",
+    "build": "tsc -b; ncc build ./dist/app.js -o build/out/lsh",
+    "watch-build": "ncc build ./dist/app.js -o build/out -w",
+    "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist"
+  },
+  "keywords": [
+    "cli",
+    "shell",
+    "convenience",
+    "prisma",
+    "persisted"
+  ],
+  "type": "module",
+  "author": "lefv",
+  "license": "ISC",
+  "dependencies": {
+    "@c3/remote": "file:c3-remote.tgz",
+    "async": "^3.2.5",
+    "async-lock": "^1.4.0",
+    "axios": "^1.5.1",
+    "chalk": "^5.3.0",
+    "cheerio": "^1.0.0-rc.12",
+    "commander": "^10.0.1",
+    "csv": "^6.3.5",
+    "fprint": "^2.0.1",
+    "http-basic": "file:http-basic.tgz",
+    "inquirer": "^9.2.12",
+    "jest": "^29.7.0",
+    "ncc": "^0.3.6",
+    "nexe": "^4.0.0-rc.2",
+    "nodemon": "^3.0.1",
+    "npx": "^10.2.2",
+    "request": "^2.88.2",
+    "sendgrid": "^5.2.3",
+    "tsc": "^2.0.4",
+    "zapier-platform-core": "15.4.1"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.23.2",
+    "babel-jest": "^29.7.0",
+    "typescript": "^5.4.0-dev.20231127"
+  }
+}
