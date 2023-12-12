@@ -26,6 +26,7 @@
   "license": "ISC",
   "dependencies": {
     "@c3/remote": "file:c3-remote.tgz",
+    "@c3/types": "file:c3-types-1.0.0.tgz", 
     "async": "^3.2.5",
     "async-lock": "^1.4.0",
     "axios": "^1.5.1",

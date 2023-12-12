@@ -1,5 +1,6 @@
 import { makePOSTRequest } from "../../services/api/api.js";
-
+import { FileSystemConfig } from "@c3/types";
+ 
 export async function get_conda_runtimes() {
     // set c3fs
     var origFSDefault = FileSystemConfig.make().getConfig().default;

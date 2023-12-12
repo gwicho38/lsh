@@ -4,31 +4,23 @@
     "type": "split",
     "children": [
       {
-        "id": "64dc8d04fcebfe8a",
+        "id": "9badd99ba716cb6c",
         "type": "tabs",
         "children": [
           {
-            "id": "e785e831a8512d0c",
-            "type": "leaf",
-            "state": {
-              "type": "empty",
-              "state": {}
-            }
-          },
-          {
-            "id": "220d6a84a943b4b4",
+            "id": "63d4a94d3ad83b46",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Untitled.md",
+                "file": "c3/gk8envs/README.md",
                 "mode": "source",
+                "backlinks": true,
                 "source": false
               }
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "vertical"
@@ -94,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Untitled.md",
+                "file": "c3/gk8envs/README.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -111,7 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Untitled.md",
+                "file": "c3/gk8envs/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -134,7 +126,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Untitled.md"
+                "file": "c3/gk8envs/README.md"
               }
             }
           }
@@ -152,47 +144,48 @@
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
-      "command-palette:Open command palette": false
+      "command-palette:Open command palette": false,
+      "templater-obsidian:Templater": false
     }
   },
-  "active": "220d6a84a943b4b4",
+  "active": "63d4a94d3ad83b46",
   "lastOpenFiles": [
-    "templates/Yearly_Reading_list.md",
-    "templates/Month_Tag.md",
-    "templates/Lecture.md",
-    "templates/Reading_List.md",
-    "templates/Term.md",
-    "templates/quote.md",
-    "templates/Month Tag.md",
-    "templates/Yearly Reading list.md",
-    "templates/C3-Technical-Interview.md",
-    "templates/C3-Interview.md",
-    "templates/Question_split.md",
-    "templates/Code.md",
-    "templates/Question.md",
-    "templates/Paper.md",
-    "templates/Resource.md",
-    "templates/Iframe.md",
-    "templates/c3/mda/weekly-reports.md",
-    "templates/c3/mda/_mda.md",
-    "templates/c3/mda/_Index_of_mda.md",
-    "templates/c3/mda/User-Stories.md",
-    "templates/c3/jira/template_task.md",
-    "templates/c3/C3-Ticket/_C3-Ticket.md",
-    "templates/c3/C3-Ticket/README.md",
-    "templates/c3/template_self_eval.md",
-    "templates/c3/mda",
-    "templates/c3/jira",
-    "templates/c3/docker",
-    "templates/c3/c3-self-review.md",
-    "templates/c3/c3-peer-review.md",
-    "templates/c3/C3-Ticket",
-    "templates/c3",
-    "templates/monthly",
-    "templates/zk",
-    "templates/daily",
-    "templates/C3-Ticket",
-    "templates",
+    "c3/c3viz/README.md",
+    "c3/gk8envs/README.md",
+    "c3/gk8envs",
+    "c3/genai/README.md",
+    "c3/c3viz",
+    "c3/guru/GURU_README.md",
+    "c3/genai",
+    "c3/proposals/cornea/guru.md",
+    "c3/daily/2023-12-12.md",
+    "c3/daily",
+    "Untitled.md",
+    "c3/templates/Yearly_Reading_list.md",
+    "c3/templates/Month_Tag.md",
+    "c3/templates/Lecture.md",
+    "c3/templates/Reading_List.md",
+    "c3/templates/Term.md",
+    "c3/templates/quote.md",
+    "c3/templates/Month Tag.md",
+    "c3/templates/Yearly Reading list.md",
+    "c3/templates/C3-Technical-Interview.md",
+    "c3/templates/C3-Interview.md",
+    "c3/templates/Question_split.md",
+    "c3/templates/Code.md",
+    "c3/templates/Question.md",
+    "c3/templates/Paper.md",
+    "c3/templates/Resource.md",
+    "c3/templates/Iframe.md",
+    "c3/templates/c3/mda/weekly-reports.md",
+    "c3/templates/c3/mda/_mda.md",
+    "c3/templates/c3/mda/_Index_of_mda.md",
+    "c3/templates/c3/mda",
+    "c3/templates/c3/jira",
+    "c3/templates/c3/docker",
+    "c3/templates/c3/C3-Ticket",
+    "c3/templates/c3",
+    "c3/templates/monthly",
     "c3/guru/Untitled Diagram.svg",
     "c3/guru/20230824_15.37.07_ML_Diagram.png"
   ]
