@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/daily/2023-12-12.md",
+                "file": "c3/daily/2023-12-13.md",
                 "mode": "source",
                 "backlinks": true,
                 "source": false
@@ -70,8 +70,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "e6df840121348a1f",
@@ -87,7 +86,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/daily/2023-12-12.md",
+                "file": "c3/daily/2023-12-13.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +103,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/daily/2023-12-12.md",
+                "file": "c3/daily/2023-12-13.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -127,7 +126,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/daily/2023-12-12.md"
+                "file": "c3/daily/2023-12-13.md"
               }
             }
           }
@@ -151,14 +150,24 @@
   },
   "active": "63d4a94d3ad83b46",
   "lastOpenFiles": [
-    "c3/meeting/guru_source_code_modification.md",
+    "c3/guru/GURU_README.md",
+    "home/lefv-vault/c3/guru/GURU_README.md",
+    "c3/edgybees/faq.md",
+    "home/lefv-vault/c3/guru",
+    "home/lefv-vault/c3",
+    "home/lefv-vault",
+    "home",
+    "c3/cesium/FAQ.md",
+    "c3/edgybees",
+    "c3/daily/2023-12-13.md",
+    "c3/cesium",
     "c3/daily/2023-12-12.md",
+    "c3/meeting/guru_source_code_modification.md",
     "c3/c3viz/README.md",
     "c3/gk8envs/README.md",
     "c3/gk8envs",
     "c3/genai/README.md",
     "c3/c3viz",
-    "c3/guru/GURU_README.md",
     "c3/genai",
     "c3/proposals/cornea/guru.md",
     "c3/daily",
@@ -177,16 +186,6 @@
     "c3/templates/Code.md",
     "c3/templates/Question.md",
     "c3/templates/Paper.md",
-    "c3/templates/Resource.md",
-    "c3/templates/Iframe.md",
-    "c3/templates/c3/mda/weekly-reports.md",
-    "c3/templates/c3/mda/_mda.md",
-    "c3/templates/c3/mda",
-    "c3/templates/c3/jira",
-    "c3/templates/c3/docker",
-    "c3/templates/c3/C3-Ticket",
-    "c3/templates/c3",
-    "c3/templates/monthly",
     "c3/guru/Untitled Diagram.svg",
     "c3/guru/20230824_15.37.07_ML_Diagram.png"
   ]

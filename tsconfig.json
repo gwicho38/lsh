@@ -11,7 +11,8 @@
       "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
     //   "allowImportingTsExtensions": true,
     //   "noEmit": true
-    "moduleResolution":"Node"
+    "moduleResolution":"Node",
+    "jsx": "react"
     },
     "include": [
       "src/**/*.ts" // Include all TypeScript files in src (including your entry point)
