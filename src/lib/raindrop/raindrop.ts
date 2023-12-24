@@ -12,11 +12,11 @@ const raindrop = {
   },
 
   rm: (id: number) => {
-    console.log(`Removing a raindrop with id: ${id}`);
+    console.log(`Searching a raindrop with id: ${id}`);
   },
 
   search: (id: number) => {
-    console.log(`Removing a raindrop with id: ${id}`);
+    console.log(`Searching a raindrop with id: ${id}`);
   }
 };
 
