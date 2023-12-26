@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Command } from 'commander';
+import * as readline from 'readline';
 import { shell_exec } from '../../lib/shell/shell.lib.js';
 
 // for additional inspiration - check CloudClusterUtil type
@@ -58,7 +59,27 @@ async function cmd_interactive(program: Command) {
   .command('interactive')
   .description('c3sh interactive shell')
   .action(async (type: String, action: String, spec: Spec) => {
-    console.log(`Calling ${type}/${action}`);
+    
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+
+    const prompt = (): void => {
+      rl.question('Enter command: ', (input: string) => {
+        if (input === 'exit') {
+          console.log('Exiting interactive shell...');
+          rl.close();
+          return;
+        }
+  
+        console.log(`You entered: ${input}`);
+        prompt(); // Re-prompt the user
+      });
+    };
+  
+    prompt();
+    
   });
 }
 

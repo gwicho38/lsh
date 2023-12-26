@@ -12,7 +12,7 @@ import http from "http";
 import * as c3_thin from 'c3-thin';
 
 import type { AsyncThinTypeSystem as AsyncThinTypeSystemV7 } from "c3-thin";
-import type { AsyncThinTypeSystem as AsyncThinTypeSystemV8 } from "@c3/remote";
+// import type { AsyncThinTypeSystem as AsyncThinTypeSystemV8 } from "@c3/remote";
 
 // import Logger, { LogLevel } from "./lib/Logger";
 // import { Package } from "./subProcesses/repoWatcher/repository";
@@ -229,7 +229,7 @@ export class CliClient {
   setToken(token: string): void {
     this.token = token;
     if (this.typeSystem) {
-      (this.typeSystem as AsyncThinTypeSystemV8).connection().$authz = token;
+      // (this.typeSystem as AsyncThinTypeSystemV8).connection().$authz = token;
     }
   }
 
@@ -305,15 +305,15 @@ export class CliClient {
           },
         };
         // eslint-disable-next-line @typescript-eslint/unbound-method
-        conn = await C3.connectAsync(
-          this.url,
-          this.token,
-          undefined,
-          connectSpec
-        );
-        ts = conn.asyncThinTypeSystem();
+        // conn = await C3.connectAsync(
+        //   this.url,
+        //   this.token,
+        //   undefined,
+        //   connectSpec
+        // );
+        // ts = conn.asyncThinTypeSystem();
 
-        return ts;
+        // return ts;
 
       default:
         throw new Error("Unsupported server version");
@@ -337,10 +337,10 @@ export class CliClient {
          * TODO: V8 we need to update this to use the real async thin type system, for now
          * we are using the full sync type system.
          */
-        const type = await (this.typeSystem as AsyncThinTypeSystemV8).type(
-          typeName
-        );
-        return Promise.resolve(await type.callByName(action, actionArguments));
+        // const type = await (this.typeSystem as AsyncThinTypeSystemV8).type(
+        //   typeName
+        // );
+        // return Promise.resolve(await type.callByName(action, actionArguments));
       } else {
         throw new Error("Unknown server version");
       }

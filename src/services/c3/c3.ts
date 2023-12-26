@@ -3,7 +3,7 @@ import { Command } from 'commander';
 import { makePOSTRequest } from '../api/api.js';
 import { CliClient } from './CliClient.js';
 import type { AsyncThinTypeSystem as AsyncThinTypeSystemV7 } from "c3-thin";
-import type { AsyncThinTypeSystem as AsyncThinTypeSystemV8 } from "@c3/remote";
+// import type { AsyncThinTypeSystem as AsyncThinTypeSystemV8 } from "@c3/remote";
 
 interface Spec {
   data?: [any]
