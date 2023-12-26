@@ -1,10 +1,8 @@
 ## FAQ
 
 > start data: April 3rd, 2023
-> security+: will taken
-> clearance: waiting
-> self-eval: talked about
-> jury-duty: 
+> security+: will taken --> 2023-12-22
+> clearance: waiting --> 2023-12-22
 
 ## Knowledge
 

@@ -63,7 +63,6 @@ Cohorts:
 
 ## 📅 - Agenda
 
-
 ## 📝 - Notes
 
 # Agenda
