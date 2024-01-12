@@ -4,7 +4,55 @@ created_date: 12/10/2023
 updated_date: 12/10/2023
 type: meeting
 ---
-# 20231009
+## 2024-01-04
+
+### NOTES
+
+Federal base apps. As that would mature into a more matura/application. 
+
+Apps rotation. 
+
+GenAi based with RSO --> ? 
+	 role?
+	 subject matter
+	 nuance regarding
+
+Staffing? 
+
+	> additional engineer for some amount of time before the end of the contract. 
+	
+	#todo Dino staffing. 
+	#todo how to request additional resources.
+	#todo how
+
+		who, complexity, timeline
+
+		18/20
+
+	Vlad?
+
+	How to weigh ticket complexity. 
+
+	Q: Role in what gets completed 
+
+		Contract end: May 2
+
+	Q: Threshhold?
+
+		Project reported status
+		Release 1.3
+
+	Q: Data Science concern
+
+		> 10% of Dixon time
+
+	Q: Process?
+
+		Vlad, 
+		Myself,
+		Federal Staffing
+		
+## 20231009
 
 Notes: 
 
@@ -15,7 +63,6 @@ Notes:
 	- this is affecting
 	- #todo contractual sow --> 
 - Dedicated person to manage talking to BAH. Person should take over contact BAH for Advana. 
-- 
 
 # 🚀  1_1_patrick_thomas -> 
 

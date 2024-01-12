@@ -42,4 +42,4 @@ sent on November 9, 2023 15:30
 
 - ACL operates outside of ELSER
 
-[[c3/guru/GURU_README|GURU_README]] 
+[[GURU_README|GURU_README]] 

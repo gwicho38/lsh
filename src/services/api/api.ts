@@ -17,6 +17,7 @@ const semaphore = new AsyncLock();
 let pkgId;
 
 export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
+  console.log("makePostRequest");
   const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
   console.log(url);
 
@@ -38,10 +39,12 @@ export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
 };
 
 const getMetadataPath = (path) => {
+  console.log("getMetadataPath");
   return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);
 };
 
 const getPkgId = async () => {
+  console.log("getPkgId");
   if (pkgId) {
     return pkgId;
   }
@@ -54,6 +57,7 @@ const getPkgId = async () => {
 }
 
 const writeContent = async (path) => {
+  console.log("writeContent");
   const pkgId = await getPkgId();
   const metadataPath = getMetadataPath(path);
   const content = FILE.encodeContent(path);

@@ -38,59 +38,93 @@
             }
           },
           {
-            "id": "aa925f2a09429213",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/lib/comp-tia-security-plus.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "e5ecb07c6ac87b01",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/mmef/readme.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "c8905c56a5d39e3f",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/daily/2023-12-21.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              }
-            }
-          },
-          {
             "id": "23aef9d0b65f7e84",
             "type": "leaf",
+            "pinned": true,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/rizzo/mayowa-omokanwaye.md",
+                "file": "c3/cornea/GURU_README.md",
                 "mode": "source",
                 "backlinks": true,
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "23b2e2f466d1100a",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/org/joffin-manjaly.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "8f78d5c61d89e6db",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/daily/2024-01-03.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "2cd3c6de3b58508c",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/meeting/20231205/se_team_leadership_meeting.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "1de43f87c977a85a",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/daily/2024-01-04.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "74b0cafd3a052937",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/daily/2024-01-11.md",
+                "mode": "source",
+                "backlinks": false,
                 "source": false
               }
             }
           }
         ],
-        "currentTab": 5
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -119,10 +153,10 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "clear ",
+                "query": "engineLog",
                 "matchingCase": false,
                 "explainSearch": false,
-                "collapseAll": false,
+                "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical"
               }
@@ -135,14 +169,21 @@
               "type": "bookmarks",
               "state": {}
             }
+          },
+          {
+            "id": "4fc712e9190ce2e8",
+            "type": "leaf",
+            "state": {
+              "type": "recent-files",
+              "state": {}
+            }
           }
         ],
         "currentTab": 1
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "e6df840121348a1f",
@@ -158,7 +199,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/rizzo/mayowa-omokanwaye.md",
+                "file": "c3/cornea/GURU_README.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -175,7 +216,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/rizzo/mayowa-omokanwaye.md",
+                "file": "c3/cornea/GURU_README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -198,7 +239,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/rizzo/mayowa-omokanwaye.md"
+                "file": "c3/cornea/GURU_README.md"
               }
             }
           },
@@ -215,7 +256,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200
+    "width": 341.5
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -230,44 +271,47 @@
   },
   "active": "23aef9d0b65f7e84",
   "lastOpenFiles": [
-    "c3/meeting/fed_staffing_standup.md",
-    "c3/daily/2023-12-21.md",
-    "c3/mmef/readme.md",
-    "c3/meeting/mmef_refresh.md",
-    "c3/lib/bundling.md",
-    "c3/lib/comp-tia-security-plus.md",
+    "c3/daily/2024-01-11.md",
     "c3/meeting/federal_staffing_standup.md",
-    "c3/daily/2023-12-20.md",
-    "c3/cesium/FAQ.md",
-    "c3/mmef",
-    "c3/guru/GURU_README.md",
-    "c3/daily/2023-12-19.md",
-    "home/lefv-vault/c3/guru/GURU_README.md",
-    "c3/daily/2023-12-18.md",
-    "c3/daily/2023-12-16.md",
-    "c3/daily/2023-12-14.md",
-    "c3/daily/2023-12-15.md",
-    "c3/lib/child_process/MAIN.md",
-    "c3/lib/child_process",
-    "Pasted image 20231214115218.png",
-    "c3/daily/2023-12-13.md",
-    "c3/edgybees/faq.md",
-    "home/lefv-vault/c3/guru",
-    "home/lefv-vault/c3",
-    "home/lefv-vault",
-    "home",
-    "c3/edgybees",
-    "c3/cesium",
-    "c3/daily/2023-12-12.md",
-    "c3/meeting/guru_source_code_modification.md",
-    "c3/c3viz/README.md",
-    "c3/gk8envs/README.md",
-    "c3/gk8envs",
-    "c3/genai/README.md",
-    "c3/c3viz",
+    "c3/cornea/cor-121.md",
+    "c3/lib/Pasted image 20240111115626.png",
+    "c3/daily/2024-01-10.md",
+    "c3/daily/2024-01-09.md",
+    "c3/contractors/brandy-youngson.md",
+    "c3/contractors/Kosei.md",
+    "c3/templates/c3/C3-New-Hire-Ignite.md",
+    "c3/daily/2024-01-08.md",
+    "c3/archive/gkev8c3apps.c3-e.com-1704731269624.log",
+    "c3/archive",
+    "c3/daily/2024-01-04.md",
+    "c3/cornea/GURU_README.md",
+    "c3/cornea/main.md",
+    "c3/cornea/onboarding.md",
     "c3/proposals/cornea/guru.md",
-    "Untitled.md",
-    "c3/guru/Untitled Diagram.svg",
-    "c3/guru/20230824_15.37.07_ML_Diagram.png"
+    "damien-lutrin/2023_mid_year_eval.md",
+    "c3/meeting/20231205/se_team_leadership_meeting.md",
+    "c3/org/damien-lutrin.md",
+    "damien-lutrin",
+    "c3/meeting/1_1_patrick_thomas.md",
+    "mayowa-omokanwaye/2023_mid_year_eval_mayowa.md",
+    "c3/org/mayowa-omokanwaye.md",
+    "patrick-thomas/mid_year_2023.md",
+    "mayowa-omokanwaye",
+    "c3/org/patrick-thomas.md",
+    "patrick-thomas",
+    "c3/org/joffin-manjaly.md",
+    "c3/org/peter-hwang.md",
+    "c3/org",
+    "c3/meeting/management-performance-discussion.md",
+    "c3/daily/2024-01-03.md",
+    "c3/lib/Pasted image 20240103152506.png",
+    "c3/richard-bui",
+    "c3/org/peter-hwang 1",
+    "c3/org/joffin-manjaly",
+    "Pasted image 20240102113517.png",
+    "c3/mmef",
+    "Pasted image 20231214115218.png",
+    "c3/cornea/Untitled Diagram.svg",
+    "c3/cornea/20230824_15.37.07_ML_Diagram.png"
   ]
 }

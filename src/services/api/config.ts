@@ -8,7 +8,7 @@
 
 export const CONFIG = {
     // Path to root repo. Exclude trailing slash
-    PATH_TO_PACKAGE_REPO: '/Users/lefv/test/20231115/prov',
+    PATH_TO_PACKAGE_REPO: '/Users/lefv/test/20240102/prov/cornea/',
   
     // Listen to file updates within these packages
     PACKAGES_TO_SYNC: ['guruSearchUI'],

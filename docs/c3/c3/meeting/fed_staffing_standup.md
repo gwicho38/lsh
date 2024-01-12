@@ -4,6 +4,32 @@ created_date: 12/10/2023
 updated_date: 12/10/2023
 type: meeting
 ---
+# FED STAFFING STANDUP
+## LINKS
+
+[[c3/rizzo/README|README]]
+
+## TEAM
+
+[[peter-hwang]]  
+
+[[joffin-manjaly]]  
+
+[[patrick-thomas]] 
+
+[[mayowa-omokanwaye]] 
+
+[[damien-lutrin]]  
+
+[[c3/org/feneel-patel]]  
+
+[[richard-bui]] 
+
+[[damien-lutrin]] 
+
+@meeting 
+
+
 ## 20231130
 
 %% going through assignments from today until 12/31/2023 %%
@@ -35,6 +61,8 @@ genai == cohort
 cohort use now?
 
 team allocation is done at the cohort level?
+
+@kevin should have access to RFP responses.
 
 
 --> Patrick 
@@ -74,34 +102,8 @@ There is a @DLA contractor that wants to work on the SuiteCase.
 	He wants a @c3 laptop. 
 
 Contractors to get access to the c3 base code would be the guide to use for this approval. 
-# 🚀  fed_staffing_standup -> 
 
-# LINKS
-
-[[c3/rizzo/README|README]]
-
-# TEAM
-
-[[c3/rizzo/peter-hwang]]  
-
-[[c3/rizzo/joffin-manjaly]]  
-
-[[c3/rizzo/patrick-thomas]] 
-
-[[c3/rizzo/mayowa-omokanwaye]] 
-
-[[c3/rizzo/damien-lutrin]]  
-
-[[c3/rizzo/feneel-patel]]  
-
-[[c3/rizzo/richard-bui]] 
-
-[[c3/rizzo/damien-lutrin]] 
-
-@meeting 
-
-
-# 20231121
+## 20231121
 
 > NOTES
 
@@ -112,7 +114,7 @@ Farhan says that there isn't a backlog but he has an Open Ticket.
 Need an open ticket with a backlog. 
 
 No administrative changes currently in pipeline. 
-# 20231017
+## 20231017
 
  @mayowa 
  @sean  
@@ -129,7 +131,7 @@ type: term
 - **🏷️Tags** :  #10-2023  
 ## Notes
 
-# 20231012
+## 20231012
 
 ## 📢 - Project information
 
@@ -145,18 +147,9 @@ Richard?
 
 #todo DLA may have allocation for one or two contractors but 
 
+## 20231010
 
-##  📅 - Agenda
-
-
-## 📝 - Notes
-
-
-## 💠 - Action items
-
-# 20231010
-
-## Customer Account Mapping (Staffing)
+### Customer Account Mapping (Staffing)
 
 @Ben field opps
 @Adam usmc
@@ -230,11 +223,11 @@ new project January 2024
 
 ---
 
-# 20231114
+## 20231114
 
 
 
-# 20231102
+## 20231102
 
 ## Agenda
 

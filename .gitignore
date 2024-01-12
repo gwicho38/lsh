@@ -143,3 +143,6 @@ dist
 
 # Stores VSCo
 util/helm/.DS_Store
+
+# Darwin files
+.DS_Store

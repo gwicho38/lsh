@@ -8,4 +8,4 @@ sent on November 10, 2023 12:34
 
 #c3 #guru #meeting 
 
-[[c3/guru/GURU_README|GURU_README]] 
+[[GURU_README|GURU_README]] 

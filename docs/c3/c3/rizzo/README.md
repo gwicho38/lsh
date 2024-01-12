@@ -4,11 +4,83 @@
 
 ```
 
-## STAFFING
+## LINKS
 
 [Customer Account Mapping - AUG 9.xlsx](https://c3e.sharepoint.com/:x:/s/CustomerSolutions/EXB5xYOfmSVPrOkIv0I--kwBsxXfl5PNlDklstoy0e05uA?e=3gXgMl)
 
 [Customer Account Mapping](https://c3e.sharepoint.com/:x:/s/CustomerSolutions/ERYs002uAH5Ok--etBQILpYByGgE0KXx1uTvetb7TDeX9w?e=Xf7NxC)
+
+https://c3e.sharepoint.com/:x:/r/sites/FederalEngineering-fed-engineering/_layouts/15/Doc.aspx?sourcedoc=%7B28C30D1D-1DF4-49A5-BF69-58F23BF3053F%7D&amp;file=PTO%20&amp;%20Travel%20Tracker.xlsx=&amp;action=default&amp;mobileredirect=true |  [Fed OOO Tracker](https://c3e.sharepoint.com/:x:/r/sites/FederalEngineering-fed-engineering/_layouts/15/Doc.aspx?sourcedoc=%7B28C30D1D-1DF4-49A5-BF69-58F23BF3053F%7D&amp;file=PTO%20&amp;%20Travel%20Tracker.xlsx=&amp;action=default&amp;mobileredirect=true)     
+
+[1:50 PM] Alejandro Chavez
+
+Internal travel form: [https://forms.office.com/pages/responsepage.aspx?id=mnetU-eTXEi6IKyCkNclK5gAe9H2JkVOuL9Jc9QGyU5UMkxESTROUlBWUUhYNDRWNDJLVVFMS1FNSS4u](https://forms.office.com/pages/responsepage.aspx?id=mnetU-eTXEi6IKyCkNclK5gAe9H2JkVOuL9Jc9QGyU5UMkxESTROUlBWUUhYNDRWNDJLVVFMS1FNSS4u "https://forms.office.com/pages/responsepage.aspx?id=mnetu-etxei6ikycknclk5gae9h2jkvoul9jc9qgyu5umkxestroulbwuuhyndrwndjlvvfms1fnss4u")
+
+[1:50 PM] Alejandro Chavez
+
+External travel form: [https://forms.office.com/pages/responsepage.aspx?id=mnetU-eTXEi6IKyCkNclK59hilRto7VChsbJLwiXODlUMVVDSzdGTEVOMjJGSDZMUTNPOUJJQUpUVy4u](https://forms.office.com/pages/responsepage.aspx?id=mnetU-eTXEi6IKyCkNclK59hilRto7VChsbJLwiXODlUMVVDSzdGTEVOMjJGSDZMUTNPOUJJQUpUVy4u "https://forms.office.com/pages/responsepage.aspx?id=mnetu-etxei6ikycknclk59hilrto7vchsbjlwixodlumvvdszdgtevomjjgsdzmutnpoujjqupuvy4u")
+
+
+https://c3e-my.sharepoint.com/personal/andrew_dorsey_c3_ai/_layouts/15/onedrive.aspx?FolderCTID=0x01200048C1A8E89C877D40B6EC9DC314A27464&id=%2Fpersonal%2Fandrew%5Fdorsey%5Fc3%5Fai%2FDocuments%2FC3%20AI%20Manager%20Materials%2FManagement%20Development%20Series&OR=Teams%2DHL&CT=1696612820375&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiIyOC8yMzA5MDExMjI3OCIsIkhhc0ZlZGVyYXRlZFVzZXIiOmZhbHNlfQ&noAuthRedirect=1
+
+https://app.powerbi.com/home?experience=power-bi
+
+TCM: [https://c3e.sharepoint.com/:x:/r/sites/CustomerSolutions/_layouts/15/doc2.aspx?sourcedoc=%7B34DDF258-5561-4BF2-8CBB-98EAF58FA60E%7D&file=Technical%20Competency%20Matrix.xlsx&action=default&mobileredirect=true](https://c3e.sharepoint.com/:x:/r/sites/CustomerSolutions/_layouts/15/doc2.aspx?sourcedoc=%7B34DDF258-5561-4BF2-8CBB-98EAF58FA60E%7D&file=Technical%20Competency%20Matrix.xlsx&action=default&mobileredirect=true&isSPOFile=1 "https://c3e.sharepoint.com/:x:/r/sites/customersolutions/_layouts/15/doc2.aspx?sourcedoc=%7b34ddf258-5561-4bf2-8cbb-98eaf58fa60e%7d&file=technical%20competency%20matrix.xlsx&action=default&mobileredirect=true&isspofile=1")
+
+[1:51 PM] Alejandro Chavez
+
+Onboarding confluence doc: [https://c3energy.atlassian.net/wiki/spaces/SE/pages/8310685697/SE+V8+Onboarding+Materials](https://c3energy.atlassian.net/wiki/spaces/SE/pages/8310685697/SE+V8+Onboarding+Materials "https://c3energy.atlassian.net/wiki/spaces/se/pages/8310685697/se+v8+onboarding+materials")
+
+https://c3energy.atlassian.net/wiki/spaces/ENG/pages/8230469638/Tips+and+Tricks+at+C3
+
+Good checklist on what team members need to have done.
+
+`Security+`
+
+Good transition page: [https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8320614812/Managing+Team+Member+Transitions](https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8320614812/Managing+Team+Member+Transitions "https://c3energy.atlassian.net/wiki/spaces/sam/pages/8320614812/managing+team+member+transitions")
+
+Jonathan personal mgmt notes:
+[https://c3energy.atlassian.net/wiki/spaces/~415818245/pages/8128036865/Fed+FDE+Management+Notes](https://c3energy.atlassian.net/wiki/spaces/~415818245/pages/8128036865/Fed+FDE+Management+Notes "https://c3energy.atlassian.net/wiki/spaces/~415818245/pages/8128036865/fed+fde+management+notes")
+
+https://c3energy.atlassian.net/wiki/spaces/~415818245/pages
+
+Resources for SE onboarding mentors: [](https://c3e-my.sharepoint.com/:p:/g/personal/sydney_weinberg_c3_ai/EcdNCnNIwDpCjJ_eNIUeYgABzEvcE_MXp2GRl6pcLZfC7Q?e=frApUm "https://c3e-my.sharepoint.com/:p:/g/personal/sydney_weinberg_c3_ai/ecdncnniwdpcjj_eniueygabzevce_mxp2grl6pclzfc7q?e=frapum")[Mentor Guide.pptx](https://c3e-my.sharepoint.com/:p:/g/personal/sydney_weinberg_c3_ai/EcdNCnNIwDpCjJ_eNIUeYgABzEvcE_MXp2GRl6pcLZfC7Q?e=frApUm "https://c3e-my.sharepoint.com/:p:/g/personal/sydney_weinberg_c3_ai/ecdncnniwdpcjj_eniueygabzevce_mxp2grl6pclzfc7q?e=frapum")
+[https://c3energy.atlassian.net/wiki/spaces/SAM/pages/2601812999/Ignite+Buddy+Tasks](https://c3energy.atlassian.net/wiki/spaces/SAM/pages/2601812999/Ignite+Buddy+Tasks "https://c3energy.atlassian.net/wiki/spaces/sam/pages/2601812999/ignite+buddy+tasks")
+
+[https://c3energy.atlassian.net/wiki/spaces/SE/pages/7888306269](https://c3energy.atlassian.net/wiki/spaces/SE/pages/7888306269 "https://c3energy.atlassian.net/wiki/spaces/se/pages/7888306269")
+
+---
+![[Pasted image 20240103152506.png]]
+
+So basically any late WFH/sick or customer site visit should be put there from your direct reports. If there's something flagged on the badge report, they'll check the post first to see if its excusable
+
+## FAQ
+
+### Where to Start?
+
+https://c3energy.atlassian.net/wiki/spaces/SE/pages/8495696031/Technical+Oversight
+
+#todo where to add entry point 
+
+### Comp Adjustment @ Mid-Year?
+
+	> voluntary attrition?
+	> promotion candidate?	
+
+### Negative Feedback and Separation? 
+
+	#todo no current uniform process
+
+### Executive Session 
+
+
+
+### Buddies
+
+> tenure without buddy or gender
+
+
+
 ## PROJECTS
 
 
@@ -19,19 +91,10 @@
 > [!note] BLADE
 > [blade sow](https://c3e-my.sharepoint.com/personal/naresh_shah_c3_ai/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fnaresh%5Fshah%5Fc3%5Fai%2FDocuments%2FMigratedFromBox%2Fnaresh%2Dshah%2FOpportunities%2FBLADE%2FProposal%20%2D%20BLADE%20LIMS%2DEV%20Migration%20%2D%20Vehicle%20Modules%2Epdf&parent=%2Fpersonal%2Fnaresh%5Fshah%5Fc3%5Fai%2FDocuments%2FMigratedFromBox%2Fnaresh%2Dshah%2FOpportunities%2FBLADE&ga=1)
 
-
-
-
-
-
-
 ## PAGES
 
 > https://c3energy.atlassian.net/wiki/spaces/~5d52b47aab24bf0d99415944/pages/8290638714/SE+Managers+Onboarding+Wishlist
 
-https://c3e-my.sharepoint.com/personal/andrew_dorsey_c3_ai/_layouts/15/onedrive.aspx?FolderCTID=0x01200048C1A8E89C877D40B6EC9DC314A27464&id=%2Fpersonal%2Fandrew%5Fdorsey%5Fc3%5Fai%2FDocuments%2FC3%20AI%20Manager%20Materials%2FManagement%20Development%20Series&OR=Teams%2DHL&CT=1696612820375&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiIyOC8yMzA5MDExMjI3OCIsIkhhc0ZlZGVyYXRlZFVzZXIiOmZhbHNlfQ&noAuthRedirect=1
-
-https://app.powerbi.com/home?experience=power-bi
 
 > Housekeeping
 
@@ -120,13 +183,13 @@ https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8193802660/FDE+Badge+Progra
 ## REPORTS
 
 20231002
-[[c3/rizzo/feneel-patel]]   
-[[c3/rizzo/peter-hwang]]  
-[[c3/rizzo/joffin-manjaly]]  
-[[c3/rizzo/patrick-thomas]] 
-[[c3/rizzo/mayowa-omokanwaye]] 
-[[c3/rizzo/damien-lutrin]]  
-[[c3/rizzo/richard-bui]] 
+[[c3/org/feneel-patel]]   
+[[peter-hwang]]  
+[[joffin-manjaly]]  
+[[patrick-thomas]] 
+[[mayowa-omokanwaye]] 
+[[damien-lutrin]]  
+[[richard-bui]] 
 
 20231114
 

@@ -4,7 +4,104 @@ created_date: 26/10/2023
 updated_date: 26/10/2023
 type: meeting
 ---
-# 20231205
+## 2024-01-11
+
+13:33
+
+![[Pasted image 20240111115626.png]]
+
+## CORNEA RADAR
+
+Dinoe: 
+
+	> @patrick-thomas 
+	> @damien-lutrin 
+
+Intel Apps:
+
+	ICM in the short term for two weeks and then back to SOCOM. 
+	 Next Monday.
+
+		xml?
+		json?
+
+		stream
+		db 
+
+
+	 
+	> @richard-bui
+	
+	> @feneel-patel
+
+			>> hook the base app up to the black box data emulator.
+			
+	> Engineering emails are sent tonight assuming @houman approval.
+	
+	> @Mitch annual is 5/1/2024 --> extended on @MDA 
+	
+		> end of February --> @Dave and @Mitch to go 50:50 on MDA
+		
+		 > February 26 starts 50:50 @Mitch 
+		 
+	> @patrick 
+
+		@chris-boswell said that we don't have enough data scientist. 
+		One of the positions was using @patrick for data science staffing.
+
+		@patrick-thomas 
+
+	@erik-shackleford-c has been approved by @adi. Metrics-based line or two. @release on x date with tickets @ n and level of effort z. Promised to deliver
+	
+Swim Lane Managers and owners on board. 
+
+Imposing an email. 
+
+Transfers that are in the email as in progress line items. 
+
+#todo 
+
+> if we get dan fraights back from ICM then have Dan do it
+
+---
+
+
+## 2024-01-09
+
+@eric-burbach 
+
+
+## 2024-01-04
+
+### Notes
+
+Straight extension on contractor base. Paradyme will only support 2 on MDA moving forward. 
+
+## 2024-01-02
+
+@MDA 
+
+PTS is able to support 4 engineers. 
+
+One Paradyme person moved to RSO without contract mods. 
+
+Paradyme engineers are being used to do Products App Work. 
+
+Retract the expansion requests to RSO. 
+
+Reisse --> 
+
+MDA:
+
+	!emergency extension
+
+@date
+
+> Federal RFP to come out on January 5, 2024.
+> Don't know why ECS agreement was not signed. 
+
+c
+## 20231205
 
 @patrick 
 
@@ -36,7 +133,7 @@ one of the paradyme folks will get dropped into PDA. Two Raytheoners, one Parady
 
 @Ben 
 
-# 20231128
+## 20231128
 
 Cohorts:
 
@@ -53,12 +150,12 @@ Cohorts:
 
 		@Fractal is providing resources. After 8 engineers it's Fed
 
-# 20231026
+## 20231026
 
 ## 🚀  federal_staffing_standup -> 
 
 ---
-## 📢 - Project information
+### 📢 - Project information
 
 
 ## 📅 - Agenda
