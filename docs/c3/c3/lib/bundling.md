@@ -2,7 +2,7 @@
 
 ```js
 
-	UiSdlConfig.getConfig({}).setConfigValue("infrastructure.webpackMode", "production");  
+UiSdlConfig.getConfig({}).setConfigValue("infrastructure.webpackMode", "production");  
 UiBundlerConfig.inst().setConfigValue('bundleOnProvision', false);  
 UiBundler.removeAll();  
 UiBundlerResult.removeAll();       

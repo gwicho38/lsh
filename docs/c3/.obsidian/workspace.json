@@ -111,12 +111,25 @@
             }
           },
           {
-            "id": "74b0cafd3a052937",
+            "id": "d04bf193dc0107c5",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/daily/2024-01-11.md",
+                "file": "c3/daily/2024-01-12.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "a8bfcefb4384d92e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/cornea/builds/d087f437.md",
                 "mode": "source",
                 "backlinks": false,
                 "source": false
@@ -124,7 +137,7 @@
             }
           }
         ],
-        "currentTab": 2
+        "currentTab": 8
       }
     ],
     "direction": "vertical"
@@ -153,7 +166,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "engineLog",
+                "query": "tag:#01-2024",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": true,
@@ -183,7 +196,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "e6df840121348a1f",
@@ -199,7 +213,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/cornea/GURU_README.md",
+                "file": "c3/cornea/builds/d087f437.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -216,7 +230,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/cornea/GURU_README.md",
+                "file": "c3/cornea/builds/d087f437.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -239,7 +253,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/cornea/GURU_README.md"
+                "file": "c3/cornea/builds/d087f437.md"
               }
             }
           },
@@ -256,7 +270,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 341.5
+    "width": 341.5,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -269,10 +284,23 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "23aef9d0b65f7e84",
+  "active": "a8bfcefb4384d92e",
   "lastOpenFiles": [
-    "c3/daily/2024-01-11.md",
+    "c3/lib/bundling.md",
+    "c3/cornea/builds/d087f437.md",
+    "c3/cornea/builds",
+    "c3/mmef/readme.md",
+    "c3/daily/2024-01-12.md",
+    "c3/daily/2024-01-15.md",
+    "c3/meeting/1_1_feneel-patel.md",
     "c3/meeting/federal_staffing_standup.md",
+    "c3/daily/2024-01-04.md",
+    "c3/rizzo/README.md",
+    "c3/meeting/rizzo_standup.md",
+    "Untitled.md",
+    "c3/daily/2024-01-11.md",
+    "c3/cornea/GURU_README.md",
+    "vs",
     "c3/cornea/cor-121.md",
     "c3/lib/Pasted image 20240111115626.png",
     "c3/daily/2024-01-10.md",
@@ -283,8 +311,6 @@
     "c3/daily/2024-01-08.md",
     "c3/archive/gkev8c3apps.c3-e.com-1704731269624.log",
     "c3/archive",
-    "c3/daily/2024-01-04.md",
-    "c3/cornea/GURU_README.md",
     "c3/cornea/main.md",
     "c3/cornea/onboarding.md",
     "c3/proposals/cornea/guru.md",
@@ -292,24 +318,13 @@
     "c3/meeting/20231205/se_team_leadership_meeting.md",
     "c3/org/damien-lutrin.md",
     "damien-lutrin",
-    "c3/meeting/1_1_patrick_thomas.md",
-    "mayowa-omokanwaye/2023_mid_year_eval_mayowa.md",
-    "c3/org/mayowa-omokanwaye.md",
-    "patrick-thomas/mid_year_2023.md",
     "mayowa-omokanwaye",
-    "c3/org/patrick-thomas.md",
     "patrick-thomas",
-    "c3/org/joffin-manjaly.md",
-    "c3/org/peter-hwang.md",
     "c3/org",
-    "c3/meeting/management-performance-discussion.md",
-    "c3/daily/2024-01-03.md",
     "c3/lib/Pasted image 20240103152506.png",
     "c3/richard-bui",
     "c3/org/peter-hwang 1",
-    "c3/org/joffin-manjaly",
     "Pasted image 20240102113517.png",
-    "c3/mmef",
     "Pasted image 20231214115218.png",
     "c3/cornea/Untitled Diagram.svg",
     "c3/cornea/20230824_15.37.07_ML_Diagram.png"

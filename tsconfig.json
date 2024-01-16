@@ -16,7 +16,7 @@
     },
     "include": [
       "src/**/*.ts" // Include all TypeScript files in src (including your entry point)
-    ],
+, "src/workflows/v8_deploy_artifact.nbjs"    ],
     "exclude": [
       "node_modules", // Exclude the node_modules directory
     //   "**/*.test.ts" // Exclude test files

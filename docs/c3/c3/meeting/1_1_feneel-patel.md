@@ -4,6 +4,40 @@
 
 
 ---
+## 2024-01-12
+
+@feneel --> yymmdd -- we were looking for mmddyy
+
+set up all the runtimes as both tags
+
+s3 --> copy all the files -- taking a long time
+
+@feneel Ardem
+
+@doug SM has SIPR token @ami --> 
+
+#todo get @ami SIPR token
+
+#todo get developer role --> @first 
+
+doesn't have to be a @c3 SIPR --> @scecret 
+
+they're not giving thank
+
+#todo what is the scope of @feneel responsibility for developer `CDAO`. Part of @feneel allocation relates to helping out 
+
+@doug --> does @ami have a @SIPR token. 
+
+working on @SOCOM. @patrick is giving him interesting tasks. 
+
+They have three contractors. Been getting semantic search tickets while gone.
+
+@BGE vLLM model. 
+
+Semantic search.
+
+#todo get on top of objectives. 
+
 
 ## 20231009
 
@@ -29,8 +63,6 @@ Cohort Meeeting:
 	Integration into NIPR and SIPR --> had different versions. 
 
 	Was actually a different version. 
-
-	
 
 - [ ] todo DataVeracity server version [link](https://todoist.com/showTask?id=7476035693) #todoist %%[todoist_id:: 7476035693]%%
 - [ ] interest in California [link](https://todoist.com/showTask?id=7476035700) #todoist %%[todoist_id:: 7476035700]%%
