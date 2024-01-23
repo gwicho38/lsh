@@ -1,3 +1,34 @@
+# 2024-01-19
+
+@damien 
+
+#todo Lattice
+
+@jira ?
+@backlog ?
+@pr-review ?
+@MLE 
+@DLA @SCOLERA ambiguity between the engineering of something stops and it is the engineer's responsibilities end. 
+
+@SOW diction is drafted by legal. There are elements. 
+
+explicit definitions where SLA is understood internally. We can define a rule of thumb. @vlad has asked @Matthew . 
+
+@joffin on property appraisal. Sales closed an entire sale without engineering approval or backup. 
+
+redundant meeting. 
+
+@lattice --> 
+
+#todo security --> haven't heard anything about clearance. 
+		
+	#todo --> most important point
+
+@tuesday office hours
+
+@community 
+
+@v8 training on the side
 # 20231128
 
 - dinao

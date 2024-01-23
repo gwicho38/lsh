@@ -1,3 +1,19 @@
+## 2024-01-17
+
+@ani to @JROC 
+
+@radar is another @cornea project but not @genai 
+
+put him on @radar 
+
+#todo 
+
+	> board
+	
+	> ticket
+	
+	> add more tickets
+	
 ## 20231115
 
 @staffing 

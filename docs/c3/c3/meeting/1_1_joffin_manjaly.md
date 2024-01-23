@@ -1,5 +1,62 @@
+## 2024-01-18
+
+losing interest in @Riverside 
+
+@Stark 
+
+	has a deadline end of March 
+
+@Charlotte 
+
+	two integrations in process: 
+	
+			> Charlotte is fine
+			> 2nd integration more complicated
+			
+	> clear backlog? 
+	
+@Riverside 
+
+	integration with third party vendor.
+	
+	vp from state and local is aware.
+
+@Riverside-commercial 
+
+	> plan --> leverage the back end of it
+	
+@SMC 
+
+	> signing for property appraisal
+
+@question 
+
+	> what 
+
+#### Process Deficiencies
+
+	> @architecture 
+		
+		`ERD` 
+
+			> automated way
+
+	> @source-of-truth-docs
+	
+			> onboarding
+
+	> @scaling 
+
+	> @ticketing process?
+
+	> @pr system 
+
+	> @build-pipeline 
 
 
+@travel 
+
+	> down to Charlotte 29th 30th, 30th to @Riverside 
 ## Links
 
 [[joffin-manjaly]] 

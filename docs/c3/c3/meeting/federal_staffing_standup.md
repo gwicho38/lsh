@@ -4,6 +4,40 @@ created_date: 26/10/2023
 updated_date: 26/10/2023
 type: meeting
 ---
+## 2024-01-18
+
+@patrick approved for DS rotation. 
+
+@anika coming out of intel apps. formally sending @paul as net neutral. @anika moves out to commercial engineering. 
+
+@eric going to aerospace @armen. when aerospace genai he may need to shift focus. 
+
+sprint board with tickets and story points for amount of work that we're expected to take. 
+
+@ani can go to an @advana program because he has @advana access
+
+@JROC support must happen in February. @ani should stick in that swim lane through February. @ryan . He has an email associated with a @CAC . 
+
+@MMAF 
+
+Alternative would be @Navy. He will be moving to @Ryan's. @Dinoe -- Federal FRP. 
+
+@Dinoe -- take a new @Paradyme engineer and take an experienced one and drop them into @Dinoe. @Cargail -- he can take an @RSO .
+
+40 + contractors. 
+
+building a @c3 practice. Co-marketing software. @Fractal did this. Whoever wins an RFP. 
+
+save money generally -- 
+
+make vs buy --> top level choices. 
+
+180 
+
+180 - 70 = $110
+
+
+
 ## 2024-01-11
 
 13:33

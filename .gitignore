@@ -146,3 +146,4 @@ util/helm/.DS_Store
 
 # Darwin files
 .DS_Store
+data/**/**

@@ -4,6 +4,29 @@ created_date: 17/10/2023
 updated_date: 17/10/2023
 type: meeting
 ---
+## 2024-01-18
+
+#todo @sean add to CORNEA_README
+
+> sprint demos every sprint
+> 
+> story points:
+> 
+>> 1 point per 1 eng day of work. 
+>> implementation
+>> testing
+>> integration
+>> 
+> rule of thumb for feature complete: 
+>  
+>> time to production, 
+>> merging to release branch. 
+>> separate epic for deployment and verification of release
+>>> add regressions and bugs found on that release
+>> having a build as success criteria for epic.
+> 
+> remove any tickets not closable by end of sprint
+
 ## 20231130
 
 2 in morning

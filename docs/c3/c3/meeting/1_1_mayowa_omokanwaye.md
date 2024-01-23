@@ -1,3 +1,25 @@
+## 2024-01-19
+
+> todo
+
+	- security+ ==> fail ==> retake?
+
+	- clearance? ==> last email sent week before last
+
+	 - performance review? 
+
+	- switching over from @RSO 
+	
+	- @sean-hollen 
+	
+	- @genai work synthetic data to be seeded for demo.
+
+	- @genai 
+
+	 - @pto Friday for a while. @Friday --> @PTO 
+
+	- @pto open to moving --> @
+
 ## 20231003
 
 Iowa with an `M`

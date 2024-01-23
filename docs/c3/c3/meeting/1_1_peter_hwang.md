@@ -3,10 +3,39 @@ id: 1_1_peter_hwang
 created_date: 25/10/2023
 updated_date: 25/10/2023
 type: meeting
+tags:
+  - ooo
 ---
 ## 2024-01-03
 
+### DCSA 
 
+@TRANSCOM 
+
+100% on DCSA now. DCSA is going really well. @Torch also has a contract with @c3 . @Torch has a data store management. 
+
+Goal to demonstrate value to DCSA customer. 
+
+Data synthesis approach - to propagate data with their model. 
+
+@v8 migration details were ironed out. 
+
+@aws 
+
+	> 20-30% meetings
+	> remainder --> 50% opps
+	> 50% dev
+	> backend 
+
+customer interactive
+aws management 
+system design
+
+anything beyond May/June. 
+
+#todo 
+
+@objectives 
 ## 20231025
 
 Field opps work. {@peter} and {@manas} got v8 working on SuiteCase. Test Azure installation guide + terraform. Test the guide to see if there's anything to be added. 

@@ -6,6 +6,32 @@ type: meeting
 ---
 ## 2024-01-04
 
+@Dinoe 
+
+one to two weeks. 
+
+the work will be with respect to the expansion. 
+
+conversations with the customer for two ui pages. 
+
+level of effort / complexity: standard ui development with occasional epic. 
+
+metrics work and data science
+
+@damien has been helping out with data science. 
+
+conversation with @alejandro on Monday --> to categorize easier tickets in @Dinoe . context regarding @MEEP  (original pilot).
+
+@contractor would be ok. @vlad brought up concern w/r/2 velocity.
+
+2 weeks would be ok. 
+
+@patrick 
+
+@todo 
+
+
+
 ### NOTES
 
 Federal base apps. As that would mature into a more matura/application. 

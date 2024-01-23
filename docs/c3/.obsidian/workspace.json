@@ -23,43 +23,13 @@
             }
           },
           {
-            "id": "0e163d34cfd6fc98",
+            "id": "db7a986c95fc933e",
             "type": "leaf",
             "pinned": true,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/lib/bundling.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              },
-              "pinned": true
-            }
-          },
-          {
-            "id": "23aef9d0b65f7e84",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/cornea/GURU_README.md",
-                "mode": "source",
-                "backlinks": true,
-                "source": false
-              },
-              "pinned": true
-            }
-          },
-          {
-            "id": "23b2e2f466d1100a",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/org/joffin-manjaly.md",
+                "file": "c3/meeting/1_1_damien_lutrin.md",
                 "mode": "source",
                 "backlinks": false,
                 "source": false
@@ -68,68 +38,12 @@
             }
           },
           {
-            "id": "8f78d5c61d89e6db",
+            "id": "823ac220fdb73913",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/daily/2024-01-03.md",
-                "mode": "source",
-                "backlinks": false,
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "2cd3c6de3b58508c",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/meeting/20231205/se_team_leadership_meeting.md",
-                "mode": "source",
-                "backlinks": false,
-                "source": false
-              },
-              "pinned": true
-            }
-          },
-          {
-            "id": "1de43f87c977a85a",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/daily/2024-01-04.md",
-                "mode": "source",
-                "backlinks": false,
-                "source": false
-              },
-              "pinned": true
-            }
-          },
-          {
-            "id": "d04bf193dc0107c5",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/daily/2024-01-12.md",
-                "mode": "source",
-                "backlinks": false,
-                "source": false
-              }
-            }
-          },
-          {
-            "id": "a8bfcefb4384d92e",
-            "type": "leaf",
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/cornea/builds/d087f437.md",
+                "file": "c3/meeting/1_1_richard_bui.md",
                 "mode": "source",
                 "backlinks": false,
                 "source": false
@@ -137,7 +51,7 @@
             }
           }
         ],
-        "currentTab": 8
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -166,7 +80,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "tag:#01-2024",
+                "query": "manifest",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": true,
@@ -213,7 +127,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/cornea/builds/d087f437.md",
+                "file": "c3/meeting/1_1_richard_bui.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -230,7 +144,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/cornea/builds/d087f437.md",
+                "file": "c3/meeting/1_1_richard_bui.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -253,7 +167,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/cornea/builds/d087f437.md"
+                "file": "c3/meeting/1_1_richard_bui.md"
               }
             }
           },
@@ -266,7 +180,7 @@
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
@@ -284,46 +198,50 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "a8bfcefb4384d92e",
+  "active": "823ac220fdb73913",
   "lastOpenFiles": [
-    "c3/lib/bundling.md",
+    "c3/org/richard-bui.md",
+    "c3/daily/2024-01-22.md",
     "c3/cornea/builds/d087f437.md",
-    "c3/cornea/builds",
-    "c3/mmef/readme.md",
-    "c3/daily/2024-01-12.md",
-    "c3/daily/2024-01-15.md",
-    "c3/meeting/1_1_feneel-patel.md",
+    "c3/lib/bundling.md",
+    "c3/meeting/1_1_mayowa_omokanwaye.md",
+    "c3/meeting/1_1_damien_lutrin.md",
+    "c3/meeting/1_1_peter_hwang.md",
+    "c3/daily/2024-01-19.md",
+    "c3/meeting/1_1_joffin_manjaly.md",
+    "c3/meeting/1_1_patrick_thomas.md",
+    "c3/daily/2024-01-18.md",
     "c3/meeting/federal_staffing_standup.md",
-    "c3/daily/2024-01-04.md",
-    "c3/rizzo/README.md",
-    "c3/meeting/rizzo_standup.md",
-    "Untitled.md",
-    "c3/daily/2024-01-11.md",
-    "c3/cornea/GURU_README.md",
-    "vs",
+    "c3/meeting/1_1_sean_summers.md",
+    "c3/links.md",
+    "c3/meeting/fed_engineering_teams_leads.md",
+    "c3/cornea/buids/0e0f8798.md",
+    "c3/meeting/rdim_runtimes.md",
+    "c3/daily/2024-01-17.md",
+    "c3/mmef/readme.md",
     "c3/cornea/cor-121.md",
+    "c3/templates/cornea/template_v8_deploy_artifact.md",
+    "c3/org/joffin-manjaly.md",
+    "c3/daily/2024-01-03.md",
+    "c3/meeting/20231205/se_team_leadership_meeting.md",
+    "c3/daily/2024-01-04.md",
+    "c3/daily/2024-01-12.md",
+    "c3/templates/cornea",
+    "c3/cornea/buids",
+    "c3/cornea/track_tool",
+    "c3/lib/Pasted image 20240115203849.png",
+    "c3/lib/Pasted image 20240115203425.png",
+    "c3/lib/Pasted image 20240115203415.png",
+    "c3/lib/Pasted image 20240115203408.png",
+    "c3/cornea/builds",
+    "vs",
     "c3/lib/Pasted image 20240111115626.png",
-    "c3/daily/2024-01-10.md",
-    "c3/daily/2024-01-09.md",
-    "c3/contractors/brandy-youngson.md",
-    "c3/contractors/Kosei.md",
-    "c3/templates/c3/C3-New-Hire-Ignite.md",
-    "c3/daily/2024-01-08.md",
     "c3/archive/gkev8c3apps.c3-e.com-1704731269624.log",
     "c3/archive",
-    "c3/cornea/main.md",
-    "c3/cornea/onboarding.md",
-    "c3/proposals/cornea/guru.md",
-    "damien-lutrin/2023_mid_year_eval.md",
-    "c3/meeting/20231205/se_team_leadership_meeting.md",
-    "c3/org/damien-lutrin.md",
     "damien-lutrin",
     "mayowa-omokanwaye",
     "patrick-thomas",
-    "c3/org",
     "c3/lib/Pasted image 20240103152506.png",
-    "c3/richard-bui",
-    "c3/org/peter-hwang 1",
     "Pasted image 20240102113517.png",
     "Pasted image 20231214115218.png",
     "c3/cornea/Untitled Diagram.svg",
