@@ -1,26 +1,16 @@
 // Setup Env for Offline Repo 
 
+/***
+ * BEFORE ALL: `nvm alias default 15.16.1`
+ */
+
+/**
+ * {@link https://gkev8c3apps.c3-e.com/202401080650/gurusearchui/documentation/topic/meta://platform/src/doc/air-gapped-application-development-setup.c3doc.md}
+ */
+
 https://github.com/c3-e/c3server/blob/af7241f8efa546968d59c72163b9baf7f952a61d/platform/platform/src/main/c3/platform/src/doc/air-gapped-application-development-setup.c3doc.md
-
+// localhost:8888/c3/c3/
 Js.Runtime.forName('js-ide-vscode-client-node');
-Cluster.startEnv({
-  "name": "dev", // your initials
-  "singleNode": true,    // use false so that you can have task nodes. 
-});
-// change to dev env
-Js.Runtime.forName('js-ide-vscode-client-node');
-// nvm set node to runtime provided
-
-var npm = NpmLibraryManager.inst().mergedRuntime('js-webpack_c3')
-npm.ensureRuntimeInstalled('js-webpack_c3');
-
-var npm = NpmLibraryManager.inst()
-npm.runtimesBasePath()
-var npm = NpmLibraryManager.inst()
-npm.installRuntime('js-webpack_c3')
-
-
-
 Cluster.startEnv({
   "name": "dev", // your initials
   "singleNode": true,    // use false so that you can have task nodes. 
@@ -28,13 +18,14 @@ Cluster.startEnv({
 
 // enable Pkg Store
 // https://c3energy.atlassian.net/wiki/spaces/ENG/pages/8291224718/Pkg+and+Pkg.Store+Runbook
+// http://localhost:8888/dev/c3/
 Pkg.Store.configureDevStore()
 
 // Setup App
 var spec = Env.StartAppSpec.make({
-  "name": "gurusearch",
+  "name": "gurusearchui",
   "singleNode": true,
-  "rootPkg": "gurusearch"
+  "rootPkg": "gurusearchui"
 });
 
 // Start App
@@ -49,8 +40,20 @@ Cluster.resumeEnv(Env.forName("<envname>"))
 // Delete Env
 Cluster.inst().terminateEnv(Env.forName(“<env_name>”), true)
 
-
+// http:// localhost:8888/dev/gurusearchui/
 Pkg.setDevMode(True)
+// change to dev env
+Js.Runtime.forName('js-ide-vscode-client-node');
+// nvm set node to runtime provided
+
+var npm = NpmLibraryManager.inst();
+npm.ensureRuntimeInstalled('js-webpack_c3');
+npm.ensureRuntimeInstalled('js-webpack_c3');
+
+var npm = NpmLibraryManager.inst()
+npm.runtimesBasePath()
+var npm = NpmLibraryManager.inst()
+npm.installRuntime('js-ide-vscode-client-node');
 
 var domainName = "localhost";
 var appUrl = AppUrl.builder().id(domainName).env(C3.env().name).app(C3.app().name).build();

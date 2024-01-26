@@ -4,6 +4,51 @@ created_date: 26/10/2023
 updated_date: 26/10/2023
 type: meeting
 ---
+## 2024-01-25
+
+### SOW 
+
+List of SOWs first at the gate with Paradyme.
+
+Related to the four engineers now working under `CDAO`. 
+
+Master agreement will go for approval at the same time. 
+
+@Kevin 
+
+I need data on when US citizens and poly cleared engg/DS can be added to Fed GenAI swim lane and who takes priority over us
+
+> USMC
+
+> if there are engineers they should be working on @DLA 3.
+
+@DINOE
+
+App deployed in @NIPR 
+
+@PRR 
+
+@adrien approved the PRR
+
+two users only. Use the application to figure out staffing for marine core. 
+
+@DLA  --> `CDAO`
+
+---
+![[Pasted image 20240125140534.png]]
+
+
+SOW 1
+
+> I need data on when US citizens and poly cleared eng/DS can be added to Fed GenAI swim lane and who takes priority over us
+
+2 months uncleared --> 2 SEs + everything that's there
+
+Dan Freights --> 
+
+March 5
+March 12
+
 ## 2024-01-18
 
 @patrick approved for DS rotation. 

@@ -43,7 +43,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/meeting/1_1_richard_bui.md",
+                "file": "c3/meeting/federal_staffing_standup.md",
                 "mode": "source",
                 "backlinks": false,
                 "source": false
@@ -127,7 +127,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/meeting/1_1_richard_bui.md",
+                "file": "c3/meeting/federal_staffing_standup.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -144,7 +144,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/meeting/1_1_richard_bui.md",
+                "file": "c3/meeting/federal_staffing_standup.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -167,7 +167,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/meeting/1_1_richard_bui.md"
+                "file": "c3/meeting/federal_staffing_standup.md"
               }
             }
           },
@@ -200,32 +200,36 @@
   },
   "active": "823ac220fdb73913",
   "lastOpenFiles": [
+    "c3/lib/Pasted image 20240125140534.png",
+    "c3/meeting/federal_staffing_standup.md",
+    "c3/daily/2024-01-25.md",
+    "c3/meeting/guru_dsu.md",
+    "c3/daily/2024-01-24.md",
+    "c3/daily/2024-01-23.md",
+    "c3/links.md",
+    "c3/cornea/builds/3ab0e19a.md",
+    "c3/lib/Pasted image 20240123154609.png",
+    "c3/lib/Pasted image 20240123152010.png",
+    "c3/lib/Pasted image 20240123145944.png",
+    "c3/meeting/1_1_damien_lutrin.md",
+    "c3/mmef/readme.md",
+    "c3/lib/Pasted image 20240123144440.png",
+    "c3/meeting/1_1_richard_bui.md",
     "c3/org/richard-bui.md",
     "c3/daily/2024-01-22.md",
     "c3/cornea/builds/d087f437.md",
     "c3/lib/bundling.md",
     "c3/meeting/1_1_mayowa_omokanwaye.md",
-    "c3/meeting/1_1_damien_lutrin.md",
     "c3/meeting/1_1_peter_hwang.md",
     "c3/daily/2024-01-19.md",
     "c3/meeting/1_1_joffin_manjaly.md",
     "c3/meeting/1_1_patrick_thomas.md",
     "c3/daily/2024-01-18.md",
-    "c3/meeting/federal_staffing_standup.md",
     "c3/meeting/1_1_sean_summers.md",
-    "c3/links.md",
     "c3/meeting/fed_engineering_teams_leads.md",
     "c3/cornea/buids/0e0f8798.md",
     "c3/meeting/rdim_runtimes.md",
     "c3/daily/2024-01-17.md",
-    "c3/mmef/readme.md",
-    "c3/cornea/cor-121.md",
-    "c3/templates/cornea/template_v8_deploy_artifact.md",
-    "c3/org/joffin-manjaly.md",
-    "c3/daily/2024-01-03.md",
-    "c3/meeting/20231205/se_team_leadership_meeting.md",
-    "c3/daily/2024-01-04.md",
-    "c3/daily/2024-01-12.md",
     "c3/templates/cornea",
     "c3/cornea/buids",
     "c3/cornea/track_tool",
@@ -241,10 +245,6 @@
     "damien-lutrin",
     "mayowa-omokanwaye",
     "patrick-thomas",
-    "c3/lib/Pasted image 20240103152506.png",
-    "Pasted image 20240102113517.png",
-    "Pasted image 20231214115218.png",
-    "c3/cornea/Untitled Diagram.svg",
-    "c3/cornea/20230824_15.37.07_ML_Diagram.png"
+    "c3/lib/Pasted image 20240103152506.png"
   ]
 }

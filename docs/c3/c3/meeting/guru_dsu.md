@@ -1,4 +1,13 @@
 # STANDUP
+
+## 2024-01-24
+
+All release 5 features done and wrapped up. 
+
+graph --> 
+
+sample output --> 
+
 ## 20231101
 
 ---
