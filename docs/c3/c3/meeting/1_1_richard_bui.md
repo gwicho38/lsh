@@ -1,3 +1,11 @@
+
+## 2024-02-02
+
+#todo >> TS --> 
+
+#todo >> TS --> sci, sci-poly
+
+#todo >> pending referral bonuses
 ## 2024-01-23
 
 [[richard-bui]] 

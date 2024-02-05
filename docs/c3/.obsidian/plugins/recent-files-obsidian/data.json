@@ -1,8 +1,68 @@
 {
   "recentFiles": [
     {
+      "basename": "fernando-canales",
+      "path": "c3/interview/fernando-canales.md"
+    },
+    {
+      "basename": "2024-02-01",
+      "path": "c3/daily/2024-02-01.md"
+    },
+    {
+      "basename": "2024-01-31",
+      "path": "c3/daily/2024-01-31.md"
+    },
+    {
+      "basename": "2024-01-30",
+      "path": "c3/daily/2024-01-30.md"
+    },
+    {
       "basename": "federal_staffing_standup",
       "path": "c3/meeting/federal_staffing_standup.md"
+    },
+    {
+      "basename": "temp-cornea-guru-20250129",
+      "path": "c3/ticket/temp-cornea-guru-20250129.md"
+    },
+    {
+      "basename": "readme",
+      "path": "c3/macbook/readme.md"
+    },
+    {
+      "basename": "guruSearchUI8.3.2+release.1.modified",
+      "path": "c3/builds/guruSearchUI8.3.2+release.1.modified.md"
+    },
+    {
+      "basename": "0e0f8798",
+      "path": "c3/cornea/buids/0e0f8798.md"
+    },
+    {
+      "basename": "2024-01-29",
+      "path": "c3/daily/2024-01-29.md"
+    },
+    {
+      "basename": "20601",
+      "path": "lefv/property/20601.md"
+    },
+    {
+      "basename": "2024-01-27",
+      "path": "c3/daily/2024-01-27.md"
+    },
+    {
+      "basename": "unlabeled-20230126",
+      "path": "c3/ticket/unlabeled-20230126.md"
+    },
+    {
+      "basename": "2024-01-26",
+      "path": "c3/daily/2024-01-26.md"
+    },
+    {
+      "basename": "1_1_feneel-patel",
+      "path": "c3/meeting/1_1_feneel-patel.md"
+    },
+    {
+      "basename": "csol",
+      "path": "c3/rizzo/csol.md"
     },
     {
       "basename": "2024-01-25",
@@ -89,10 +149,6 @@
       "path": "c3/meeting/fed_engineering_teams_leads.md"
     },
     {
-      "basename": "0e0f8798",
-      "path": "c3/cornea/buids/0e0f8798.md"
-    },
-    {
       "basename": "rdim_runtimes",
       "path": "c3/meeting/rdim_runtimes.md"
     },
@@ -143,62 +199,6 @@
     {
       "basename": "readme",
       "path": "c3/cornea/track_tool/readme.md"
-    },
-    {
-      "basename": "people",
-      "path": "c3/cornea/people.md"
-    },
-    {
-      "basename": "cor-110",
-      "path": "c3/cornea/cor-110.md"
-    },
-    {
-      "basename": "11142023",
-      "path": "c3/cornea/11142023.md"
-    },
-    {
-      "basename": "Release Test",
-      "path": "c3/cornea/Release Test.md"
-    },
-    {
-      "basename": "2024-01-15",
-      "path": "c3/daily/2024-01-15.md"
-    },
-    {
-      "basename": "1_1_feneel-patel",
-      "path": "c3/meeting/1_1_feneel-patel.md"
-    },
-    {
-      "basename": "README",
-      "path": "c3/rizzo/README.md"
-    },
-    {
-      "basename": "rizzo_standup",
-      "path": "c3/meeting/rizzo_standup.md"
-    },
-    {
-      "basename": "Untitled",
-      "path": "Untitled.md"
-    },
-    {
-      "basename": "2024-01-11",
-      "path": "c3/daily/2024-01-11.md"
-    },
-    {
-      "basename": "2024-01-10",
-      "path": "c3/daily/2024-01-10.md"
-    },
-    {
-      "basename": "2024-01-09",
-      "path": "c3/daily/2024-01-09.md"
-    },
-    {
-      "basename": "brandy-youngson",
-      "path": "c3/contractors/brandy-youngson.md"
-    },
-    {
-      "basename": "Kosei",
-      "path": "c3/contractors/Kosei.md"
     }
   ],
   "omittedPaths": [],

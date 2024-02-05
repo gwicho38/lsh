@@ -1,11 +1,33 @@
 ---
 id: 1_1_peter_hwang
-created_date: 25/10/2023
-updated_date: 25/10/2023
 type: meeting
-tags:
-  - ooo
+updated_date: 25/10/2023
+tags: 
+created_date:
 ---
+## 2024-02-02
+
+## GenAi 
+
+> what is the value of this work?
+>
+	>> take the platform into different customer work. 
+	>> Do you think you could do 50% on DCSA or 50% on something else?
+
+> q: what do you understand about dcsa?
+> 
+>> CoE -- farhan --> us + torch + dcsa 
+>>> torch 
+
+at least one SE. 
+
+what is your backlog like?
+
+to do anything is slow. 
+
+#todo 
+
+
 ## 2024-01-03
 
 ### DCSA 

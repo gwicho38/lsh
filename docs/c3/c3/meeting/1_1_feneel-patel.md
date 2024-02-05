@@ -2,6 +2,29 @@
 
 ## SCHEDULE
 
+#meeting 
+
+@zach is committed to being here once a month. @alejandro has visibility on @cdao vertical developer access. 
+
+@jon-chao leaving. Connection needs to be updated. Each of the projects have their own particular access. 
+
+	> q: is it possible to have a c3 account?
+	
+@c3 --> @fitz or @brian has a list. @fitz and @joe. 
+
+> everything @cdao access. needs access to the @room. 
+
+---
+
+@icm 
+
+@wills came today -- @david-corbet 
+
+> code freeze on @monday 
+
+@react work was good. 
+
+
 
 ---
 ## 2024-01-12

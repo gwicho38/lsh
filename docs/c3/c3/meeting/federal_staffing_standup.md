@@ -4,6 +4,10 @@ created_date: 26/10/2023
 updated_date: 26/10/2023
 type: meeting
 ---
+## 2024-01-30
+
+
+
 ## 2024-01-25
 
 ### SOW 
@@ -20,7 +24,7 @@ I need data on when US citizens and poly cleared engg/DS can be added to Fed Gen
 
 > USMC
 
-> if there are engineers they should be working on @DLA 3.
+> if there are engineers they should be working on @DLA 
 
 @DINOE
 

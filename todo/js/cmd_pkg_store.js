@@ -37,14 +37,14 @@ function debug_pkg_store() {
 
 }
 
-function delteCaches() {
+function deleteCaches() {
   // get default package
-var pkg = Pkg.Store.inst()
-// clear caches
-pkg.clearCaches();
-//clear root package
-// using root package name
-pkg.deleteContent(Pkg.Store.pkgDeclPath("guruSearch"));
+  var pkg = Pkg.Store.inst()
+  // clear caches
+  pkg.clearCaches();
+  //clear root package
+  // using root package name
+  pkg.deleteContent(Pkg.Store.pkgDeclPath("guruSearch"));
 }
 
 // Pkg and Pkg.Store API Key

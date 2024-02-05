@@ -1,4 +1,22 @@
-# 2024-01-19
+
+## 2024-02-02
+
+Dinoe Release
+
+Security+ 
+
+Michael's feedback
+
+	> more community 
+	> office hours
+	> lunch and learn
+	
+Prepare / give lunch and learn Dinoe
+
+New York office having openings
+
+
+## 2024-01-19
 
 @damien 
 

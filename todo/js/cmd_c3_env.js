@@ -41,23 +41,26 @@ Cluster.resumeEnv(Env.forName("<envname>"))
 Cluster.inst().terminateEnv(Env.forName(“<env_name>”), true)
 
 // http:// localhost:8888/dev/gurusearchui/
-Pkg.setDevMode(True)
+Pkg.setDevMode(true)
 // change to dev env
-Js.Runtime.forName('js-ide-vscode-client-node');
+// Js.Runtime.forName('js-ide-vscode-client-node');
 // nvm set node to runtime provided
 
 var npm = NpmLibraryManager.inst();
-npm.ensureRuntimeInstalled('js-webpack_c3');
-npm.ensureRuntimeInstalled('js-webpack_c3');
+npm = NpmLibraryManager.inst();
+npm.installRuntime('js-webpack_c3');
+// npm.ensureRuntimeInstalled('js-webpack_c3');
 
-var npm = NpmLibraryManager.inst()
-npm.runtimesBasePath()
-var npm = NpmLibraryManager.inst()
+// var npm = NpmLibraryManager.inst()
+// npm.runtimesBasePath()
+// var npm = NpmLibraryManager.inst()
 npm.installRuntime('js-ide-vscode-client-node');
 
 var domainName = "localhost";
 var appUrl = AppUrl.builder().id(domainName).env(C3.env().name).app(C3.app().name).build();
 appUrl.upsert();
+
+// END </env_name>
 
 // clear vs code 
 rm -rf extension/out/node_modules/

@@ -1,3 +1,45 @@
+## 2024-
+
+- [x] eca
+- [ ] reimbursement?
+- [ ] security+?
+- [ ] clearance?
+- [ ] RSO team
+	- [ ] anthony
+	- [ ] sean hollen
+	- [ ] eli
+	- [ ] oliver
+	- [ ] daniele 
+	- [ ] kosei
+- [ ] rso?
+- [ ] ** clearance ** 
+	- [ ] 
+
+	> listening --> genai
+	
+--> successfully migrate all tests in advana
+
+--> successfully migrate advana source code to v8
+
+--> deployment --> contribute to airgap preparation
+
+--> type migration list + functional changes
+
+#todo shadow --> shadow
+
+	`v8_migration` --> 
+
+		advana package uses workflows --> trying to understand
+
+	`ticketing`
+
+		file that is broken --> Jasmine test files
+
+	`v8 migrator notes`
+
+		
+		
+
 ## 2024-01-19
 
 > todo
