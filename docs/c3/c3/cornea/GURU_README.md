@@ -3,7 +3,7 @@ tag: c3
 sticker: emoji//1f4d3
 type: readme
 ---
-# GURU REAME
+%%  %%# GURU REAME
 
 ## ENVIRONMENTS
 

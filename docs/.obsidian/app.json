@@ -1,1 +1,6 @@
-{}
+{
+  "trashOption": "local",
+  "alwaysUpdateLinks": true,
+  "showUnsupportedFiles": true,
+  "attachmentFolderPath": "c3/c3/raw"
+}

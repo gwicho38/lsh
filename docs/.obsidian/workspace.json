@@ -13,7 +13,31 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/c3/meeting/1_1_mayowa_omokanwaye.md",
+                "file": "c3/c3/builds/c0c3e72c.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "d715b7514c7855a6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/cornea/_guru.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "bed8840d91ef27ef",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md",
                 "mode": "source",
                 "source": false
               }
@@ -31,7 +55,8 @@
               }
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -84,8 +109,17 @@
               "type": "recent-files",
               "state": {}
             }
+          },
+          {
+            "id": "2525233e32249c5c",
+            "type": "leaf",
+            "state": {
+              "type": "mk-path-view",
+              "state": {}
+            }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
@@ -106,8 +140,8 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/c3/meeting/1_1_mayowa_omokanwaye.md",
-                "collapseAll": false,
+                "file": "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md",
+                "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
                 "showSearch": false,
@@ -123,7 +157,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/c3/meeting/1_1_mayowa_omokanwaye.md",
+                "file": "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -146,7 +180,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/c3/meeting/1_1_mayowa_omokanwaye.md"
+                "file": "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md"
               }
             }
           }
@@ -154,8 +188,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -165,15 +198,34 @@
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "templater-obsidian:Templater": false
+      "templater-obsidian:Templater": false,
+      "homepage:Open homepage": false
     }
   },
-  "active": "0f8de927c9bfbe7d",
+  "active": "bed8840d91ef27ef",
   "lastOpenFiles": [
+    "c3/c3/rizzo/README.md",
+    "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md",
+    "c3/c3/releases/c3ui",
+    "c3/c3/releases",
+    "c3/c3/meeting/1_1_patrick_thomas.md",
+    "c3/c3/org/damien-lutrin.md",
+    "c3/c3/org/feneel-patel.md",
+    "c3/c3/cornea/GURU_README.md",
+    "c3/c3/meeting/elser-technicals.md",
+    "c3/c3/meeting/elser-integration-mvp.md",
+    "c3/c3/ui/bugs.md",
+    "c3/c3/ui",
+    "c3/c3/cornea/_guru.md",
+    "Spaces/Home",
+    "Spaces",
+    "c3/c3/builds/c0c3e72c.md",
+    "c3/c3/cornea/pr/feature-ms-705.md",
+    "c3/c3/meeting/1_1_mayowa_omokanwaye.md",
+    "c3/c3/cornea/pr",
     "c3/c3/meeting/1_1_richard_bui.md",
     "2024-02-02.md",
     "c3/c3/meeting/1_1_peter_hwang.md",
-    "c3/c3/meeting/1_1_damien_lutrin.md",
-    "c3/c3/meeting/1_1_patrick_thomas.md"
+    "c3/c3/meeting/1_1_damien_lutrin.md"
   ]
 }

@@ -2,6 +2,37 @@
 
 - [x] #todo tell feneel assignment SOCOM for 2-3 months.  [link](https://todoist.com/showTask?id=7476035010) #todoist %%[todoist_id:: 7476035010]%%
 - [x] SOCOM CoE -->  [link](https://todoist.com/showTask?id=7476035061) #todoist %%[todoist_id:: 7476035061]%%
+
+- [ ] #firing 
+- [ ] #competency-matrix
+	- [ ] data model
+	- [ ] leadership
+	- [ ] PSR
+	- [ ] Cassandra & Postgres
+	- [ ] kubernetes
+	- [ ] opensearch
+	- [ ] grafana
+
+## 20230208
+
+@Feneel --> one of the contractors isn't progressing fast enough.
+
+@Paradyme --> 
+
+@Jeff --> handling --> 
+
+@Brian --> 
+
+---
+
+@alejandro --> conversation --> helping out with SOCOM --> incorporate GenAi. Find data science value. Currently @jeff is the lead --> comfort level. Not really. 
+
+When @Zoe left the company -- and a lot more meetings got added to my calendar. What helped is that I had context before I became lead. I've had 1.5 months of experience before @ICM. 
+
+Find @SOCOM boring -- use case -- @SOCOM is biggest app in Commander's dashboard --> want to start working on base commander dashboard. Prefer customer apps over base applications. Thinking about the customer, pain points, and create new solutions. 
+
+As short term. 
+
 ## 20231003 
 
 01:15:48

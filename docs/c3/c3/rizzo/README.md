@@ -1,8 +1,21 @@
+## TODO
+
+#competency-matrix 
+- [ ] v8
+- [ ] platform architecture
+- [ ] kubernetes
+- [ ] Opensearch
+	- [ ] Grafana 
+- [ ] genAi
+- [ ] STIG Checks
+- [ ] Controls Documentation
+- [ ] DoD Common Access Card (CAC) (0 or 3) 
+- [ ] COMPTIA Security Plus Training (0 or 3)
+
+
 ## OVERVIEW
 
-```
-
-```
+https://c3e.sharepoint.com/:x:/s/CustomerSolutions/EVjy3TRhVfJLjLuY6vWPpg4BDPclWKjcVK3_nae6ohy_ew?e=7tZezC
 
 ## LINKS
 

@@ -1,6 +1,54 @@
 {
   "recentFiles": [
     {
+      "basename": "8.3.2support.8.3.2.1",
+      "path": "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md"
+    },
+    {
+      "basename": "README",
+      "path": "c3/c3/rizzo/README.md"
+    },
+    {
+      "basename": "1_1_patrick_thomas",
+      "path": "c3/c3/meeting/1_1_patrick_thomas.md"
+    },
+    {
+      "basename": "damien-lutrin",
+      "path": "c3/c3/org/damien-lutrin.md"
+    },
+    {
+      "basename": "feneel-patel",
+      "path": "c3/c3/org/feneel-patel.md"
+    },
+    {
+      "basename": "GURU_README",
+      "path": "c3/c3/cornea/GURU_README.md"
+    },
+    {
+      "basename": "elser-technicals",
+      "path": "c3/c3/meeting/elser-technicals.md"
+    },
+    {
+      "basename": "elser-integration-mvp",
+      "path": "c3/c3/meeting/elser-integration-mvp.md"
+    },
+    {
+      "basename": "bugs",
+      "path": "c3/c3/ui/bugs.md"
+    },
+    {
+      "basename": "_guru",
+      "path": "c3/c3/cornea/_guru.md"
+    },
+    {
+      "basename": "c0c3e72c",
+      "path": "c3/c3/builds/c0c3e72c.md"
+    },
+    {
+      "basename": "feature-ms-705",
+      "path": "c3/c3/cornea/pr/feature-ms-705.md"
+    },
+    {
       "basename": "1_1_mayowa_omokanwaye",
       "path": "c3/c3/meeting/1_1_mayowa_omokanwaye.md"
     },
@@ -19,10 +67,6 @@
     {
       "basename": "1_1_damien_lutrin",
       "path": "c3/c3/meeting/1_1_damien_lutrin.md"
-    },
-    {
-      "basename": "1_1_patrick_thomas",
-      "path": "c3/c3/meeting/1_1_patrick_thomas.md"
     }
   ],
   "omittedPaths": [],
