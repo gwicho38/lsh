@@ -194,6 +194,39 @@
                 "const getMetadataPath = (path) => {\n  console.log(\"getMetadataPath\");\n  return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);\n};\n\nconst getPkgId = async () => {\n  console.log(\"getPkgId\");\n  if (pkgId) {\n    return pkgId;\n  }\n\n  await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {\n    pkgId = body;\n  });\n\n  return pkgId;\n}\n\nconst writeContent = async (path) => {\n  console.log(\"writeContent\");\n  const pkgId = await getPkgId();\n  const metadataPath = getMetadataPath(path);\n  const content = FILE.encodeContent(path);\n  if (await content === FILE.NO_CHANGE_TO_FILE) {\n    return;\n  }\n  return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {\n    type: 'ContentValue',\n    content,\n  }], () => console.log(\"Success\"));\n}\n\nconst deleteContent = async (path) => {\n  const pkgId = await getPkgId();\n  const metadataPath = getMetadataPath(path);\n  return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log(\"deleted!\"));\n}\n"
             ],
             "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "const chokidar = require('chokidar');\nconst path = require('path');\nconst CONFIG = require('/Users/lefv/repos/lsh/util/c3sync/config');\nconst handleEvent = require('/Users/lefv/repos/lsh/util/c3sync/src/handleEvent');\nconst { setPkgId, getPkgId } = require('/Users/lefv/repos/lsh/util/c3sync/src/shared');\nconst c3Post = require('/Users/lefv/repos/lsh/util/c3sync/src/api');"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "let status = (async () => {\n    try {\n      const typeName = 'Pkg'; // Replace with your type name\n      const method = 'inst'; // Replace with your method name\n      const data = {}; // Your data object\n  \n      const responseBody = await c3Post(typeName, method, data);\n      // const responseString = JSON.stringify(responseBody); // Convert the response body to a string\n  \n      // console.log(\"response: \", responseBody.body); // Use the response string as needed\n      return responseBody;\n    } catch (error) {\n      return error;\n      console.error('Error making POST request:', error);\n    }\n  })();"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "[Function: c3Post]",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "javascript",
+            "source": [
+                "console.log(status);"
+            ],
+            "outputs": []
         }
     ]
 }

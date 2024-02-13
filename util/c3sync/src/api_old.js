@@ -9,7 +9,7 @@
 const request = require('request');
 const AsyncLock = require('async-lock');
 
-const CONFIG = require('./../config');
+const CONFIG = require('../config');
 const FILE = require('./file');
 
 const semaphore = new AsyncLock();

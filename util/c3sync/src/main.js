@@ -1,37 +1,35 @@
-/*
- * Copyright 2009-2022 C3 (www.c3.ai). All Rights Reserved.
- * This material, including without limitation any software, is the confidential trade secret and proprietary
- * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
- * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
- * This material may be covered by one or more patents or pending patent applications.
- */
+import readline from 'readline';
+import { c3Post } from './api.js'; // Adjust the path to where your c3Post function is defined
 
-const chokidar = require('chokidar');
-const path = require('path');
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
 
-const CONFIG = require('./../config');
-const handleEvent = require('./handleEvent');
-const { getPkgId } = require('./shared');
-const c3Post = require('./api');
-const { postToRootPkg } = require('./workflows/workflow_crud_pkg');
-
-const WATCHDIRS = CONFIG.PACKAGES_TO_SYNC.map(package => path.join(CONFIG.PATH_TO_PACKAGE_REPO, package));
-
-let cachedId = getPkgId();
-if (cachedId === "EMPTY") {
-  postToRootPkg();
+function askQuestion(query) {
+  return new Promise(resolve => rl.question(query, resolve));
 }
 
-chokidar.watch(WATCHDIRS, {
-  ignoreInitial: true,
-  ignored: (filePath) => {
-    return filePath.includes('gen/cache')
-      || filePath.includes('.c3doc')
-      || filePath.includes('.jpg')
-      || filePath.includes('.vscode/')
-      || filePath.includes('.png');
-  },
-}).on('all', handleEvent);
-//
-// console.log('View live Type updates by navigating to ' + CONFIG.APPURL + '/static/console');
-// console.log('Listening to file updates at: \n' + WATCHDIRS.join('\n'));
+async function main() {
+  while (true) {
+    const typeName = await askQuestion('Enter typeName (or type exit to quit): ');
+    if (typeName === 'exit') break;
+
+    const method = await askQuestion('Enter method: ');
+    if (method === 'exit') break;
+
+    // Assuming a fixed or empty data object for simplicity
+    const data = {}; // Modify or extend this as needed based on your API's requirements
+
+    try {
+      const response = await c3Post(typeName, method, data);
+      console.log('Response:', response.data); // Adjust this according to the actual structure of your API response
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }
+
+  rl.close();
+}
+
+main();

@@ -1,8 +1,8 @@
 // shared.js
 let pkgId = "EMPTY";
 
-module.exports = {
-  getPkgId: () => pkgId,
-  setPkgId: (value) => { pkgId = value; },
-};
+
+export const getPkgId = () => pkgId;
+export const setPkgId = (value) => { pkgId = value; };
+
 

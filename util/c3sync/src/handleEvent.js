@@ -6,19 +6,21 @@
  * This material may be covered by one or more patents or pending patent applications.
  */
 
-const API = require('./api');
+// const API = require('./api');
 
-const handleEvent = (event, path) => {
+export const handleEvent = (event, path) => {
   console.log(event, path);
 
   switch (event) {
     case 'add':
     case 'change': {
-      API.writeContent(path);
+      // API.writeContent(path);
+      console.log('change');
       break;
     }
     case 'unlink': {
-      API.deleteContent(path);
+      // API.deleteContent(path);
+      console.log('unlink');
       break;
     }
     case 'addDir':
@@ -27,5 +29,3 @@ const handleEvent = (event, path) => {
       break;
   }
 };
-
-module.exports = handleEvent;
