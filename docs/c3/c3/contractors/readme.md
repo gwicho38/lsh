@@ -6,4 +6,3 @@ If the user needs to install Teams on the VM they will need to login to Teams vi
 
 These are my settings:
 
-![[Pasted image 20230116113832.png]]

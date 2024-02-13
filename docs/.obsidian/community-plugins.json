@@ -17,5 +17,11 @@
   "multi-column-markdown",
   "obsidian-excel-to-markdown-table",
   "quick-explorer",
-  "drawio-obsidian"
+  "drawio-obsidian",
+  "obsidian-reveal-active-file",
+  "obsidian-folder-index",
+  "obisidian-note-linker",
+  "obsidian-regex-pipeline",
+  "obsidian-task-marker",
+  "obsidian-simple-mention"
 ]

@@ -1,0 +1,199 @@
+{
+    "cells": [
+        {
+            "language": "markdown",
+            "source": [
+                "Though node.js notebooks supports `shellscript` and `powershell`, they both end up getting executed using the same terminal [node-pty](https://github.com/microsoft/node-pty).\n\nThe two languages are provided for convenience (better intellisense and the like if one prefers to use `powershell` over `bash` or vice versa)."
+            ],
+            "outputs": []
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "## You can run shell scripts\nls"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "app.jsbook",
+                                "noderepl.nnb",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "## You can nwo install npm packages directly from a notebook.\n## These scripts run a little slower due to the fact terminals take a while to startup.\nnpm install mocha"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stderr",
+                            "value": [
+                                "(node:69511) Warning: Setting the NODE_TLS_REJECT_UNAUTHORIZED environment variable to '0' makes TLS connections and HTTPS requests insecure by disabling certificate verification.",
+                                "(Use `node --trace-warnings ...` to show where the warning was created)",
+                                ""
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stdout",
+                            "value": [
+                                "",
+                                "added 34 packages, and audited 1394 packages in 4s",
+                                "",
+                                "91 packages are looking for funding",
+                                "  run `npm fund` for details",
+                                "",
+                                "61 vulnerabilities (1 low, 22 moderate, 32 high, 6 critical)",
+                                "",
+                                "To address issues that do not require attention, run:",
+                                "  npm audit fix",
+                                "",
+                                "To address all issues (including breaking changes), run:",
+                                "  npm audit fix --force",
+                                "",
+                                "Run `npm audit` for details.",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "/*\n * Copyright 2009-2022 C3 (www.c3.ai). All Rights Reserved.\n * This material, including without limitation any software, is the confidential trade secret and proprietary\n * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is\n * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.\n * This material may be covered by one or more patents or pending patent applications.\n */\n\nimport request from 'request';\nimport AsyncLock from 'async-lock';\n\n"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stderr",
+                            "value": [
+                                "/bin/sh: /Applications: is a directory",
+                                "/bin/sh: -c: line 1: syntax error near unexpected token `('",
+                                "/bin/sh: -c: line 1: ` * Copyright 2009-2022 C3 (www.c3.ai). All Rights Reserved.'",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "# import { CONFIG}  from './config.js';\n# import { FILE } from './file.js';\n\nconst semaphore = new AsyncLock();\n\nlet pkgId;\n"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stderr",
+                            "value": [
+                                "/bin/sh: -c: line 3: syntax error near unexpected token `('",
+                                "/bin/sh: -c: line 3: `const semaphore = new AsyncLock();'",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "\"\"\"\n  // Prevent parallel writes/deletions\n  return semaphore.acquire('request', (done) => {\n    return request.post(url, {\n      method: 'POST',\n      body: data,\n      json: true,\n      headers: {\n        Authorization: CONFIG.AUTH_TOKEN,\n      },\n    }, (err, response, body) => {\n      onSuccess?.(body);\n      done();\n    });\n  });\n\"\"\""
+            ],
+            "outputs": []
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                ""
+            ],
+            "outputs": []
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "export const makePOSTRequest = async (url, auth, typeName, method, data, onSuccess) => {\n  console.log(\"makePostRequest\");\n  const c3url = url + '/api/8' + '/' + typeName + '/' + method;\n  console.log(c3url);\n\n\n\n};\n"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stderr",
+                            "value": [
+                                "/bin/sh: -c: line 0: syntax error near unexpected token `('",
+                                "/bin/sh: -c: line 0: `export const makePOSTRequest = async (url, typeName, method, data, onSuccess) => {'",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "# test\nmakePOSTRequest(\"test\", \"test\", \"test\", \"test\", \"test\")"
+            ],
+            "outputs": [
+                {
+                    "items": [
+                        {
+                            "mime": "application/vnd.code.notebook.stderr",
+                            "value": [
+                                "/bin/sh: -c: line 0: syntax error near unexpected token `\"test\",'",
+                                "/bin/sh: -c: line 0: `makePOSTRequest(\"test\", \"test\", \"test\", \"test\", \"test\")'",
+                                ""
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "  await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {\n    pkgId = body;\n  });"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "\nconst getMetadataPath = (path) => {\n  console.log(\"getMetadataPath\");\n  return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);\n};\n\nconst getPkgId = async () => {\n  console.log(\"getPkgId\");\n  if (pkgId) {\n    return pkgId;\n  }\n\n  await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {\n    pkgId = body;\n  });\n\n  return pkgId;\n}\n\nconst writeContent = async (path) => {\n  console.log(\"writeContent\");\n  const pkgId = await getPkgId();\n  const metadataPath = getMetadataPath(path);\n  const content = FILE.encodeContent(path);\n  if (await content === FILE.NO_CHANGE_TO_FILE) {\n    return;\n  }\n  return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {\n    type: 'ContentValue',\n    content,\n  }], () => console.log(\"Success\"));\n}\n\nconst deleteContent = async (path) => {\n  const pkgId = await getPkgId();\n  const metadataPath = getMetadataPath(path);\n  return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log(\"deleted!\"));\n}\n"
+            ],
+            "outputs": []
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                ""
+            ],
+            "outputs": []
+        },
+        {
+            "language": "shellscript",
+            "source": [
+                "const getMetadataPath = (path) => {\n  console.log(\"getMetadataPath\");\n  return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);\n};\n\nconst getPkgId = async () => {\n  console.log(\"getPkgId\");\n  if (pkgId) {\n    return pkgId;\n  }\n\n  await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {\n    pkgId = body;\n  });\n\n  return pkgId;\n}\n\nconst writeContent = async (path) => {\n  console.log(\"writeContent\");\n  const pkgId = await getPkgId();\n  const metadataPath = getMetadataPath(path);\n  const content = FILE.encodeContent(path);\n  if (await content === FILE.NO_CHANGE_TO_FILE) {\n    return;\n  }\n  return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {\n    type: 'ContentValue',\n    content,\n  }], () => console.log(\"Success\"));\n}\n\nconst deleteContent = async (path) => {\n  const pkgId = await getPkgId();\n  const metadataPath = getMetadataPath(path);\n  return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log(\"deleted!\"));\n}\n"
+            ],
+            "outputs": []
+        }
+    ]
+}

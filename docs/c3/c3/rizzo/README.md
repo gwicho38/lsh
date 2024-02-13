@@ -12,11 +12,13 @@
 - [ ] DoD Common Access Card (CAC) (0 or 3) 
 - [ ] COMPTIA Security Plus Training (0 or 3)
 
-
 ## OVERVIEW
 
 https://c3e.sharepoint.com/:x:/s/CustomerSolutions/EVjy3TRhVfJLjLuY6vWPpg4BDPclWKjcVK3_nae6ohy_ew?e=7tZezC
 
+> global org entrypoint
+
+https://c3e.sharepoint.com/sites/CustomerSolutions/Shared%20Documents/Forms/AllItems.aspx?FolderCTID=0x0120000D1FF06BE72AFA4A8E6F7CB3F60901EE&viewid=f3720265%2Dc955%2D479c%2D8d77%2D72b550202e0d
 ## LINKS
 
 [Customer Account Mapping - AUG 9.xlsx](https://c3e.sharepoint.com/:x:/s/CustomerSolutions/EXB5xYOfmSVPrOkIv0I--kwBsxXfl5PNlDklstoy0e05uA?e=3gXgMl)

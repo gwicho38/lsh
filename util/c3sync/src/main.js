@@ -13,28 +13,14 @@ const CONFIG = require('./../config');
 const handleEvent = require('./handleEvent');
 const { getPkgId } = require('./shared');
 const c3Post = require('./api');
+const { postToRootPkg } = require('./workflows/workflow_crud_pkg');
 
 const WATCHDIRS = CONFIG.PACKAGES_TO_SYNC.map(package => path.join(CONFIG.PATH_TO_PACKAGE_REPO, package));
 
-console.log(getPkgId());
-
-// Usage
-const rootPkg = (async () => {
-  try {
-    const typeName = 'Pkg'; // Replace with your type name
-    const method = 'inst'; // Replace with your method name
-    const data = {}; // Your data object
-
-    const responseBody = await c3Post(typeName, method, data);
-    // const responseString = JSON.stringify(responseBody); // Convert the response body to a string
-    console.log("response: ", responseBody); // Use the response string as needed
-
-  } catch (error) {
-    console.error('Error making POST request:', error);
-  }
-})();
-
-console.log(rootPkg);
+let cachedId = getPkgId();
+if (cachedId === "EMPTY") {
+  postToRootPkg();
+}
 
 chokidar.watch(WATCHDIRS, {
   ignoreInitial: true,
@@ -42,6 +28,7 @@ chokidar.watch(WATCHDIRS, {
     return filePath.includes('gen/cache')
       || filePath.includes('.c3doc')
       || filePath.includes('.jpg')
+      || filePath.includes('.vscode/')
       || filePath.includes('.png');
   },
 }).on('all', handleEvent);

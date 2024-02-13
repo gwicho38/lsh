@@ -39,6 +39,7 @@
     "http-basic": "file:http-basic.tgz",
     "inquirer": "^9.2.12",
     "jest": "^29.7.0",
+    "mocha": "^10.3.0",
     "ncc": "^0.3.6",
     "nexe": "^4.0.0-rc.2",
     "nodemon": "^3.0.1",
