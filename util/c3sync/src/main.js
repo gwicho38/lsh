@@ -9,10 +9,32 @@
 const chokidar = require('chokidar');
 const path = require('path');
 
-const CONFIG = require('./config');
+const CONFIG = require('./../config');
 const handleEvent = require('./handleEvent');
+const { getPkgId } = require('./shared');
+const c3Post = require('./api');
 
 const WATCHDIRS = CONFIG.PACKAGES_TO_SYNC.map(package => path.join(CONFIG.PATH_TO_PACKAGE_REPO, package));
+
+console.log(getPkgId());
+
+// Usage
+const rootPkg = (async () => {
+  try {
+    const typeName = 'Pkg'; // Replace with your type name
+    const method = 'inst'; // Replace with your method name
+    const data = {}; // Your data object
+
+    const responseBody = await c3Post(typeName, method, data);
+    // const responseString = JSON.stringify(responseBody); // Convert the response body to a string
+    console.log("response: ", responseBody); // Use the response string as needed
+
+  } catch (error) {
+    console.error('Error making POST request:', error);
+  }
+})();
+
+console.log(rootPkg);
 
 chokidar.watch(WATCHDIRS, {
   ignoreInitial: true,
@@ -23,6 +45,6 @@ chokidar.watch(WATCHDIRS, {
       || filePath.includes('.png');
   },
 }).on('all', handleEvent);
-
-console.log('View live Type updates by navigating to ' + CONFIG.APPURL + '/static/console');
-console.log('Listening to file updates at: \n' + WATCHDIRS.join('\n'));
+//
+// console.log('View live Type updates by navigating to ' + CONFIG.APPURL + '/static/console');
+// console.log('Listening to file updates at: \n' + WATCHDIRS.join('\n'));
