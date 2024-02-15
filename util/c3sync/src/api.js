@@ -3,6 +3,7 @@ import axios from 'axios';
 // Import CONFIG with ES Module syntax, assuming config.js has been updated to export a CONFIG object
 import { CONFIG } from './../config.js'; // Adjust the relative path as necessary
 import crypto from 'crypto';
+import os from 'os';
 
 /**
  * Makes a POST request to a specified endpoint using Axios.
@@ -58,52 +59,57 @@ export async function c3Post(typeName, method, data) {
  * @param user The username of the user to authenticate
  * @param pvtKey The private key to use
  */
-export const createGlobalAuthToken = function (user, pvtKey) {
+export const createGlobalAuthToken = function () {
   // if (!pvtKey)
   //   throw new Error("Cannot generate c3key auth token without private key");
 
   console.log("Inside of createGlobalAuthToken");
 
-  pvtKey = `-----BEGIN OPENSSH PRIVATE KEY-----
-  b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAABlwAAAAdzc2gtcn
-  NhAAAAAwEAAQAAAYEAvkeTCQNmv5XO1nKUTrr95cK8Cn96lO1Va7VEVLZUxOlXea0oINyA
-  F50cdLiXsbAhIqX6HdSaVcrMdy0z8sJfHQ2LQrqsI1hpusLIxIvkc7jrkO1aABc7In4UfZ
-  gKQowfPzCJZD2sdlriQyOi3HqJl8JU/+cVs5dFMMeih0TxG5BXWPLEAbNgLYhOZo51/HEf
-  DISSTcu0DIBt+CVbPWyVEU+RdErCdEs/V/P5P0WNyWtMmi27GZeS+UIV9qH2XDN6tCN1xR
-  zBGmm+XO3b+kequ5RcxGs1YVjiPdVkTpoPlzRhl0Qw2+0vAIQ0vC0AaXSGYAZ+TJf9UmC3
-  82exfFpRoI7yzbPULCsyrh7BMwG0pfcoQpLWmM4Zawp4Jl5851OpmvUPjr9sUQeMqTZz6B
-  AJ7bmJiwnvHHDjVjSaECWjvYbjahFpjbnWy/gF6kL8PgVBWJ6eDVQGwa4ltKDsTdwhsQPW
-  Kb44Y1zugX7S4jVwREwNw8I9e+G5x8FwA+KxDHk3AAAFmPwad5T8GneUAAAAB3NzaC1yc2
-  EAAAGBAL5HkwkDZr+VztZylE66/eXCvAp/epTtVWu1RFS2VMTpV3mtKCDcgBedHHS4l7Gw
-  ISKl+h3UmlXKzHctM/LCXx0Ni0K6rCNYabrCyMSL5HO465DtWgAXOyJ+FH2YCkKMHz8wiW
-  Q9rHZa4kMjotx6iZfCVP/nFbOXRTDHoodE8RuQV1jyxAGzYC2ITmaOdfxxHwyEkk3LtAyA
-  bfglWz1slRFPkXRKwnRLP1fz+T9FjclrTJotuxmXkvlCFfah9lwzerQjdcUcwRppvlzt2/
-  pHqruUXMRrNWFY4j3VZE6aD5c0YZdEMNvtLwCENLwtAGl0hmAGfkyX/VJgt/NnsXxaUaCO
-  8s2z1CwrMq4ewTMBtKX3KEKS1pjOGWsKeCZefOdTqZr1D46/bFEHjKk2c+gQCe25iYsJ7x
-  xw41Y0mhAlo72G42oRaY251sv4BepC/D4FQVieng1UBsGuJbSg7E3cIbED1im+OGNc7oF+
-  0uI1cERMDcPCPXvhucfBcAPisQx5NwAAAAMBAAEAAAGAHNYkBl2pmKdPbVh3+WaFS+izLr
-  QbE67UHzqdXGk1d5IVW69OQYypLOr2gQnok1kp7GJTAWpS6WWOjxEeqk+isnh2/mnj5Idl
-  npQecQryWEdSC+islw7uO0/4MwBzrZomsiDc8YAXPuiPGbWw3NEFQSaGUzHmLA1kwvu+Od
-  nM4GyDkEtaQRe6H6xklU5JuzQ5jGAa/Ac/BhYAlHa02R43iSQR2xnpVk6BDwc+YsRbtIa6
-  WTNNA5fhAj1trq7k8xwp3TDIklh70nPO+o46pbumI+HqwFWq3FIPHofAlLW6D6DdqUQOTn
-  1oiYYkqi7S04GhKYhutyncay9gNpsWeTdwlpk8qoJuNBEU4pPbLAyHiRBdX2nDC2aHUROJ
-  hKbaQ6C15cBlFeu1NSTMX7pW5ucCc4KYZf3QxBB3cDPu6NIxStjtwg9/t6ZnByuVE/pv2b
-  Qqn0yxfRIX0KOyHc760kDYfxY3LW1xVuKYokBR6J6rNQ8uBOmLE40oPei5JwfAJXIhAAAA
-  wQCnsRNMyOsAcvaxlN+nhB+EuZAk9pakc1ccJMTWO3CslMXUhD4bhKoJwsDFLO98JgW5ZB
-  btt8d08l4ppUo0+Vqn4VNG0ST9Nt8BKWOnEstlky3gBmvtAeVYf8An6dcZal5nqqW0ctXy
-  qSuCRxzay7jwAHbqEwumgKdhXxAjpQZ1sn9GQSk2j9Y8Mcik1YBIiFxgKToxqI2ZKOYFOk
-  lECuyNxEClCtIEDkY4MUszQ9wPkR1sM84yTOQCuaSiHc2ziUEAAADBAPFg3RnLi6cY73YO
-  yCgCCWoiIyPo8ux4JRrP/ogvwmnhezXyDWj+xv53gUiUQl9XwD69QjzFY5pzD3fZwWt98B
-  PPNpmEQDRjDsf7XTaRC83/j/gZDeJ6B+/9eokZxumD6zH0Jz1vTqTWHmQP5MZdC4SZBQ9D
-  3XGzVnDlXKJXXO/vbx95dTmjJ5azYKUpGcaIrFAtzuLuE0OjtoY6PHQCNGfZ+taPuQrJ8W
-  W4ggjfE8Z2BkdE3ie0yblLou8TpFI+kwAAAMEAyc5N8YB5798NAsfZQsyXveg1PRvMQGAv
-  qrswDCe613fhRfRuPBa+byohqIAto08R7lAiz/z8W/esqKCsoUGUbd/r8jl1E4jPxvuMZ3
-  d5lQ6gcQ7OCyPZnCz8/aiKazpqApCpDpYKeVADPNUlAjQ/Zwm8CjPM9AN3Oi2MfO7nt5Lm
-  90FoIgeqbMW4xHGGZNMtvUwwI2XtpfQX60EJ7fbuNydtU0TMj2z08RD09jDWQsz659RJcX
-  NCC8ExMuQagx1NAAAAHGxlZnZAbGVmdnMtTWFjQm9vay1Qcm8ubG9jYWwBAgMEBQY=
-  -----END OPENSSH PRIVATE KEY-----`;
+  function generateKeyPair() {
+    return crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048, // bits - standard for RSA keys
+      publicKeyEncoding: {
+        type: 'spki', // recommended to be 'spki' by the Node.js docs
+        format: 'pem',
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8', // recommended to be 'pkcs8' by the Node.js docs
+        format: 'pem',
+      },
+    });
+  }
+  
+  function signData(privateKey, data) {
+    const signer = crypto.createSign('SHA512');
+    signer.update(data);
+    signer.end();
+    const signature = signer.sign(privateKey, 'base64');
+    return signature;
+  }
 
-  pvtKey = btoa(pvtKey);
+  function getUserId() {
+    try {
+      const userInfo = os.userInfo();
+    
+      console.log('Current User Information:');
+      console.log(`- Username: ${userInfo.username}`);
+      console.log(`- Home Directory: ${userInfo.homedir}`);
+      if (process.platform !== 'win32') { // UID and GID are not available on Windows
+        console.log(`- UID: ${userInfo.uid}`);
+        console.log(`- GID: ${userInfo.gid}`);
+        return userInfo.uid;
+      }
+    } catch (error) {
+      console.error('Failed to get user information:', error);
+      return "";
+    }
+  }
+
+  const userId = getUserId();
+
+  const pvtKey = generateKeyPair()['privateKey'];
+  // const data = "Data to sign with RSA-SHA512";
+  // const signature = signData(privateKey, data);
   
   const generateC3KeyAuthToken = function () {
     // WARNING: The following logic is mostly copied from boot.js
@@ -111,9 +117,11 @@ export const createGlobalAuthToken = function (user, pvtKey) {
     const signatureText = Date.now().toString();
     const signer = crypto.createSign(signAlgo);
     signer.update(signatureText);
+    console.log(pvtKey);
+    process.exit(0);
     const signature = signer.sign(pvtKey, "base64");
     const tokenString =
-      user +
+      userId +
       ":" +
       Buffer.from(signatureText).toString("base64") +
       ":" +
