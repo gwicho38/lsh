@@ -1,6 +1,6 @@
 import { program } from 'commander';
 import readline from 'readline';
-import { c3Post } from './api.js'; // Adjust the path as necessary
+import { c3Post, createGlobalAuthToken } from './api.js'; // Adjust the path as necessary
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -16,12 +16,26 @@ program
   .description('CLI to interact with c3Post API')
   .version('1.0.0');
 
-program.command('start')
+program.command('shell')
   .description('Start the interactive shell')
   .action(() => {
     console.log('Interactive shell started. Type "exit" to quit.');
     interactiveShell();
   });
+
+program.command('sync')
+.description('Sync files listed in config directory')
+.action(() => {
+  console.log('Syncing all files');
+  interactiveShell();
+});
+
+program.command('auth')
+.description('Authenticate to C3 server with persistent auth token')
+.action(() => {
+  console.log('Syncing all files');
+  createGlobalAuthToken();
+});
 
 async function interactiveShell() {
   while (true) {
