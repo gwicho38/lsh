@@ -1,10 +1,11 @@
-// Import axios with ES Module syntax
+// external depedencies
 import axios from 'axios';
-// Import CONFIG with ES Module syntax, assuming config.js has been updated to export a CONFIG object
-import { CONFIG } from './../config.js'; // Adjust the relative path as necessary
 import crypto from 'crypto';
 import os from 'os';
 
+// local dependencies
+import { CONFIG } from './../config.js'; // Adjust the relative path as necessary
+import { getC3Key, setC3Key } from './shared.js';
 /**
  * Makes a POST request to a specified endpoint using Axios.
  * 
@@ -12,9 +13,27 @@ import os from 'os';
  * @param {string} method The method name for the request.
  * @param {Object} data The payload for the POST request.
  * @returns {Promise} The promise object representing the result of the HTTP request.
+ * 
+ * @summary     
+ * var postOptions = {
+      hostname: opts.hostname,
+      port: opts.port,
+      agent: opts.agent,
+      path: path,
+      method: 'POST',
+      headers: {
+        "Content-type": 'application/json',
+        "Authorization": config.authToken,
+        "Content-Length": data.length,
+        "Connection": 'keep-alive',
+        "Accept": 'application/json'
+      }
+    };
+ * 
  */
 export async function c3Post(typeName, method, data) {
   const url = `${CONFIG.APPURL}/api/8/${typeName}/${method}`;
+  const cachedToken = getC3Key() != "EMPTY" ? getC3Key() : getC3Key(setC3Key(createGlobalAuthToken()));
 
   try {
     const response = await axios.post(url, data, {
@@ -78,7 +97,7 @@ export const createGlobalAuthToken = function () {
       },
     });
   }
-  
+
   function signData(privateKey, data) {
     const signer = crypto.createSign('SHA512');
     signer.update(data);
@@ -90,13 +109,13 @@ export const createGlobalAuthToken = function () {
   function getUserId() {
     try {
       const userInfo = os.userInfo();
-    
+
       console.log('Current User Information:');
       console.log(`- Username: ${userInfo.username}`);
       console.log(`- Home Directory: ${userInfo.homedir}`);
       if (process.platform !== 'win32') { // UID and GID are not available on Windows
-        console.log(`- UID: ${userInfo.uid}`);
-        console.log(`- GID: ${userInfo.gid}`);
+        // console.log(`- UID: ${userInfo.uid}`);
+        // console.log(`- GID: ${userInfo.gid}`);
         return userInfo.uid;
       }
     } catch (error) {
@@ -110,15 +129,15 @@ export const createGlobalAuthToken = function () {
   const pvtKey = generateKeyPair()['privateKey'];
   // const data = "Data to sign with RSA-SHA512";
   // const signature = signData(privateKey, data);
-  
+
   const generateC3KeyAuthToken = function () {
     // WARNING: The following logic is mostly copied from boot.js
     const signAlgo = "RSA-SHA512";
     const signatureText = Date.now().toString();
     const signer = crypto.createSign(signAlgo);
     signer.update(signatureText);
-    console.log(pvtKey);
-    process.exit(0);
+    // console.log(pvtKey);
+    // process.exit(0);
     const signature = signer.sign(pvtKey, "base64");
     const tokenString =
       userId +
@@ -127,10 +146,30 @@ export const createGlobalAuthToken = function () {
       ":" +
       signature;
     const authToken = "c3key " + Buffer.from(tokenString).toString("base64");
-
+    console.log(authToken);
+    process.exit(0);
     return authToken;
   };
 
   // Publish our generator to the global scope as the type system is expecting it.
   return generateC3KeyAuthToken();
+};
+
+/**
+ * Convenience function for generating c3server URLs
+ *
+ * Examples:
+ *
+ *   pathFor('Tenant.deploy', 'c3','c3') ->
+ *      http://SERVER/api/1/c3/c3/Tenant?action=deploy
+ *
+ */
+export const c3ApiPath = function (typeAction, tenant, tag) {
+  var s = typeAction.split('.');
+  var c3type = s[0];
+  var action = s[1];
+  var ttg = tenant != null ? tenant + '/' + tag + '/' : ''
+  var path = '/api/1/' + ttg + c3type + '?action=' + action
+  log.verbose("PATH: " + path);
+  return path;
 };

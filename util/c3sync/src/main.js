@@ -1,6 +1,9 @@
 import { program } from 'commander';
 import readline from 'readline';
+
+// local dependencies
 import { c3Post, createGlobalAuthToken } from './api.js'; // Adjust the path as necessary
+import { getC3Key, setC3Key } from './shared.js';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -34,6 +37,7 @@ program.command('auth')
 .description('Authenticate to C3 server with persistent auth token')
 .action(() => {
   console.log('Syncing all files');
+  console.log(getC3Key() != "EMPTY" ? getC3Key() : getC3Key(setC3Key(createGlobalAuthToken())));
   createGlobalAuthToken();
 });
 
