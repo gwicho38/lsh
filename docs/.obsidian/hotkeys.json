@@ -86,5 +86,17 @@
       ],
       "key": "6"
     }
-  ]
+  ],
+  "insert-current-date": [
+    {
+      "modifiers": [
+        "Alt",
+        "Ctrl",
+        "Mod",
+        "Shift"
+      ],
+      "key": "D"
+    }
+  ],
+  "make-md:mk-blink": []
 }

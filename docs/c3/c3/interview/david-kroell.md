@@ -1,13 +1,15 @@
 ---
 id: C3-Screening-Interview
-created_date: <% tp.file.creation_date('DD/MM/YYYY') %>
-updated_date: <% tp.file.creation_date('DD/MM/YYYY') %>
+created_date: 15/02/2024
+updated_date: 15/02/2024
 type: interview
 ---
 
-#  <% tp.file.title.split(" ")[0] %>
+#  david-kroell
 
-- **🏷️Tags** :  #<% tp.file.creation_date('MM-YYYY') %> #company #c3 #c3-ai 
+- **🏷️Tags** :  #02-2024 #company #c3 #c3-ai 
+
+https://app2.greenhouse.io/guides/21655964002/people/178343767002?application_id=190587422002
 
 The screening interview is the first step of the interview process for experienced candidates.
 

@@ -8,18 +8,57 @@
         "type": "tabs",
         "children": [
           {
-            "id": "a03ed9a94c880d2d",
+            "id": "e924eb27f53f8fa7",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/meeting/federal_staffing_standup.md",
+                "mode": "source",
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "37419def5b433912",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Home.md",
+                "file": "c3/c3/templates/C3-Screening-Interview.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "e1445a5327dff314",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/interview/david-kroell.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "d57b54527c810f0e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "2024-02-16.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -81,11 +120,12 @@
               "state": {}
             }
           }
-        ]
+        ],
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 417.5,
+    "width": 236.5,
     "collapsed": true
   },
   "right": {
@@ -97,12 +137,41 @@
         "type": "tabs",
         "children": [
           {
+            "id": "cfb722e570d06555",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "2024-02-16.md"
+              }
+            }
+          },
+          {
+            "id": "6db9a394f88fd95c",
+            "type": "leaf",
+            "state": {
+              "type": "ch.der-tobi.obsidian-simple-mention",
+              "state": {}
+            }
+          },
+          {
+            "id": "26152ef62b4e879b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
             "id": "2b0159006d6bbe52",
             "type": "leaf",
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Home.md",
+                "file": "2024-02-16.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -119,39 +188,10 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Home.md",
+                "file": "2024-02-16.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
-            }
-          },
-          {
-            "id": "26152ef62b4e879b",
-            "type": "leaf",
-            "state": {
-              "type": "tag",
-              "state": {
-                "sortOrder": "frequency",
-                "useHierarchy": true
-              }
-            }
-          },
-          {
-            "id": "cfb722e570d06555",
-            "type": "leaf",
-            "state": {
-              "type": "outline",
-              "state": {
-                "file": "Home.md"
-              }
-            }
-          },
-          {
-            "id": "6db9a394f88fd95c",
-            "type": "leaf",
-            "state": {
-              "type": "ch.der-tobi.obsidian-simple-mention",
-              "state": {}
             }
           }
         ]
@@ -163,6 +203,7 @@
   },
   "left-ribbon": {
     "hiddenItems": {
+      "homepage:Open homepage": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
@@ -170,18 +211,29 @@
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
       "templater-obsidian:Templater": false,
-      "homepage:Open homepage": false,
       "obisidian-note-linker:Note Linker": false,
       "obsidian-regex-pipeline:Regex Rulesets": false
     }
   },
-  "active": "a03ed9a94c880d2d",
+  "active": "d57b54527c810f0e",
   "lastOpenFiles": [
+    "2024-02-15.md",
+    "2024-02-16.md",
+    "c3/c3/cornea/tests/cor-753.md",
+    "c3/c3/meeting/federal_staffing_standup.md",
+    "c3/c3/interview/david-kroell.md",
+    "c3/c3/interview/andres-navarro.md",
+    "c3/c3/templates/C3-Screening-Interview.md",
+    "c3/c3/meeting/se_team_leadership_meeting.md",
+    "c3/c3/lib/test.md",
+    "templates/templates.md",
+    "c3/c3.md",
+    "2024-02-02.md",
+    "Home.md",
     "2024-02-13.md",
     "c3/c3/rizzo/README.md",
     "c3/c3/contractors/readme.md",
     "Untitled.canvas",
-    "Home.md",
     "c3/c3/cornea/sprint_planning_backlog_review.md",
     "Pasted image 20240212153448.png",
     "templates/template_cornea_release5_test.md",
@@ -195,7 +247,6 @@
     "Pasted image 20240212152039.png",
     "Pasted image 20240212151819.png",
     "c3/c3/meeting/1_1_patrick_thomas.md",
-    "c3/c3/cornea/tests/cor-753.md",
     "Pasted image 20240212145341.png",
     "Untitled.md",
     "templates",
@@ -208,20 +259,10 @@
     "uiuc/cs484/mp0",
     "uiuc/cs484",
     "uiuc",
-    "c3/c3/releases/c3ui/8.3.2support.8.3.2.1.md",
     "c3/c3/c3standards",
     "c3/c3/releases/c3ui",
     "c3/c3/releases",
-    "c3/c3/org/damien-lutrin.md",
-    "c3/c3/org/feneel-patel.md",
-    "c3/c3/meeting/elser-integration-mvp.md",
-    "c3/c3/ui/bugs.md",
     "c3/c3/ui",
-    "c3/c3/cornea/_guru.md",
-    "Spaces/Home",
-    "c3/c3/builds/c0c3e72c.md",
-    "c3/c3/cornea/pr/feature-ms-705.md",
-    "c3/c3/meeting/1_1_mayowa_omokanwaye.md",
-    "c3/c3/meeting/1_1_richard_bui.md"
+    "Spaces/Home"
   ]
 }

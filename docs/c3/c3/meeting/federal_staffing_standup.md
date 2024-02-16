@@ -3,8 +3,20 @@ id: federal_staffing_standup
 created_date: 26/10/2023
 updated_date: 26/10/2023
 type: meeting
+tags:
+  - rizzo
 ---
-## 2024-01-30
+## 2024-02-15
+
+@ts meeting discussed for Transcom. 
+
+Formal request to take back @dan or @anika.
+
+@TRANSCOM --> what needs to be done for @SOCOM . Can someone backfill for two weeks. 
+
+@feneel to work on @TRANSCOM as @Jeff substitute. 
+
+@DLA3 close to slipping. 
 
 
 
@@ -111,8 +123,6 @@ Intel Apps:
 		stream
 		db 
 
-
-	 
 	> @richard-bui
 	
 	> @feneel-patel
