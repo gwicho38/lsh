@@ -1,3 +1,21 @@
+## 2024-02-16
+
+- [ ] travel from @charlotte to @riverside
+- [ ] might go to @Charlotte next week
+- [ ] what is the threshold for doing too much?
+- [ ] staffing for @smc 
+	- [ ] support staff
+- [ ] @fde support 
+	- [ ] current staffing: 
+		- [ ] ds
+	- [ ] @charlotte 
+	- [ ] @smc 
+	- [ ] @rivserside-residential 
+	- [ ] @stark-residential integrations are big -- despite no @se support 
+		- [ ] @dse provided -- scope of work not clear
+	- [ ] @Riverside-commercial 
+- [ ] @gcs 
+- [ ] @bug reporting zendesk
 ## 2024-01-18
 
 losing interest in @Riverside 

@@ -5,6 +5,88 @@ updated_date: 25/10/2023
 tags: 
 created_date:
 ---
+## 2024-02-16
+
+@peter @dcsa
+
+v8 approval from DCSA. 12 month v8 application Pilot. 
+
+> questions
+
+- [ ] lead?
+- [ ] UI/UX early on?
+- [ ] who is sitting on this meeting?
+- [ ] integration of the work
+- [ ] testing suite
+- [ ] data governance credentials
+	- [ ] permissions
+- [ ] v8 migration -- @peter 
+- [ ] deployment
+- [ ] classification
+- [ ] list of tickets
+- [ ] what is the partner going to take on specifically
+- [ ] what is the business planning
+- [ ] migration
+- [ ] prod support process
+- [ ] paying for opps?
+- [ ] newer engineering with light touch from @peter 
+- [ ] interim @ts clearance
+- [ ] End of February 
+- [ ] @timeline 
+- [ ] ServiceNow
+
+
+> risks
+
+	timeline: 0 - 2 months planning
+	start: 03/15/2024
+	phase: 10 months
+	platform to ML development for Data Scientists
+	current project @v7 @v8 
+	timeline 
+	report to @bus 
+		@zander -- @titan 
+		@farhan -- @dcsa
+		
+
+> use case 
+
+	examine individual company orgs. 
+	public data + dcsa data + foreign interactions
+	make a determination of risk level
+	pipeline feeds into model
+	returns a foreign risk score
+	@zander initiated the clearance application for @peter because he wants ppl to work on @titan-ii 
+
+> reusability
+
+	overlap between individual 
+	SF-86 ? find risk score involved with this individual
+		=> question would be 
+	partner @KPMG 
+
+		>> return values to their own UI
+
+> key points
+
+	testing suite?
+
+> staffing
+
+	> @naresh @sean aware
+	
+	2-3 SEs and 1 DS full time.
+	
+> timeline
+
+	1 - 2 months.
+
+	at least 
+
+> screens?
+
+	> 1 page for MLOpps related things. 
+	> 
 ## 2024-02-02
 
 ## GenAi 

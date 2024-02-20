@@ -1,3 +1,36 @@
+## 2024-02-16
+
+@1-1 
+@jawad 
+
+@request time off -- procedural stuff
+
+@contested-logists and @dla --> only person on @contested-logists . 
+Other ppl will find other people to transition. 
+
+@brian-human 
+
+- [ ] spec?
+- [ ] backlog?
+- [ ] lead engineer?
+
+@question @Richard -- @adi met with @brian-human and @wills . Prioritizing `customer satisfaction`. Pulling people from base @contested-logists to @TRANSCOM  logistics onto those. 
+
+@jawad doesn't know about this. 
+
+---
+
+no official notice about where he's going next
+
+---
+
+there are a lot of questions. @Wills and @Brian -- William will lead the base app. 
+
+@dan and @victor on @decision-advantage 
+
+- [ ] @richard 
+- [ ] request access for @sipr token for @DLA-9 and @DLA-3 -- @DM @joe for @DLA-9 -- @alejandro gave @richard the forms to do it.
+- [ ] 
 
 ## 2024-02-02
 

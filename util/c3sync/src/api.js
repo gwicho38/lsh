@@ -3,9 +3,35 @@ import axios from 'axios';
 import crypto from 'crypto';
 import os from 'os';
 
+/**
+ * Decoding c3 auth
+ * eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJhcHAiOiJna2V2OGMzYXBwcy1sZWZ2MjQwMjEzLWd1cnVzZWFyY2h1aSIsImlzcyI6ImMzLmFpIiwiZ3JvdXBzIjpbIkMzLkFwcEFkbWluIiwiQzMuRW52QWRtaW4iXSwic2lkIjoxLCJhdWQiOiJjMy5haSIsImlkcCI6IiIsImMzZ3JvdXBzIjpbIkMzLkFwcEFkbWluIiwiQzMuRW52QWRtaW4iXSwiaWRwZ3JvdXBzIjoie1wiT2lkY0lkcENvbmZpZzo6Z2tldjhjM2FwcHMuYzMtZS5jb21cIjpbXCJna2V2OGMzYXBwcy5jMy1lLmNvbS9DMy5TdHVkaW9Vc2VyXCJdfSIsInNzaWR4IjoiIiwibmFtZSI6IjMxY2Y0ZmVlOGNhYTFhNmUzMDFiZDc5M2Q1NTM4NTNiYzY3NjEzZGRjZDkyMmI1Y2Q1ODU3MjBkMzI3ZTZmMTMiLCJpZCI6IjMxY2Y0ZmVlOGNhYTFhNmUzMDFiZDc5M2Q1NTM4NTNiYzY3NjEzZGRjZDkyMmI1Y2Q1ODU3MjBkMzI3ZTZmMTMiLCJleHAiOjE3MDgyMDkxNzMwMDAsImVtYWlsIjoibHVpcy5mZXJuYW5kZXotZGUtbGEtdmFyYUBjMy5haSJ9.2X1qefBfswy3VDWDQHiOz-c_Q5UMLcdcdlwdG-Ul2jdJAXv7Nn9TM4KVEEl1Kd8ZEGq6uLMFvPTmYIvjHTaZWdzVzduXAsS0Xl_PqHRNMqN63Jrf9qvSYaGGMzJTFuBQZWP33BNzFH_1BqmYk_lfrtsa88tocW2g8qvCB2Fc42tz6lf3SnKva51gPlg1M4U_6KzHweUPOA5CwkmrJHAnqeOrW9zN7FII93P4fNYCx9bUeEKMWVkTumHmDoc-7rEcKjIB0zFE_Malsgco9PjB10k7fsEw6MVSefsE8TtnxKhnDmG5ZdWVreevxNvhryIu1yQ1wbMZMU6REom76ecbUw;
+ */
+
+// {"typ":"JWT","alg":"RS512"}
+// eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9
+
+// // {
+//   "app": "gkev8c3apps-lefv240213-gurusearchui",
+//   "iss": "c3.ai",
+//   "groups": ["C3.AppAdmin", "C3.EnvAdmin"],
+//   "sid": 1,
+//   "aud": "c3.ai",
+//   "idp": "",
+//   "c3groups": ["C3.AppAdmin", "C3.EnvAdmin"],
+//   "idpgroups": "{\"OidcIdpConfig::gkev8c3apps.c3-e.com\":[\"gkev8c3apps.c3-e.com/C3.StudioUser\"]}",
+//   "ssidx": "",
+//   "name": "31cf4fee8caa1a6e301bd793d553853bc67613ddcd922b5cd585720d327e6f13",
+//   "id": "31cf4fee8caa1a6e301bd793d553853bc67613ddcd922b5cd585720d327e6f13",
+//   "exp": 1708209173000,
+//   "email": "luis.fernandez-de-la-vara@c3.ai"
+// }
+
+// eyJhcHAiOiJna2V2OGMzYXBwcy1sZWZ2MjQwMjEzLWd1cnVzZWFyY2h1aSIsImlzcyI6ImMzLmFpIiwiZ3JvdXBzIjpbIkMzLkFwcEFkbWluIiwiQzMuRW52QWRtaW4iXSwic2lkIjoxLCJhdWQiOiJjMy5haSIsImlkcCI6IiIsImMzZ3JvdXBzIjpbIkMzLkFwcEFkbWluIiwiQzMuRW52QWRtaW4iXSwiaWRwZ3JvdXBzIjoie1wiT2lkY0lkcENvbmZpZzo6Z2tldjhjM2FwcHMuYzMtZS5jb21cIjpbXCJna2V2OGMzYXBwcy5jMy1lLmNvbS9DMy5TdHVkaW9Vc2VyXCJdfSIsInNzaWR4IjoiIiwibmFtZSI6IjMxY2Y0ZmVlOGNhYTFhNmUzMDFiZDc5M2Q1NTM4NTNiYzY3NjEzZGRjZDkyMmI1Y2Q1ODU3MjBkMzI3ZTZmMTMiLCJpZCI6IjMxY2Y0ZmVlOGNhYTFhNmUzMDFiZDc5M2Q1NTM4NTNiYzY3NjEzZGRjZDkyMmI1Y2Q1ODU3MjBkMzI3ZTZmMTMiLCJleHAiOjE3MDgyMDkxNzMwMDAsImVtYWlsIjoibHVpcy5mZXJuYW5kZXotZGUtbGEtdmFyYUBjMy5haSJ9
+
 // local dependencies
 import { CONFIG } from './../config.js'; // Adjust the relative path as necessary
-import { getC3Key, setC3Key } from './shared.js';
+import { getPrivateKey, setPrivateKey } from './shared.js';
 /**
  * Makes a POST request to a specified endpoint using Axios.
  * 
@@ -33,7 +59,7 @@ import { getC3Key, setC3Key } from './shared.js';
  */
 export async function c3Post(typeName, method, data) {
   const url = `${CONFIG.APPURL}/api/8/${typeName}/${method}`;
-  const cachedToken = getC3Key() != "EMPTY" ? getC3Key() : getC3Key(setC3Key(createGlobalAuthToken()));
+  const cachedToken = getPrivateKey() != "EMPTY" ? getPrivateKey() : getPrivateKey(setPrivateKey(createGlobalAuthToken()));
 
   try {
     const response = await axios.post(url, data, {
@@ -129,7 +155,8 @@ export const createGlobalAuthToken = function () {
   const pvtKey = generateKeyPair()['privateKey'];
   // const data = "Data to sign with RSA-SHA512";
   // const signature = signData(privateKey, data);
-
+  // {"typ":"JWT","alg":"RS512"}
+  // eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.
   const generateC3KeyAuthToken = function () {
     // WARNING: The following logic is mostly copied from boot.js
     const signAlgo = "RSA-SHA512";

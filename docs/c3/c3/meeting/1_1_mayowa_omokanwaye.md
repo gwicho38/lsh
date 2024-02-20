@@ -1,8 +1,32 @@
-## 2024-
+## 2024-02-16
+
+@lattice objectives -- were old objectives that were attached to 
+old time periods.
+
+@question what parents objectives to link?
+
+## 2024-02
 
 - [x] eca
 - [ ] reimbursement?
 - [ ] security+?
+- [ ] data integration tasks
+- [ ] was open to genai
+- [ ] @sean doing work on the @genai app for @panda 
+- [ ] @v8 training?
+	- [ ] @goal 
+- [ ] what's new in @v8?
+- [ ] looking at documentation and seeing which things are deprecated
+- [ ] @comunity post is looking to see which things are deprecated
+- [ ] 30 minutes for a week 
+- [ ] 2 weeks. 
+- [ ] training team message to get cluster. 
+- [ ] read confluence document v7 to v8 differences. 
+- [ ] @v8 migrator documents + tips
+	- [ ] videos focused 
+		- [ ] information that was in litmos videos that was not in the documentation. course docs or c3 showtype.
+		- [ ] transcripts -- voice to text
+	- [ ] 
 - [ ] clearance?
 - [ ] RSO team
 	- [ ] anthony
@@ -13,7 +37,7 @@
 	- [ ] kosei
 - [ ] rso?
 - [ ] ** clearance ** 
-	- [ ] 
+	- [ ] #todo send email regarding clearance
 
 	> listening --> genai
 	

@@ -4,6 +4,37 @@ created_date: 12/10/2023
 updated_date: 12/10/2023
 type: meeting
 ---
+## 2024-02-16
+
+@DINOE 
+
+March 4th
+
+- [ ] firm date for PSR
+
+March 11th for PSR begin
+
+- [ ] March 4th --> get 
+- [ ] May 22nd --> 1.4 tentative date --> 
+	- [ ] March 4th --> May 10th
+	- [ ] Rolling out UI components. 
+- [ ] If release 
+- [ ] if not person
+- [ ] UI features can be descoped --> have been identified
+
+> Data Science
+
+engine wash applies to --> 
+
+next phase of the product they'll be a major Data Science initiative. 
+
+#v8 --> v7 to v8 migration in May -- June to August 
+
+#runtime --> need to estimate runtime costs
+
+> Jawwad 
+
+
 ## 2024-01-04
 
 @Dinoe 

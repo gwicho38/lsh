@@ -15,6 +15,37 @@ Prepare / give lunch and learn Dinoe
 
 New York office having openings
 
+## 2024-02-16
+
+@dinoe 
+
+- March 11
+
+> questions
+
+- [ ] figma
+- [ ] forms
+- [ ] testing
+- [ ] migration v7
+- [ ] feature scope trim down
+- [ ] tests
+- [ ] onboarding more features to the platform 
+- [ ] prod support
+- [ ] one more person
+- [ ] initiatives are bespoke 
+- [ ] value prop that all the data is in one place
+- [ ] very specific use cases --> going in the direction of an RSO --> looking at things from a point of view. 
+- [ ] sales --> 
+- [ ] creating an SLA -- defined rulesets
+- [ ] formal ticketing system
+- [ ] no formal ticketing system 
+- [ ] 
+
+> DINOE
+
+normalizing KPIs --> normalizing
+
+having an engineer in the room has allowed proper scope when creating bespoke process. 
 
 ## 2024-01-19
 

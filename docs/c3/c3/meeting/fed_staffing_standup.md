@@ -30,6 +30,20 @@ type: meeting
 @meeting 
 
 
+
+## 2024-02-20
+
+@IW 
+
+
+
+
+
+10/12
+
+13 commit
+
+
 ## 20231130
 
 %% going through assignments from today until 12/31/2023 %%

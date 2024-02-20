@@ -51,14 +51,26 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "2024-02-16.md",
+                "file": "2024-02-20.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
+            "id": "299d409e3093c985",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/cornea/elastic-elser.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 4
       }
     ],
     "direction": "vertical"
@@ -142,7 +154,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "2024-02-16.md"
+                "file": "c3/c3/cornea/elastic-elser.md"
               }
             }
           },
@@ -171,7 +183,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "2024-02-16.md",
+                "file": "c3/c3/cornea/elastic-elser.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -188,7 +200,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "2024-02-16.md",
+                "file": "c3/c3/cornea/elastic-elser.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -215,10 +227,19 @@
       "obsidian-regex-pipeline:Regex Rulesets": false
     }
   },
-  "active": "d57b54527c810f0e",
+  "active": "299d409e3093c985",
   "lastOpenFiles": [
-    "2024-02-15.md",
+    "c3/c3/meeting/fed_staffing_standup.md",
+    "2024-02-20.md",
+    "c3/c3/cornea/elastic-elser.md",
     "2024-02-16.md",
+    "c3/c3/meeting/1_1_joffin_manjaly.md",
+    "c3/c3/meeting/1_1_mayowa_omokanwaye.md",
+    "c3/c3/meeting/1_1_richard_bui.md",
+    "c3/c3/meeting/1_1_patrick_thomas.md",
+    "c3/c3/meeting/1_1_damien_lutrin.md",
+    "c3/c3/meeting/1_1_peter_hwang.md",
+    "2024-02-15.md",
     "c3/c3/cornea/tests/cor-753.md",
     "c3/c3/meeting/federal_staffing_standup.md",
     "c3/c3/interview/david-kroell.md",
@@ -236,8 +257,6 @@
     "Untitled.canvas",
     "c3/c3/cornea/sprint_planning_backlog_review.md",
     "Pasted image 20240212153448.png",
-    "templates/template_cornea_release5_test.md",
-    "20240212_CORNEA_RELEASE5_TEST.md",
     "Pasted image 20240212153112.png",
     "Pasted image 20240212152856.png",
     "Pasted image 20240212152836.png",
@@ -246,16 +265,9 @@
     "Pasted image 20240212152123.png",
     "Pasted image 20240212152039.png",
     "Pasted image 20240212151819.png",
-    "c3/c3/meeting/1_1_patrick_thomas.md",
     "Pasted image 20240212145341.png",
-    "Untitled.md",
     "templates",
-    "uiuc/cs484/mp0/CS484 | mp0 | writeup.md",
-    "c3/c3/cornea/GURU_README.md",
-    "c3/c3/meeting/elser-technicals.md",
-    "c3/c3/ticket/plat-75382.md",
     "c3/c3/cornea/tests",
-    "c3/c3/c3standards/readme.md",
     "uiuc/cs484/mp0",
     "uiuc/cs484",
     "uiuc",

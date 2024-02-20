@@ -1,8 +1,44 @@
 {
   "recentFiles": [
     {
+      "basename": "elastic-elser",
+      "path": "c3/c3/cornea/elastic-elser.md"
+    },
+    {
+      "basename": "fed_staffing_standup",
+      "path": "c3/c3/meeting/fed_staffing_standup.md"
+    },
+    {
+      "basename": "2024-02-20",
+      "path": "2024-02-20.md"
+    },
+    {
       "basename": "2024-02-16",
       "path": "2024-02-16.md"
+    },
+    {
+      "basename": "1_1_joffin_manjaly",
+      "path": "c3/c3/meeting/1_1_joffin_manjaly.md"
+    },
+    {
+      "basename": "1_1_mayowa_omokanwaye",
+      "path": "c3/c3/meeting/1_1_mayowa_omokanwaye.md"
+    },
+    {
+      "basename": "1_1_richard_bui",
+      "path": "c3/c3/meeting/1_1_richard_bui.md"
+    },
+    {
+      "basename": "1_1_patrick_thomas",
+      "path": "c3/c3/meeting/1_1_patrick_thomas.md"
+    },
+    {
+      "basename": "1_1_damien_lutrin",
+      "path": "c3/c3/meeting/1_1_damien_lutrin.md"
+    },
+    {
+      "basename": "1_1_peter_hwang",
+      "path": "c3/c3/meeting/1_1_peter_hwang.md"
     },
     {
       "basename": "2024-02-15",
@@ -77,10 +113,6 @@
       "path": "templates/template_cornea_release5_test.md"
     },
     {
-      "basename": "1_1_patrick_thomas",
-      "path": "c3/c3/meeting/1_1_patrick_thomas.md"
-    },
-    {
       "basename": "Untitled",
       "path": "Untitled.md"
     },
@@ -135,22 +167,6 @@
     {
       "basename": "feature-ms-705",
       "path": "c3/c3/cornea/pr/feature-ms-705.md"
-    },
-    {
-      "basename": "1_1_mayowa_omokanwaye",
-      "path": "c3/c3/meeting/1_1_mayowa_omokanwaye.md"
-    },
-    {
-      "basename": "1_1_richard_bui",
-      "path": "c3/c3/meeting/1_1_richard_bui.md"
-    },
-    {
-      "basename": "1_1_peter_hwang",
-      "path": "c3/c3/meeting/1_1_peter_hwang.md"
-    },
-    {
-      "basename": "1_1_damien_lutrin",
-      "path": "c3/c3/meeting/1_1_damien_lutrin.md"
     }
   ],
   "omittedPaths": [],
