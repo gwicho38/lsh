@@ -11,6 +11,27 @@ type: note
 
 25/10/2023:10:61
 
+## 2024-02-21
+
+- docs
+- security+
+- aidp --> related to @MDA 
+	- @c3 is hosting it during Pilot and then transition when environment is ready. 
+	- @sharepoint 
+- #todo 
+	- tokenized mapping 
+	- user to object
+	- #ticket 
+		- apply acl logic to passages
+		- ts/sci --> 
+	- p0 improvement @ coe blocking
+		- mda
+		- cornea
+		- gray pilot ends @mitch 
+	- FSO
+	- ATO
+	- Field Work
+	- Fed Genai
 ## 20231025
 
 # Questions
