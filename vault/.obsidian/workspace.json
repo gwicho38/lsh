@@ -12,8 +12,12 @@
             "type": "leaf",
             "pinned": true,
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/cornea/colbert-embedder-retriever.md",
+                "mode": "source",
+                "source": false
+              },
               "pinned": true
             }
           },
@@ -22,17 +26,25 @@
             "type": "leaf",
             "pinned": true,
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md",
+                "mode": "source",
+                "source": false
+              },
               "pinned": true
             }
           },
           {
-            "id": "70d0b6fb5350322f",
+            "id": "a9bdc631379c7039",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {}
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/interview/christopher-evans-screen.md",
+                "mode": "source",
+                "source": false
+              }
             }
           }
         ],
@@ -81,13 +93,38 @@
               "type": "bookmarks",
               "state": {}
             }
+          },
+          {
+            "id": "3f69b22965d05e2f",
+            "type": "leaf",
+            "state": {
+              "type": "recent-files",
+              "state": {}
+            }
+          },
+          {
+            "id": "2525233e32249c5c",
+            "type": "leaf",
+            "state": {
+              "type": "mk-path-view",
+              "state": {}
+            }
+          },
+          {
+            "id": "2125869e9df4e465",
+            "type": "leaf",
+            "state": {
+              "type": "mk-path-view",
+              "state": {}
+            }
           }
         ],
-        "currentTab": 2
+        "currentTab": 3
       }
     ],
     "direction": "horizontal",
-    "width": 236.5
+    "width": 236.5,
+    "collapsed": true
   },
   "right": {
     "id": "74a509b4fcd0481c",
@@ -102,7 +139,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md"
+              }
             }
           },
           {
@@ -130,6 +169,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -146,6 +186,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -159,12 +200,11 @@
               "state": {}
             }
           }
-        ],
-        "currentTab": 5
+        ]
       }
     ],
     "direction": "horizontal",
-    "width": 300,
+    "width": 200,
     "collapsed": true
   },
   "left-ribbon": {
@@ -174,12 +214,26 @@
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
-      "command-palette:Open command palette": false
+      "command-palette:Open command palette": false,
+      "templater-obsidian:Templater": false,
+      "homepage:Open homepage": false,
+      "obisidian-note-linker:Note Linker": false,
+      "obsidian-regex-pipeline:Regex Rulesets": false,
+      "mermaid-tools:Open Mermaid Toolbar": false
     }
   },
-  "active": "179495021f522885",
+  "active": "a8662843663faff7",
   "lastOpenFiles": [
+    "c3/store/doc/~$) CORNEA GURU Enterprise Search Product Specification.docx",
+    "c3/c3/interview/christopher-evans-screen.md",
     "c3/c3/cornea/elastic-elser-embedder-retriever.md",
+    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
+    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
+    "c3/c3/raw/tmp1708709193228_elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
+    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_3_acdf5b35.png",
+    "c3/c3/raw/tmp1708708999084_elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
+    "c3/c3/raw/raw.md",
+    "c3/c3/raw",
     "~$) CORNEA GURU Enterprise Search Product Specification.docx",
     "(U) CORNEA GURU Enterprise Search Product Specification.docx",
     "Untitled 1.canvas",
@@ -196,7 +250,6 @@
     "c3/c3/genai/genai.md",
     "c3/c3/interview/mpho-musengua.md",
     "c3/c3/meeting/fed_staffing_standup.md",
-    "c3/c3/interview/christopher-evans-screen.md",
     "c3/c3/meeting/1_1_fed_engineering_team_leads.md",
     "Home.md",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/README.md",
@@ -207,7 +260,6 @@
     "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/home",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/Dockerfile",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715.zip",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/intel_v8_sne.md",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/untitled folder.md",
     "c3/c3/cornea/opps/24211132/untitled folder/untitled folder.md",
@@ -218,13 +270,7 @@
     "c3/c3/cornea/opps/24211132.md ./docs/docs.md",
     "c3/c3/cornea/opps/24211132.md ./24211132.md ..md",
     "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/cornea/opps/24211132/24211132.md",
-    "c3/c3/cornea/opps/24211132/24211132.md",
     "Untitled.canvas",
-    "Pasted image 20240212153448.png",
-    "Pasted image 20240212153112.png",
-    "Pasted image 20240212152856.png",
-    "Pasted image 20240212152836.png",
-    "Pasted image 20240212152528.png",
-    "Pasted image 20240212152251.png"
+    "Pasted image 20240212153448.png"
   ]
 }
