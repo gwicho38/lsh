@@ -1,3 +1,7 @@
+## 2024-02-26
+
+ask `hr` for referral bonus
+
 ## 20231114
 
 

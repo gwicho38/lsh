@@ -1,6 +1,18 @@
 {
   "recentFiles": [
     {
+      "basename": "federal_biweekly_standup",
+      "path": "c3/c3/meeting/federal_biweekly_standup.md"
+    },
+    {
+      "basename": "readme",
+      "path": "c3/c3/aviary/readme.md"
+    },
+    {
+      "basename": "2024-02-26",
+      "path": "2024-02-26.md"
+    },
+    {
       "basename": "elastic-elser-embedder-retriever",
       "path": "c3/c3/cornea/elastic-elser-embedder-retriever.md"
     },
@@ -187,10 +199,6 @@
     {
       "basename": "c0c3e72c",
       "path": "c3/c3/builds/c0c3e72c.md"
-    },
-    {
-      "basename": "feature-ms-705",
-      "path": "c3/c3/cornea/pr/feature-ms-705.md"
     }
   ],
   "omittedPaths": [],

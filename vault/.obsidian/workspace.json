@@ -46,9 +46,21 @@
                 "source": false
               }
             }
+          },
+          {
+            "id": "d4d37305ff31bf7b",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/meeting/federal_biweekly_standup.md",
+                "mode": "source",
+                "source": false
+              }
+            }
           }
         ],
-        "currentTab": 1
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -140,7 +152,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md"
+                "file": "c3/c3/meeting/federal_biweekly_standup.md"
               }
             }
           },
@@ -169,7 +181,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md",
+                "file": "c3/c3/meeting/federal_biweekly_standup.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -186,7 +198,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md",
+                "file": "c3/c3/meeting/federal_biweekly_standup.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -222,11 +234,19 @@
       "mermaid-tools:Open Mermaid Toolbar": false
     }
   },
-  "active": "a8662843663faff7",
+  "active": "d4d37305ff31bf7b",
   "lastOpenFiles": [
+    "c3/c3/aviary/readme.md",
+    "c3/c3/raw/readme_IMG_4_ab2b38c6.png",
+    "c3/c3/raw/readme_IMG_2_ab2b38c6.png",
+    "c3/c3/raw/readme_IMG_1_ab2b38c6.png",
+    "c3/c3/raw/readme_IMG_3_ab2b38c6.png",
+    "2024-02-26.md",
+    "c3/c3/aviary/aviary.md",
+    "c3/c3/aviary",
+    "c3/c3/cornea/elastic-elser-embedder-retriever.md",
     "c3/store/doc/~$) CORNEA GURU Enterprise Search Product Specification.docx",
     "c3/c3/interview/christopher-evans-screen.md",
-    "c3/c3/cornea/elastic-elser-embedder-retriever.md",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
     "c3/c3/raw/tmp1708709193228_elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
@@ -238,11 +258,8 @@
     "(U) CORNEA GURU Enterprise Search Product Specification.docx",
     "Untitled 1.canvas",
     "Pasted image 20240223114135.png",
-    "Pasted image 20240223114117.png",
     "c3/c3/cornea/colbert-embedder-retriever.md",
-    "DALL·E 2024-02-23 11.32.21 - Create a simplified diagram illustrating the process of using Elasticsearch for embedding-based document retrieval. Include the following steps_ 1. Do.webp",
     ".md",
-    "DALL·E 2024-02-23 11.13.10 - Create a detailed diagram that illustrates the process of pre-computing document embeddings in the ColBERT model for information retrieval. The diagra.webp",
     "genai/null/null.md",
     "genai/genai.md",
     "genai/null",
@@ -258,8 +275,6 @@
     "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/docker_compose_8_32_1715.md",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/docker-compose.yml",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/home",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/Dockerfile",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/intel_v8_sne.md",
     "c3/c3/cornea/opps/24211132/intel_v8_sne/untitled folder.md",
     "c3/c3/cornea/opps/24211132/untitled folder/untitled folder.md",
@@ -267,10 +282,6 @@
     "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/cornea/cornea.md",
     "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/c3.md",
     "c3/c3/cornea/opps/24211132.md ./docs/c3/c3.md",
-    "c3/c3/cornea/opps/24211132.md ./docs/docs.md",
-    "c3/c3/cornea/opps/24211132.md ./24211132.md ..md",
-    "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/cornea/opps/24211132/24211132.md",
-    "Untitled.canvas",
-    "Pasted image 20240212153448.png"
+    "Untitled.canvas"
   ]
 }
