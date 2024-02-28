@@ -218,7 +218,7 @@ Justification:
 
 ![[Pasted image 20230824150925.png]]
 
-![[Untitled Diagram.svg]]
+![[GURU_README_IMG_1_acdf5b35.svg]]
 
 ### BUSINESS JUSTIFICATION
 
@@ -353,7 +353,7 @@ BERT, which stands for **Bidirectional Encoder Representations from Transforme
 
 ![[Pasted image 20230825112344.png]]
 
-![[Pasted image 20230825112438.png]]
+![[GURU_README_IMG_2_acdf5b35]]
 
 ### Lucid Diagram
 
@@ -660,6 +660,14 @@ sent on November 10, 2023 14:47
 
 
 current branch --> 5cda7dab5e937da905b53866e7082c2aec2ba2c0
+
+### Artifacts
+
+https://c3e-my.sharepoint.com/personal/ben_dohmeier_c3_ai/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fben%5Fdohmeier%5Fc3%5Fai%2FDocuments%2FCornea%20GURU%20artifacts&ct=1709090638250&or=OWA%2DNT&cid=ef54d5c5%2D6072%2D7cbc%2D2187%2De2f2ae1bf6e6&ga=1&WSL=1
+
+## PSR
+
+https://c3gov.app.box.com/folder/246522474468?tc=collab-folder-invite-treatment-b
 
 ## VALIDATION & TESTING
 

@@ -6,6 +6,12 @@ type: meeting
 tags:
   - rizzo
 ---
+## 2024-02-27
+
+@brendan-pan moving from jroc.
+
+@jawad request for @richard-bui moving to apps is on @netsuite   
+
 ## 2024-02-15
 
 @ts meeting discussed for Transcom. 
@@ -51,7 +57,7 @@ two users only. Use the application to figure out staffing for marine core.
 @DLA  --> `CDAO`
 
 ---
-![[Pasted image 20240125140534.png]]
+![[federal_staffing_standup_IMG_1_21c332b4.png]]
 
 
 SOW 1
@@ -103,7 +109,7 @@ make vs buy --> top level choices.
 
 13:33
 
-![[Pasted image 20240111115626.png]]
+![[federal_staffing_standup_IMG_2_21c332b4.png]]
 
 ## CORNEA RADAR
 

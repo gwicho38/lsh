@@ -369,6 +369,44 @@ async function performSearch(query: Query) {
 
 ```
 
+## Questions
+
+> 2024-02-27
+
+❓@DS please confirm accuracy of high side flow:
+
+```txt
+
+	
+	Client --> 
+    Client->>+Client: Input Text Query
+    Client->>+Client: Generate Query Embedding
+    Note right of Client: Embedding Process in Client Application
+    Client->>+ES: Search Documents by Embedding
+    ES->>-Client: Return Search Response
+    Note over Client: Process and Display Results
+
+```
+
+
+> do we know vector dimensions?
+
+PUT /my_index
+{
+  "mappings": {
+    "properties": {
+      "my_vector": {
+        "type": "dense_vector",
+        "dims": 128  // Assuming your vectors are of dimension 128
+      },
+      "text": {
+        "type": "text"
+      }
+      // Include other fields as necessary
+    }
+  }
+}
+
 ## References
 
 > https://c3energy.atlassian.net/wiki/spaces/GENAI/pages/8548843624/Elastic+ELSER+Connector

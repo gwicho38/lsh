@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Main-Class: c3.platform.server.BootstrapServer
+Multi-Release: true
+

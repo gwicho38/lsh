@@ -1,17 +1,3 @@
-## TODO
-
-#competency-matrix 
-- [ ] v8
-- [ ] platform architecture
-- [ ] kubernetes
-- [ ] Opensearch
-	- [ ] Grafana 
-- [ ] genAi
-- [ ] STIG Checks
-- [ ] Controls Documentation
-- [ ] DoD Common Access Card (CAC) (0 or 3) 
-- [ ] COMPTIA Security Plus Training (0 or 3)
-
 ## OVERVIEW
 
 https://c3e.sharepoint.com/:x:/s/CustomerSolutions/EVjy3TRhVfJLjLuY6vWPpg4BDPclWKjcVK3_nae6ohy_ew?e=7tZezC
@@ -65,11 +51,58 @@ Resources for SE onboarding mentors: [](https://c3e-my.sharepoint.com/:p:/g/pers
 [https://c3energy.atlassian.net/wiki/spaces/SE/pages/7888306269](https://c3energy.atlassian.net/wiki/spaces/SE/pages/7888306269 "https://c3energy.atlassian.net/wiki/spaces/se/pages/7888306269")
 
 ---
-![[Pasted image 20240103152506.png]]
+![[README_IMG_1_c6572756.png]]
 
 So basically any late WFH/sick or customer site visit should be put there from your direct reports. If there's something flagged on the badge report, they'll check the post first to see if its excusable
 
 ## FAQ
+
+
+> [!NOTE] MDA
+> 
+> 
+
+> [!note] BLADE
+> [blade sow](https://c3e-my.sharepoint.com/personal/naresh_shah_c3_ai/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fnaresh%5Fshah%5Fc3%5Fai%2FDocuments%2FMigratedFromBox%2Fnaresh%2Dshah%2FOpportunities%2FBLADE%2FProposal%20%2D%20BLADE%20LIMS%2DEV%20Migration%20%2D%20Vehicle%20Modules%2Epdf&parent=%2Fpersonal%2Fnaresh%5Fshah%5Fc3%5Fai%2FDocuments%2FMigratedFromBox%2Fnaresh%2Dshah%2FOpportunities%2FBLADE&ga=1)
+
+### Debug
+
+```js
+
+```
+### Tasks
+
+> Workstreams 
+> 
+> Recruiting -> Alejandro
+> 
+> Partner Engineering -> Erik --> Quarterly Objectives
+> 
+> Staffing?
+>  
+> Metrics?
+> 
+> Career Planning discussions in Lattice Grow
+> 
+> Growth areas: 
+> 
+>>  30 minute preps on 1:1
+>>  self eval
+>>  peer feedback
+>>  technical help they 
+
+> First Hand look into day to day work
+
+> Mid year evaluation 
+> 
+>> candid and direct
+>> feedback 
+>> body language
+>> peer feedback
+>> strongly rooted in what they deliver
+>> hardest one to coach is someone who is not technically keeping up
+>> 
+
 
 ### Where to Start?
 
@@ -95,17 +128,27 @@ https://c3energy.atlassian.net/wiki/spaces/SE/pages/8495696031/Technical+Oversig
 > tenure without buddy or gender
 
 
+### GPU for AI/ML Licesning
 
-## PROJECTS
+```
+Hey JP and Russ,
 
+Regarding your inquiry of getting licenses for GPUs for AI/ML data science work, our field ops team got back to us with some steps to get that setup. 
 
-> [!NOTE] MDA
-> 
-> 
+In order to create C3 worker pods to utilize the GPUs, the helm chart configurations would need to be changed. An example of that is attached to this email. The important pieces that need to be updated are the “nodeSelector” and the “nvidia.com/gpu” requests/limits in the resources section. The “nodeSelector” field in the Helm chart will depend on the GPU type (if it’s not NVIDIA then it would be something else).
 
-> [!note] BLADE
-> [blade sow](https://c3e-my.sharepoint.com/personal/naresh_shah_c3_ai/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fnaresh%5Fshah%5Fc3%5Fai%2FDocuments%2FMigratedFromBox%2Fnaresh%2Dshah%2FOpportunities%2FBLADE%2FProposal%20%2D%20BLADE%20LIMS%2DEV%20Migration%20%2D%20Vehicle%20Modules%2Epdf&parent=%2Fpersonal%2Fnaresh%5Fshah%5Fc3%5Fai%2FDocuments%2FMigratedFromBox%2Fnaresh%2Dshah%2FOpportunities%2FBLADE&ga=1)
+Depending on the type of GPU, a NVIDIA driver or something similar will likely need to be installed. Instructions here: [https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html](https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fdocs.nvidia.com%2Fdatacenter%2Fcloud-native%2Fgpu-operator%2Flatest%2Fgetting-started.html&data=05%7C02%7Cluis.fernandez-de-la-vara%40c3.ai%7C212a22f9a22d445b572a08dc23772a63%7C53ad779a93e7485cba20ac8290d7252b%7C1%7C0%7C638424241922059700%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C0%7C%7C%7C&sdata=gPA9lf75g2R%2BV2TP120M16lzwUiCG9hlAgqocxkNRBM%3D&reserved=0 "Original URL: https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/latest/getting-started.html. Click or tap if you trust this link.")
 
+In order to add new nodes to an RKE cluster, Rancher details the steps (assuming the node has a GPU already installed) here: [https://rke.docs.rancher.com/managing-clusters#:~:text=In%20order%20to%20add%20additional,list%20in%20the%20original%20cluster.](https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Frke.docs.rancher.com%2Fmanaging-clusters%23%3A~%3Atext%3DIn%2520order%2520to%2520add%2520additional%2Clist%2520in%2520the%2520original%2520cluster.&data=05%7C02%7Cluis.fernandez-de-la-vara%40c3.ai%7C212a22f9a22d445b572a08dc23772a63%7C53ad779a93e7485cba20ac8290d7252b%7C1%7C0%7C638424241922069830%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C0%7C%7C%7C&sdata=VplVXTe6c7B3C%2BWSACIrs1et0IL5V7jyAAaBfEjQcSQ%3D&reserved=0 "Original URL: https://rke.docs.rancher.com/managing-clusters#:~:text=In%20order%20to%20add%20additional,list%20in%20the%20original%20cluster.. Click or tap if you trust this link.")
+
+Let us know if there are any issues or concerns and the team will be ready to assist.
+
+Thanks,
+
+Eric
+```
+
+**Source**: [[20240228_gpu_licensing_requirements.pdf]] 
 ## PAGES
 
 > https://c3energy.atlassian.net/wiki/spaces/~5d52b47aab24bf0d99415944/pages/8290638714/SE+Managers+Onboarding+Wishlist
@@ -152,45 +195,6 @@ Getting to know them --
 > Channels to plug into current work that. 
 
 
-### Debug
-
-```js
-
-```
-### Tasks
-
-> Workstreams 
-> 
-> Recruiting -> Alejandro
-> 
-> Partner Engineering -> Erik --> Quarterly Objectives
-> 
-> Staffing?
->  
-> Metrics?
-> 
-> Career Planning discussions in Lattice Grow
-> 
-> Growth areas: 
-> 
->>  30 minute preps on 1:1
->>  self eval
->>  peer feedback
->>  technical help they 
-
-> First Hand look into day to day work
-
-> Mid year evaluation 
-> 
->> candid and direct
->> feedback 
->> body language
->> peer feedback
->> strongly rooted in what they deliver
->> hardest one to coach is someone who is not technically keeping up
->> 
-
-
 ## BADGES
 
 https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8193802660/FDE+Badge+Program
@@ -204,7 +208,12 @@ https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8193802660/FDE+Badge+Progra
 [[patrick-thomas]] 
 [[mayowa-omokanwaye]] 
 [[damien-lutrin]]  
-[[richard-bui]] 
+~~[[richard-bui]]~~ 
+[[c3/org/ryan-vihn]] 
+
+### Other Assignments
+
+[[c3/store/doc/]] 
 
 20231114
 
@@ -224,7 +233,7 @@ What we're working.
 Go through - get an understanding on what they're working. Get context about the broader project as a whole. 
 
 
-## YSK for Reports
+## REQUIREMENTS
 
 > [!NOTE] Added to IT Support Staff List?
 > 
@@ -237,7 +246,58 @@ Go through - get an understanding on what they're working. Get context about the
 > [!NOTE] Partnership Engineer Info Page? 
 > Confluence page. 
 
+@billing 
+> Billing Time for Base App Contributions
 
+```
+Please bill time in Open Air to the base application charge code for time you spend writing designing or writing code that is a PR to a base application you are contributing to. Please start for whatever timesheets you have not yet submitted in the past or this week. We are working to set up a charge code per base application, and we will send a note out when everyone has been added to this.
+```
+
+![[README_IMG_2_c6572756.png]]
+
+@contractor 
+### Onboarding Contractors
+
+```
+The company is implementing a unified process for all contractor onboarding/offboarding.  We are now supposed to use a form off of Netsuite.  However, I am sure it will require an SOW to be in place.  We currently have not unfilled positions on any of our Paradyme SOWs.  So until we get Alex or Adi to secure approval of the Paradyme mega-SOW request, I think we have to lean forward and do this informally through Sid.
+
+The first SOW we pass will be for Fed Base Apps.  As soon as it is signed, we can formally move the engineers that have already been moved to products, but are charging against our RDIM and PDA SOWs to that the new Fed Base Apps SOW.  That will open up the RDIM and PDA slots for new Paradyme engineers.
+
+So, I think what I’m saying is that we need to use our Sid “magical” power if it’s still available for Sanjay.
+```
+
+source: [[20240228_unified_contractor_onboarding_approach.pdf]] 
+
+
+@testing @brett 
+### TESTING
+
+2024-02-28
+
+```txt
+
+To fix that going forward, we expect the following from all projects (note that these are not new):
+
+- 80% test coverage across all metrics on v8 projects as measure by the Release Mgt Test Coverage Report
+
+- v7 projects are exempt from reporting only due to complexity in setup. Please try to maintain high test coverage.
+
+- 100% passing tests on all static branches (master, release, develop, trunk, etc.)
+
+- If we get yellow/red builds on any static branches it requires a P0 mid sprint ticket
+
+- Tests are included in the Definition of Done
+
+- All PRs either require >= 80% test coverage OR an explanation of why a test is not needed
+
+- All GitHub repositories should have branch protections enabled and require RM status checks before merging.
+- Level of effort estimations should include writing automated tests – communicate any impacts to timelines ASAP.
+
+If you get **_any_** pushback on the above requirements from anyone – SMs, DMs, Practice Leads, etc. – please tell them to raise the issue with Bus or myself. If you feel your project deserves an exemption from any of these requirements, please reach out.
+
+```
+
+**source**: [[20240228_testing_requirements.pdf]] 
 ## LINKS
 
 |  Links                                                                                                                                                                                                                                       |  Note                    |
@@ -245,16 +305,6 @@ Go through - get an understanding on what they're working. Get context about the
 |  https://calendly.com/event_types/user/me                                                                                                                                                                                                    |  [LEFV Calendly Home](https://calendly.com/event_types/user/me   )    |
 |  https://calendly.com/lefv                                                                                                                                                                                                                   |  [LEFV Calendly]([https://calendly.com/lefv](https://calendly.com/lefv))       |
 | https://c3e.sharepoint.com/:x:/r/sites/FederalEngineering-fed-engineering/_layouts/15/Doc.aspx?sourcedoc=%7B28C30D1D-1DF4-49A5-BF69-58F23BF3053F%7D&amp;file=PTO%20&amp;%20Travel%20Tracker.xlsx=&amp;action=default&amp;mobileredirect=true |  [Fed OOO Tracker](https://c3e.sharepoint.com/:x:/r/sites/FederalEngineering-fed-engineering/_layouts/15/Doc.aspx?sourcedoc=%7B28C30D1D-1DF4-49A5-BF69-58F23BF3053F%7D&amp;file=PTO%20&amp;%20Travel%20Tracker.xlsx=&amp;action=default&amp;mobileredirect=true)         |  
-
-## TODO
-
-- [x] peter [link](https://todoist.com/showTask?id=7476035157) #todoist %%[todoist_id:: 7476035157]%%
-- [x] mayowa [link](https://todoist.com/showTask?id=7476035202) #todoist %%[todoist_id:: 7476035202]%%
-- [x] richard [link](https://todoist.com/showTask?id=7476035247) #todoist %%[todoist_id:: 7476035247]%%
-- [x] joffin[]() [link](https://todoist.com/showTask?id=7476035304) #todoist %%[todoist_id:: 7476035304]%%
-- [x] patrick [link](https://todoist.com/showTask?id=7476035354) #todoist %%[todoist_id:: 7476035354]%%
-- [x] damien [link](https://todoist.com/showTask?id=7476035408) #todoist %%[todoist_id:: 7476035408]%%
-- [x] feneel [link](https://todoist.com/showTask?id=7476035440) #todoist %%[todoist_id:: 7476035440]%%
 
 ## Reviews
 
@@ -274,3 +324,28 @@ Go through - get an understanding on what they're working. Get context about the
 > 
 
 - [ ] when do i get 1:1s set up in Lattice.  [link](https://todoist.com/showTask?id=7476035482) #todoist %%[todoist_id:: 7476035482]%%
+
+## TODO
+
+#competency-matrix 
+- [ ] v8
+- [ ] platform architecture
+- [ ] kubernetes
+- [ ] Opensearch
+	- [ ] Grafana 
+- [ ] genAi
+- [ ] STIG Checks
+- [ ] Controls Documentation
+- [ ] DoD Common Access Card (CAC) (0 or 3) 
+- [ ] COMPTIA Security Plus Training (0 or 3)
+
+## TODO
+
+- [x] peter [link](https://todoist.com/showTask?id=7476035157) #todoist %%[todoist_id:: 7476035157]%%
+- [x] mayowa [link](https://todoist.com/showTask?id=7476035202) #todoist %%[todoist_id:: 7476035202]%%
+- [x] richard [link](https://todoist.com/showTask?id=7476035247) #todoist %%[todoist_id:: 7476035247]%%
+- [x] joffin[]() [link](https://todoist.com/showTask?id=7476035304) #todoist %%[todoist_id:: 7476035304]%%
+- [x] patrick [link](https://todoist.com/showTask?id=7476035354) #todoist %%[todoist_id:: 7476035354]%%
+- [x] damien [link](https://todoist.com/showTask?id=7476035408) #todoist %%[todoist_id:: 7476035408]%%
+- [x] feneel [link](https://todoist.com/showTask?id=7476035440) #todoist %%[todoist_id:: 7476035440]%%
+

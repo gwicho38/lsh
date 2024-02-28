@@ -35,7 +35,15 @@
   "showRibbon": true,
   "deleteFileOption": "trash",
   "expandedSpaces": [
-    "/"
+    "/",
+    "c3",
+    "/c3/c3",
+    "//c3/c3/templates",
+    "///c3/c3/templates/c3",
+    "//c3",
+    "//c3/c3/c3",
+    "//c3/c3/c3/c3/c3/templates",
+    "//c3/c3/c3/c3/c3/templates/c3/c3/templates/c3"
   ],
   "expandFolderOnClick": true,
   "menuTriggerChar": "/",

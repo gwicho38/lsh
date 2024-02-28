@@ -4,63 +4,34 @@
     "type": "split",
     "children": [
       {
-        "id": "1602f311f2ae725f",
+        "id": "0ff9bb89ea23d6bd",
         "type": "tabs",
         "children": [
           {
-            "id": "2242d1cb4c2eaaec",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/c3/cornea/colbert-embedder-retriever.md",
-                "mode": "source",
-                "source": false
-              },
-              "pinned": true
-            }
-          },
-          {
-            "id": "a8662843663faff7",
-            "type": "leaf",
-            "pinned": true,
-            "state": {
-              "type": "markdown",
-              "state": {
-                "file": "c3/c3/cornea/elastic-elser-embedder-retriever.md",
-                "mode": "source",
-                "source": false
-              },
-              "pinned": true
-            }
-          },
-          {
-            "id": "a9bdc631379c7039",
+            "id": "8da2b3e5b61f07d6",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/c3/interview/christopher-evans-screen.md",
+                "file": "c3/c3/rizzo/README.md",
                 "mode": "source",
                 "source": false
               }
             }
           },
           {
-            "id": "d4d37305ff31bf7b",
+            "id": "1d7501462b575e8e",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/c3/meeting/federal_biweekly_standup.md",
+                "file": "c3/c3/templates/c3/C3-RizzoRerports.md",
                 "mode": "source",
                 "source": false
               }
             }
           }
-        ],
-        "currentTab": 3
+        ]
       }
     ],
     "direction": "vertical"
@@ -131,11 +102,11 @@
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 4
       }
     ],
     "direction": "horizontal",
-    "width": 236.5,
+    "width": 323.50312423706055,
     "collapsed": true
   },
   "right": {
@@ -152,7 +123,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/c3/meeting/federal_biweekly_standup.md"
+                "file": "c3/c3/rizzo/README.md"
               }
             }
           },
@@ -181,7 +152,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/c3/meeting/federal_biweekly_standup.md",
+                "file": "c3/c3/rizzo/README.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -198,7 +169,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/c3/meeting/federal_biweekly_standup.md",
+                "file": "c3/c3/rizzo/README.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -216,72 +187,73 @@
       }
     ],
     "direction": "horizontal",
-    "width": 200,
-    "collapsed": true
+    "width": 364.5
   },
   "left-ribbon": {
     "hiddenItems": {
+      "homepage:Open homepage": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "templater-obsidian:Templater": false,
-      "homepage:Open homepage": false,
       "obisidian-note-linker:Note Linker": false,
       "obsidian-regex-pipeline:Regex Rulesets": false,
-      "mermaid-tools:Open Mermaid Toolbar": false
+      "mermaid-tools:Open Mermaid Toolbar": false,
+      "terminal:Open terminal": false,
+      "templater-obsidian:Templater": false
     }
   },
-  "active": "d4d37305ff31bf7b",
+  "active": "8da2b3e5b61f07d6",
   "lastOpenFiles": [
+    "c3/store/img/Screenshot 2024-02-28 at 12.13.09.png",
+    "c3/store/doc/20240228_CDAO_Developer_Reassignments.pdf",
+    "c3/store/doc/20240228_gpu_licensing_requirements.pdf",
+    "c3/org/ryan-vihn.md",
+    "c3/c3/contractors/sow.md",
+    "c3/c3/templates/c3/C3-RizzoRerports.md",
+    "c3/notes/Home.md",
+    "c3/c3/templates/c3/C3-Contractor.md",
+    "c3/c3/richard-bui/richard-bui.md",
+    "c3/c3/templates/templates.md",
+    "c3/c3/c3.md",
+    "c3/c3.md",
+    "templates/templates.md",
+    "c3/c3/rizzo/README.md",
+    "c3/org/org.md",
+    "c3/org",
+    "c3/c3/org/feneel-patel.md",
+    "c3/c3/org/peter-hwang.md",
+    "c3/store/doc/20240228_testing_requirements.pdf",
+    "c3/store/doc/20240228_unified_contractor_onboarding_approach.pdf",
+    "c3/c3/raw/README_IMG_2_c6572756.png",
+    "c3/store/img/Screenshot 2024-02-28 at 10.54.55.png",
+    "c3/store/doc/20240228_se_billing_and_base_contributions.pdf",
+    "c3/store/doc/20240228_c3_resource_allocation_paradyme.pdf",
+    "c3/c3/cornea/GURU_README.md",
+    "c3/c3/cornea/elastic-elser-embedder-retriever.md",
+    "c3/c3/contractors/contractors.md",
+    "c3/c3/meeting/20231205/elser_connector.md",
+    "c3/c3/meeting/fed_staffing_standup.md",
+    "c3/c3/meeting/federal_staffing_standup.md",
+    "c3/c3/interview/christopher-evans-screen.md",
+    "Untitled.canvas",
+    "c3/c3/rizzo/security+-tracker.md",
+    "c3/c3/contractors/readme.md",
+    "c3/c3/meeting/federal_biweekly_standup.md",
     "c3/c3/aviary/readme.md",
     "c3/c3/raw/readme_IMG_4_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_2_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_1_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_3_ab2b38c6.png",
-    "2024-02-26.md",
-    "c3/c3/aviary/aviary.md",
     "c3/c3/aviary",
-    "c3/c3/cornea/elastic-elser-embedder-retriever.md",
     "c3/store/doc/~$) CORNEA GURU Enterprise Search Product Specification.docx",
-    "c3/c3/interview/christopher-evans-screen.md",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
     "c3/c3/raw/tmp1708709193228_elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_3_acdf5b35.png",
-    "c3/c3/raw/tmp1708708999084_elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
-    "c3/c3/raw/raw.md",
     "c3/c3/raw",
-    "~$) CORNEA GURU Enterprise Search Product Specification.docx",
-    "(U) CORNEA GURU Enterprise Search Product Specification.docx",
-    "Untitled 1.canvas",
-    "Pasted image 20240223114135.png",
-    "c3/c3/cornea/colbert-embedder-retriever.md",
-    ".md",
-    "genai/null/null.md",
-    "genai/genai.md",
-    "genai/null",
-    "genai",
-    "c3/c3/genai/genai.md",
-    "c3/c3/interview/mpho-musengua.md",
-    "c3/c3/meeting/fed_staffing_standup.md",
-    "c3/c3/meeting/1_1_fed_engineering_team_leads.md",
-    "Home.md",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/README.md",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/README.md",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/home/home.md",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/docker_compose_8_32_1715.md",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/docker-compose.yml",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/docker_compose_8_32_1715/home",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/intel_v8_sne.md",
-    "c3/c3/cornea/opps/24211132/intel_v8_sne/untitled folder.md",
-    "c3/c3/cornea/opps/24211132/untitled folder/untitled folder.md",
-    "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/cornea/opps/opps.md",
-    "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/cornea/cornea.md",
-    "c3/c3/cornea/opps/24211132.md ./docs/c3/c3/c3.md",
-    "c3/c3/cornea/opps/24211132.md ./docs/c3/c3.md",
-    "Untitled.canvas"
+    "Untitled 1.canvas"
   ]
 }

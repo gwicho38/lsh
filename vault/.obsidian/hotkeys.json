@@ -98,5 +98,13 @@
       "key": "D"
     }
   ],
-  "make-md:mk-blink": []
+  "make-md:mk-blink": [],
+  "terminal:open-terminal.integrated.root": [
+    {
+      "modifiers": [
+        "Mod"
+      ],
+      "key": "J"
+    }
+  ]
 }

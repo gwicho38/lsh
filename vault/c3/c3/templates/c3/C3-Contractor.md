@@ -3,6 +3,8 @@ created_date: <% tp.file.creation_date('DD/MM/YYYY') %>
 id: <% tp.file.title.split(" ")[0] %>
 updated_date: <% tp.file.creation_date('DD/MM/YYYY') %>
 type: project
+tags:
+  - rizzo
 ---
 
 # #<% tp.file.creation_date('MM-YYYY') %> - <% tp.file.title.split(" ")[0] %>
