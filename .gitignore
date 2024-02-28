@@ -142,3 +142,5 @@ dist
 .tern-port
 
 # Stores VSCo
+data/
+data/**
