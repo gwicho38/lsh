@@ -209,7 +209,7 @@ https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8193802660/FDE+Badge+Progra
 [[patrick-thomas]] 
 [[mayowa-omokanwaye]] 
 [[damien-lutrin]]  
-~~[[richard-bui]]~~ 
+~~[[richard-bui]]~~ 1
 [[c3/org/ryan-vihn]] 
 
 ### Other Assignments
@@ -226,12 +226,7 @@ Whole team
 
 Peer group
 
-Do Globally --> 
-## NOTES
-
-What we're working. 
-
-Go through - get an understanding on what they're working. Get context about the broader project as a whole. 
+Do Globally --> ,,
 
 
 ## REQUIREMENTS
@@ -307,9 +302,8 @@ If you get **_any_** pushback on the above requirements from anyone – SMs, D
 |  https://calendly.com/lefv                                                                                                                                                                                                                   |  [LEFV Calendly]([https://calendly.com/lefv](https://calendly.com/lefv))       |
 | https://c3e.sharepoint.com/:x:/r/sites/FederalEngineering-fed-engineering/_layouts/15/Doc.aspx?sourcedoc=%7B28C30D1D-1DF4-49A5-BF69-58F23BF3053F%7D&amp;file=PTO%20&amp;%20Travel%20Tracker.xlsx=&amp;action=default&amp;mobileredirect=true |  [Fed OOO Tracker](https://c3e.sharepoint.com/:x:/r/sites/FederalEngineering-fed-engineering/_layouts/15/Doc.aspx?sourcedoc=%7B28C30D1D-1DF4-49A5-BF69-58F23BF3053F%7D&amp;file=PTO%20&amp;%20Travel%20Tracker.xlsx=&amp;action=default&amp;mobileredirect=true)         |  
 
-## Reviews
+## REVIEWS
 
-![[Pasted image 20231102103846.png]]
 
 - review sheet: https://c3e-my.sharepoint.com/:x:/g/personal/alejandro_chavez_c3_ai/EYPW3VfSRWNIg748sZfc4pkB7A_mL-B9i61rg1qjUcNxrA?e=0thN53&clickparams=eyJBcHBOYW1lIjoiVGVhbXMtRGVza3RvcCIsIkFwcFZlcnNpb24iOiIyOC8yMzA5MjkxMTIwNyJ9
 - 1 DM or SM
@@ -319,12 +313,9 @@ If you get **_any_** pushback on the above requirements from anyone – SMs, D
 > self eval -> template
 
 > review -> template
-## Note
 
-> go to each individual and ask who they would like to be reviewed by
-> 
+https://c3e-my.sharepoint.com/:p:/r/personal/andrew_dorsey_c3_ai/_layouts/15/doc2.aspx?sourcedoc=%7BA7197A0C-14D6-4AD0-A8BE-E31EA3298B83%7D&file=Performance%20Management%20Reviews.pptx&action=edit&mobileredirect=true&DefaultItemOpen=1
 
-- [ ] when do i get 1:1s set up in Lattice.  [link](https://todoist.com/showTask?id=7476035482) #todoist %%[todoist_id:: 7476035482]%%
 
 ## TODO
 
@@ -340,8 +331,6 @@ If you get **_any_** pushback on the above requirements from anyone – SMs, D
 - [ ] DoD Common Access Card (CAC) (0 or 3) 
 - [ ] COMPTIA Security Plus Training (0 or 3)
 
-## TODO
-
 - [x] peter [link](https://todoist.com/showTask?id=7476035157) #todoist %%[todoist_id:: 7476035157]%%
 - [x] mayowa [link](https://todoist.com/showTask?id=7476035202) #todoist %%[todoist_id:: 7476035202]%%
 - [x] richard [link](https://todoist.com/showTask?id=7476035247) #todoist %%[todoist_id:: 7476035247]%%
@@ -350,3 +339,7 @@ If you get **_any_** pushback on the above requirements from anyone – SMs, D
 - [x] damien [link](https://todoist.com/showTask?id=7476035408) #todoist %%[todoist_id:: 7476035408]%%
 - [x] feneel [link](https://todoist.com/showTask?id=7476035440) #todoist %%[todoist_id:: 7476035440]%%
 
+> go to each individual and ask who they would like to be reviewed by
+> 
+
+- [ ] when do i get 1:1s set up in Lattice.  [link](https://todoist.com/showTask?id=7476035482) #todoist %%[todoist_id:: 7476035482]%%

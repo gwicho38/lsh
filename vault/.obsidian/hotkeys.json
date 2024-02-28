@@ -106,5 +106,16 @@
       ],
       "key": "J"
     }
+  ],
+  "workspace:toggle-pin": [
+    {
+      "modifiers": [
+        "Alt",
+        "Ctrl",
+        "Mod",
+        "Shift"
+      ],
+      "key": "K"
+    }
   ]
 }

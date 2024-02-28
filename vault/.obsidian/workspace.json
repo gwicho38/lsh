@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/c3/org/feneel-patel.md",
+                "file": "2024-02-28.md",
                 "mode": "source",
                 "source": false
               }
@@ -22,13 +22,15 @@
           {
             "id": "1d7501462b575e8e",
             "type": "leaf",
+            "pinned": true,
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/c3/templates/c3/C3-RizzoRerports.md",
+                "file": "c3/c3/rizzo/README.md",
                 "mode": "source",
                 "source": false
-              }
+              },
+              "pinned": true
             }
           }
         ]
@@ -123,7 +125,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/c3/org/feneel-patel.md"
+                "file": "2024-02-28.md"
               }
             }
           },
@@ -152,7 +154,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/c3/org/feneel-patel.md",
+                "file": "2024-02-28.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -169,7 +171,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/c3/org/feneel-patel.md",
+                "file": "2024-02-28.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -208,15 +210,20 @@
   },
   "active": "8da2b3e5b61f07d6",
   "lastOpenFiles": [
+    "c3/c3/meeting/fed_engineering_teams_leads.md",
+    "2024-02-28.md",
+    "Spaces/Home/Home.md",
+    "c3/c3/rizzo/README.md",
+    "c3/c3/meeting/rizzo_standup.md",
+    "c3/c3/templates/c3/C3-RizzoRerports.md",
+    "c3/c3/org/feneel-patel.md",
     "c3/store/img/Screenshot 2024-02-28 at 15.00.56.png",
     "c3/c3/meeting/1_1_sean_summers.md",
-    "c3/c3/rizzo/README.md",
     "c3/store/img/Screenshot 2024-02-28 at 12.13.09.png",
     "c3/store/doc/20240228_CDAO_Developer_Reassignments.pdf",
     "c3/store/doc/20240228_gpu_licensing_requirements.pdf",
     "c3/org/ryan-vihn.md",
     "c3/c3/contractors/sow.md",
-    "c3/c3/templates/c3/C3-RizzoRerports.md",
     "c3/notes/Home.md",
     "c3/c3/templates/c3/C3-Contractor.md",
     "c3/c3/richard-bui/richard-bui.md",
@@ -226,7 +233,6 @@
     "templates/templates.md",
     "c3/org/org.md",
     "c3/org",
-    "c3/c3/org/feneel-patel.md",
     "c3/c3/org/peter-hwang.md",
     "c3/store/doc/20240228_testing_requirements.pdf",
     "c3/store/doc/20240228_unified_contractor_onboarding_approach.pdf",
@@ -242,9 +248,6 @@
     "c3/c3/meeting/federal_staffing_standup.md",
     "c3/c3/interview/christopher-evans-screen.md",
     "Untitled.canvas",
-    "c3/c3/rizzo/security+-tracker.md",
-    "c3/c3/contractors/readme.md",
-    "c3/c3/meeting/federal_biweekly_standup.md",
     "c3/c3/raw/readme_IMG_4_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_2_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_1_ab2b38c6.png",
@@ -253,7 +256,6 @@
     "c3/store/doc/~$) CORNEA GURU Enterprise Search Product Specification.docx",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
-    "c3/c3/raw/tmp1708709193228_elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
     "c3/c3/raw",
     "Untitled 1.canvas"
   ]
