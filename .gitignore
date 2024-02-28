@@ -147,3 +147,4 @@ util/helm/.DS_Store
 # Darwin files
 .DS_Store
 data/**/**
+/Users/lefv/repos/lsh/util/c3server
