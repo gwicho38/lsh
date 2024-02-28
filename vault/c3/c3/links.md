@@ -1,8 +1,0 @@
-###  Travel Request Forms 2024-01-18
-
-- [Before traveling](https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fforms.office.com%2FPages%2FResponsePage.aspx%3Fid%3DmnetU-eTXEi6IKyCkNclK3LjWWvCI2xNnAFYSn3mumhUNzQ2MkFVRUQwV0hGQjJGS0cxRlVIOTFVSy4u&data=05%7C02%7Cluis.fernandez-de-la-vara%40c3.ai%7C0b184bcbbe9d4d6601c508dc0e0bd1aa%7C53ad779a93e7485cba20ac8290d7252b%7C1%7C0%7C638400691150493770%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C3000%7C%7C%7C&sdata=iQt1ovFadGHDSguk06lIexGRVdc%2FmWz3%2FrG9kUQbKwo%3D&reserved=0 "Original URL: https://forms.office.com/Pages/ResponsePage.aspx?id=mnetU-eTXEi6IKyCkNclK3LjWWvCI2xNnAFYSn3mumhUNzQ2MkFVRUQwV0hGQjJGS0cxRlVIOTFVSy4u. Click or tap if you trust this link.")
-- [After traveling](https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fforms.office.com%2FPages%2FResponsePage.aspx%3Fid%3DmnetU-eTXEi6IKyCkNclK3LjWWvCI2xNnAFYSn3mumhUNUEzNEI0TTNNUkE4SElFQzJQSUNYNDRHWS4u&data=05%7C02%7Cluis.fernandez-de-la-vara%40c3.ai%7C0b184bcbbe9d4d6601c508dc0e0bd1aa%7C53ad779a93e7485cba20ac8290d7252b%7C1%7C0%7C638400691150493770%7CUnknown%7CTWFpbGZsb3d8eyJWIjoiMC4wLjAwMDAiLCJQIjoiV2luMzIiLCJBTiI6Ik1haWwiLCJXVCI6Mn0%3D%7C3000%7C%7C%7C&sdata=SG68KdhPrRzdbKhTmijkW0bKkH0XKESvVbjvsrnGtwA%3D&reserved=0 "Original URL: https://forms.office.com/Pages/ResponsePage.aspx?id=mnetU-eTXEi6IKyCkNclK3LjWWvCI2xNnAFYSn3mumhUNUEzNEI0TTNNUkE4SElFQzJQSUNYNDRHWS4u. Click or tap if you trust this link.")
-
-## C3 IT
-
-https://c3energy.atlassian.net/servicedesk/customer/portals

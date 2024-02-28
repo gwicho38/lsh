@@ -1,1 +1,0 @@
-[[c3/contractors/quentin-wilkes]] 
