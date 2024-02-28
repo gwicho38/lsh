@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "c3/c3/rizzo/README.md",
+                "file": "c3/c3/org/feneel-patel.md",
                 "mode": "source",
                 "source": false
               }
@@ -123,7 +123,7 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "c3/c3/rizzo/README.md"
+                "file": "c3/c3/org/feneel-patel.md"
               }
             }
           },
@@ -152,7 +152,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "c3/c3/rizzo/README.md",
+                "file": "c3/c3/org/feneel-patel.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -169,7 +169,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "c3/c3/rizzo/README.md",
+                "file": "c3/c3/org/feneel-patel.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -187,7 +187,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 364.5
+    "width": 364.5,
+    "collapsed": true
   },
   "left-ribbon": {
     "hiddenItems": {
@@ -207,6 +208,9 @@
   },
   "active": "8da2b3e5b61f07d6",
   "lastOpenFiles": [
+    "c3/store/img/Screenshot 2024-02-28 at 15.00.56.png",
+    "c3/c3/meeting/1_1_sean_summers.md",
+    "c3/c3/rizzo/README.md",
     "c3/store/img/Screenshot 2024-02-28 at 12.13.09.png",
     "c3/store/doc/20240228_CDAO_Developer_Reassignments.pdf",
     "c3/store/doc/20240228_gpu_licensing_requirements.pdf",
@@ -220,7 +224,6 @@
     "c3/c3/c3.md",
     "c3/c3.md",
     "templates/templates.md",
-    "c3/c3/rizzo/README.md",
     "c3/org/org.md",
     "c3/org",
     "c3/c3/org/feneel-patel.md",
@@ -242,7 +245,6 @@
     "c3/c3/rizzo/security+-tracker.md",
     "c3/c3/contractors/readme.md",
     "c3/c3/meeting/federal_biweekly_standup.md",
-    "c3/c3/aviary/readme.md",
     "c3/c3/raw/readme_IMG_4_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_2_ab2b38c6.png",
     "c3/c3/raw/readme_IMG_1_ab2b38c6.png",
@@ -252,7 +254,6 @@
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
     "c3/c3/raw/elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
     "c3/c3/raw/tmp1708709193228_elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
-    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_3_acdf5b35.png",
     "c3/c3/raw",
     "Untitled 1.canvas"
   ]

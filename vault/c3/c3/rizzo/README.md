@@ -148,6 +148,7 @@ Thanks,
 Eric
 ```
 
+
 **Source**: [[20240228_gpu_licensing_requirements.pdf]] 
 ## PAGES
 

@@ -1,6 +1,14 @@
 {
   "recentFiles": [
     {
+      "basename": "feneel-patel",
+      "path": "c3/c3/org/feneel-patel.md"
+    },
+    {
+      "basename": "1_1_sean_summers",
+      "path": "c3/c3/meeting/1_1_sean_summers.md"
+    },
+    {
       "basename": "README",
       "path": "c3/c3/rizzo/README.md"
     },
@@ -43,10 +51,6 @@
     {
       "basename": "templates",
       "path": "templates/templates.md"
-    },
-    {
-      "basename": "feneel-patel",
-      "path": "c3/c3/org/feneel-patel.md"
     },
     {
       "basename": "peter-hwang",
@@ -195,10 +199,6 @@
     {
       "basename": "2024-02-02",
       "path": "2024-02-02.md"
-    },
-    {
-      "basename": "2024-02-13",
-      "path": "2024-02-13.md"
     }
   ],
   "omittedPaths": [],
