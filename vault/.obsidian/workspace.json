@@ -8,12 +8,28 @@
         "type": "tabs",
         "children": [
           {
+            "id": "8da2b3e5b61f07d6",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "2024-02-28.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          },
+          {
             "id": "1d7501462b575e8e",
             "type": "leaf",
             "pinned": true,
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "c3/c3/rizzo/README.md",
+                "mode": "source",
+                "source": false
+              },
               "pinned": true
             }
           }
@@ -108,7 +124,9 @@
             "type": "leaf",
             "state": {
               "type": "outline",
-              "state": {}
+              "state": {
+                "file": "2024-02-28.md"
+              }
             }
           },
           {
@@ -136,6 +154,7 @@
             "state": {
               "type": "backlink",
               "state": {
+                "file": "2024-02-28.md",
                 "collapseAll": true,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -152,6 +171,7 @@
             "state": {
               "type": "outgoing-link",
               "state": {
+                "file": "2024-02-28.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               }
@@ -188,12 +208,12 @@
       "templater-obsidian:Templater": false
     }
   },
-  "active": "1d7501462b575e8e",
+  "active": "8da2b3e5b61f07d6",
   "lastOpenFiles": [
-    "c3/c3/rizzo/README.md",
-    "2024-02-28.md",
     "c3/c3/meeting/fed_engineering_teams_leads.md",
+    "2024-02-28.md",
     "Spaces/Home/Home.md",
+    "c3/c3/rizzo/README.md",
     "c3/c3/meeting/rizzo_standup.md",
     "c3/c3/templates/c3/C3-RizzoRerports.md",
     "c3/c3/org/feneel-patel.md",

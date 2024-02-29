@@ -1,0 +1,250 @@
+{
+  "main": {
+    "id": "ddfc437c37881e23",
+    "type": "split",
+    "children": [
+      {
+        "id": "9badd99ba716cb6c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c0e7b4fd5038cbb2",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/mmef/readme.md",
+                "mode": "source",
+                "backlinks": true,
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "db7a986c95fc933e",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/meeting/1_1_damien_lutrin.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              },
+              "pinned": true
+            }
+          },
+          {
+            "id": "823ac220fdb73913",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "c3/interview/fernando-canales.md",
+                "mode": "source",
+                "backlinks": false,
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "a7ef1d1755800e1c",
+    "type": "split",
+    "children": [
+      {
+        "id": "3856eb4b957614d0",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "5b80727a97b39968",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "b50d644841bf87d3",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "manifest",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": true,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "501a3da2f2a48b9f",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          },
+          {
+            "id": "4fc712e9190ce2e8",
+            "type": "leaf",
+            "state": {
+              "type": "recent-files",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "e6df840121348a1f",
+    "type": "split",
+    "children": [
+      {
+        "id": "8ecb8ea4229faf9d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c8f278c5204ecd59",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "c3/interview/fernando-canales.md",
+                "collapseAll": true,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "99d24dc215e3c949",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "c3/interview/fernando-canales.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "e8baebffdf95506f",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "6002e4d13139af6e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "c3/interview/fernando-canales.md"
+              }
+            }
+          },
+          {
+            "id": "e84a10700d51c0ff",
+            "type": "leaf",
+            "state": {
+              "type": "ch.der-tobi.obsidian-simple-mention",
+              "state": {}
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 341.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "templater-obsidian:Templater": false
+    }
+  },
+  "active": "823ac220fdb73913",
+  "lastOpenFiles": [
+    "c3/daily/2024-02-01.md",
+    "c3/daily/2024-01-31.md",
+    "c3/interview/fernando-canales.md",
+    "c3/daily/2024-01-30.md",
+    "c3/meeting/federal_staffing_standup.md",
+    "c3/ticket/temp-cornea-guru-20250129.md",
+    "c3/macbook/readme.md",
+    "c3/builds/guruSearchUI8.3.2+release.1.modified.md",
+    "c3/macbook",
+    "c3/cornea/buids/0e0f8798.md",
+    "c3/builds",
+    "c3/daily/2024-01-29.md",
+    "lefv/property/20601.md",
+    "c3/daily/2024-01-27.md",
+    "lefv/property",
+    "lefv",
+    "c3/ticket/unlabeled-20230126.md",
+    "c3/daily/2024-01-26.md",
+    "c3/meeting/1_1_feneel-patel.md",
+    "c3/rizzo/csol.md",
+    "c3/lib/Pasted image 20240125140534.png",
+    "c3/daily/2024-01-25.md",
+    "c3/meeting/guru_dsu.md",
+    "c3/daily/2024-01-24.md",
+    "c3/daily/2024-01-23.md",
+    "c3/links.md",
+    "c3/cornea/builds/3ab0e19a.md",
+    "c3/lib/Pasted image 20240123154609.png",
+    "c3/lib/Pasted image 20240123152010.png",
+    "c3/lib/Pasted image 20240123145944.png",
+    "c3/meeting/1_1_damien_lutrin.md",
+    "c3/mmef/readme.md",
+    "c3/lib/Pasted image 20240123144440.png",
+    "c3/meeting/1_1_richard_bui.md",
+    "c3/org/richard-bui.md",
+    "c3/templates/cornea",
+    "c3/cornea/buids",
+    "c3/cornea/track_tool",
+    "c3/lib/Pasted image 20240115203849.png",
+    "c3/lib/Pasted image 20240115203425.png",
+    "c3/lib/Pasted image 20240115203415.png",
+    "c3/lib/Pasted image 20240115203408.png",
+    "c3/cornea/builds",
+    "vs",
+    "c3/lib/Pasted image 20240111115626.png",
+    "c3/archive/gkev8c3apps.c3-e.com-1704731269624.log"
+  ]
+}

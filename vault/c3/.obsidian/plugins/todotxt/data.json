@@ -1,0 +1,10 @@
+{
+  "defaultPriorityFilter": "B",
+  "defaultOrganizeBy": "project",
+  "defaultTodotxt": "default",
+  "additionalExts": [
+    ".md"
+  ],
+  "recurringTasks": true,
+  "preservePriority": false
+}
