@@ -1,0 +1,1 @@
+[C3 AI Proposal - C3 Generative AI LLM Service.docx](https://c3e-my.sharepoint.com/:w:/g/personal/sharedfolders_c3iot_com/ESXdfQym4ipFszsxLF64ULEBqri70WmBgMvHkFydGo_8rw?e=Bh8bY2)

@@ -1,0 +1,19 @@
+curl 'https://ci-artifacts.c3.ai/v1/artifacts/maven-repo/mavens/com/oracle/jdbc/ojdbc8/18.3/ojdbc8-18.3.jar' \
+	-H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7' \
+	-H 'Accept-Language: en-US,en;q=0.9' \
+	-H 'Cache-Control: no-cache' \
+	-H 'Connection: keep-alive' \
+	-H 'Cookie: _gcl_au=1.1.1564899140.1708115304; _uetvid=ef05a9c0cd0911ee84a001f30aa2ec28; _clck=18zdf7p%7C2%7Cfjb%7C0%7C1507; _mkto_trk=id:375-LHD-920&token:_mch-c3.ai-1708115304575-40682; _ce.irv=new; cebs=1; cebsp_=1; _ga_FVKMLPT9LD=GS1.1.1708115304.1.1.1708115313.51.0.0; _ce.s=v~3a7d592f810d0bf5a8674f1bf093fe95cb73f413~lcw~1708115313629~lva~1708115304622~vpv~0~v11.fhb~1708115304888~v11.lhb~1708115304888~v11.cs~355009~v11.s~ef56b1a0-cd09-11ee-987c-1313ccd61665~v11.sla~1708115313650~v11.send~1708115313629~lcw~1708115313650; _ga_WYZ0QXMGP0=GS1.1.1708980097.2.1.1708982155.0.0.0; _ga=GA1.2.447320503.1707155473; _gid=GA1.2.582394959.1709052600; _ga_CP5DJZ0LB5=GS1.2.1709052600.20.1.1709053155.42.0.0' \
+	-H 'DNT: 1' \
+	-H 'Pragma: no-cache' \
+	-H 'Referer: https://ci-artifacts.c3.ai/mavens' \
+	-H 'Sec-Fetch-Dest: document' \
+	-H 'Sec-Fetch-Mode: navigate' \
+	-H 'Sec-Fetch-Site: same-origin' \
+	-H 'Sec-Fetch-User: ?1' \
+	-H 'Upgrade-Insecure-Requests: 1' \
+	-H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36' \
+	-H 'sec-ch-ua: "Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"' \
+	-H 'sec-ch-ua-mobile: ?0' \
+	-H 'sec-ch-ua-platform: "macOS"' \
+	--compressed
