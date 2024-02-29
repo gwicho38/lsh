@@ -1,0 +1,30 @@
+version: '3.7'
+services:
+  c3server:
+    image: 8_32_1715:latest
+    hostname: c3server_8_32_1715 
+    container_name: c3server_8_32_1715 
+    volumes:
+      - $HOME/tmp/:/host/tmp
+      - ./home/:/host/home
+    ports:
+    - 8888:8888
+    - 9999:9000
+    restart: always
+  # cass:
+  #   image: cassandra:3.11
+  #   restart: unless-stopped
+  #   mem_limit: 8g
+  #   ports:
+  #     - 9042:9042
+  #
+  # pg:
+  #   image: postgres:15
+  #   restart: unless-stopped
+  #   mem_limit: 4g
+  #   ports:
+  #     - 5432:5432
+  #   environment:
+  #     POSTGRES_USER: c3
+  #     POSTGRES_PASSWORD: c3postgres
+  #     POSTGRES_DB: c3

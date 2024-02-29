@@ -10,6 +10,6 @@ const prepareMetadata = function (passageContent, sourceFile) {
     return passageContent
  }
 
-const indexMetadataLambda = Lambda.fromJsFunc(prepareMetadata);
-const sc = Genai.SourceCollection.forId("default");
-sc.withField('indexedContentProvider', indexMetadataLambda).merge();
+// const indexMetadataLambda = Lambda.fromJsFunc(prepareMetadata);
+// const sc = Genai.SourceCollection.forId("default");
+// sc.withField('indexedContentProvider', indexMetadataLambda).merge();
