@@ -142,14 +142,5 @@ dist
 .tern-port
 
 # Stores VSCo
-util/helm/.DS_Store
-
-# Darwin files
-.DS_Store
-data/**/**
-/Users/lefv/repos/lsh/util/c3server
-/Users/lefv/repos/lsh/vault/
-/Users/lefv/repos/lsh/links/
-/Users/lefv/repos/lsh/data/
-todo/
-util/c3-ui-react/
+data/
+data/**
