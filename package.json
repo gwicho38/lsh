@@ -28,7 +28,7 @@
     "@deck.gl/core": "^8.9.33",
     "async": "^3.2.5",
     "async-lock": "^1.4.0",
-    "axios": "^1.5.1",
+    "axios": "^1.6.0",
     "c3-thin": "file:c3-thin-7.30.0-alpha.tgz",
     "chalk": "^5.3.0",
     "cheerio": "^1.0.0-rc.12",
