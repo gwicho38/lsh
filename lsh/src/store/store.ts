@@ -10,9 +10,9 @@ export const getPrivateKey = () => uKey;
 export const setPrivateKey = (value: string) => { uKey = value; };
 
 // {"typ":"JWT","alg":"RS512"}
-let c3Key = "EMPTY";
-export const getC3Key = () => c3Key;
-export const setC3Key = (value: string) => { c3Key = value; }
+let key = "EMPTY";
+export const getkey = () => key;
+export const setkey = (value: string) => { key = value; }
 
 // {"typ":"JWT","alg":"RS512"}
 export const getC3 = () => console.log("getC3");
@@ -23,10 +23,10 @@ export const set = (value: any) => console.log(value);
 export const inst = (value: any) => console.log(value);
 export const kill = (value: any) => console.log(value);
 
-type C3 = {
+type LSH= {
     id?: number;
     name?: string;
-    c3Key?: string;
+    key?: string;
     pkgId?: string; 
     get?: any;
     set?: any;
