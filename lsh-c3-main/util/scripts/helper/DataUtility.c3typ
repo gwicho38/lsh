@@ -1,0 +1,76 @@
+/*
+ * Copyright 2009-2024 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+/**
+ * Utility type to export C3 entity type data from an environment.
+ */
+type DataUtility {
+
+  /**
+   * Exports entity type data and saves JSON exports to remote filesystem.
+   */
+  exportData: function(exportName: string = "ICMExport"): json js-server
+
+  /**
+   * Generates zip file containing exported JSON data and returns the zip file URL.
+   */
+  generateExportZipFile: function(exportName: string = "ICMExport"): string js-server
+
+  /**
+   * TODO (use FileUtility in implementation) Deletes all files associated with the given export name.
+   */
+  deleteExport: function(exportName: string = "ICMExport"): int js-server
+
+  /**
+   * Unzips export file from remote filesystem and starts import of JSON export files.
+   */
+  importData: function(exportName: string = "ICMExport"): json js-server
+
+  /**
+   * Takes the contents of a KML or KMZ file and creates an corresponding {@link IcMapOverlay}.
+   */
+  importICO: function(name: !string, content: !binary, operationId: string): IcMapOverlay js-server
+
+  /**
+   * Exports an ICO in the given export format (KML or KMZ) and returns the URL for download.
+   */
+  exportICO: function(type: !string, id: !string, exportFormat: !string): string js-server
+  
+  /**
+   * Converts a given GeoJSON object to a KML string using the @maphubs/tokml library.
+   * See: https://github.com/maphubs/tokml.
+   */
+  toKml: function(geoJson: !json, options: json): string js-icm-node
+
+  /**
+   * Coverts a given KML string to a GeoJSON object using the mapbox/togeojson library.
+   * See: https://github.com/mapbox/togeojson.
+   */
+  fromKmlToGeoJson: function(kmlString: !string): json js-icm-node
+
+  /**
+   * Deletes all the files in the /fs/mapImports/ directory.
+   */
+  deleteMapImports: function(): int js-server
+
+  /**
+   * Deletes all the files in the /fs/mapExports/ directory.
+   */
+  deleteMapExports: function(): int js-server
+
+  /**
+   * Format bytes (file contentLength) to human-readable value. Returns value in appropriate unit (B, KB, MB, GB, TB).
+   */
+  formatBytes: function(bytes: !int): string js-server
+
+  /**
+   * Converts the given longitude and latitude to a {@link MgrsLocation} using the proj4js/mgrs library.
+   * See: https://github.com/proj4js/mgrs.
+   */
+  convertLongLatToMgrs: function(long: !float, lat: !float, accuracy: int = 5): MgrsLocation js-icm-node
+}

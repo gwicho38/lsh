@@ -1,0 +1,30 @@
+## alert_rules.yml ##
+
+# Alert for any instance that is unreachable for >1 minutes.
+groups:
+  - name: AllInstances
+    rules:
+      - alert: InstanceDown
+        # Condition for alerting
+        expr: up == 0
+        for: 1m
+        # Annotation - additional informational labels to store more information
+        annotations:
+          title: 'Instance {{ $labels.instance }} down'
+          description: '{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute.'
+        # Labels - additional labels to be attached to the alert
+        labels:
+          severity: 'critical'
+  
+  - name: JVMMemory 
+    rules:
+      - alert: JVMMemoryThresholdCrossed
+        # Condition for alerting
+        expr: jvm_memory_committed_bytes{region="heap"}/jvm_memory_max_bytes{region="heap"} > 0.8
+        # Annotation - additional informational labels to store more information
+        annotations:
+          title: 'Instance {{ $labels.instance }} has crossed 80% heap memory usage'
+          description: '{{ $labels.instance }} of job {{ $labels.job }} has crossed 80% heap memory usage'
+        # Labels - additional labels to be attached to the alert
+        labels:
+          severity: 'critical'
