@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES6", // Specify ECMAScript target version
+    "outDir": "./dist", // Redirect output structure to the directory
+    "rootDir": "./src", // Specify the root directory of input files
+    "strict": false, // Enable all strict type-checking options
+    "sourceMap": false,
+    "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
+    "skipLibCheck": false, // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
+    "moduleResolution": "Node",
+    "jsx": "react",
+    "declaration": true,
+    "declarationDir": "./types",
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": [
+    "src/**/*.ts" // Include all TypeScript files in src (including your entry point)
+    ,
+    "lib/workflows/v8_deploy_artifact.nbjs"
+  ],
+  "exclude": [
+    "node_modules", // Exclude the node_modules directory
+    //   "**/*.test.ts" // Exclude test files
+  ]
+}

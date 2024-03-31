@@ -1,0 +1,258 @@
+{
+  "main": {
+    "id": "8aec273e6d09679d",
+    "type": "split",
+    "children": [
+      {
+        "id": "0ff9bb89ea23d6bd",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "1d7501462b575e8e",
+            "type": "leaf",
+            "pinned": true,
+            "state": {
+              "type": "empty",
+              "state": {},
+              "pinned": true
+            }
+          },
+          {
+            "id": "10b41a1f6d19f36f",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Spaces/Home/Home.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "d87b75ca70b38683",
+    "type": "split",
+    "children": [
+      {
+        "id": "0a457f284d1a103e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ffec4d14709eeb52",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "78491c514532325f",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "179495021f522885",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          },
+          {
+            "id": "3f69b22965d05e2f",
+            "type": "leaf",
+            "state": {
+              "type": "recent-files",
+              "state": {}
+            }
+          },
+          {
+            "id": "2525233e32249c5c",
+            "type": "leaf",
+            "state": {
+              "type": "mk-path-view",
+              "state": {}
+            }
+          },
+          {
+            "id": "2125869e9df4e465",
+            "type": "leaf",
+            "state": {
+              "type": "mk-path-view",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 200,
+    "collapsed": true
+  },
+  "right": {
+    "id": "74a509b4fcd0481c",
+    "type": "split",
+    "children": [
+      {
+        "id": "cbfaa47303710e43",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cfb722e570d06555",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Spaces/Home/Home.md"
+              }
+            }
+          },
+          {
+            "id": "6db9a394f88fd95c",
+            "type": "leaf",
+            "state": {
+              "type": "ch.der-tobi.obsidian-simple-mention",
+              "state": {}
+            }
+          },
+          {
+            "id": "26152ef62b4e879b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "2b0159006d6bbe52",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Spaces/Home/Home.md",
+                "collapseAll": true,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "5e2820c7d7ed0840",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Spaces/Home/Home.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "776dade71d8b124a",
+            "type": "leaf",
+            "state": {
+              "type": "mermaid-toolbar-view",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 364.5,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "templater-obsidian:Templater": false,
+      "homepage:Open homepage": false,
+      "obisidian-note-linker:Note Linker": false,
+      "obsidian-regex-pipeline:Regex Rulesets": false,
+      "mermaid-tools:Open Mermaid Toolbar": false,
+      "terminal:Open terminal": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "10b41a1f6d19f36f",
+  "lastOpenFiles": [
+    "Home.md",
+    "c3/c3/meeting/1_1_joffin_manjaly.md",
+    "20240229.md",
+    "c3/c3/raw/readme_IMG_3_ab2b38c6.png.crswap",
+    "c3/c3/raw/readme_IMG_3_ab2b38c6.png",
+    "c3/c3/raw/readme_IMG_2_ab2b38c6.png",
+    "c3/c3/raw/readme_IMG_1_ab2b38c6.png",
+    "c3/c3/raw/raw.md",
+    "c3/c3/raw/federal_staffing_standup_IMG_2_21c332b4.png",
+    "c3/c3/raw/federal_staffing_standup_IMG_1_21c332b4.png",
+    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_3_acdf5b35.png",
+    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_2_acdf5b35.png",
+    "c3/c3/raw/elastic-elser-embedder-retriever_IMG_1_acdf5b35.png",
+    "c3/c3/raw/README_IMG_2_c6572756.png",
+    "c3/c3/raw/README_IMG_1_c6572756.png",
+    "c3/c3/raw/GURU_README_IMG_2_acdf5b35.md",
+    "c3/c3/raw",
+    "c3/c3/pso/lib/repo mgmt.md",
+    "c3/c3/pso/lib/provisioning.md",
+    "c3/c3/pso/lib/links.md",
+    "c3/c3/pso/lib/data mgmt and model.md",
+    "c3/c3/pso/lib/_lib.md",
+    "c3/c3/pso/lib/_Index_of_lib.md",
+    "c3/c3/pso/scenario-mgmt.md",
+    "c3/c3/pso/ticket-workflow.md",
+    "c3/c3/pso/repo mgmt.md",
+    "c3/c3/pso/provisioning.md",
+    "c3/c3/pso/pr-work-flow.md",
+    "c3/c3/pso/links.md",
+    "c3/c3/pso/lib",
+    "c3/c3/pso/features.md",
+    "c3/c3/pso/feature_scenario_management.md",
+    "c3/c3/pso/feature_alert.md",
+    "c3/c3/pso/data mgmt and model.md",
+    "c3/c3/pso/alerts.md",
+    "c3/c3/pso/_pso.md",
+    "c3/c3/pso/Untitled.md",
+    "c3/c3/pso/_Index_of_pso.md",
+    "c3/c3/pso",
+    "c3/c3/proposals/cornea/guru.md",
+    "c3/c3/proposals/cornea",
+    "c3/c3/proposals",
+    "c3/c3/pnnl",
+    "c3/c3/org/peter-hwang 1",
+    "c3/c3/org/peter-hwang",
+    "c3/c3/org/joffin-manjaly",
+    "Untitled.canvas",
+    "Untitled 1.canvas"
+  ]
+}

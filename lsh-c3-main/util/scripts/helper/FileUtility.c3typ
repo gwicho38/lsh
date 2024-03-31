@@ -1,0 +1,43 @@
+/*
+ * Copyright 2009-2024 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+/**
+ * Utility type to manage, navigate, and organize the remote filesystem.
+ */
+type FileUtility {
+  /**
+   * Returns the directory for data imports.
+   */
+  getDataImportDirectory: inline function(): string js-server
+
+  /**
+   * Returns the directory for data exports.
+   */
+  getDataExportDirectory: inline function(): string js-server
+
+  /**
+   * Returns the directory for map imports.
+   */
+  getMapImportDirectory: inline function(): string js-server
+
+  /**
+   * Returns the directory for map exports.
+   */
+  getMapExportDirectory: inline function(): string js-server
+
+  /**
+   * Returns the directory for all files specific to an {@link Operation}.
+   * TODO re-organize filesystem directory structure to be organized by operation.
+   */
+  getOperationDirectory: inline function(operationId: string): string js-server
+
+  /**
+   * Generate a URL that can be used to view/download the file given a filesystem absolute path.
+   */
+  getDownloadPath: inline function(fileUrl: !string): string js-server
+}
