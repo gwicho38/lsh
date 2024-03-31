@@ -10,7 +10,7 @@ let pkgId;
 
 export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
   console.log("makePostRequest");
-  const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
+  const url = CONFIG.URL + '/api/8' + '/' + typeName + '/' + method;
   console.log(url);
 
   // Prevent parallel writes/deletions
