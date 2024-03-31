@@ -4,8 +4,8 @@ export declare const getPrivateKey: () => string;
 export declare const setPrivateKey: (value: string) => void;
 export declare const getkey: () => string;
 export declare const setkey: (value: string) => void;
-export declare const getC3: () => void;
-export declare const setC3: (value: any) => void;
+export declare const getLSH: () => void;
+export declare const setLSH: (value: any) => void;
 export declare const get: () => void;
 export declare const set: (value: any) => void;
 export declare const inst: (value: any) => void;
@@ -18,6 +18,6 @@ type LSH= {
     get?: any;
     set?: any;
 };
-export declare const c3: C3;
+export declare const lsh: LSH;
 export { };
 
