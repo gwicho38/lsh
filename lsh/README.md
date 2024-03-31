@@ -6,8 +6,6 @@
 
 `lsh` extensible cli.
 
-`c3.ai` reference documents and scripts.
-
 ## Contributors
 
 lsh is (and will continue to be) a work in progress. All help, cleanup, and comments are welcome.
