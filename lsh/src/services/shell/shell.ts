@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import * as repl from 'repl';
-import { getC3 as getLSH } from '../../store/store.js';
+import { getLSH } from '../../store/store.js';
 
 interface Spec {
   function: String
@@ -17,7 +17,7 @@ export async function init_shell_cmd(program: Command) {
 async function cmd_interactive(program: Command) {
   program
   .command('interactive')
-  .description('c3sh interactive shell')
+  .description('lsh interactive shell')
   .action(async (type: String, action: String, spec: Spec) => {
     repl.start({
       prompt: '> ',
