@@ -3,17 +3,17 @@ declare global {
     /**
      * Function that generates a token based on a username and a key pair.
      *
-     * @returns a new valid c3key authentication token
+     * @returns a new valid key authentication token
      */
-    function generateC3KeyAuthToken(): string;
-    function generateC3SessionToken(): JSON;
+    function generateAuthToken(): string;
+    function generateSessionToken(): JSON;
 }
-export declare const generateC3SessionToken: () => any;
+export declare const generateSessionToken: () => any;
 /**
- * Creates a function that generates c3key tokens based on a private key.
+ * Creates a function that generates key tokens based on a private key.
  *
- * NOTE: We need this to support c3key-based tokens. The typesystem is expecting a function to be defined
- *       so that it can "refresh" the c3key token any time a request is sent.
+ * NOTE: We need this to support key-based tokens. The typesystem is expecting a function to be defined
+ *       so that it can "refresh" the key token any time a request is sent.
  *
  *       This is not ideal and the type system should provide full support for it, but the current v7
  *       implementation is hardcoded in boot.js as part of the `c3` CLI so with this function we are
