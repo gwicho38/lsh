@@ -4,7 +4,7 @@
   "description": "extensible cli client",
   "main": "src/app.js",
   "bin": {
-    "c3sh": "./dist/app.js"
+    "lsh": "./dist/app.js"
   },
   "scripts": {
     "compile-ts": "tsc -b",
@@ -23,13 +23,11 @@
   "author": "lefv",
   "license": "ISC",
   "dependencies": {
-    "@c3/c3-remote": "file:c3-remote.tgz",
     "@deck.gl/core": "^8.9.33",
     "@xstate/react": "^4.1.0",
     "async": "^3.2.5",
     "async-lock": "^1.4.0",
     "axios": "^1.5.1",
-    "c3-thin": "file:c3-thin-7.30.0-alpha.tgz",
     "chalk": "^5.3.0",
     "cheerio": "^1.0.0-rc.12",
     "chokidar": "^3.6.0",
@@ -38,7 +36,6 @@
     "dotenv": "^16.4.5",
     "fprint": "^2.0.1",
     "gradstop": "^2.2.3",
-    "http-basic": "file:http-basic.tgz",
     "inquirer": "^9.2.12",
     "jest": "^29.7.0",
     "mocha": "^10.3.0",
