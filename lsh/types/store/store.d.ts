@@ -18,6 +18,6 @@ type LSH= {
     get?: any;
     set?: any;
 };
-export declare const c3: C3;
+export declare const lsh: LSH;
 export { };
 
