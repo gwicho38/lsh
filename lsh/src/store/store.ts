@@ -15,8 +15,8 @@ export const getKey = () => key;
 export const setKey = (value: string) => { key = value; }
 
 // {"typ":"JWT","alg":"RS512"}
-export const getLSH = () => console.log("getLSH");
-export const setLSH = (value: any) => console.log("setLSH");
+export const getShell = () => console.log("getLSH");
+export const setShell = (value: any) => console.log("setLSH");
 
 export const get = () => console.log("hi");
 export const set = (value: any) => console.log(value);
