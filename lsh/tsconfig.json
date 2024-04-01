@@ -16,12 +16,11 @@
     "checkJs": true
   },
   "include": [
-    "src/**/*.ts" // Include all TypeScript files in src (including your entry point)
-    ,
-    "lib/workflows/v8_deploy_artifact.nbjs"
+    "src/**/*.ts", // Include all TypeScript files in src (including your entry point)
+    "src/**/*.tsx"
   ],
   "exclude": [
-    "node_modules", // Exclude the node_modules directory
+    // "node_modules", // Exclude the node_modules directory
     //   "**/*.test.ts" // Exclude test files
   ]
 }
