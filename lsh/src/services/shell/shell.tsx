@@ -1,4 +1,7 @@
 import { Command } from 'commander';
+import { render } from 'ink';
+import React from 'react';
+import { UserInput } from '../../components/UserInput.js';
 
 interface Spec {
   function: String
@@ -17,6 +20,8 @@ async function cmd_interactive(program: Command) {
     .command('repl')
     .description('lsh interactive shell')
     .action(async (type: String, action: String, spec: Spec) => {
+
+      render(<UserInput/>);
 
     });
 }
