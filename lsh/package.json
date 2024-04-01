@@ -24,6 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "@deck.gl/core": "^8.9.33",
+    "@inkjs/ui": "^1.0.0",
     "@types/ink": "^2.0.3",
     "@xstate/react": "^4.1.0",
     "async": "^3.2.5",
