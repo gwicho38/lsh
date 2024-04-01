@@ -24,6 +24,7 @@
   "license": "ISC",
   "dependencies": {
     "@deck.gl/core": "^8.9.33",
+    "@types/ink": "^2.0.3",
     "@xstate/react": "^4.1.0",
     "async": "^3.2.5",
     "async-lock": "^1.4.0",
@@ -59,7 +60,9 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.23.2",
+    "@babel/preset-react": "^7.24.1",
     "@types/async-lock": "^1.4.2",
+    "@types/react": "^18.2.73",
     "@types/request": "^2.48.12",
     "babel-jest": "^29.7.0",
     "typescript": "^5.4.0-dev.20231127"
