@@ -13,3 +13,7 @@ lsh is (and will continue to be) a work in progress. All help, cleanup, and comm
 ## Note
 
 Please excuse the mess while you're here. This is a prototyping place above all.
+
+## Reference
+
+- [awesome-micro-npm](https://github.com/parro-it/awesome-micro-npm-packages?tab=readme-ov-file)

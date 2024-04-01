@@ -9,7 +9,6 @@ program
 
 init_shell_cmd(program);
 
-console.log("End");
+console.log(program.opts());
 
 program.parse(process.argv)
-
