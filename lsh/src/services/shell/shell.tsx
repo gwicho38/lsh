@@ -11,7 +11,7 @@ export async function get_ishell(type: String = "Jvm", spec: Spec = { function: 
 
 }
 
-export async function init_shell_cmd(program: Command) {
+export async function init_ishell(program: Command) {
   cmd_interactive(program);
 }
 
