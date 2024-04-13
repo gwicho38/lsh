@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { init_lib_cmd } from './services/lib/lib.js';
 import { init_ishell } from './services/shell/shell.js';
 
 const program = new Command();
@@ -9,5 +10,6 @@ program
   .name('lsh');
 
 init_ishell(program);
+init_lib_cmd(program);
 
 program.parse(process.argv)

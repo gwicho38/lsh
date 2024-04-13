@@ -28,41 +28,48 @@ export interface CommandDictionary {
 }
 
 export async function loadCommands() {
-  console.log("loadCommands");
   const commands: CommandDictionary = {};
-  const currentFile = path.basename(__filename);
+//   const currentFile = path.basename(__filename);
+  // console.log(path.basename(__filename));
+  // console.log(__dirname);
+  const currentFile = "lib.ts"; 
   const directory = __dirname;
-  console.log(currentFile);
+  // console.log(currentFile);
 
   // Read the directory asynchronously
   const files = await fs.promises.readdir("./src/services/lib/");
   console.log(files);
 
-  files.forEach(file => {
-      const fullFilePath = path.join(directory, file);
-      console.log(fullFilePath);
-      if (file !== currentFile && file.endsWith('.js')) {
-          try {
-              const fileExports = require(fullFilePath);
+  files.forEach((file) => {
+    const fullFilePath = path.join(directory, file);
+    console.log(file);
+    if (file !== currentFile && file.endsWith(".ts")) {
+      console.log(file);
+      try {
+        const fileExports = require(fullFilePath);
+        console.log(fileExports);
 
-              // Check each export to see if it's a function and starts with "cmd_"
-              const validFunctions: Function[] = [];
-              Object.keys(fileExports).forEach(exportKey => {
-                  const potentialFunction = fileExports[exportKey];
-                  if (typeof potentialFunction === 'function' && exportKey.startsWith('cmd_')) {
-                      validFunctions.push(potentialFunction);
-                  }
-              });
-
-              if (validFunctions.length > 0) {
-                  commands[file] = validFunctions;
-              }
-          } catch (error) {
-              console.error(`Error importing ${file}: ${error}`);
+        // Check each export to see if it's a function and starts with "cmd_"
+        const validFunctions: Function[] = [];
+        Object.keys(fileExports).forEach((exportKey) => {
+          const potentialFunction = fileExports[exportKey];
+          if (
+            typeof potentialFunction === "function" &&
+            exportKey.startsWith("cmd_")
+          ) {
+            validFunctions.push(potentialFunction);
           }
-          return { "result": 200 };
+        });
+
+        if (validFunctions.length > 0) {
+          commands[file] = validFunctions;
+        }
+      } catch (error) {
+        console.error(`Error importing ${file}: ${error}`);
       }
-      return fullFilePath;
+      return { result: 200 };
+    }
+    return fullFilePath;
   });
 }
 
