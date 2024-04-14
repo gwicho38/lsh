@@ -17,4 +17,4 @@
 export interface CommandDictionary {
     [filename: string]: Function[];
 }
-export declare function loadCommands(): Promise<void>;
+export declare function getFiles(): Promise<string[]>;
