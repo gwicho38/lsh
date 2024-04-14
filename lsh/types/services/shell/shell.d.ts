@@ -1,4 +1,4 @@
-import { Command } from 'commander';
+import { Command } from "commander";
 interface Spec {
     function: String;
 }
