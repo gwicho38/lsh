@@ -7,7 +7,8 @@ const program = new Command();
 program
   .version('0.0.0')
   .description('lsh | extensible cli client.')
-  .name('lsh');
+  .name('lsh')
+  .addHelpText('after', "<> required\n[] optional");
 
 await init_ishell(program);
 await init_lib(program);
