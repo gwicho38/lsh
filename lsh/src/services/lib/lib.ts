@@ -88,7 +88,8 @@ export async function init_lib(program: Command) {
       .action(async () => {
         console.log(commands[commandName]());
       })
-      .description("commandName");
+      .description("commandName")
+      .usage(`${commandName} used as follows:`);
   }
 
   // Optional: Enhance the 'lib' command group with additional descriptions and error handling
