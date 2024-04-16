@@ -90,7 +90,6 @@ pytest-github-actions-annotate-failures = "^0.1.7"
 [tool.poetry.scripts]
 poetry = "poetry.console.application:main"
 
-
 [build-system]
 requires = ["poetry-core>=1.5.0"]
 build-backend = "poetry.core.masonry.api"
