@@ -1,6 +1,5 @@
 def main() -> int:
-    exit_code: int = Application().run()
-    return exit_code
+    print("lpy")
 
 if __name__ == "__main__":
     main()
