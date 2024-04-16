@@ -1,9 +1,25 @@
 [tool.poetry]
 name = "lpy"
-version = "0.1.0"
-description = ""
-authors = ["lefv <luis.fernandez-de-la-vara@c3.ai>"]
+version = "0.0.0"
+description = "Python dependency management and packaging made easy."
+authors = ["lefv"]
+maintainers = [
+    "lefv <luis@lefv.io>"
+]
+license = "MIT"
 readme = "README.md"
+include = [{ path = "tests", format = "sdist" }]
+homepage = "https://www.lefv.io"
+repository = "https://github.com/gwicho38/lsh"
+documentation = "https://github.com/gwicho38/lsh/README.md"
+keywords = ["cli", "shell", "lpy", "lsh"]
+classifiers = [
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[tool.poetry.urls]
+Changelog = "https://github.com/gwicho38/lsh/README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -17,4 +33,4 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-lpy = "lpy.lpy:main"
+lpy = "lpy.app.main:main"
