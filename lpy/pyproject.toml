@@ -3,6 +3,7 @@ name = "lpy"
 version = "0.1.0"
 description = ""
 authors = ["lefv <luis.fernandez-de-la-vara@c3.ai>"]
+packages = [{include = "lpy"}]
 readme = "README.md"
 
 [tool.poetry.dependencies]

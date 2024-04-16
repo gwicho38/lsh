@@ -2,7 +2,7 @@ import { Octokit } from "@octokit/rest";
 export declare const createOctokit: (authToken: string) => import("@octokit/core").Octokit & {
     paginate: import("@octokit/plugin-paginate-rest").PaginateInterface;
 } & import("@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types").RestEndpointMethods & import("@octokit/plugin-rest-endpoint-methods/dist-types/types").Api;
-export declare function cmd_github_search_pr_by_user(octokit: Octokit, user: string, repo: string, organization?: string): Promise<{
+export declare function cmd_search_prs(octokit: Octokit, user: string, repo: string, organization?: string): Promise<{
     total_count: number;
     incomplete_results: boolean;
     items: {
@@ -360,7 +360,7 @@ export declare function cmd_github_search_pr_by_user(octokit: Octokit, user: str
         };
     }[];
 }>;
-export declare function cmd_github_search_pr_review_by_user(octokit: Octokit, user: string, repo: string, organization?: string): Promise<import("@octokit/plugin-paginate-rest/dist-types/types").OctokitResponse<{
+export declare function cmd_search_reviews(octokit: Octokit, user: string, repo: string, organization?: string): Promise<import("@octokit/plugin-paginate-rest/dist-types/types").OctokitResponse<{
     id: number;
     node_id: string;
     user: {
