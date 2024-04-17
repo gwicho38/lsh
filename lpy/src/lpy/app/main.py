@@ -1,23 +1,27 @@
+import typer
+import IPython
 from lpy.c3 import load_c3
 
-# def main() -> int:
-#     c3 = load_c3(url=url, auth=TOKEN)
-#     print(c3)
+c3 = {}
+app = {}
+
+def set_global(global_name: str, global_value: any):
+    global global_name
+    global_name = global_value
+
+def get_global(global_name: str):
+    global global_name
+    return global_name
+
 
 TOKEN = "REDACTED"
 
 url = "http://localhost:8888/c3/c3"
 
 def main() -> None:
-    import IPython
-
-    c3 = load_c3(url, TOKEN)
-    print(c3)
-    print("lpy/main.py")
-    # lots of code
-    # even more code
+    set_global("app", typer.Typer())
+    set_global("c3", load_c3(url, TOKEN))
     IPython.embed()
 
 if __name__ == "__main__":
-    # c3 = load_c3(url=url, auth=TOKEN)
     print("main.py")
