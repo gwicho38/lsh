@@ -22,16 +22,17 @@ class C3CommunityBase:
     _outputFileName = ''
 
     def __init__(self, c3CommunityId, token, outputFileName=None, solutionEngineersFileName=None):
-        self._c3CommunityId = c3CommunityId
-        self._token = token
-        self._headers['Accept'] = 'application/json'
-        self._headers['Api-Key'] = self._token
-        self._solutionEngineersFileName = solutionEngineersFileName
-        self._readSolutionsEngineers()
-        self._createOutputDir()
-        self._logger = logging.getLogger()
-        self._outputFileName = outputFileName
-        self._runTime = RunTime.RunTime(self._outputDir, self._outputFileName[:-4])
+        print("C3CommunityBase")
+        # self._c3CommunityId = c3CommunityId
+        # self._token = token
+        # self._headers['Accept'] = 'application/json'
+        # self._headers['Api-Key'] = self._token
+        # self._solutionEngineersFileName = solutionEngineersFileName
+        # self._readSolutionsEngineers()
+        # self._createOutputDir()
+        # self._logger = logging.getLogger()
+        # self._outputFileName = outputFileName
+        # self._runTime = RunTime.RunTime(self._outputDir, self._outputFileName[:-4])
 
     def _readSolutionsEngineers(self):
         if self._solutionEngineersFileName is None:

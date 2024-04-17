@@ -8,7 +8,9 @@ maintainers = [
 ]
 license = "MIT"
 readme = "README.md"
-include = [{ path = "tests", format = "sdist" }]
+include = [
+    { path = "tests", format = "sdist" },
+]
 homepage = "https://www.lefv.io"
 repository = "https://github.com/gwicho38/lsh"
 documentation = "https://github.com/gwicho38/lsh/README.md"
@@ -34,3 +36,6 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 lpy = "lpy.app.main:main"
+
+# [tool.poetry.packages]
+# util = ["../util/*.py"] 

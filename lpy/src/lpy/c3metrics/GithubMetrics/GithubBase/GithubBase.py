@@ -33,22 +33,23 @@ class GithubBase:
                  solutionEngineersFileName=None,
                  federalRepoFileName=None,
                  commercialRepoFileName=None):
+        print("hi")
 
-        self._githubId = githubId
-        self._token = token
-        self._headers['Authorization'] = 'token ' + self._token
-        self._solutionEngineersFileName = solutionEngineersFileName
-        self._federalRepoFileName = federalRepoFileName
-        self._commercialRepoFileName = commercialRepoFileName
-        self._readFederalRepoList()
-        self._readCommercialRepoList()
-        self._readSolutionsEngineers()
-        self._createOutputDir()
-        self._logger = logging.getLogger()
-        self._apiCount = 0
-        self._outputFileName = outputFileName
-        self._pullsProcessedFileName = self._outputFileName[:-4] + '_last_processed.json'
-        self._runTime = RunTime.RunTime(self._outputDir, self._outputFileName[:-4])
+        # self._githubId = githubId
+        # self._token = token
+        # self._headers['Authorization'] = 'token ' + self._token
+        # self._solutionEngineersFileName = solutionEngineersFileName
+        # self._federalRepoFileName = federalRepoFileName
+        # self._commercialRepoFileName = commercialRepoFileName
+        # self._readFederalRepoList()
+        # self._readCommercialRepoList()
+        # self._readSolutionsEngineers()
+        # self._createOutputDir()
+        # self._logger = logging.getLogger()
+        # self._apiCount = 0
+        # self._outputFileName = outputFileName
+        # self._pullsProcessedFileName = self._outputFileName[:-4] + '_last_processed.json'
+        # self._runTime = RunTime.RunTime(self._outputDir, self._outputFileName[:-4])
 
     def _readRepoList(self, repoFileName):
         f = open(repoFileName, "r")
