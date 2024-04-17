@@ -8,9 +8,6 @@ maintainers = [
 ]
 license = "MIT"
 readme = "README.md"
-include = [
-    { path = "tests", format = "sdist" },
-]
 homepage = "https://www.lefv.io"
 repository = "https://github.com/gwicho38/lsh"
 documentation = "https://github.com/gwicho38/lsh/README.md"
@@ -27,15 +24,20 @@ Changelog = "https://github.com/gwicho38/lsh/README.md"
 python = "^3.12"
 requests = "^2.31.0"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.dev-dependencies]
 requests = "^2.31.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.2.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 lpy = "lpy.app.main:main"
 
-# [tool.poetry.packages]
-# util = ["../util/*.py"] 
+[[tool.poetry.packages]]
+include = "lpy/app/**/*"
+from = "src"
+
+[[tool.poetry.packages]]
+include = "lpy/c3/**/*"
+from = "src"
