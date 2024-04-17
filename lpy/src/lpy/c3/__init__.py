@@ -1,1 +1,1 @@
-print("c3.py")
+from .c3 import load_c3

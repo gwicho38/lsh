@@ -23,6 +23,7 @@ Changelog = "https://github.com/gwicho38/lsh/README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 requests = "^2.31.0"
+ipython = "^8.23.0"
 
 [tool.poetry.dev-dependencies]
 requests = "^2.31.0"
