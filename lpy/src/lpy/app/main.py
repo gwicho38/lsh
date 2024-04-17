@@ -2,10 +2,9 @@ import typer
 import IPython
 import os
 from lpy.c3 import load_c3
-# Using os.environ without a default (can raise KeyError if not found)
 
 GLOBALS = {
-   "C3": {},
+    "C3": {},
     "APP": {},
     "C3_TOKEN": os.environ['C3_TOKEN'],
     "C3_URL": os.environ['C3_URL']
