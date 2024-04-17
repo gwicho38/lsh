@@ -1,9 +1,0 @@
-c3fed
-c3fed-dcsa
-c3fed-diu
-c3fed-mda
-c3fed-stig
-c3fed-vision
-c3mdaafrl
-c3smc
-rso-cbm
