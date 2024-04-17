@@ -9,7 +9,14 @@ TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJhcHAiOiJsb2NhbC1jMy1jMyIsImZpcn
 url = "http://localhost:8888/c3/c3"
 
 def main() -> None:
+    import IPython
+
+    c3 = load_c3(url, TOKEN)
+    print(c3)
     print("lpy/main.py")
+    # lots of code
+    # even more code
+    IPython.embed()
 
 if __name__ == "__main__":
     # c3 = load_c3(url=url, auth=TOKEN)
