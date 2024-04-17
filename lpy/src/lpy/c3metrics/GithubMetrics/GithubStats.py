@@ -77,4 +77,5 @@ class GithubStats(GithubBase.GithubBase):
             return True
     
     def __del__(self):
-        self._csvfile.close()
+        print("GithubStats")
+        # self._csvfile.close()
