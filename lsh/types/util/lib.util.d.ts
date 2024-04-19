@@ -17,4 +17,5 @@
 export interface CommandDictionary {
     [filename: string]: Function[];
 }
-export declare function getFiles(): Promise<string[]>;
+export declare function getFiles(path: string): Promise<string[]>;
+export declare function loadCommands(baseCmd: string, path: string): Promise<{}>;

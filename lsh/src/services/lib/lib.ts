@@ -1,40 +1,17 @@
 import { Command } from "commander";
-import { getFiles } from "../../util/lib.util.js";
+import { loadCommands } from "../../util/lib.util.js";
 
-async function parseCommands(files: any) {
-  let commands = {};
+// async function makeCommand(commander: Command) {
+//   const commands = await loadCommands();
+//   commander.command("jug").action(() => {
+//     console.log("heat jug");
+//   });
+//   commander.command("pot").action(() => {
+//     console.log("heat pot");
+//   });
 
-  for (const file of files) {
-    if (file !== "lib.ts") {
-      const cmd_exports = await import(`./${file.split(".")[0]}.js`);
-      for (const [key, value] of Object.entries(cmd_exports)) {
-        if (key.indexOf("cmd") !== -1) {
-          commands[key.split("cmd_")[1]] = value;
-        }
-      }
-    }
-  }
-
-  return commands;
-}
-
-export async function loadCommands() {
-  const files = await getFiles();
-  const cmdMap = await parseCommands(files);
-  return cmdMap;
-}
-
-async function makeCommand(commander: Command) {
-  const commands = await loadCommands();
-  commander.command("jug").action(() => {
-    console.log("heat jug");
-  });
-  commander.command("pot").action(() => {
-    console.log("heat pot");
-  });
-
-  return commander;
-}
+//   return commander;
+// }
 
 // export async function init_lib_cmd(program: Command) {
 //   const brew = program.command("lib");
@@ -79,9 +56,11 @@ async function makeCommand(commander: Command) {
 
 export async function init_lib(program: Command) {
   const lib = program.command("lib");
+  const baseCmd = "lib.ts";
+  const path = process.env.LSH_CMD_LIB;
 
   // Load and register dynamic commands
-  const commands = await loadCommands();
+  const commands = await loadCommands(baseCmd, path);
   for (const commandName of Object.keys(commands)) {
     lib
       .command(commandName)
@@ -92,7 +71,6 @@ export async function init_lib(program: Command) {
       .usage(`${commandName} used as follows:`);
   }
 
-  // Optional: Enhance the 'lib' command group with additional descriptions and error handling
   lib
     .showHelpAfterError("Command not recognized, here's some help.")
     .showSuggestionAfterError(true);
