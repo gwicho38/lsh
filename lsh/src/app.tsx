@@ -13,4 +13,4 @@ program
 await init_ishell(program);
 await init_lib(program);
 
-program.parse(process.argv)
+program.parse(process.argv);

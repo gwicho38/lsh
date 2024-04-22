@@ -2,6 +2,7 @@ import { Command } from "commander";
 import { render } from "ink";
 import React from "react";
 import { UserInput } from "../../components/UserInput.js";
+import { exec, spawn } from "child_process";
 
 interface Spec {
   function: String;
@@ -13,7 +14,7 @@ export async function get_ishell(
 ) {}
 
 export async function init_ishell(program: Command) {
-  cmd_interactive(program);
+  await cmd_interactive(program);
 }
 
 async function cmd_interactive(program: Command) {
@@ -21,6 +22,6 @@ async function cmd_interactive(program: Command) {
     .command("repl")
     .description("lsh interactive shell")
     .action(async (type: String, action: String, spec: Spec) => {
-      render(<UserInput />);
+      render(<UserInput userInput={program} Props={undefined} />);
     });
 }

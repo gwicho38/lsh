@@ -1,11 +1,13 @@
 import { useInput, useStdout } from 'ink';
 import React, { useState } from 'react';
+import { Divider } from '../components/Divider.js';
+import { Command } from 'commander';
 
 type Props = {
-	name: string | undefined;
+	program: Command
 };
 
-export function UserInput({ ...props }) {
+export function UserInput({ Props, ...props }) {
 	const [feature, setFeature] = useState('');
 	const [readData, setReadData] = useState([]);
 	const [writeData, setWriteData] = useState([]);
@@ -13,40 +15,31 @@ export function UserInput({ ...props }) {
 	const [name, setName] = useState('');
 	const handleSubmit = query => {
 		// Do something with query
-		console.log(query);
+		console.log('handleSubmit');
 		setUserInput('');
 
 	};
 	const {stdout, write} = useStdout();
 
 	const handleChange = query => {
+		console.log('handleChange');
 	};
 
 	useInput((input, key) => {
-		console.log(input);
-		// console.log(key);
-		if (input === 'q') {
-			// Exit program
-		};
+		console.log(props);
+		if (key?.return) {
+			console.log(userInput);
+			setUserInput('');
+		} else {
+			setUserInput(userInput + input);
+		}
+
 	});
 
 	const input = (
 		<>
-			{/* <Divider /> */}
-
-			{/* <UncontrolledTextInput
-				focus={true}
-				onSubmit={handleSubmit}
-				initialValue={userInput}
-				value={userInput}
-				onChange={handleChange}
-				placeholder={''}
-				// mask={'*'}
-				highlightPastedText={true}
-				showCursor={true}>
-					{stdout.value}
-			</UncontrolledTextInput> */}
-			{/* <Divider /> */}
+			{/* <Divider />
+			<Divider /> */}
 		</>
 	);
 	return input;
