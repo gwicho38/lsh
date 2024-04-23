@@ -1,84 +1,109 @@
-import { Box, Text, render, useApp, useInput } from 'ink';
+import autocomplete from 'autocomplete';
+import { Box, Text, render, useInput } from 'ink';
 import TextInput from 'ink-text-input';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { shell } from 'shelljs';
 import vm from 'vm';
 
-// Header Component
-const Header = ({ version }) => (
-  <Box justifyContent="space-between" height={1}>
-    <Text color="green">MyShell</Text>
-    <Text color="yellow">v{version}</Text>
-  </Box>
-);
+// Setup the autocomplete engine
+const globals = Object.getOwnPropertyNames(global).sort();
+const autoCompleteEngine = autocomplete.connectAutocomplete();
 
-// Footer Component
-const Footer = () => (
-  <Box justifyContent="space-between" height={1}>
-    <Text color="green">-----</Text>
-    <Text color="yellow">-----</Text>
-  </Box>
-);
+autoCompleteEngine.initialize(() => {
+  return globals.map(item => ({ name: item }));
+});
 
-// REPL Component
-const REPL = () => {
-  const { exit } = useApp();
-  const [input, setInput] = useState('');
+function executeUserCommand(input) {
+  const parts = input.split(' '); // Naive splitting, consider using a robust parser
+  const command = parts[0];
+  const args = parts.slice(1).join(' ');
+
+  if (command === 'echo' || command === 'ls') { // Only allow certain commands
+    const sanitizedArgs = sanitize(args); // Ensure arguments are safe to use
+    shell.exec(`${command} ${sanitizedArgs}`);
+  } else {
+    // Handle with internal logic
+    console.log('Command not recognized or not allowed.');
+  }
+}
+
+function sanitize(input) {
+  // Implement sanitization logic
+  return input.replace(/[^a-zA-Z0-9 \-]/g, '');
+}
+
+export const UserInput = () => {
+  const [query, setQuery] = useState('');
   const [history, setHistory] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
-  useInput((input, key) => {
-    if (key.escape) {
-      exit();
+  useInput((input: any, key: { return: any; tab: any; }) => {
+    if (key.return) {
+      // Execute the command when Enter is pressed
+			executeUserCommand(query);
+      executeQuery(query);
+      setQuery('');
+      setSuggestions([]);
+      setSelectedIndex(0);
+    } else if (key.tab) {
+      // Handle Tab key for cycling through suggestions
+      if (suggestions.length > 0) {
+        const newIndex = (selectedIndex + 1) % suggestions.length;
+        setSelectedIndex(newIndex);
+        setQuery(suggestions[newIndex].name);
+      }
     }
   });
 
-  const handleInput = (value) => {
-    setInput(value);
-  };
+  useEffect(() => {
+    // Fetch new suggestions whenever the query changes
+    if (query.length > 1) {
+      const matches = autoCompleteEngine.search(query);
+      setSuggestions(matches);
+      setSelectedIndex(0);
+    } else {
+      setSuggestions([]);
+    }
+  }, [query]);
 
-  const executeCommand = () => {
+  const executeQuery = (code: string) => {
     try {
-      const script = new vm.Script(input);
+      const script = new vm.Script(code);
       const context = vm.createContext(global);
       const result = script.runInContext(context);
-			const resultString = result === undefined || result === null ? 'undefined' : result.toString();
-      setHistory([...history, `> ${input}`, `= ${resultString}`]);
-			        // Check if the result is undefined or null before calling toString()
-
-    } catch (err) {
-      setHistory([...history, `> ${input}`, `! Error: ${err.message}`]);
-    } finally {
-      setInput('');
+      setHistory(prevHistory => [...prevHistory, `> ${code}`, `= ${result}`]);
+    } catch (error) {
+      setHistory(prevHistory => [...prevHistory, `> ${code}`, `! Error: ${error.message}`]);
     }
   };
 
   return (
-    <Box flexDirection="column" flexGrow={1}>
-      <Box flexGrow={1} flexDirection="column" borderColor="cyan" borderStyle="round">
-        <Box marginBottom={1} flexDirection="column">
-          {history.map((entry, index) => (
-            <Text key={index}>{entry}</Text>
-          ))}
-        </Box>
-        <TextInput
-          value={input}
-          onChange={handleInput}
-          onSubmit={executeCommand}
-          placeholder="Type JavaScript code and press Enter..."
+    <Box flexDirection="row">
+      <Box flexDirection="column" width="50%">
+        <Text color="green">Enter command:</Text>
+        <TextInput 
+          value={query}
+          onChange={setQuery}
+          onSubmit={() => setQuery('')}
         />
+        <Box flexDirection="column" marginTop={1}>
+          {suggestions.length > 0 && (
+            <Box>
+              <Text>Autocomplete:</Text>
+              {suggestions.map((s, index) => (
+                <Text key={index} inverse={index === selectedIndex}>{s.name}</Text>
+              ))}
+            </Box>
+          )}
+        </Box>
       </Box>
-    </Box>
-  );
-};
-
-// App Component
-export const UserInput = () => {
-  const version = "1.0.0";
-
-  return (
-    <Box flexDirection="column" height={process.stdout.rows}>
-      <Header version={version} />
-      <REPL />
-      <Footer />
+      <Box flexDirection="column" width="50%" marginLeft={1}>
+        <Text>History:</Text>
+        {history.map((item, index) => (
+          <Text key={index}>{item}</Text>
+        ))}
+      </Box>
     </Box>
   );
 };
