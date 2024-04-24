@@ -17,3 +17,7 @@ Please excuse the mess while you're here. This is a prototyping place above all.
 ## Reference
 
 - [awesome-micro-npm](https://github.com/parro-it/awesome-micro-npm-packages?tab=readme-ov-file)
+
+## TODO
+
+platform/platform/src/main/c3/platform/src/doc/security-guide/oauth-example.c3doc.md

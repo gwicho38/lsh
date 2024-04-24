@@ -16,24 +16,13 @@
 //   pkg.deleteContent(Pkg.Store.pkgDeclPath(d), true);
 // })
 
-// // delete the ui core package
-// // get default package
-// // var pkg = Pkg.Store.inst()
-// // clear caches
-// pkg.clearCaches();
-// //clear root package
-// // using root package name
-// // pkg.deleteContent(Pkg.Store.pkgDeclPath("c3ui_core"), true);
+// delete the ui core package
+// get default package
+var pkg = Pkg.Store.inst()
+pkg.clearCaches();
+Pkg.File.Db.removeAll({}, true)  // this means you need to re-sync, use only for clean start.
 
-// // delete any previously synced packages
-
-// // /var/folders/df/8qm0hv8j50dc1g6gpnxj7nc80000gn/T/http-basic/
-// //
-// Pkg.Store.clearCaches()
-
-// Pkg.File.Db.removeAll({}, true)  // this means you need to re-sync, use only for clean start.
-
-// Server.restart()
+Server.restart()
 
 
 // // edit packages as a batch
