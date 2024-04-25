@@ -4,7 +4,11 @@ export const CONFIG = {
   
     URL: "",
 
-    // Auth Token for Cluster Environment
+    GITHUB_URL: "https://api.github.com",
+
+    GITHUB_AUTH_TOKEN: "ghp_1234567890abcdefghijklmnopqrstuvwxyz",
+
+    // Auth Token for Cluster Environment  
     AUTH_TOKEN: '00000000000000000000000000'
 };
   
