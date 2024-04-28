@@ -14,7 +14,12 @@
     "declaration": true,
     "declarationDir": "./types",
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/**/*.ts", // Include all TypeScript files in src (including your entry point)
