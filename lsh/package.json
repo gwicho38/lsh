@@ -40,6 +40,7 @@
     "fprint": "^2.0.1",
     "glob": "^10.3.12",
     "gradstop": "^2.2.3",
+    "highlightjs": "^9.16.2",
     "ink": "^4.4.1",
     "ink-text-input": "^5.0.1",
     "inquirer": "^9.2.12",
