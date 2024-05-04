@@ -7,5 +7,25 @@
         "lefv",
         "nexe",
         "sendgrid"
-    ]
+    ],
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#7e7bd3",
+        "activityBar.background": "#7e7bd3",
+        "activityBar.foreground": "#15202b",
+        "activityBar.inactiveForeground": "#15202b99",
+        "activityBarBadge.background": "#8f3330",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "commandCenter.border": "#e7e7e799",
+        "sash.hoverBorder": "#7e7bd3",
+        "statusBar.background": "#5855c6",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#7e7bd3",
+        "statusBarItem.remoteBackground": "#5855c6",
+        "statusBarItem.remoteForeground": "#e7e7e7",
+        "titleBar.activeBackground": "#5855c6",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveBackground": "#5855c699",
+        "titleBar.inactiveForeground": "#e7e7e799"
+    },
+    "peacock.color": "#5855c6"
 }

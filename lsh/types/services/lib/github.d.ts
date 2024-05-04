@@ -105,7 +105,7 @@ export declare function cmd_search_prs(octokit: Octokit, user: string, repo: str
             id: number;
             node_id: string;
             number: number;
-            state: "open" | "closed";
+            state: "closed" | "open";
             title: string;
             description: string;
             creator: {
