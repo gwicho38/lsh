@@ -1,9 +1,11 @@
 import { useInput, useStdout } from 'ink';
 import React, { useState } from 'react';
+import { Divider } from './Divider.js';
 
 type Props = {
 	name: string | undefined;
 };
+
 
 export function UserInput({ ...props }) {
 	const [feature, setFeature] = useState('');
@@ -32,7 +34,7 @@ export function UserInput({ ...props }) {
 
 	const input = (
 		<>
-			{/* <Divider /> */}
+			<Divider />
 
 			{/* <UncontrolledTextInput
 				focus={true}
@@ -46,7 +48,7 @@ export function UserInput({ ...props }) {
 				showCursor={true}>
 					{stdout.value}
 			</UncontrolledTextInput> */}
-			{/* <Divider /> */}
+			<Divider />
 		</>
 	);
 	return input;

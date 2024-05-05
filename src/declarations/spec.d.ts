@@ -1,0 +1,3 @@
+interface Spec {
+  data?: [any];
+}
