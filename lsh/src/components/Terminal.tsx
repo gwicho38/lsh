@@ -2,65 +2,67 @@ import React, { useState, useEffect } from "react";
 import { render, Box, Text, useInput, useApp } from "ink";
 import TextInput from "ink-text-input";
 import { stdin, stdout } from "process";
+import { Script, createContext } from "vm";
 
 export const Terminal = () => {
   const [input, setInput] = useState("");
   const [lines, setLines] = useState([]);
-  const [stdOutChanged, hasChanges] = useState(false);
   const { exit } = useApp();
+
+  // Execute JavaScript code in a new VM context
+  const executeScript = input => {
+    try {
+      const script = new Script(input);
+      const context = createContext({});
+      const result = script.runInContext(context);
+      return `Result: ${result}`;
+    } catch (error) {
+      return `Error: ${error.message}`;
+    }
+  };
 
   // Handle input submission
   const handleSubmit = () => {
-    const newLines = [...lines, "> " + input];
+    const newLines = [...lines, "> " + input, executeScript(input)];
     setLines(newLines);
-    setInput(""); // Clear input after submission
+    setInput(""); // Clear input after execution
   };
 
+  // Handle resizing of the terminal
   const [size, setSize] = useState({
-    columns: process.stdout.columns,
-    rows: process.stdout.rows,
+    columns: stdout.columns,
+    rows: stdout.rows,
   });
 
   useEffect(() => {
     const handleResize = () => {
       setSize({
-        columns: process.stdout.columns,
-        rows: process.stdout.rows,
+        columns: stdout.columns,
+        rows: stdout.rows,
       });
     };
 
-    process.stdout.on("resize", handleResize);
-
+    stdout.on("resize", handleResize);
     return () => {
-      process.stdout.off("resize", handleResize);
+      stdout.off("resize", handleResize);
     };
   }, []);
 
-  // Exit on Ctrl+C
-  useInput((input, key) => {
-    if (key.ctrl && input === "c") {
-      exit();
-    }
-  });
-
-  // Use `useInput` to listen for the 'return' key to submit the input
   useInput((input, key) => {
     if (key.return) {
       handleSubmit();
+    } else if (key.ctrl && input === "c") {
+      exit();
     }
   });
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Box
-        flexDirection="row"
-        width={size.columns - 10}
-        height={size.rows - 10}
-      >
+      <Box flexDirection="row" width={size.columns - 10} height={size.rows - 10}>
         <Box width="50%" borderStyle="round" borderColor="green" paddingX={1}>
           <Text color="lightgreen">Input:</Text>
           <Box flexDirection="column" flexGrow={1} marginTop={1}>
-            <Text color="green">{">"} </Text>
+            <Text color="green">{">"}</Text>
             <TextInput value={input} onChange={setInput} />
           </Box>
         </Box>

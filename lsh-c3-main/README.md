@@ -8,6 +8,10 @@
 
 `c3.ai` reference documents and scripts.
 
+### HMR
+
+https://webpack.js.org/guides/typescript/#root
+
 ## Contributors
 
 lsh is (and will continue to be) a work in progress. All help, cleanup, and comments are welcome.
