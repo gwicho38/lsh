@@ -18,20 +18,27 @@ export const setKey = (value: string) => { key = value; }
 export const getShell = () => console.log("getLSH");
 export const setShell = (value: any) => console.log("setLSH");
 
-export const get = () => console.log("hi");
-export const set = (value: any) => console.log(value);
+let cmdMap = new Map();
+export const setCmdMap = (key: string, value: any) => {
+    cmdMap.set(key, value);
+    console.log(cmdMap.size);
+};
+export const getCmdMap = () => cmdMap;
+
+export const get = (key: any) => lsh.key;
+export const set = (key: any, value: any) => lsh.key = value;
 export const inst = (value: any) => console.log(value);
 export const kill = (value: any) => console.log(value);
 
 type LSH = {
+    key?: any;
     id?: number;
     name?: string;
-    key?: string;
     session?: string;
     pkgId?: string; 
     get?: any;
     set?: any;
-
+    commands?: any;
 };
 
 export const lsh: LSH = {};
