@@ -1,5 +1,4 @@
-import { exec } from 'child_process';
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
 
 // TODO: sanitize inputs
 export async function shell_exec(command: string) {
