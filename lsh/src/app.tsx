@@ -9,7 +9,8 @@ program
   .description('lsh | extensible cli client.')
   .name('lsh');
 
-await init_ishell(program);
-await init_lib(program);
+
+init_ishell(program);
+init_lib(program);
 
 program.parse(process.argv);
