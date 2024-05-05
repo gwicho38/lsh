@@ -1,13 +1,16 @@
 import { Command } from 'commander';
-import { init_shell_cmd } from './services/shell/shell.js';
+import { init_lib } from './services/lib/lib.js';
+import { init_ishell } from './services/shell/shell.js';
 
 const program = new Command();
 
 program
   .version('0.0.0')
   .description('lsh | extensible cli client.')
-  .name('lsh');
+  .name('lsh')
+  .addHelpText('after', "<> required\n[] optional");
 
-init_shell_cmd(program);
+await init_ishell(program);
+await init_lib(program);
 
 program.parse(process.argv)

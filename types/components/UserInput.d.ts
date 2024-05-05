@@ -1,4 +1,2 @@
 import React from 'react';
-export declare function UserInput({ ...props }: {
-    [x: string]: any;
-}): React.JSX.Element;
+export declare const UserInput: () => React.JSX.Element;
