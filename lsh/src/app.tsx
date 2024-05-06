@@ -1,7 +1,7 @@
 import { Command } from 'commander';
-import { init_lib } from './services/lib/lib.js';
-import { init_ishell } from './services/shell/shell.js';
-import { init_c3 } from './services/c3/c3.js';
+import { init_lib } from './cmds/lib/lib.js';
+import { init_ishell } from './cmds/shell/shell.js';
+import { init_c3 } from './cmds/c3/c3.js';
 
 const program = new Command();
 
