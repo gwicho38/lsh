@@ -1,14 +1,12 @@
-#!/usr/bin/env zsh
-
-function gcloud_ws_start() {
+function cmd_ws_start() {
   gcloud workstations start --project=remote-ws-88 --cluster=cluster-cirrus-ws --config=config-cirrus-ws --region=us-west1 apps-luis-fernandez-de-la-vara
 }
 
 function gcloud_ws_status() {
-
+  echo 'Hi';
 }
 
-function gcloud_ws_tunnel() {
+function ws_tunnel() {
   gcloud workstations start-tcp-tunnel --project=remote-ws-88 --cluster=cluster-cirrus-ws --config=config-cirrus-ws --region=us-west1 apps-luis-fernandez-de-la-vara 22 --local-host-port=:2222
 }
 
