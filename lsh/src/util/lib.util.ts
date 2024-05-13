@@ -41,13 +41,16 @@ async function parseCommands(baseCmd: string, files: any, path: string) {
   let commands = {};
   for (const file of files) {
     if (file !== baseCmd) {
-      // TODO: Generalize further
-      const cmd_exports = await import(`../services/${baseCmd.split(".")[0]}/${file.split(".")[0]}.js`);
-      for (const [key, value] of Object.entries(cmd_exports)) {
+      // all commands from js/ts
+      const cmd_js_exports = await import(
+        `../services/${baseCmd.split(".")[0]}/${file.split(".")[0]}.js`
+      );
+      for (const [key, value] of Object.entries(cmd_js_exports)) {
         if (key.indexOf("cmd") !== -1) {
           commands[key.split("cmd_")[1]] = value;
         }
       }
+      const cmd_shell_exports = await console.log("hi");
     }
   }
 
