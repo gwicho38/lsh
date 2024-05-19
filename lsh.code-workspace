@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../coursera-dl"
 		}
 	],
 	"settings": {
