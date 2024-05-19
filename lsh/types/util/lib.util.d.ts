@@ -19,3 +19,5 @@ export interface CommandDictionary {
 }
 export declare function getFiles(path: string): Promise<string[]>;
 export declare function loadCommands(baseCmd: string, path: string): Promise<{}>;
+export declare const getAllTsFiles: (dir: any, ig: any, fileList?: any[]) => any[];
+export declare const searchTsFiles: (searchQuery: any) => import("fuse.js").FuseResult<any>[];
