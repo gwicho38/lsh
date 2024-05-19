@@ -28,6 +28,7 @@ typer = "^0.12.3"
 click = "^8.1.7"
 pandoc = "^2.3"
 
+ptpython = "^3.0.26"
 [tool.poetry.dev-dependencies]
 requests = "^2.31.0"
 
