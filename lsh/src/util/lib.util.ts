@@ -74,15 +74,16 @@ const parseGitignore = (baseDir) => {
 };
 
 // Function to recursively get all TypeScript files in a directory excluding "d.ts", "dist" directory, and ".gitignore" patterns
-const getAllTsFiles = (dir, ig, fileList = []) => {
+export const getAllTsFiles = (dir, ig, fileList = []) => {
   const files = fs.readdirSync(dir);
+  console.log(files);
   files.forEach((file) => {
     const filePath = path.join(dir, file);
     const relativeFilePath = path.relative(process.cwd(), filePath);
 
-    if (ig.ignores(relativeFilePath) || relativeFilePath.startsWith("dist")) {
-      return;
-    }
+    // if (ig.ignores(relativeFilePath) || relativeFilePath.startsWith("dist")) {
+    //   return;
+    // }
 
     if (fs.statSync(filePath).isDirectory()) {
       getAllTsFiles(filePath, ig, fileList);
@@ -91,4 +92,24 @@ const getAllTsFiles = (dir, ig, fileList = []) => {
     }
   });
   return fileList;
+};
+
+// Main function to use fuse.js for searching
+export const searchTsFiles = (searchQuery) => {
+  console.log("searchTsFiles");
+  const baseDir = process.env.LSH_ROOT; // Adjust the path to your TypeScript files
+  console.log(baseDir);
+  const ig = parseGitignore(baseDir);
+  console.log(ig);
+  const tsFiles = getAllTsFiles(baseDir, ig);
+  console.log(tsFiles);
+
+  const fuse = new Fuse(tsFiles, {
+    includeScore: true,
+  });
+
+  const result = fuse.search("shell.util");
+  console.log(result);
+
+  return result;
 };
