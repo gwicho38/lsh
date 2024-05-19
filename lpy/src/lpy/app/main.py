@@ -7,8 +7,8 @@ from lpy.c3 import load_c3
 GLOBALS = {
     "C3": {},
     "APP": {},
-    "C3_TOKEN": os.environ['C3_TOKEN'],
-    "C3_URL": os.environ['C3_URL']
+    "C3_TOKEN": {},
+    "C3_URL": {}
 }
 
 def set_global(global_name: str, global_value: any):
