@@ -6,7 +6,7 @@ import os
 import click
 from lpy.c3 import load_c3
 from ptpython.repl import embed
-
+from lpy.config import configure
 import click
 
 
