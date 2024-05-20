@@ -132,7 +132,7 @@ def configure(repl):
     repl.enable_syntax_highlighting = True
 
     # Get into Vi navigation mode at startup
-    repl.vi_start_in_navigation_mode = False
+    repl.vi_start_in_navigation_mode = True
 
     # Preserve last used Vi input mode between main loop iterations
     repl.vi_keep_last_used_mode = False
@@ -189,9 +189,7 @@ def configure(repl):
 
     # Add a custom title to the status bar. This is useful when ptpython is
     # embedded in other applications.
-    """
-    repl.title = "My custom prompt."
-    """
+    repl.title = "lpy"
 
 
 # Custom colorscheme for the UI. See `ptpython/layout.py` and
