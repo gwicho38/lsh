@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lpy"
-version = "0.0.2"
+version = "0.0.4"
 description = "Python dependency management and packaging made easy."
 authors = ["lefv"]
 maintainers = [
@@ -19,6 +19,7 @@ classifiers = [
 # Only include cythonized files in final build
 include = ["lpy/**/*.so"]  # ignored in VCS, so we need to be explicit
 exclude = ["lpy/**/*.py"]
+build = "build.py"
 
 [tool.poetry.urls]
 Changelog = "https://github.com/gwicho38/lsh/README.md"
@@ -41,7 +42,7 @@ requests = "^2.31.0"
 cython = "^3.0.10"
 
 [build-system]
-requires = ["poetry-core>=1.2.0", "setuptools"]
+requires = ["poetry-core>=1.2.0",  "Cython", "setuptools", "wheel"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
@@ -54,7 +55,3 @@ from = "src"
 [[tool.poetry.packages]]
 include = "lpy/c3/**/*"
 from = "src"
-
-[tool.poetry.build]
-script = "build.py"
-generate-setup-file = true 
