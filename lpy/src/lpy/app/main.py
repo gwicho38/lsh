@@ -6,7 +6,7 @@ import os
 import click
 from lpy.c3 import load_c3
 from ptpython.repl import embed
-from lpy.config import configure
+# from lpy.config import configure
 import click
 
 
@@ -127,7 +127,7 @@ def repl():
     banner = "Welcome to the ptpython REPL. Type `exit` or `Ctrl-D` to exit."
     history_filename = '.ptpython_history'
     
-    embed(globals={}, locals={}, history_filename=history_filename, configure=configure)
+    embed(globals=globals(), locals=locals(), history_filename=history_filename)
     
 # Add commands to coursera group
 coursera.add_command(initdb)
