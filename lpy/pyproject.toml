@@ -7,10 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-requests = "^2.31.0"
+requests = "^2.32.0"
 
 [tool.poetry.group.dev.dependencies]
-requests = "^2.31.0"
+requests = "^2.32.0"
 
 [build-system]
 requires = ["poetry-core"]
