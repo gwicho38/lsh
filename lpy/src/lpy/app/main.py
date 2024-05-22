@@ -4,7 +4,7 @@ import typer
 import IPython
 import os
 import click
-from lpy.c3 import load_c3
+from lpy.c3 import c3
 from ptpython.repl import embed
 # from lpy.config import configure
 import click
@@ -24,7 +24,6 @@ def coursera() -> None:
 def lib() -> None:
     pass
 
-
 @click.command()
 def initdb():
     click.echo("Initialized the database")
@@ -33,7 +32,6 @@ def initdb():
 @click.command()
 def dropdb():
     click.echo("Dropped the database")
-
 
 @click.command()
 @click.argument("username")
@@ -101,16 +99,12 @@ def configure(repl):
     """
     # Enable syntax highlighting.
     repl.enable_syntax_highlighting = True
-
     # Use Vi mode.
     repl.vi_mode = True
-
     # Show line numbers.
     repl.show_line_numbers = True
-
     # Enable auto-completion.
     repl.enable_auto_suggest = True
-
     # Set a custom color scheme.
     repl.use_code_colorscheme('monokai')
 
@@ -138,6 +132,7 @@ coursera.add_command(connect)
 lpy.add_command(coursera)
 lpy.add_command(lib)
 lpy.add_command(repl)
+lpy.add_command(c3.c3)
 
 GLOBALS = {"C3": {}, "APP": {}, "C3_TOKEN": {}, "C3_URL": {}}
 

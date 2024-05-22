@@ -34,6 +34,7 @@ pandoc = "^2.3"
 ptpython = "^3.0.26"
 setuptools = "^69.5.1"
 cython = "^3.0.10"
+watchdog = "^4.0.0"
 
 [tool.poetry.dev-dependencies]
 requests = "^2.31.0"
