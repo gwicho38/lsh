@@ -4,10 +4,8 @@ import typer
 import IPython
 import os
 import click
-from lpy.c3 import c3
 from ptpython.repl import embed
-# from lpy.config import configure
-import click
+from lpy.c3 import c3
 
 
 @click.group()
@@ -49,6 +47,7 @@ coursera.add_command(connect)
 # Add subgroups to lpy group
 lpy.add_command(coursera)
 lpy.add_command(lib)
+lpy.add_command(c3)
 
 
 @click.group()
@@ -132,7 +131,8 @@ coursera.add_command(connect)
 lpy.add_command(coursera)
 lpy.add_command(lib)
 lpy.add_command(repl)
-lpy.add_command(c3.c3)
+print(c3)
+lpy.add_command(c3)
 
 GLOBALS = {"C3": {}, "APP": {}, "C3_TOKEN": {}, "C3_URL": {}}
 
