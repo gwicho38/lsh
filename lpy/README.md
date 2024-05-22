@@ -18,6 +18,10 @@ https://github.com/python-poetry/poetry-core/blob/0db07bc81b989c5c4933cf019fec7a
 
 https://python-poetry.org/docs/pyproject/#scripts
 
+## Example Session/Auth
+
+PkgExplorerEvent.runTest {"props":{"c3.category":"PkgExplorerEvent","c3.machineId":"mcpm8s6vlJgtm9Ypvn0crf7LfSSTcjU0D2DUyjnkO0U=","c3.sessionId":"3d4caa71433a7dd5f009e7604815b669","c3.workspace":"home:user:c3fed-guru:cornea"}}
+
 ## Example `pyproject.toml`
 
 ```toml
