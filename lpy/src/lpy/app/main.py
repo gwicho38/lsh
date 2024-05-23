@@ -26,6 +26,7 @@ def lib() -> None:
 
 @click.command()
 def initdb():
+from process_pr import process_pr
     click.echo("Initialized the database")
 
 
