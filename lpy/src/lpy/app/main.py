@@ -1,8 +1,10 @@
 import click
 import subprocess
 import typer
-import IPython
-import os
+import git
+import difflib
+import openai
+
 import click
 from ptpython.repl import embed
 from lpy.c3 import c3
