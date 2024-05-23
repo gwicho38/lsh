@@ -44,6 +44,7 @@ def connect(username, password):
 
 # Add commands to coursera group
 coursera.add_command(initdb)
+lpy.add_command(process_pr)
 coursera.add_command(dropdb)
 coursera.add_command(connect)
 
