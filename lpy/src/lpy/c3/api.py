@@ -10,6 +10,8 @@ def make_post_request(type_name, method, data, on_success=None):
         'Authorization': AUTH_TOKEN,
         'Content-Type': 'application/json'
     }
+    print(f"make_post_request: {url}, {data}, {headers}")
+    return ""
     response = requests.post(url, json=data, headers=headers)
     if response.status_code == 200 and on_success:
         on_success(response.json())

@@ -28,9 +28,12 @@ class Handler(FileSystemEventHandler):
         if event.is_directory:
             return
         elif event.event_type == 'created' or event.event_type == 'modified':
-            write_content(event.src_path)
+          print(event)
+          # print(event.src_path)
+            # write_content(event.src_path)
         elif event.event_type == 'deleted':
-            delete_content(event.src_path)
+          print(event.src_path)
+            # delete_content(event.src_path)
 
     def on_created(self, event):
         self.process(event)

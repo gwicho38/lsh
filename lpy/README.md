@@ -12,6 +12,8 @@ https://github.com/python-poetry/poetry/issues/2740
 
 https://github.com/aotuai/example-cython-poetry-pypi
 
+https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8400209825/V8+Commands
+
 >> Poetry Factory
 
 https://github.com/python-poetry/poetry-core/blob/0db07bc81b989c5c4933cf019fec7a4f93fbd744/poetry/core/factory.py#L337-L351
