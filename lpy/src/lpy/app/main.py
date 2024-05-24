@@ -6,6 +6,7 @@ import os
 import click
 from ptpython.repl import embed
 from lpy.c3 import c3
+from lpy.repo import repo
 
 
 @click.group()
@@ -131,8 +132,9 @@ coursera.add_command(connect)
 lpy.add_command(coursera)
 lpy.add_command(lib)
 lpy.add_command(repl)
-print(c3)
+# print(c3)
 lpy.add_command(c3)
+lpy.add_command(repo)
 
 GLOBALS = {"C3": {}, "APP": {}, "C3_TOKEN": {}, "C3_URL": {}}
 

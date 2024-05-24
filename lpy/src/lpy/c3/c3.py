@@ -26,4 +26,4 @@ c3.add_command(delete)
 c3.add_command(watch)
 
 if __name__ == "__main__":
-    print("main")
+    c3()

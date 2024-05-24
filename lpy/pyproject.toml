@@ -35,6 +35,8 @@ ptpython = "^3.0.26"
 setuptools = "^69.5.1"
 cython = "^3.0.10"
 watchdog = "^4.0.0"
+openai = "^1.30.2"
+gitpython = "^3.1.43"
 
 [tool.poetry.dev-dependencies]
 requests = "^2.31.0"
