@@ -7,6 +7,7 @@ import click
 from ptpython.repl import embed
 from lpy.c3 import c3
 from lpy.repo import repo
+import git
 
 
 @click.group()

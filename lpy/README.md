@@ -4,8 +4,6 @@
 
 https://medium.com/clarityai-engineering/how-to-create-and-distribute-a-minimalist-cli-tool-with-python-poetry-click-and-pipx-c0580af4c026
 
-## Builds
-
 https://d39l7znklsxxzt.cloudfront.net/zh/blog/2021/01/19/publishing-a-proprietary-python-package-on-pypi-using-poetry/
 
 https://github.com/python-poetry/poetry/issues/2740
@@ -19,6 +17,10 @@ https://c3energy.atlassian.net/wiki/spaces/SAM/pages/8400209825/V8+Commands
 https://github.com/python-poetry/poetry-core/blob/0db07bc81b989c5c4933cf019fec7a4f93fbd744/poetry/core/factory.py#L337-L351
 
 https://python-poetry.org/docs/pyproject/#scripts
+
+## Builds
+
+`poetry build` generates wheel and tar.gz for lpy
 
 ## Example Session/Auth
 
