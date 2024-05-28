@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lpy"
-version = "0.0.4"
+version = "0.0.5"
 description = "Python dependency management and packaging made easy."
 authors = ["lefv"]
 maintainers = [
@@ -37,6 +37,7 @@ cython = "^3.0.10"
 watchdog = "^4.0.0"
 openai = "^1.30.2"
 gitpython = "^3.1.43"
+pygithub = "^2.3.0"
 
 [tool.poetry.dev-dependencies]
 requests = "^2.31.0"
