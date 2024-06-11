@@ -4,6 +4,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from .config import PACKAGES_TO_SYNC, PATH_TO_PACKAGE_REPO, APPURL
 from .api import write_content, delete_content
+import re
 
 class Watcher:
     def __init__(self, directories):
@@ -25,15 +26,21 @@ class Watcher:
 class Handler(FileSystemEventHandler):
     @staticmethod
     def process(event):
-        if event.is_directory:
+        if (event.is_directory 
+            # or re.search(r'\.\w+$', event.src_path) 
+            or event.src_path.endswith('~')):
+            print("Badly formatted file string")
+            print(event)
+            print(event.src_path)
+            print(event.is_synthetic)
             return
         elif event.event_type == 'created' or event.event_type == 'modified':
-          print(event)
-          # print(event.src_path)
-            # write_content(event.src_path)
+            print(event)
+            print(event.src_path)
+            write_content(event.src_path)
         elif event.event_type == 'deleted':
-          print(event.src_path)
-            # delete_content(event.src_path)
+            print(event.src_path)
+            delete_content(event.src_path)
 
     def on_created(self, event):
         self.process(event)

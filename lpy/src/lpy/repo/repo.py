@@ -27,7 +27,7 @@ def loading_indicator(message, queue):
 
 def get_pr_details(pr_url):
     pr_url = "https://api.github.com/repos/c3-e/c3generativeAi/pulls/3615"
-    github_api_token = "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"
+    github_api_token = ""
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {github_api_token}",
@@ -35,6 +35,7 @@ def get_pr_details(pr_url):
     }
 
     response = requests.get(pr_url, headers=headers)
+    print(response)
 
     if response.status_code == 200:
         pr_details = response.json()
@@ -95,7 +96,7 @@ def repo():
 
 @repo.group()
 def pr():
-    """Commands for pull request operations."""
+    """Commands for pull request operationsssss."""
     pass
 
 @pr.command(help="Compare a file between two branches and analyze the changes.",
