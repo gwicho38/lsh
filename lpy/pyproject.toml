@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lpy"
-version = "0.0.5"
+version = "0.0.6"
 description = "Python dependency management and packaging made easy."
 authors = ["lefv"]
 maintainers = [
