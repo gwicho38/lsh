@@ -233,3 +233,8 @@ exclude_also = [
 ]
 
 ```
+
+## docs
+
+[keras](https://github.dev/keras-team/keras) 
+[scikit-learn](https://github.com/scikit-learn/scikit-learn) 
