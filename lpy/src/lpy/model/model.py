@@ -2,10 +2,13 @@ import click
 import os
 import subprocess
 import signal
+from typing import Any
 from keras.api.models import load_model
 from flask import Flask, request, jsonify
 import numpy as np
 import tensorflow as tf
+from keras.src.layers.core.dense import Dense
+from keras.api.models import Sequential
 
 """
     usage: model train --epochs 20 --batch-size 64 --model-path /app/model_checkpoint.h5
@@ -13,7 +16,19 @@ import tensorflow as tf
 """
 
 app = Flask(__name__)
-model = None
+model = Any
+
+@click.group()
+def model():
+    pass
+
+def create_model(input_shape):
+    model = Sequential([
+        Dense(64, activation='relu', input_shape=input_shape),
+        Dense(64, activation='relu'),
+        Dense(3, activation='softmax')
+    ])
+    return model
 
 # Route for predictions
 @app.route('/predict', methods=['POST'])
@@ -23,10 +38,6 @@ def predict():
     prediction = model.predict(input_data)
     return jsonify({'prediction': prediction.tolist()})
 
-@click.group()
-def model():
-    pass
-
 @model.command()
 @click.option('--epochs', default=10, help='Number of epochs for training.')
 @click.option('--batch-size', default=32, help='Batch size for training.')
@@ -34,8 +45,6 @@ def model():
 def train(epochs, batch_size, model_path):
     """Train the model."""
     # Example model training logic
-    from keras.api.models import Sequential
-    from keras.src.layers.core.dense import Dense
     from sklearn.datasets import load_iris
     from sklearn.model_selection import train_test_split
     from sklearn.preprocessing import StandardScaler
