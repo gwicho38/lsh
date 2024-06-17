@@ -25,7 +25,7 @@ def make_post_request(type_name, method, data, on_success=None):
     req = Request(method='GET', url=url, headers=headers, data=data)
     # prepped = s.prepare_request(req)
     print(str(req));
-    # print(f"make_post_request: {url}, {data}, {headers}")
+    print(f"make_post_request: {url}, {data}, {headers}")
     # request_dump = dump.dump_all(prepared)
     # print(request_dump.decode('utf-8'))
     return
@@ -38,6 +38,7 @@ def get_metadata_path(path):
     return path[len(PATH_TO_PACKAGE_REPO):]
 
 def get_pkg_id():
+    return 'guruSearchUI'
     global pkg_id
     if pkg_id:
         return pkg_id
@@ -50,24 +51,24 @@ def get_pkg_id():
     return pkg_id
 
 def write_content(path):
-    print("write_content")
-    if re.search(r'\.\w+$', path) or path.endswith('~'):
-        print("Badly formatted file")
-        pass
+    print("api | write_content")
+    print("packageId")
     pkg_id = get_pkg_id()
+    print(pkg_id)
+    print("metadata_path")
     metadata_path = get_metadata_path(path)
     content = None
-    # with open(path, 'rb') as file:
-    #     print(file)
-    #     content = file
     print(metadata_path)
-    print(content)
-    # if content == NO_CHANGE_TO_FILE:
-    #     return
-    # return make_post_request('Pkg', 'writeContent', [pkg_id, metadata_path, {
-    #     'type': 'ContentValue',
-    #     'content': content
-    # }])
+    with open(path, 'rb') as file:
+        print(file)
+        content = file
+    if content == NO_CHANGE_TO_FILE:
+        print('NO CHANGE TO FILE')
+        return
+    return make_post_request('Pkg', 'writeContent', [pkg_id, metadata_path, {
+        'type': 'ContentValue',
+        'content': content
+    }])
 
 def delete_content(path):
     pkg_id = get_pkg_id()

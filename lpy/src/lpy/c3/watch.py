@@ -35,10 +35,11 @@ class Handler(FileSystemEventHandler):
             print(event.is_synthetic)
             return
         elif event.event_type == 'created' or event.event_type == 'modified':
-            print(event)
-            print(event.src_path)
+            print('watch.config | write_content will be called')
+            print(f'created or modified: {event.src_path}')
             write_content(event.src_path)
         elif event.event_type == 'deleted':
+            print('watch.process | file deleted')
             print(event.src_path)
             delete_content(event.src_path)
 

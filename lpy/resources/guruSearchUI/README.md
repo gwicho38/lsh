@@ -1,9 +1,10 @@
 # GuruSearchUI
 
+test
+
 ## Overview
 
 GuruSearchUI is a part of the Cornea project within the c3fed repository. It is designed to provide an intuitive and efficient user interface for searching and managing data using c3's Generative AI technology.
-
 
 ## Repository Structure
 
@@ -17,7 +18,7 @@ The `cornea/guruSearchUI` folder is organized into three main directories:
 
 ## Structure
 
-Current top-level package structure. 
+Current top-level package structure.
 
 ```
 .
@@ -30,11 +31,11 @@ Current top-level package structure.
 
 ```
 
-## Development Environment 
+## Development Environment
 
 ### Dependencies
 
-This application depends on the following dependencies: 
+This application depends on the following dependencies:
 
 - [c3generativeAi](https://github.com/c3-e/c3generativeAi)
 
