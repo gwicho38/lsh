@@ -1,3 +1,7 @@
 lpy/local_env
 lpy/local_config.py
 lpy/dist/**/**
+lpy/.envrc
+lpy/dist/**/*
+lpy/dist/**/**
+lpy/dist/
