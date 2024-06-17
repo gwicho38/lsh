@@ -1,0 +1,10 @@
+{
+  "type" : "UiSdlConnected<UiSdlEmptyState>",
+  "component" : {
+    "imageUrl": {
+      "type": "UiSdlThemedImageUrl",
+      "DARK": "/assets/logos/GURU_EnterpriseAI.svg",
+      "LIGHT": "/assets/logos/GURU_EnterpriseAI.svg"
+    }
+  }
+}

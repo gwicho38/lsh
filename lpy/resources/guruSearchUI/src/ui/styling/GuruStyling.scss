@@ -1,0 +1,30 @@
+// set homepage background image
+div.enterprise-search {
+  /* webpackIgnore: true */
+  background-image: url("/assets/images/world_cropped.jpg");   
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+// disable background color on homepage logo
+.enterprise-search.search-page .c3-sdl-empty-state {
+  background-color: transparent;
+}
+
+// make homepage logo wider
+#content > div > div > div:nth-child(1) > span > div > img {
+  width: 640px;
+}
+
+// decrease space between homepage logo and search bar
+#content > div > div > div:nth-child(2) {
+  margin-top: -24px;
+}
+
+// disable background colors for components on the management page
+#content > div.c3-sdl-layout-container > div > div:nth-child(1) > span > div > div > div.c3-sdl-tabpanel-content > div > div > div {
+  background-color: transparent;
+  > div > div { 
+    background-color: transparent;
+  }
+}

@@ -1,0 +1,127 @@
+{
+    "type": "UiSdlConnected<GuruChat>",
+    "applicationStateRef": {
+      "type": "UiSdlApplicationStateRef",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+    },
+    "derivedProps": {
+      "uiSettings": {
+        "type": "UiSdlApplicationStateValueParam",
+        "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+        "path": "uiSettings"
+      },
+      "showBanner": {
+        "type": "UiSdlApplicationStateValueParam",
+        "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+        "path": "disableFilterApply",
+        "action": "!statePathValue"
+      },
+      "generativeAiResult": { // START CHANGE 1
+        "type": "UiSdlApplicationStateValueParam",
+        "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+        "path": "generativeAiResult" 
+      } // END CHANGE 1
+    },
+    "component": {
+      "dataSpec": {
+        "disableDataRequestOnFirstRender": true,
+        "dataType": "Genai.ChatBot",
+        "actionName": "chat"
+      },
+      "headerText": "EnterpriseSearch.ChatBox.headerText",
+      "serverMessageHeader": "EnterpriseSearch.ChatBox.messageHeader",
+      "userMessageHeader": "email",
+      "expandable": true,
+      "searchableMessages": true,
+      "allowFeedback": true,
+      "dateFormat": {
+        "type": "UiSdlDateTimeParamKindFormat",
+        "spec": {
+          "hour": "numeric",
+          "minute": "numeric"
+        }
+      }
+    },
+    "effectTriggers": [
+      {
+        "trigger": "EnterpriseSearch.ChatBox.SEARCH_SUBMIT",
+        "payloadStrategy": "MERGE",
+        "actions": [
+          {
+            "type": "EnterpriseSearch.ChatBox.EXPANDED_MODE_SET",
+            "payload": {
+              "componentId": "EnterpriseSearch.ChatBox",
+              "expanded": false
+            }
+          }
+        ]
+      },
+      {
+        "trigger": "EnterpriseSearch.ChatBox.SEARCH_SUBMIT",
+        "effectType": "UiSdlEpicInitializeSearchResultPage",
+        "payloadStrategy": "MERGE",
+        "payload": {
+          "typeName": "Genai.ChatBot",
+          "actionName": "queryFromChat",
+          "applicationStateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+          "dataResetComponents": [
+            "EnterpriseSearch.ChatBox"
+          ]
+        }
+      },
+      {
+        "trigger": "EnterpriseSearch.ChatBox.FEEDBACK_POSITIVE",
+        "payloadStrategy": "MERGE",
+        "actions": [
+          {
+            "type": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch.ENTITY_ID_SET",
+            "payload": {
+              "stateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+            }
+          },
+          {
+            "type": "EnterpriseSearch.PositiveFeedbackModal.MODAL_OPEN",
+            "payload": {
+              "componentId": "EnterpriseSearch.PositiveFeedbackModal"
+            }
+          }
+        ]
+      },
+      {
+        "trigger": "EnterpriseSearch.ChatBox.FEEDBACK_NEGATIVE",
+        "payloadStrategy": "MERGE",
+        "actions": [
+          {
+            "type": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch.ENTITY_ID_SET",
+            "payload": {
+              "stateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+            }
+          },
+          {
+            "type": "EnterpriseSearch.NegativeFeedbackModal.MODAL_OPEN",
+            "payload": {
+              "componentId": "EnterpriseSearch.NegativeFeedbackModal"
+            }
+          }
+        ]
+      },
+      {
+        "trigger": "EnterpriseSearch.ChatBox.LOADED_DATA_HANDLE",
+        "effectType": "UiSdlEpicPollGenaiQueryResult",
+        "payloadStrategy": "MERGE",
+        "payload": {
+          "pollingTo": "chat",
+          "applicationStateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+        }
+      },
+      {
+        "trigger": "EnterpriseSearch.ChatBox.QUERY_SUBMIT",
+        "effectType": "UiSdlEpicSubmitChatQuery",
+        "payloadStrategy": "MERGE",
+        "payload": {
+          "applicationStateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+          "componentId": "EnterpriseSearch.ChatBox"
+        }
+      }
+    ]
+  }

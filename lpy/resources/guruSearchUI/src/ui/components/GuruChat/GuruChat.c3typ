@@ -1,0 +1,151 @@
+/*
+ * Copyright 2009-2024 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+@beta
+@typeScript
+type GuruChat extends UiSdlComponent<BasicDataSpec> {
+
+  /**
+   * The log of the {@link Genai.Query.Result} chain
+   * Note base app `engineLog` is a {@type string}. 
+   * JSON representation more naturally composed for UI rendering.
+   */
+  generativeAiResult: json
+
+  @uiSdlDataSpec(dataDestinationField='latestMessage')
+  dataSpec: ~
+
+  /**
+   * The header text of the chat box component
+   */
+  headerText: string
+
+  /**
+   * The header of each chat message sent by the server
+   */
+  serverMessageHeader: string
+
+  /**
+   * The header of each message sent by the user
+   */
+  userMessageHeader: string enum('email', 'name')
+
+  /**
+   * Whether the chat box can be expanded to full screen
+   */
+  expandable: boolean
+
+  /**
+   * Whether the search icon appears on user messages, allowing them to initiate a search query 
+   * using the original message as the query
+   */
+  searchableMessages: boolean
+  
+  /**
+   * The format of the datetime displayed on each message
+   */
+  dateFormat: UiSdlDateTimeParamKindFormat
+  
+  /**
+   * Whether feedback is allowed for chat messages sent by the server
+   */
+  allowFeedback: boolean
+
+  /**
+   * Whether the chat is in expanded view
+   */
+  expanded: boolean
+
+  /**
+   * The title of the chat box component
+   */
+  header: UiSdlComponentHeader
+
+  /**
+   * All of the chat messages sent in the chat
+   */
+  messages: [Genai.Query.ChatMessage]
+  
+  /**
+   * The latest chat message sent in the chat. Not actually used for rendering. Instead, 
+   * the latest message is just appended to the {@link #messages} inside the reducer
+   * {@link #chatUpdateEffect}. Still needed a field for the dataSpec to point to as the
+   * `dataDestinationField` without it being {@link #messages} because it will just override
+   * and we want it to append.
+   */
+  latestMessage: Genai.Query.ChatMessage
+
+  /**
+   * UI Settings dependent on the backend configuration
+   */
+  uiSettings: GenAiUiConfig
+
+  /**
+   * Whether the filter status banner is shown in the chat
+   */
+  showBanner: boolean
+
+  /**
+   * Kick off a `CHAT_MESSAGES_SET` action
+   */
+  @uiSdlActionCreator(actionType='CHAT_MESSAGES_SET')
+  setChatMessagesAction: function(id: !string, messages: [Genai.Query.ChatMessage], ownProps: any): !UiSdlChatMessagesSetAction ts-client
+
+  /**
+   * Kick off a `QUERY_SUBMIT` action
+   */
+  @uiSdlActionCreator(actionType='QUERY_SUBMIT')
+  submitQueryAction: function(id: !string, query: !string, ownProps: any): !UiSdlQuerySubmitAction ts-client
+
+  /**
+    * Kick off a `FEEDBACK_BUTTON_ACTION` for feedback submission. Can be positive or negative
+    */
+  @uiSdlActionCreator(actionType='FEEDBACK_BUTTON_CLICK')
+  clickFeedbackButtonAction: private function(id: !string, helpful: !boolean, generativeAiResultId: !string, ownProps: any): !UiSdlButtonClickAction ts-client
+
+  /**
+   * Kick off a `SEARCH_SUBMIT` action to move the chat message to search
+   */
+  @uiSdlActionCreator(actionType='SEARCH_SUBMIT')
+  submitSearchAction: function(id: !string, searchQuery: !string, ownProps: any): !UiSdlSearchSubmitAction ts-client
+
+  /**
+   * Kick off an `EXPANDED_MODE_SET` action to put chat in and out of expanded mode
+   */
+  @uiSdlActionCreator(actionType="EXPANDED_MODE_SET")
+  setExpandedModeAction: function(id: !string, expanded: boolean, ownProps: any): !UiSdlChatExpandedSetAction ts-client
+
+  /**
+   * Update the state of the {@link #messages} to the value of the messages in the action passed in
+   */
+  @uiSdlReducer(actionType='CHAT_MESSAGES_SET')
+  chatMessagesSetEffect: private inline function(state: !UiSdlReduxState,
+                                                 action: !UiSdlChatInputSetAction): !UiSdlReduxState ts-client
+
+  /**
+   * Update the state of {@link #messages} with an intermediary state of the user's message and a message
+   * from the chat bot that it is generating an answer
+   */
+  @uiSdlReducer(actionType='QUERY_SUBMIT')
+  querySubmitEffect: private inline function(state: !UiSdlReduxState,
+                                             action: !UiSdlQuerySubmitAction): !UiSdlReduxState ts-client
+
+  /**
+   * Append to the {@link #messages} when receiving data from the network request
+   */
+  @uiSdlReducer(actionType='LOADED_DATA_HANDLE')
+  chatUpdateEffect: private inline function(state: !UiSdlReduxState,
+                                             action: !UiSdlQuerySubmitAction): !UiSdlReduxState ts-client
+
+  /**
+   * Put the chat in and out of expanded mode
+   */
+  @uiSdlReducer(actionType='EXPANDED_MODE_SET')
+  expandedModeSetEffect: private inline function(state: !UiSdlReduxState,
+                                             action: !UiSdlQuerySubmitAction): !UiSdlReduxState ts-client
+}

@@ -1,0 +1,40 @@
+/*
+ * Copyright 2009-2024 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+/**
+* The configuration for showing a scale bar when
+* {@link UiSdlGraphVisualization#showMap} is true.
+*/
+type FedGraphVisualizationScaleConfig {
+
+  /**
+  * The position of the control (one of the map corners). Possible values are 'topleft', 'topright', 'bottomleft' or 'bottomright'.
+  * NOTE: for some reason topleft is not working.
+  */
+  position: string enum('topleft', 'topright', 'bottomleft', 'bottomright')
+
+  /**
+  * Maximum width of the control in pixels. The width is set dynamically to show round values (e.g. 100, 200, 500).
+  */
+  maxWidth: int
+
+  /**
+  * Whether to show the metric scale line (m/km).
+  */
+  metric: boolean
+
+  /**
+  * Whether to show the imperial scale line (mi/ft).
+  */
+  imperial: boolean
+
+  /**
+  * If true, the control is updated on moveend, otherwise it's always up-to-date (updated on move).
+  */
+  updateWhenIdle: boolean
+}

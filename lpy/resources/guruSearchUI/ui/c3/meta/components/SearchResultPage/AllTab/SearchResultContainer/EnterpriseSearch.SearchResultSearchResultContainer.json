@@ -1,0 +1,12 @@
+{
+    "type" : "UiSdlConnected<UiSdlLayoutContainer>",
+    "component" : {
+      "children" : [
+        [
+          {
+            "id" : "EnterpriseSearch.SearchResultSearchResultContext" // CHANGED TO ADD ENGINELOG AS DERIVEDPROPS
+          }
+        ]
+      ]
+    }
+  }

@@ -1,0 +1,110 @@
+{
+  "type" : "UiSdlConnected<GuruSummaryCard>",
+  "derivedProps" : {
+    "contentHeader" : {
+      "type" : "UiSdlApplicationStateValueParam",
+      "id" : "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path" : "generativeAiResult.answer"
+    },
+    "contentBody": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id" : "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path" : "generativeAiResult.rationale"
+    },
+    "engineLog": { // START CHANGE 1
+      "type": "UiSdlApplicationStateValueParam",
+      "id" : "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path" : "generativeAiResult.engineLog"
+    }, // END CHANGE 1
+    "sources": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult.rationaleSources"
+    },
+    "generativeAiResultId": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult.id"
+    },
+    "engineLog": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult.engineLog"
+    },
+    "failed": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult.failed"
+    },
+    "interimStatuses": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult.statusHistory"
+    },
+    "isDataLoading": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult",
+      "action": "statePathValue.get('answer') == null && statePathValue.get('visualization') == null"
+    },
+    "visualizationDynamicComponent": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "generativeAiResult.visualization",
+      "dataTransforms": [
+        "UiSdlTransformGenAiVisualizationBaseToUiSdlDynamicComponentMetadata"
+      ]
+    },
+    "uiSettings": {
+      "type": "UiSdlApplicationStateValueParam",
+      "id": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch",
+      "path": "uiSettings"
+    }
+  },
+  "component" : {
+    "className" : "search-result-answer",
+    "htmlTag" : "h1",
+    "wrapWithContainer": true,
+    "secondaryClassName" : "search-result-rationale",
+    "secondaryHtmlTag" : "p",
+    "emptyStateText": "Searching..."
+  },
+  "effectTriggers": [
+    {
+      "trigger": "EnterpriseSearch.SearchResultSearchResultContext.FEEDBACK_POSITIVE",
+      "payloadStrategy": "MERGE",
+      "actions": [
+        {
+          "type": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch.ENTITY_ID_SET",
+          "payload": {
+            "stateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+          }
+        },
+        {
+          "type": "EnterpriseSearch.PositiveFeedbackModal.MODAL_OPEN",
+          "payload": {
+            "componentId": "EnterpriseSearch.PositiveFeedbackModal"
+          }
+        }
+      ]
+    },
+    {
+      "trigger": "EnterpriseSearch.SearchResultSearchResultContext.FEEDBACK_NEGATIVE",
+      "payloadStrategy": "MERGE",
+      "actions": [
+        {
+          "type": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch.ENTITY_ID_SET",
+          "payload": {
+            "stateId": "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+          }
+        },
+        {
+          "type": "EnterpriseSearch.NegativeFeedbackModal.MODAL_OPEN",
+          "payload": {
+            "componentId": "EnterpriseSearch.NegativeFeedbackModal"
+          }
+        }
+      ]
+    }
+  ]
+}

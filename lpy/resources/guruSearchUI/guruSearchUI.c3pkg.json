@@ -1,0 +1,10 @@
+{
+	"author": "C3 AI",
+	"name": "guruSearchUI",
+	"dependencies": [
+		"govSecurityV8",
+		"guruSearch",
+		"uiComponentLibraryReact",
+		"uiGraphComponentReact"
+	]
+}

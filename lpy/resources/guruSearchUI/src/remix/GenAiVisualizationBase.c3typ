@@ -1,0 +1,26 @@
+/*
+ * Copyright 2009-2024 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+/**
+ * Root type to mixin to the different GenAiVisualization implementations.
+ * {@link genai-visualizations.c3doc Generative Ai Visualizations}.
+ */
+remix type GenAiVisualizationBase {
+  /**
+   * Given a {@link Data} object, return the most relevant visualization for it. Private function
+   * that is only exposed for testing purposes. 
+   *
+   * If the structuredQuerySpec is for evalMetrics, the GenAiVisualizationBase passes a spec and srcType.
+   * Otherwise, the data is passed by value.
+   * 
+   * Note: Currently we do not support pass-by-spec for evaluateSpec, so this parameter is ignored.
+   */
+  forData: private function(data: !Data,
+                            structuredQuerySpec: Genai.StructuredQuery.Spec):
+                                                              GenAiVisualizationBase py-query_orchestrator-server-py4j
+}

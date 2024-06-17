@@ -1,0 +1,163 @@
+/*
+ * Copyright 2009-2023 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+/**
+ * The presentational component for a {@link FedGraphVisualization} instance.
+ */
+private type FedGraphVisualizationPresentationalComponent extends UiSdlComponent<any> {
+
+  /**
+   * The background color of the graph.
+   */
+  backgroundColor: private string serialized Color
+
+  /**
+   * The cache key of the whole in-memory graph.
+   */
+  cacheKey: private string
+
+  /**
+   * The modal to display warning on clear graph click.
+   */
+  clearGraphWarningModalComponentId: private string = 'SDL.UiSdlGraphVisualizationClearGraphWarningModal'
+
+  /**
+   * The configuration for clustering nodes within a certain pixel radius when
+   * {@link UiSdlGraphVisualization#showMap} is true.
+   */
+  clusterConfig: private UiSdlGraphVisualizationNodeClusterConfig
+
+  /**
+   * The configuration for showing a scale bar when
+   * {@link UiSdlGraphVisualization#showMap} is true.
+   */
+  scaleConfig: private FedGraphVisualizationScaleConfig
+
+  /**
+   * The fill color of a cluster node in map mode.
+   */
+  clusterNodeFillColor: private string serialized Color
+
+  /**
+   * The outline color of a cluster node in map mode.
+   */
+  clusterNodeOutlineColor: private string serialized Color
+
+  /**
+   * Whether or not to initial render the graph in a combined / grouped state.
+   */
+  collapseCombinedNodesOnLoad: private boolean
+
+  /**
+   * String referencing the global coordinate reference system to use when rendering the leaflet instance
+   */
+  coordinateReferenceSystem: private string enum ("3857", "4326", "3395")
+
+  /**
+   * The data for the graph.
+   */
+  data: private map<string, UiSdlGraphVisualizationDataNode | UiSdlGraphVisualizationDataEdge>
+
+  /**
+   * The data passed to Leaflet to display on the tile layer on the map.
+   */
+  geoJsonData: private json
+
+  /**
+   * The Mapbox URL loaded with the API token required for rendering Mapbox tiles.
+   */
+  mapboxUrl: private string
+
+  /**
+   * The dictionary to store the mapping from an original edge id to its merged edge id.
+   */
+  mergedEdgesMapping: private json
+
+  /**
+   * The color grouping for the nodes based on category if
+   * {@link UiSdlGraphVisualizationNodeStyleConfig.fillColorByProperty} is set to
+   * {@link UiSdlGraphVisualizationFillColorByPropertyStrategyCategorical} type.
+   */
+  nodeColorGroupings: private json
+
+  /**
+   * The color grouping for the combined nodes.
+   */
+  nodeCombineColorGroupings: private json
+
+  /**
+   * The loaded glyph to display the number of nodes in a closed combo node.
+   */
+  nodeInfoGlyph: private json
+
+  /**
+   * The configuration for a temporarily animated halo effect to a node or a link, also known as a ping effect.
+   */
+  pingConfig: private UiSdlGraphVisualizationPingConfig
+
+  /**
+   * The style to apply to GeoJson region on hover.
+   */
+  regionHoverStyle: private json
+
+  /**
+   * The style to apply to GeoJson region on select.
+   */
+  regionSelectStyle: private json
+
+  /**
+   * The modal to display warning on reset graph button click.
+   */
+  resetGraphWarningModalComponentId: private string = 'SDL.UiSdlGraphVisualizationResetGraphWarningModal'
+
+  /**
+   * The list of properties associated with the combined nodes listed in the reverse order
+   * (from the lowest to highest granularity).
+   */
+  reversedCombineProperties: private [string]
+
+  /**
+   * The configuration to control the appearance of selected items.
+   */
+  selectionConfig: private UiSdlGraphVisualizationSelectionConfig
+
+  /**
+   * The background color for the time bar.
+   */
+  timeBarBackgroundColor: private string serialized Color
+
+  /**
+   * The color used for the bars of the time bar.
+   */
+  timeBarColor: private string serialized Color
+
+  /**
+   * The color when a bar in the time bar is hovered on by the user.
+   */
+  timeBarHoverColor: private string serialized Color
+
+  /**
+   * Whether the time bar is in dimming mode or filtering mode.
+   */
+  timeBarIsDimmingMode: private boolean
+
+  /**
+   * Whether the time bar should display a histogram.
+   */
+  timeBarIsHistogram: private boolean
+
+  /**
+   * The color of the time bar scale section that is hovered over.
+   */
+  timeBarScaleHoverColor: private string serialized Color
+
+  /**
+   * Whether multiple links between 2 groups should be displayed as a single link.
+   */
+  useSummaryLinks: private boolean
+}
