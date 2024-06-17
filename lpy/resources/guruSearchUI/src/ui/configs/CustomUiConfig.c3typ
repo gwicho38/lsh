@@ -1,0 +1,19 @@
+/*
+ * Copyright 2009-2023 C3.ai, Inc. (formerly C3IoT)  (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret
+ * and proprietary information of C3.ai and its licensors. Reproduction, use and/or distribution
+ * of this material in any form is strictly prohibited except as set forth in a written
+ * license agreement with C3.ai and/or its authorized distributors.
+ * This product may be covered by one or more U.S. patents or pending patent applications.
+ */
+
+@beta
+type CustomUiConfig mixes Config, Singleton {
+
+  /**
+   * Function to rely on for appending the env/app prefix to any URL
+   * See https://c3energy.atlassian.net/browse/EXC-32191 for reason for this config
+   */
+  appUrlPrefix: string = ""
+
+}

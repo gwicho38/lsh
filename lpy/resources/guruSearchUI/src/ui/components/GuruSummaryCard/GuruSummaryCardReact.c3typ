@@ -1,0 +1,7 @@
+/**
+ * The react component type of {@link GuruSummaryCard}.
+ */
+type GuruSummaryCardReact extends ReactFunction mixes GuruSummaryCard {
+
+  render: ~ tsx-client
+}

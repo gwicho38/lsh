@@ -1,0 +1,920 @@
+/*
+ * Copyright 2009-2023 C3 AI (www.c3.ai). All Rights Reserved.
+ * This material, including without limitation any software, is the confidential trade secret and proprietary
+ * information of C3 and its licensors. Reproduction, use and/or distribution of this material in any form is
+ * strictly prohibited except as set forth in a written license agreement with C3 and/or its authorized distributors.
+ * This material may be covered by one or more patents or pending patent applications.
+ */
+
+/**
+ * A UI node graph component that displays data in a network graph.
+ */
+@beta
+@typeScript
+type FedGraphVisualization extends UiSdlComponent<FedGraphVisualizationDataSpec> mixes UiSdlHideGraphVisualizationNodes {
+
+  /**
+   * Holds the data to be diplayed in the graph's tooltip.
+   */
+  activeTooltip: private UiSdlGraphVisualizationTooltipData
+
+  /**
+   * The background color of the chart canvas. Defaults to {@link UiSdlThemeTemplate#componentBackgroundColor}.
+   */
+  backgroundColor: string serialized Color
+
+  /**
+   * The cache key of the whole in-memory graph. See {@link InMemoryGraph#m_cacheKey}.
+   */
+  cacheKey: private string
+
+  /**
+   * Whether or not graph should be clearable.
+   * If set to true, a button is rendered on the canvas that the user can click to clear the graph.
+   */
+  clearable: boolean = true
+
+  /**
+   * Whether the clearing of canvas items is in progress.
+   * This field is used to determine whether the clear graph warning modal component should show up.
+   * See usage of this field in `SDLGraphVisualization.jsx` for more details.
+   */
+  isClearingCanvasItems: private boolean
+
+  /**
+   * The config for controlling when the nodes should combine into groups.
+   */
+  combineConfig: UiSdlGraphVisualizationCombineConfig
+
+  /**
+   * Mapbox Style that will be used to call the API and get a styled map
+   */
+  mapboxStyle: string enum UiSdlMapboxStyle = NOT_SET
+
+  /**
+   * Mapbox API version that's used with the style label to be able to retrieve the proper styles.
+   */
+  mapboxVersion: string = 'v10'
+
+  /**
+   * The specification used for retrieving data displayed by the graph.
+   */
+  @uiSdlDataSpec(dataDestinationField='data')
+  dataSpec: ~
+
+  /**
+   * Holds the data to display in the graph.
+   */
+  data: private UiSdlGraphVisualizationData
+
+  /**
+   * Holds the data that appears on the canvas.  Cloned from props.data.  This is the state that will be updated when
+   * the graph on the canvas changes, for example, hovering or selecting a node.
+   */
+  canvasItems: private map<string, UiSdlGraphVisualizationDataNode | UiSdlGraphVisualizationDataEdge>
+
+  /**
+   * Flag to force initialization of `canvasItems`.
+   */
+  forceCanvasItemsInitialization: private boolean
+
+  /**
+   * The default fit option for the graph when an item is selected.
+   */
+  defaultFitOptionOnSelect: string enum UiSdlGraphVisualizationDefaultFitOptionOnSelect = NONE
+
+  /**
+   * The default fit option for the graph when data load.
+   */
+  fitOption: string enum UiSdlGraphVisualizationDefaultFitOptionOnSelect = AUTO
+
+  /**
+   * A list of default colors used to color edges.
+   *
+   * If {@link UiSdlGraphVisualizationEdgeStyleConfig#fillColorByProperty} is of type
+   * {@link UiSdlGraphVisualizationFillColorByPropertyStrategyCategorical}, the component will assign a color to each
+   * category from here in order.
+   *
+   * The colors have to belong to {@link UiSdlGraphVisualizationFillColorOption}.
+   */
+  defaultEdgeColors: private [string serialized Color] = ['#057C87', '#6932BA', '#BF808C', '#5E274B', '#4B7A5B', '#0E48C4', '#3B5C0F', '#704A50', '#A65E00', '#8C316E']
+
+  /**
+   * A list of default colors used to color nodes.
+   *
+   * If {@link UiSdlGraphVisualizationNodeStyleConfig#fillColorByProperty} is of type
+   * {@link UiSdlGraphVisualizationFillColorByPropertyStrategyCategorical}, the component will assign a color to each
+   * category from here in order.
+   *
+   * The colors have to belong to {@link UiSdlGraphVisualizationFillColorOption}.
+   */
+  defaultNodeColors: private [string serialized Color] = ['#057C87', '#6932BA', '#BF808C', '#5E274B', '#4B7A5B', '#0E48C4', '#3B5C0F', '#704A50', '#A65E00', '#8C316E']
+
+  /**
+   * By default, all edges between two nodes are merged into a single edge.
+   * Set this to true to disable merged edges.
+   */
+  disableMergedEdges: boolean
+
+  /**
+   * The component that handles the empty state.
+   * It will appear if the grid has no data.
+   * Empty state is only availible if {@link showMap} is false
+   */
+  emptyState: private UiSdlComponentRef<UiSdlEmptyState>
+
+  /**
+   * Defaults to tight, loose will put a little space between the node and the edge.
+   */
+  endSpacing: string enum UiSdlGraphVisualizationEndSpacingOption = TIGHT
+
+  /**
+   * The specification used for retrieving GeoJSON data passed on to Leaflet to be rendered in the tile layer.
+   */
+  @uiSdlDataSpec(dataDestinationField='geoJsonData')
+  geoJsonDataSpec: UiSdlGraphVisualizationGeoJsonDataSpec
+
+  /**
+   * Holds the data passed to Leaflet to display on the tile layer on the map. Needs to be in the GeoJSON format:
+   * https://leafletjs.com/examples/geojson/
+   */
+  geoJsonData: private json
+
+  /**
+   * The height in pixels of the graph.  This will be reflected in the height of the container div; the graph
+   * element itself will then take up 100% of the container's height.
+   */
+  height: int = 650
+
+  /**
+   * The list of highlighted item ids when an item is hovered on or selected. This field is only set if
+   * {@link UiSdlGraphVisualizationHoverConfig#highlightNeighborsOnHover} or
+   * {@link UiSdlGraphVisualizationSelectionConfig#highlightNeighborsOnSelect} is true.
+   */
+  highlightedItemIds: private [string]
+
+  /**
+   * The configuration to control the appearance and behavior of hovered items.
+   */
+  hoverConfig: UiSdlGraphVisualizationHoverConfig
+
+  /**
+   * The id of the currently hovered edge.
+   */
+  hoveredEdgeId: private string
+
+  /**
+   * The id of the currently hovered node.
+   */
+  hoveredNodeId: private string
+
+  /**
+   * The layout configuration to use.
+   */
+  layout: UiSdlGraphVisualizationLayout
+
+  /**
+   * Controls animations on the graph.
+   */
+  animation: UiSdlGraphVisualizationAnimation
+
+  /**
+   * Canvas legend configuration.
+   */
+  legendConfig: UiSdlGraphVisualizationCanvasLegendConfig
+
+  /**
+   * The configuration for controlling how to merge multiple links between two nodes.
+   */
+  mergedEdgeConfig: UiSdlGraphVisualizationMergedEdgeConfig
+
+  /**
+   * A mapping from an original edge id to its merged edge id.
+   */
+  mergedEdgeMapping: private map<string, string>
+
+  /**
+   * Configuration for a temporary animated halo effect to a node or a link, also known as a ping effect.
+   */
+  pingConfig: UiSdlGraphVisualizationPingConfig
+
+  /**
+   * An array of node or edge ids to temporarily animate or ping.
+   */
+  pingItems: private [string]
+
+  /**
+   * Whether or not graph should be resettable.
+   * If set to true, a button is rendered on the canvas that the user can click to reset the graph.
+   */
+  resettable: boolean = true
+
+  /**
+   * A dictionary with a truthy property for each selected item.
+   * The keys are the ids of the selected node/edge.
+   */
+  selectedItems: private map<string, boolean>
+
+  /**
+   * An array of node ids which represent selected nodes on the graph canvas.
+   */
+  selectedNodeIds: private [string]
+
+  /**
+   * An array of edge ids which represent selected edges on the graph canvas.
+   */
+  selectedEdgeIds: private [string]
+
+  /**
+   * The configuration to control the appearance and behavior of selected items.
+   */
+  selectionConfig: UiSdlGraphVisualizationSelectionConfig
+
+  /**
+   * The name of the selected GeoJSON region.
+   */
+  selectedRegion: private string
+
+  /**
+   * Set to true to enable map mode.
+   */
+  showMap: boolean
+
+  /**
+   * Configuration to display scale bar on map.
+   */
+  scaleConfig: FedGraphVisualizationScaleConfig
+
+  /**
+   * Set to true to show edges between nodes when {@link showMap} is `true`.
+   */
+  showEdgesOnMap: boolean
+
+  /**
+   * When true show the canvas legend.
+   */
+  showLegend: boolean = true
+
+  /**
+   * The configuration to control the appearance of the time bar.
+   * Must be configured in order for the time bar to be shown.
+   * Currently the time bar only supports filtering on edge temporal data or node
+   * temporal data. If provided configs for both, it will default to filtering
+   * on edges and ignore node temporal data.
+   */
+  timeBarConfig: UiSdlGraphVisualizationTimeBarConfig
+
+  /**
+   * The items in the currently visible time bar range.
+   */
+  timeBarInRangeItems: private [string]
+
+  /**
+   * Whether or not the zoom control buttons should be displayed on this graph.
+   * If set to true, a button group is rendered on the canvas that the user can use zoom in,
+   * zoom out and re-center the graph.
+   * If set to false, the mouse/trackpad gestures still enable the users to zoom in/out.
+   */
+  showZoomControls: boolean = true
+
+  /**
+   * Triggered after the user clicks the clear graph button.
+   *
+   * @param id
+   *           Id of the component.
+   * @param warningModalId
+   *           Id of the warning modal that will be displayed.
+   *
+   * @return a `WARNING_MODAL_OPEN` action for this instance with the following properties:
+   * - payload.componentId {string} id of the graph visualization instance that originated the clear graph action.
+   * - payload.warningModalId {string} id of the warning modal.
+   */
+  @uiSdlActionCreator(actionType='WARNING_MODAL_OPEN')
+  openWarningModalAction: function(id: string, warningModalId: string): UiSdlWarningModalOpenAction ts-client
+
+  /**
+   * Triggered after the user exits from the warning modal by clicking its primary button.
+   *
+   * @param id
+   *           Id of the component.
+   * @param warningModalId
+   *           Id of the warning modal that will be closed.
+   *
+   * @return a `WARNING_MODAL_CLOSE` action for this instance with the following properties:
+   * - payload.componentId {string} id of the graph visualization instance that originated the clear graph action.
+   * - payload.warningModalId {string} id of the warning modal.
+   */
+  @uiSdlActionCreator(actionType='WARNING_MODAL_CLOSE')
+  closeWarningModalAction: function(id: string, warningModalId: string): UiSdlWarningModalCloseAction ts-client
+
+  /**
+   * Triggered when an edge is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param edgeId
+   *           Id of the edge.
+   * @return a `EDGE_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='EDGE_CLICK')
+  clickEdgeAction: private function(id: string,
+                                    edgeId: string): !UiSdlReduxAction<UiSdlGraphVisualizationClickEdgeActionPayload> ts-client
+
+  /**
+   * Triggered when an edge glyph is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param edgeId
+   *           Id of the edge that contains the glyph that was clicked.
+   * @param glyph
+   *           The glyph that was clicked.
+   * ```
+   * item.glyphs[glyphIndex]
+   * ```
+   *
+   * @return a `EDGE_GLYPH_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='EDGE_GLYPH_CLICK')
+  clickEdgeGlyphAction: private function(id: string,
+                                         edgeId: string,
+                                         glyph: UiSdlGraphVisualizationBaseGlyphConfig)
+                                  : !UiSdlReduxAction<UiSdlGraphVisualizationClickEdgeGlyphActionPayload> ts-client
+
+  /**
+   * Triggered when the graph is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param lat 
+   *           Latitude of clicked point
+   * @param lng 
+   *           Longitude of clicked point
+   * @return a `GRAPH_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='GRAPH_CLICK')
+  clickGraphAction: private function(id: string, lat: float, lng: float): !UiSdlReduxAction<UiSdlComponentActionPayload> ts-client
+
+  /**
+   * Triggered when a node is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param nodeId
+   *           Id of the node.
+   * @return a `NODE_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='NODE_CLICK')
+  clickNodeAction: private function(id: string,
+                                    nodeId: string): !UiSdlReduxAction<UiSdlGraphVisualizationClickNodeActionPayload> ts-client
+
+  /**
+   * Triggered when a GeoJSON region is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param regionId
+   *           Id of the region.
+   * @return a `REGION_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='REGION_CLICK')
+  clickRegionAction: private function(id: string,
+                                      regionId: string)
+                               : !UiSdlReduxAction<UiSdlGraphVisualizationClickRegionActionPayload> ts-client
+
+  /**
+   * Triggered when a node glyph is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param nodeId
+   *           Id of the node that contains the glyph that was clicked.
+   * @param glyph
+   *           The glyph that was clicked.
+   * ```
+   * item.glyphs[glyphIndex]
+   * ```
+   *
+   * @return a `NODE_GLYPH_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='NODE_GLYPH_CLICK')
+  clickNodeGlyphAction: private function(id: string,
+                                         nodeId: string,
+                                         glyph: UiSdlGraphVisualizationBaseGlyphConfig)
+                                  : !UiSdlReduxAction<UiSdlGraphVisualizationClickNodeGlyphActionPayload> ts-client
+
+  /**
+   * Triggered when a node is double clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @param nodeId
+   *           Id of the node.
+   * @return a `NODE_DOUBLE_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='NODE_DOUBLE_CLICK')
+  doubleClickNodeAction: private function(id: string,
+                                          nodeId: string)
+                                   : !UiSdlReduxAction<UiSdlGraphVisualizationDoubleClickNodeActionPayload> ts-client
+
+  /**
+   * Triggered when the `Clear Graph` button is clicked.
+   *
+   * @param id
+   *           Id of the component.
+   * @return a `CLEAR_GRAPH_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='CLEAR_GRAPH_CLICK')
+  clickClearGraphAction: private function(id: string): !UiSdlReduxAction<UiSdlComponentActionPayload> ts-client
+
+  /**
+   * Dispatched to call reducer to set {@link UiSdlGraphVisualization#isClearingCanvasItems} state.
+   *
+   * @param id
+   *           Id of the component.
+   * @param isClearingCanvasItems
+   *           Whether the clearing of canvas items is in progress.
+   * @return a `CLEARING_CANVAS_ITEMS_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='CLEARING_CANVAS_ITEMS_SET')
+  setClearingCanvasItemsAction: private function(id: string,
+                                                 isClearingCanvasItems: boolean)
+                                          : !UiSdlReduxAction<UiSdlGraphVisualizationSetClearingCanvasItemsActionPayload> ts-client
+
+  /**
+   * Dispatched when the graph is loaded in memory to sets the cache key in the state.
+   *
+   * @param id
+   *           Id of the component.
+   * @param cacheKey
+   *           The cacheKey of the cached graph.
+   * @return a `CACHE_KEY_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='CACHE_KEY_SET')
+  setCacheKeyAction: private function(id: string,
+                                      cacheKey: string)
+                               : !UiSdlReduxAction<UiSdlGraphVisualizationSetCacheKeyActionPayload> ts-client
+
+  /**
+   * Dispatched to call reducer to set data loading state.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param isDataLoading
+   *           Whether the data is loading.
+   * @return a `DATA_LOADING_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='DATA_LOADING_SET')
+  setDataLoadingAction: private function(id: string,
+                                         isDataLoading: boolean)
+                                  : !UiSdlReduxAction<UiSdlGraphVisualizationSetDataLoadingActionPayload> ts-client
+
+  /**
+   * Initializes the `canvasItems` state value the first time the component is rendered.
+   * @param id
+   *           Id of the graph component.
+   * @param items
+   *           The items to be initialized.
+   * @return a `CANVAS_ITEMS_INITIALIZE` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='CANVAS_ITEMS_INITIALIZE')
+  initializeCanvasItemsAction: private function(id: string,
+                                                items: map<string, UiSdlGraphVisualizationDataNode | UiSdlGraphVisualizationDataEdge>)
+                                         : !UiSdlReduxAction<UiSdlGraphVisualizationInitializeCanvasItemsActionPayload> ts-client
+
+  /**
+   * Initializes the graphVisualization state to the first time the component is rendered.
+   * @param id
+   *           Id of the graph component.
+   * @return a `RESET_GRAPH_TO_INITIAL_STATE` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='RESET_GRAPH_TO_INITIAL_STATE')
+  resetGraphAction: private function(id: string): !UiSdlReduxAction<UiSdlComponentActionPayload> ts-client
+
+  /**
+   * Sets flag value to force initialization of `canvasItems`.
+   * @param id
+   *           Id of the graph component.
+   * @param shouldForceInitialization
+   *           Whether to force {@link canvasItems} initialization.
+   * @return a `FORCE_CANVAS_ITEMS_INITIALIZATION_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='FORCE_CANVAS_ITEMS_INITIALIZATION_SET')
+  setForceCanvasItemsInitializationAction: private function(id: string,
+                                                            shouldForceInitialization: boolean)
+                                                     : !UiSdlReduxAction<UiSdlGraphVisualizationForceInitializeCanvasItemsActionPayload> ts-client
+
+  /**
+   * Triggered when a node is hovered.
+   *
+   * @param id
+   *           Id of the component.
+   * @param hoveredNodeId
+   *           Id of the hovered node.
+   * @param x
+   *           The x location of the pointer in view coordinates.
+   * @param y
+   *           The y location of the pointer in view coordinates.
+   * @param zoomValue
+   *           The value that represents the current zoom level of the graph.
+   * @return a `NODE_HOVER_ON` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='NODE_HOVER_ON')
+  hoverOnNodeAction: private function(id: string,
+                                      hoveredNodeId: string,
+                                      x: int,
+                                      y: int,
+                                      zoomValue: double)
+                               : !UiSdlReduxAction<UiSdlGraphVisualizationHoverOnNodeActionPayload> ts-client
+
+  /**
+   * Triggered when an edge is hovered.
+   *
+   * @param id
+   *           Id of the component.
+   * @param hoveredEdgeId
+   *           The hovered edge id.
+   * @param x
+   *           The x location of the pointer in view coordinates.
+   * @param y
+   *           The y location of the pointer in view coordinates.
+   * @return a `EDGE_HOVER_ON` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='EDGE_HOVER_ON')
+  hoverOnEdgeAction: private function(id: string,
+                                      hoveredEdgeId: string,
+                                      x: int,
+                                      y: int): !UiSdlReduxAction<UiSdlGraphVisualizationHoverOnEdgeActionPayload> ts-client
+
+  /**
+   * Triggered when a merged edge is hovered.
+   *
+   * @param id
+   *           Id of the component.
+   * @param hoveredEdgeIds
+   *           The ids of edges that are constituents of the merged edge.
+   * @return a `MERGED_EDGE_HOVER_ON` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='MERGED_EDGE_HOVER_ON')
+  hoverOnMergedEdgeAction: private function(id: string,
+                                            hoveredEdgeIds: [string])
+                                     : !UiSdlReduxAction<UiSdlGraphVisualizationHoverOnMergedEdgeActionPayload> ts-client
+
+  /**
+   * Triggered when a node is no longer hovered.
+   *
+   * @param id
+   *           Id of the component.
+   * @return a `NODE_HOVER_OFF` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='NODE_HOVER_OFF')
+  hoverOffNodeAction: private function(id: string): !UiSdlReduxAction<UiSdlComponentActionPayload> ts-client
+
+  /**
+   * Triggered when an edge is no longer hovered.
+   *
+   * @param id
+   *           Id of the component.
+   * @return a `EDGE_HOVER_OFF` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='EDGE_HOVER_OFF')
+  hoverOffEdgeAction: private function(id: string): !UiSdlReduxAction<UiSdlComponentActionPayload> ts-client
+
+  /**
+   * Triggered when a merged edge is no longer hovered.
+   *
+   * @param id
+   *           Id of the component.
+   * @return a `MERGED_EDGE_HOVER_OFF` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='MERGED_EDGE_HOVER_OFF')
+  hoverOffMergedEdgeAction: private function(id: string): !UiSdlReduxAction<UiSdlComponentActionPayload> ts-client
+
+  /**
+   * Dispatched to temporarily animate or ping the given graph items.
+   *
+   * @param id
+   *           Id of the component.
+   * @param pingItemIds
+   *           The node or edge ids to ping in the graph.
+   * @return a `ITEMS_PING` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='ITEMS_PING')
+  pingItemsAction: private function(id: string,
+                                    pingItemIds: [string])
+                             : !UiSdlReduxAction<UiSdlGraphVisualizationPingItemsActionPayload> ts-client
+
+  /**
+   * Dispatched to set merged edge mappings in the graph state.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param mergedEdgeMapping
+   *           The mapping of edge ids to merged edge ids.
+   * @return a `MERGED_EDGE_MAPPING_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='MERGED_EDGE_MAPPING_SET')
+  setMergedEdgeMappingAction: private function(id: string,
+                                               mergedEdgeMapping: map<string, string>)
+                                        : !UiSdlReduxAction<UiSdlGraphVisualizationSetMergedEdgeMappingActionPayload> ts-client
+
+  /**
+   * Dispatched to set selected items in the graph.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param selectedItemIds
+   *           The list of selected item ids to set.
+   * @return a `SELECTED_ITEMS_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='SELECTED_ITEMS_SET')
+  setSelectedItemsAction: private function(id: string,
+                                           selectedItemIds: [string])
+                                    : !UiSdlReduxAction<UiSdlGraphVisualizationSetSelectedItemsActionPayload> ts-client
+
+  /**
+   * Dispatched to set the edges that are included in the current time bar range.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param timeBarInRangeItems
+   *           The list of in range item ids to set.
+   * @return a `TIME_BAR_RANGE_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='TIME_BAR_RANGE_SET')
+  setTimeBarInRangeItemsAction: private function(id: string,
+                                                 timeBarInRangeItems: [string])
+                                          : !UiSdlReduxAction<UiSdlGraphVisualizationSetTimeBarInRangeItemsActionPayload> ts-client
+
+  /**
+   * Dispatched to set the layout.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param layout
+   *           The layout object to set.
+   * @return a `LAYOUT_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='LAYOUT_SET')
+  setLayoutAction: private function(id: string,
+                                    layout: UiSdlGraphVisualizationLayout)
+                             : !UiSdlReduxAction<UiSdlGraphVisualizationSetLayoutActionPayload> ts-client
+
+  /**
+   * Dispatched to set the animation.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param animation
+   *           The animation object to set.
+   * @return a `ANIMATION_SET` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='ANIMATION_SET')
+  setAnimationAction: private function(id: !string,
+                                       animation: UiSdlGraphVisualizationAnimation)
+                                       : !UiSdSetAnimationGraphVisualizationAction ts-client
+
+  /**
+   * Dispatched when a context menu item is clicked.
+   *
+   * @param id
+   *           Id of the graph component.
+   * @param itemId
+   *           The id of the item that was right-clicked to launch the context menu.
+   * @param actionToDispatch
+   *           The action that should be dispatched when the item is clicked.
+   * @return a `CONTEXT_MENU_ITEM_CLICK` action for this instance.
+   */
+  @uiSdlActionCreator(actionType='CONTEXT_MENU_ITEM_CLICK')
+  clickContextMenuItemAction: private function(id: string,
+                                               itemId: string,
+                                               actionToDispatch: UiSdlAction)
+                                        : !UiSdlReduxAction<UiSdlGraphVisualizationClickContextMenuItemActionPayload> ts-client
+
+  /**
+   * Listens for actions of type `CACHE_KEY_SET` and updates {@link UiSdlGraphVisualization#cacheKey}.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='CACHE_KEY_SET')
+  cacheKeySetReducer: private function(state: !UiSdlReduxState, action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `CLEAR_GRAPH_CLICK` and sets {@link UiSdlGraphVisualization#selectedItems},
+   * {@link UiSdlGraphVisualization#selectedNodeIds}, {@link UiSdlGraphVisualization#selectedEdgeIds},
+   * {@link UiSdlGraphVisualization#selectedRegion}, {@link UiSdlGraphVisualization#timeBarInRangeItems},
+   * and {@link UiSdlGraphVisualization#canvasItems} to empty value.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='CLEAR_GRAPH_CLICK')
+  clearGraphClickReducer: private function(state: !UiSdlReduxState,
+                                           action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `CLEARING_CANVAS_ITEMS_SET` and updates
+   * {@link UiSdlGraphVisualization#isClearingCanvasItems}.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='CLEARING_CANVAS_ITEMS_SET')
+  clearingCanvasItemsSetReducer: private function(state: !UiSdlReduxState,
+                                                  action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `REGION_CLICK` and updates {@link UiSdlGraphVisualization#selectedRegion}.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='REGION_CLICK')
+  regionClickReducer: private function(state: !UiSdlReduxState, action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `RESET_GRAPH_TO_INITIAL_STATE` and updates {@link UiSdlGraphVisualization}.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='RESET_GRAPH_TO_INITIAL_STATE')
+  resetGraphReducer: private function(state: !UiSdlReduxState, action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `DATA_LOADING_SET` and sets the loading state.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='DATA_LOADING_SET')
+  dataLoadingSetReducer: private function(state: !UiSdlReduxState,
+                                          action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `CANVAS_ITEMS_INITIALIZE` and initializes the canvasItems value.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return an Observable action stream.
+   */
+  @uiSdlReducer(actionType='CANVAS_ITEMS_INITIALIZE')
+  canvasItemsInitializeReducer: private function(state: !UiSdlReduxState,
+                                                 action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `FORCE_CANVAS_ITEMS_INITIALIZATION_SET` and sets the
+   * {@link UiSdlGraphVisualization#forceCanvasItemsInitialization} value in the state.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return an Observable action stream.
+   */
+  @uiSdlReducer(actionType='FORCE_CANVAS_ITEMS_INITIALIZATION_SET')
+  forceCanvasItemsInitializationSetReducer: private function(state: !UiSdlReduxState,
+                                                             action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `SELECTED_ITEMS_SET` and sets {@link UiSdlGraphVisualization#selectedItems},
+   * {@link UiSdlGraphVisualization#selectedNodeIds} and {@link UiSdlGraphVisualization#selectedEdgeIds} values in the
+   * state.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='SELECTED_ITEMS_SET')
+  selectedItemsSetReducer: private function(state: !UiSdlReduxState,
+                                            action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `MERGED_EDGE_MAPPING_SET` and sets merged edge mapping in the graph state.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='MERGED_EDGE_MAPPING_SET')
+  mergedEdgeMappingSetReducer: private function(state: !UiSdlReduxState,
+                                                action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `LAYOUT_SET` and sets the layout in the graph state.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='LAYOUT_SET')
+  layoutSetReducer: private function(state: !UiSdlReduxState, action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `ANIMATION_SET` and sets the animation in the graph state.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='ANIMATION_SET')
+  setAnimationReducer: private function(state: !UiSdlReduxState, action: !UiSdSetAnimationGraphVisualizationAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `ITEMS_PING` and temporarily animate or ping the given graph items.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='ITEMS_PING')
+  itemsPingReducer: private function(state: !UiSdlReduxState, action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `TIME_BAR_RANGE_SET` and sets the time bar range and in range ids.
+   * If {@link UiSdlGraphVisualizationTimeBarConfig#mode} is 'dim', adds a fade to all items that are out of the
+   * timebar range.
+   * If {@link UiSdlGraphVisualizationTimeBarConfig#mode} is 'filter', sets the invisible property true on all items
+   * that are out of the timebar range. The presentational component omits these items from being passed into the
+   * Chart component.
+   *
+   * @param state
+   *           Redux state.
+   * @param action
+   *           Redux action.
+   * @return a new Redux state.
+   */
+  @uiSdlReducer(actionType='TIME_BAR_RANGE_SET')
+  timeBarInRangeItemsSetReducer: private function(state: !UiSdlReduxState,
+                                                  action: !UiSdlReduxAction): !UiSdlReduxState ts-client
+
+  /**
+   * Listens for actions of type `WARNING_MODAL_OPEN`.
+   *
+   * @param actionStream
+   *           Observable action stream.
+   * @param stateStream
+   *           Observable state stream.
+   * @return an Observable action stream.
+   */
+  @uiSdlEpic(actionType='WARNING_MODAL_OPEN')
+  openWarningModalEpic: private function(actionStream: UiSdlActionsObservable,
+                                         stateStream: UiSdlStatesObservable): UiSdlActionsObservable ts-client
+
+  /**
+   * Listens for actions of type `WARNING_MODAL_CLOSE`.
+   *
+   * @param actionStream
+   *           Observable action stream.
+   * @param stateStream
+   *           Observable state stream.
+   * @return an Observable action stream.
+   */
+  @uiSdlEpic(actionType='WARNING_MODAL_CLOSE')
+  closeWarningModalEpic: private function(actionStream: UiSdlActionsObservable,
+                                          stateStream: UiSdlStatesObservable): UiSdlActionsObservable ts-client
+
+  /**
+   * Listens for actions of type `CONTEXT_MENU_ITEM_CLICK`, and dispatches the configured action.
+   *
+   * @param actionStream
+   *           Observable action stream.
+   * @param stateStream
+   *           Observable state stream.
+   * @return an Observable action stream.
+   */
+  @uiSdlEpic(actionType='CONTEXT_MENU_ITEM_CLICK')
+  clickContextMenuItemEpic: private function(actionStream: UiSdlActionsObservable,
+                                             stateStream: UiSdlStatesObservable): UiSdlActionsObservable ts-client
+}

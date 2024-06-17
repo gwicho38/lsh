@@ -1,0 +1,20 @@
+{
+  "type": "UiSdlConnected<GuruSearchLayoutPage>",
+  "applicationStateRef": {
+    "type" : "UiSdlApplicationStateRef",
+    "id" : "EnterpriseSearch.UiSdlApplicationStateEnterpriseSearch"
+  },
+  "component": {
+    "className": "external-sources-page",
+    "navigation": {
+      "id": "EnterpriseSearch.ApplicationNavMenu"
+    },
+    "pageTitle": {
+      "id": "EnterpriseSearch.SettingsPageTitleSwitchRenderer"
+    },
+    "content": {
+      "id": "EnterpriseSearch.ExternalSourcesPageContent"
+    },
+    "wrapWithMetadataId": true
+  }
+}
