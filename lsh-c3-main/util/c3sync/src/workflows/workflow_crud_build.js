@@ -1,7 +1,7 @@
 // pkgname & version come from build in studio, e.g.
 // https://gkev8c3apps.c3-e.com/blitztest/studio/branches/github-c3-e-c3fed-guru-cornea--feature%2Frps%2FCOR-772/1/guruSearchUI
 var pkgName = "guruSearchUI";
-var semVer = "8.3.2+develop.27.f8ba22a2563f1664f89d1708f06cc374e53f60b4";
+var semVer = '8.3.2+develop.135.c0d8a7ee8c8cb63810800e93f544275105ab580c";
 
 //See all the artifacts avaliable and semantic verions
 // c3Grid(ArtifactHubService.Artifact.fetch())

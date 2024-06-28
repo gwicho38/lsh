@@ -9,15 +9,18 @@
 const request = require('request');
 const AsyncLock = require('async-lock');
 
-const CONFIG = require('./config');
-const FILE = require('./file');
+// const CONFIG = require('./config');
+// const FILE = require('./file');
 
 const semaphore = new AsyncLock();
 
 let pkgId;
 
+const URL = 'https://gkev8c3apps.c3-e.com/lefvcor1135/gurusearch';
+const AUTH_TOKEN = 'REDACTED';
+
 const makePOSTRequest = async (typeName, method, data, onSuccess) => {
-  const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
+  const url = URL  + '/api/8' + '/' + typeName + '/' + method;
 
   // Prevent parallel writes/deletions
   return semaphore.acquire('request', (done) => {
@@ -26,7 +29,7 @@ const makePOSTRequest = async (typeName, method, data, onSuccess) => {
       body: data,
       json: true,
       headers: {
-        Authorization: CONFIG.AUTH_TOKEN,
+        Authorization: AUTH_TOKEN,
       },
     }, (err, response, body) => {
       onSuccess?.(body);
@@ -35,42 +38,44 @@ const makePOSTRequest = async (typeName, method, data, onSuccess) => {
   });
 };
 
-const getMetadataPath = (path) => {
-  return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);
-};
+await makePOSTRequest('Pkg', 'appMode', {}, (x: any) => console.log(x));
 
-const getPkgId = async () => {
-  if (pkgId) {
-    return pkgId;
-  }
+// // const getMetadataPath = (path) => {
+// //   return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);
+// // };
 
-  await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {
-    pkgId = body;
-  });
+// const getPkgId = async () => {
+//   if (pkgId) {
+//     return pkgId;
+//   }
 
-  return pkgId;
-}
+//   await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {
+//     pkgId = body;
+//   });
 
-const writeContent = async (path) => {
-  const pkgId = await getPkgId();
-  const metadataPath = getMetadataPath(path);
-  const content = FILE.encodeContent(path);
-  if (content === FILE.NO_CHANGE_TO_FILE) {
-    return;
-  }
-  return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {
-    type: 'ContentValue',
-    content,
-  }]);
-}
+//   return pkgId;
+// }
 
-const deleteContent = async (path) => {
-  const pkgId = await getPkgId();
-  const metadataPath = getMetadataPath(path);
-  return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true]);
-}
+// const writeContent = async (path) => {
+//   const pkgId = await getPkgId();
+//   const metadataPath = getMetadataPath(path);
+//   const content = FILE.encodeContent(path);
+//   if (content === FILE.NO_CHANGE_TO_FILE) {
+//     return;
+//   }
+//   return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {
+//     type: 'ContentValue',
+//     content,
+//   }]);
+// }
 
-module.exports = {
-  writeContent,
-  deleteContent,
-};
+// const deleteContent = async (path) => {
+//   const pkgId = await getPkgId();
+//   const metadataPath = getMetadataPath(path);
+//   return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true]);
+// }
+
+// module.exports = {
+//   writeContent,
+//   deleteContent,
+// };

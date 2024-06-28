@@ -1,10 +1,24 @@
+"""
+ignore all simlinks in repo
+#!/bin/bash
+
+# Find all symbolic links in the repository and append them to .gitignore
+find . -type l | while read -r link; do
+    echo "$link" >> .gitignore
+done
+
+# Sort and remove duplicates from .gitignore
+sort -u -o .gitignore .gitignore
+
+"""
+
 # from openai import OpenAI
-# import click
-# import os
-# import time
-# import requests
-# from threading import Thread
-# from queue import Queue
+import click
+import os
+import time
+import requests
+from threading import Thread
+from queue import Queue
 # from openai import OpenAI
 
 # # Replace with your OpenAI API key
@@ -89,11 +103,41 @@
 #     analysis = response.choices[0].message.content.strip()
 #     return analysis
 
-# @click.group()
-# def repo():
-#     """A tool for analyzing pull requests."""
-#     pass
+@click.group()
+def repo():
+    """A tool for analyzing pull requests."""
+    pass
 
+@repo.command(name="ignore--simlinks")
+def ignore_simlinks():
+    directory_path = "/Users/lefv/c3/__c3jira__/cor-1488/c3fed-guru"
+    gitignore_path = ".gitignore"
+    def find_symlinks(directory):
+        symlinks = []
+        for root, dirs, files in os.walk(directory):
+            for name in dirs + files:
+                path = os.path.join(root, name)
+                if os.path.islink(path):
+                    symlinks.append(os.path.relpath(path, directory))
+        return symlinks
+
+    def update_gitignore(symlinks, gitignore_path):
+        try:
+            with open(gitignore_path, 'r') as file:
+                existing_entries = set(line.strip() for line in file)
+        except FileNotFoundError:
+            existing_entries = set()
+
+        new_entries = set(symlinks)
+        all_entries = sorted(existing_entries | new_entries)
+
+        with open(gitignore_path, 'w') as file:
+            file.write('\n'.join(all_entries) + '\n')
+
+    symlinks = find_symlinks(directory_path)
+    update_gitignore(symlinks, gitignore_path)
+    print(f"Added {len(symlinks)} symlink(s) to {gitignore_path}")
+    
 # @repo.group()
 # def pr():
 #     """Commands for pull request operationsssss."""
@@ -150,5 +194,5 @@
 #     except requests.exceptions.RequestException as e:
 #         print(f"API request failed: {e}")
 
-# if __name__ == "__main__":
-#     repo()
+if __name__ == "__main__":
+    repo()
