@@ -1,0 +1,399 @@
+/**
+ * Master list of dependencies for the core :platform project. By declaring all dependencies with "api" we are
+ * allowing consumers of :platform to transitively inherit the same dependencies. This helps keep our .gradle files DRY.
+ */
+dependencies {
+    def withoutLog4j = {
+        exclude group: 'log4j', module: 'log4j'
+        exclude group: 'org.apache.logging.log4j', module: '*'
+    }
+
+    api project(":kpi-agent")
+    api project(":thirdParty")
+
+    api "org.apache.arrow:arrow-vector:$apacheArrowVersion"
+    api "org.apache.arrow:arrow-memory-netty:$apacheArrowVersion"
+    api "org.apache.arrow:arrow-memory:$apacheArrowVersion"
+    api "org.apache.arrow:arrow-compression:$apacheArrowVersion"
+    // api "org.apache.arrow:arrow-plasma:$apacheArrowVersion"
+    api "black.ninia:jep:$jepVersion"
+    api "cdata.jdbc.salesforce:salesforce-jdbc:$salesforceJdbcVersion"
+    api "cdata.jdbc:googlebigquery:$googlebigqueryVersion"
+    api "colt:colt:$coltVersion"
+    api "com.amazon.redshift:redshift-jdbc42:$redshiftJdbcVersion"
+    api "com.amazonaws:aws-java-sdk:$awsSdkVersion"
+    api "com.amazonaws:aws-java-sdk-eks:$awsSdkVersion"
+    api "com.atlassian.commonmark:commonmark-ext-gfm-strikethrough:$commonmarkVersion"
+    api "com.atlassian.commonmark:commonmark-ext-gfm-tables:$commonmarkVersion"
+    api "com.atlassian.commonmark:commonmark-ext-heading-anchor:$commonmarkVersion"
+    api "com.atlassian.commonmark:commonmark:$commonmarkVersion"
+    api "com.bettercloud:vault-java-driver:$bettercloudVersion"
+    api "com.c3:gheat:$gheatVersion"
+    api "com.cdata.jdbc:cosmosdb:$cosmosDbJdbcVersion"
+    api "com.cdata.jdbc:hubspot:$hubspotJdbcVersion"
+    api "com.cronutils:cron-utils:$cronUtilsVersion"
+    api "cdata.jdbc.databricks:databricks:$databricksJdbcVersion"
+    api ("com.datastax.cassandra:cassandra-driver-core:$cassandraDriverVersion") {
+        exclude group: 'org.ow2.asm'
+    }
+    api "com.datastax.cassandra:cassandra-driver-mapping:$cassandraDriverVersion"
+    api "com.esotericsoftware:minlog:$minlogVersion"
+    api "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    api "com.fasterxml.woodstox:woodstox-core:$woodstoxVersion"
+    api "com.github.javafaker:javafaker:$javafakerVersion"
+    api "com.github.cloudonix:vertx-java.io:$vertxJavaIoVersion"
+    api "com.github.jbellis:jamm:$jammVersion"
+    // TODO PLAT-35589
+    api "com.github.jbellis:jamm4:$jamm4Version"
+    api ("com.github.jnr:jnr-posix:$jnrPosixVersion") {
+        exclude group: 'org.ow2.asm'
+    }
+    api "com.google.crypto.tink:tink:$tinkVersion"
+    api ("com.google.guava:guava:$guavaVersion") {
+        force = true
+    }
+    api "com.google.javascript:closure-compiler:$closureCompilerVersion"
+    api "com.google.apis:google-api-services-cloudresourcemanager:$googleCloudResourceManager"
+    api "com.google.apis:google-api-services-iam:$googleCloudIAM"
+    api "com.google.cloud:google-cloud-storage:$googleCloudStorageVersion"
+    api "com.google.cloud:google-cloud-aiplatform:$googleApiPlatformVersion"
+    api "com.google.cloud.bigdataoss:gcs-connector:$googleCloudHadoopVersion"
+    api "com.google.auth:google-auth-library-oauth2-http:$googleAuthVersion"
+    api "com.google.api:gax:$googleGaxVersion"
+    api "com.google.cloud:google-cloud-bigtable:$googleBigTableVersion"
+    api "com.h2database:h2:$h2Version"
+    api "com.hazelcast:hazelcast:$hazelcastVersion"
+    api "com.ibm.db2:db2jcc4:$db2jcc4Version"
+    api "com.jcabi:jcabi-ssh:$jcabiVersion"
+    api "com.microsoft.azure.sdk.iot:iot-service-client:$azureIotVersion"
+    api "com.microsoft.azure:applicationinsights-web:$azureAppInsightsVersion"
+    api "com.microsoft.azure:azure-eventhubs-eph:$azureEventHubsEphVersion"
+    api "com.microsoft.azure:azure-eventhubs:$azureEventHubsVersion"
+    api "com.microsoft.azure:azure-keyvault-core:$azureKeyVaultVersion"
+    api "com.microsoft.azure:azure-mgmt-datalake-analytics:$azureDatalakeVersion"
+    api "com.microsoft.azure:azure-mgmt-datalake-store:$azureDatalakeVersion"
+    api "com.microsoft.sqlserver:mssql-jdbc:$mssqlJdbcVersion"
+    api "com.oracle.jdbc:ojdbc8:$ojdbcVersion"
+    api "com.sap.cloud.db.jdbc:ngdbc:$ngdbcVersion"
+    api "com.splunk:splunk:$splunkVersion"
+    api "com.sun.codemodel:codemodel:$codemodelVersion"
+    api "com.zaxxer:nuprocess:$nuprocessVersion"
+    api "commons-codec:commons-codec:$commonsCodecVersion"
+    api "commons-collections:commons-collections:$apacheCollectionsVersion"
+    api "commons-httpclient:commons-httpclient:$commonsHttpClientVersion"
+    api "commons-io:commons-io:$commonsIoVersion"
+    api "commons-lang:commons-lang:$commonsLangVersion"
+    api "commons-net:commons-net:$commonsNetVersion"
+    api "commons-pool:commons-pool:$commonsPoolVersion"
+    api "commons-fileupload:commons-fileupload:$commonsFileUploadVersion"
+    api "de.l3s.boilerpipe:boilerpipe:$boilerpipeVersion"
+    api "org.jdom:jdom2:$jdomVersion"
+    api ("edu.ucar:netcdf4:$netcdfJavaVersion") {
+        exclude group: 'org.quartz-scheduler', module: 'quartz'
+    }
+    api ("io.kubernetes:client-java:$kubernetesClientVersion") {
+        exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+        exclude group: 'com.squareup.okhttp3', module: 'logging-interceptor'
+        exclude module: 'snakeyaml'
+    }
+    api "io.etcd:jetcd-core:$jetcdVersion"
+    api "io.github.classgraph:classgraph:$classgraphVersion"
+    api "io.prometheus:simpleclient:$prometheusClientVersion"
+    api "io.prometheus:simpleclient_common:$prometheusClientCommonVersion"
+    api "io.swagger:swagger-parser:$swaggerParserVersion"
+    api "io.netty:netty-codec-http2:$nettyCodecVersion"
+    api "io.vertx:vertx-micrometer-metrics:$vertxMicrometerMetrics"
+    api "io.micrometer:micrometer-registry-prometheus:$micrometerRegistryPrometheus"
+    api "io.vertx:vertx-web-api-contract:$vertxVersion"
+    api "io.vertx:vertx-web-client:$vertxVersion"
+    api "io.vertx:vertx-web-graphql:$vertxVersion"
+    api "io.vertx:vertx-web:$vertxVersion"
+    api "joda-time:joda-time:$jodaTimeVersion"
+    api "net.java.dev.jna:jna-platform:$jnaPlatformVersion"
+    api "net.java.dev.jna:jna:$jnaVersion"
+    api "net.nextencia:rrdiagram:$rrdiagramVersion"
+    api "net.postgis:postgis-jdbc:$postgisJdbcVersion"
+    api "net.sf.jung:jung-algorithms:$jungVersion"
+    api "net.sf.jung:jung-api:$jungVersion"
+    api "net.sf.jung:jung-graph-impl:$jungVersion"
+    api "net.sf.py4j:py4j:$py4jVersion"
+    api "net.sf.saxon:Saxon-HE:$saxonVersion"
+    api "net.sf.trove4j:trove4j:$trove4jVersion"
+    api "net.snowflake:snowflake-jdbc:$snowflakeJdbcVersion"
+    api "net.sourceforge.collections:collections-generic:$sourceforgeVersion"
+    api "net.spy:spymemcached:$spymemcachedVersion"
+    api "org.apache.avro:avro:$avroVersion"
+    api ("org.apache.parquet:parquet-avro:$parquetAvroVersion") {
+        exclude group: 'org.apache.avro', module: 'avro'
+    }
+    api ("org.apache.hadoop:hadoop-mapreduce-client-core:$hadoopMapReduceCoreVersion") {
+        exclude group: 'io.netty', module: 'netty'
+        exclude group: 'org.apache.avro', module: 'avro'
+        exclude group: 'org.apache.zookeper', module: 'zookeeper'
+    }
+    api "org.apache.commons:commons-compress:$apacheCommonsCompress"
+    api "org.apache.commons:commons-csv:$apacheCsvVersion"
+    api "org.apache.commons:commons-lang3:$apacheCommonsLangVersion"
+    api "org.apache.commons:commons-math3:$commonsMath3Version"
+    api "org.apache.commons:commons-text:$commonsTextVersion"
+    api "org.apache.commons:commons-vfs2:$commonsVfsVersion"
+    api "org.apache.httpcomponents:fluent-hc:$httpClientVersion"
+    api "org.apache.httpcomponents:httpasyncclient:$httpAsyncClientVersion"
+    api "org.apache.httpcomponents:httpclient:$httpClientVersion"
+    api "org.apache.httpcomponents:httpcore:$apacheHttpCoreVersion"
+    api "org.apache.james:apache-mime4j-core:$apacheMimeVersion"
+    api "org.apache.james:apache-mime4j-dom:$apacheMimeVersion"
+    api "org.apache.kafka:kafka-clients:$apacheKafkaVersion"
+    api "org.apache.logging.log4j:log4j-api:$log4j2Version"
+    api "org.apache.logging.log4j:log4j-core:$log4j2Version"
+    api "org.apache.logging.log4j:log4j-slf4j2-impl:$log4j2Version"
+    api "org.apache.lucene:lucene-analyzers-common:$luceneVersion", withoutLog4j
+    api "org.apache.lucene:lucene-core:$luceneVersion", withoutLog4j
+    api "org.apache.lucene:lucene-queryparser:$luceneVersion", withoutLog4j
+    api "org.apache.lucene:lucene-suggest:$luceneVersion", withoutLog4j
+    api "org.apache.poi:poi-scratchpad:$apachePoiVersion"
+    api "org.apache.poi:poi-ooxml:$apachePoiVersion"
+    api "org.apache.santuario:xmlsec:$xmlsecVersion"
+    api "org.apache.sis.core:sis-utility:$apacheSisVersion"
+    api "org.apache.tika:tika-core:$apacheTikaVersion"
+    api "org.apache.xmlgraphics:batik-anim:$batikVersion"
+    api "org.apache.xmlgraphics:batik-bridge:$batikVersion"
+    api "org.apache.xmlgraphics:batik-dom:$batikVersion"
+    api "org.apache.xmlgraphics:batik-svg-dom:$batikVersion"
+    api "org.apache.xmlgraphics:batik-util:$batikVersion"
+    api "org.apache.zookeeper:zookeeper:$zookeeperVersion"
+    api "xalan:xalan:$xalanVersion"
+    api "xalan:serializer:$xalanVersion"
+    api "org.atteo:evo-inflector:$evoVersion"
+    api "org.bouncycastle:bcmail-jdk15on:$bouncycastleVersion"
+    api "org.bouncycastle:bcpg-jdk15on:$bouncycastleVersion"
+    api "org.bouncycastle:bcprov-jdk15on:$jdk15onVersion"
+    api "org.bytedeco:ffmpeg-platform:$ffmpegVersion"
+    api "org.bytedeco:javacpp:$bytedecoVersion"
+    api "org.bytedeco:javacv:$bytedecoVersion"
+    api "org.ccil.cowan.tagsoup:tagsoup:$tagsoupVersion"
+    api "org.eclipse.jdt.core.compiler:ecj:$ecjCompilerVersion"
+    api "org.eclipse.jetty.websocket:websocket-client:$jettyVersion"
+    api "org.eclipse.jetty.websocket:websocket-server:$jettyVersion"
+    api "org.eclipse.jetty.websocket:websocket-servlet:$jettyVersion"
+    api "org.eclipse.jetty:jetty-proxy:$jettyVersion"
+    api "org.eclipse.jetty:jetty-server:$jettyVersion"
+    api "org.eclipse.jetty:jetty-servlet:$jettyVersion"
+    api "org.eclipse.jetty:jetty-servlets:$jettyVersion"
+    api "org.eclipse.jetty:jetty-util:$jettyVersion"
+    api "org.eclipse.jetty.aggregate:jetty-all:$jettyVersion"
+    api "org.apache.ant:ant:$antVersion"
+    api "org.freemarker:freemarker:$freemarkerVersion"
+    api "org.fusesource.jansi:jansi:$jansiVersion"
+    api "org.gridkit.jvmtool:hprof-heap:$hprofVersion"
+    api "org.javassist:javassist:$javassistVersion"
+    api "org.jblas:jblas:$jblasVersion"
+    api "org.json:json:$jsonVersion"
+    api "org.jsoup:jsoup:$jsoupVersion"
+    api "org.kamranzafar:jtar:$jtarVersion"
+    api "org.kohsuke:akuma:$akumaVersion"
+    api "org.lz4:lz4-java:$lz4Version"
+    api "org.mongodb:mongosql-auth:$mongoAuthVersion"
+    api "org.mozilla:rhino:$rhinoVersion"
+    api "org.objenesis:objenesis:$objenesisVersion"
+    api "org.apache.velocity:velocity-engine-core:$apacheVelocityVersion"
+    api "org.opensaml:opensaml-core:$opensamlVersion"
+    api "org.opensaml:opensaml-saml-impl:$opensamlVersion"
+    api "org.opensaml:opensaml-saml-api:$opensamlVersion"
+    api "org.opensaml:opensaml-security-api:$opensamlVersion"
+    api "org.opensaml:opensaml-xmlsec-impl:$opensamlVersion"
+    api "org.opensaml:opensaml-xmlsec-api:$opensamlVersion"
+    api ("org.owasp.esapi:esapi:$esapiVersion") {
+        exclude group: 'commons-fileupload', module: 'commons-fileupload'
+    }
+    api ("org.apache.hadoop:hadoop-common:$hadoopCommonVersion") {
+        exclude group: 'org.apache.avro', module: 'avro'
+        exclude group: 'com.fasterxml.woodstox', module: 'woodstox-core'
+        exclude group: 'org.codehaus.woodstox', module: 'stax2-api'
+        exclude group: 'org.apache.zookeper', module: 'zookeeper'
+    }
+    api "org.apache.hadoop:hadoop-azure:$hadoopCommonVersion"
+    api "org.apache.hadoop:hadoop-aws:$hadoopCommonVersion"
+    api "org.codehaus.jettison:jettison:$jettisonVersion"
+    api "org.ow2.asm:asm:$asmVersion"
+    api "org.ow2.asm:asm-commons:$asmVersion"
+    api "com.pgvector:pgvector:$pgvectorVersion"
+    api "org.postgresql:postgresql:$postgresqlVersion"
+    api "org.reflections:reflections:$reflectionsVersion"
+    api "org.seleniumhq.selenium:selenium-grid:$seleniumVersion"
+    api "org.seleniumhq.selenium:selenium-devtools-v$seleniumChromeVersion:$seleniumVersion"
+    api "org.slf4j:slf4j-api:$slf4jVersion"
+    api "org.xerial.snappy:snappy-java:$snappyVersion"
+    api "rome:rome:$romeVersion"
+    api "com.github.kirviq:dumbster:$simpleSmtpServerVersion"
+    api ("org.apache.hadoop:hadoop-yarn-server-common:$hadoopYarnServerCommonVersion") {
+        exclude group: 'org.apache.avro', module: 'avro'
+        exclude group: 'org.apache.zookeper', module: 'zookeeper'
+    }
+    api("org.apache.hive:hive-jdbc:$hiveJdbcVersion") {
+        exclude group: 'org.apache.avro', module: 'avro'
+        exclude group: 'org.ow2.asm'
+        exclude group: 'commons-codec', module: 'commons-codec'
+        exclude group: 'io.netty', module: '*'
+        exclude group: 'javax.servlet', module: 'servlet-api'
+        exclude group: 'org.apache.avro', module: 'avro'
+        exclude group: 'org.apache.derby', module: 'derby'
+        exclude group: 'org.apache.httpclients', module: '*'
+        exclude group: 'org.apache.logging.log4j', module: '*'
+        exclude group: 'org.apache.parquet', module: 'parquet-hadoop-bundle'
+        exclude group: 'org.eclipse.jetty', module: '*'
+        exclude group: 'org.eclipse.jetty.toolchain', module: 'jetty-schemas'
+        exclude group: 'org.eclipse.jetty.websocket', module: '*'
+        exclude group: 'org.slf4j', module: '*'
+        // PLAT-24087 BofA security scan
+        exclude group: 'tomcat', module: 'jasper-compiler'
+        // PLAT-24086 BofA security scan
+        exclude group: 'tomcat', module: 'jasper-runtime'
+        exclude group: 'org.apache.hive', module: 'hive-service'
+        exclude group: 'org.antlr', module: 'antlr-runtime'
+    }
+    api("com.google.code.java-allocation-instrumenter:java-allocation-instrumenter:$javaAllocationVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+        exclude group: 'org.ow2.asm', module: 'asm-tree'
+        exclude group: 'org.ow2.asm', module: 'asm-commons'
+        exclude group: 'org.ow2.asm', module: 'asm-analysis'
+        exclude group: 'org.ow2.asm', module: 'asm-xml'
+        exclude group: 'org.ow2.asm', module: 'asm-util'
+    }
+    api("com.microsoft.azure:adal4j:$adal4jVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("com.microsoft.azure:azure-servicebus:$azureServiceBusVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("com.microsoft.azure:azure-batch:$azureBatchVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("com.microsoft.azure:azure-storage:$azureStorageVersion") {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-annotations'
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-core'
+    }
+    api("com.microsoft.azure:azure:$azureVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("com.microsoft.azure:azure-client-runtime:$azureClientRuntimeVersion") {
+        exclude group: 'com.squareup.okhttp3', module: '*'
+    }
+    api("eu.medsea.mimeutil:mime-util:$mimeUtilVersion") {
+        exclude group: 'org.slf4j', module: '*'
+        exclude group: 'log4j', module: '*'
+    }
+    api("com.esotericsoftware:reflectasm:$reflectasmVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("org.apache.tika:tika-parsers:$apacheTikaVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("org.apache.tika:tika-parser-xml-module:$apacheTikaVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("net.minidev:accessors-smart:$accessorsSmartVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("org.antlr:antlr") {
+        /**
+         * note: {@link MutableVersionConstraint#strictly} is not propagated to maven pom.xml!
+         * this means that dependency management for gradle works fine but if you publish this project's jar to a maven
+         * repository along with a generated pom.xml, it won't include any information about pinning this dependencies
+         * version. prefer {@link ModuleDependency#exclude} wherever possible.
+         */
+        version {
+            strictly("$antlrVersion")
+        }
+    }
+    api("org.antlr:antlr-runtime") {
+        version {
+            strictly("$antlrVersion")
+        }
+    }
+    api("com.sforce.soap:enterprise:$sforceVersion") {
+        exclude group: 'org.antlr', module: 'antlr-runtime'
+    }
+    api("com.sforce.soap:metadata:$sforceVersion") {
+        exclude group: 'org.antlr', module: 'antlr-runtime'
+    }
+    api("software.amazon.awssdk:aws-core:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("software.amazon.awssdk:netty-nio-client:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("software.amazon.awssdk:ec2:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("software.amazon.awssdk:s3:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("software.amazon.awssdk:cloudwatch:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("software.amazon.awssdk:dynamodb:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("software.amazon.awssdk:url-connection-client:$awsVersion") {
+        exclude group: 'org.slf4j', module: 'slf4j-api'
+    }
+    api("io.atomix:atomix:$atomixVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("io.atomix:atomix-raft:$atomixVersion") {
+        exclude group: 'org.ow2.asm', module: 'asm'
+    }
+    api("org.apache.directory.server:apacheds-kerberos-codec:$apacheKerberosVersion") {
+        exclude group: 'org.apache.directory.api', module: 'api-ldap-model'
+    }
+
+    api "com.bettercloud:vault-java-driver:$vaultDriverVersion"
+    api "com.auth0:java-jwt:$auth0JwtVersion"
+
+    api "org.apache.ant:ant:$antjunitVersion"
+    api "org.apache.ant:ant-junit:$antjunitVersion"
+
+    api "io.ray:ray-api:$rayVersion"
+
+    api "org.apache.directory.api:api-all:$apacheDirectoryApiVersion"
+    api "org.apache.directory.api:api-ldap-client-all:$apacheDirectoryApiVersion"
+    api "org.apache.directory.api:api-util:$apacheDirectoryApiVersion"
+    api "org.apache.directory.api:api-ldap-codec-core:$apacheDirectoryApiVersion"
+    api "org.apache.directory.api:api-ldap-extras-codec-api:$apacheDirectoryApiVersion"
+
+    api "me.xuender:unidecode:$unidecodeVersion"
+
+    api "com.atlassian.sourcemap:sourcemap:$sourcemapVersion"
+    api "com.codahale.metrics:metrics-core:$metricsVersion"
+
+    api "com.unboundid:unboundid-ldapsdk:$ldapSdkVersion"
+    api "net.minidev:json-smart:$jsonSmartVersion"
+    api "org.junit.jupiter:junit-jupiter-api:$junitJupiterVersion"
+    api "org.junit.jupiter:junit-jupiter-engine:$junitJupiterVersion"
+    api "net.jqwik:jqwik:$jqwikVersion"
+    api "com.squareup.okhttp3:okhttp:$okhttpVersion"
+    api "com.squareup.okhttp3:logging-interceptor:$okhttpVersion"
+
+}
+
+task createProperties() {
+    doLast {
+        mkdir "$projectDir/src/main/resources/c3/gradle/gen/"
+        new File("$projectDir/src/main/resources/c3/gradle/gen/build.properties").withPrintWriter { w ->
+            Properties p = new Properties()
+            p['version'] = project.version.toString()
+            p['date'] = new Date().format("yyyy-MM-dd")
+            p.store(w, null)
+        }
+    }
+}
+
+jar {
+    zip64 = true
+}
+
+classes {
+    dependsOn createProperties
+}

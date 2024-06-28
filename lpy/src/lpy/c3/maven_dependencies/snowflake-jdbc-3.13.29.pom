@@ -1,0 +1,51 @@
+<project ns0:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns:ns0="http://www.w3.org/2001/XMLSchema-instance">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.snowflake</groupId>
+    <artifactId>snowflake-jdbc</artifactId>
+    <version>3.13.29</version>
+    <packaging>jar</packaging>
+    <name>Snowflake JDBC Driver</name>
+    <description>Snowflake JDBC Driver</description>
+    <url>https://www.snowflake.net/</url>
+
+    <licenses>
+      <license>
+        <name>The Apache Software License, Version 2.0</name>
+        <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      </license>
+    </licenses>
+
+    <developers>
+      <developer>
+        <name>Snowflake Support Team</name>
+        <email>snowflake-java@snowflake.net</email>
+        <organization>Snowflake Computing</organization>
+        <organizationUrl>https://www.snowflake.net</organizationUrl>
+      </developer>
+    </developers>
+
+    <scm>
+      <connection>scm:git:git://github.com/snowflakedb/snowflake-jdbc</connection>
+      <url>http://github.com/snowflakedb/snowflake-jdbc/tree/master</url>
+    </scm>
+
+    <properties>
+      <jna.version>5.13.0</jna.version>
+    </properties>
+
+    <dependencies>
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna</artifactId>
+        <version>${jna.version}</version>
+        <optional>true</optional>
+      </dependency>
+      <dependency>
+        <groupId>net.java.dev.jna</groupId>
+        <artifactId>jna-platform</artifactId>
+        <version>${jna.version}</version>
+        <optional>true</optional>
+      </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,457 @@
+import c3.gradle.Env
+import c3.gradle.Artifact
+import com.github.jengelman.gradle.plugins.shadow.transformers.Log4j2PluginsCacheFileTransformer
+import org.yaml.snakeyaml.Yaml
+import org.gradle.internal.os.OperatingSystem
+
+allprojects {
+    group = 'com.c3'
+    version = serverVersion()
+}
+
+ext {
+    setup                          = new Yaml().load(rootProject.file("setup/vars/gradle.yml").text)
+    accessorsSmartVersion          = '1.2'
+    adal4jVersion                  = '1.4.0'
+    akumaVersion                   = '1.10'
+    antVersion                     = '1.10.14'
+    antjunitVersion                = '1.9.3'
+    antlrVersion                   = '3.2'
+    apacheArrowVersion             = '12.0.0'
+    apacheCollectionsVersion       = '3.2.2'
+    apacheCommonsLangVersion       = '3.5'
+    apacheCommonsCompress          = '1.26.0'
+    apacheCsvVersion               = '1.5'
+    // TODO: https://c3energy.atlassian.net/browse/PLAT-21477 (Use Vertx http core equivalent)
+    apacheHttpCoreVersion          = '4.4.12'
+    apacheKafkaVersion             = '3.6.0'
+    apacheKerberosVersion          = '2.0.0-M15'
+    apacheMimeVersion              = '0.7'
+    apachePoiVersion               = '5.2.3'
+    apacheSisVersion               = '1.3'
+    apacheTikaVersion              = '2.7.0'
+    apacheVelocityVersion          = '2.3'
+    asmVersion                     = '9.1'
+    atomixVersion                  = '3.1.12'
+    avroVersion                    = '1.11.3'
+    parquetAvroVersion             = '1.12.3'
+    // Please don't decrement the version from 1.12.376. Refer to https://c3energy.atlassian.net/browse/PLAT-52611 for more details.
+    awsSdkVersion                  = '1.12.638'
+    awsVersion                     = '2.16.46'
+    azureAppInsightsVersion        = '1.0.8'
+    azureBatchVersion              = '2.0.0'
+    azureClientRuntimeVersion      = '1.7.5'
+    azureDatalakeVersion           = '1.0.0-beta1.5'
+    azureEventHubsEphVersion       = '3.3.0'
+    azureEventHubsVersion          = '3.3.0'
+    azureIotVersion                = '1.20.0'
+    azureKeyVaultVersion           = '0.8.0'
+    azureServiceBusVersion         = '3.6.7'
+    azureStorageVersion            = '8.3.0'
+    azureVersion                   = '1.36.0'
+    batikVersion                   = '1.17'
+    xalanVersion                   = '2.7.3'
+    bettercloudVersion             = '5.1.0'
+    boilerpipeVersion              = '1.1.0'
+    bouncycastleVersion            = '1.61'
+    jdk15onVersion                 = '1.67'
+    bytedecoVersion                = '1.5.10'
+    cassandraDriverVersion         = '3.11.0'
+    cassandraUnitVersion           = '3.11.2.0'
+    classgraphVersion              = '4.8.163'
+    classvizVisualizeVersion       = '1.0.0'
+    closureCompilerVersion         = 'v20240317'
+    codemodelVersion               = '2.6'
+    coltVersion                    = '1.2.0'
+    commonmarkVersion              = '0.16.1'
+    commonsCodecVersion            = '1.7'
+    commonsHttpClientVersion       = '3.1'
+    commonsIoVersion               = '2.7'
+    commonsLangVersion             = '2.4'
+    commonsMath3Version            = '3.6.1'
+    commonsNetVersion              = '3.6'
+    commonsPoolVersion             = '1.5.5'
+    commonsTextVersion             = '1.10.0'
+    commonsVfsVersion              = '2.1'
+    commonsFileUploadVersion       = '1.5'
+    cosmosDbJdbcVersion            = '19.0.7285'
+    db2jcc4Version                 = '4.24.92'
+    kubernetesClientVersion        = '20.0.0'
+    dynamoDBLocal                  = '1.25.0'
+    esapiVersion                   = '2.5.3.1'
+    evoVersion                     = '1.2'
+    ffmpegVersion                  = '6.1.1-1.5.10'
+    freemarkerVersion              = '2.3.32'
+    googleCloudIAM                 = 'v1-rev20230209-2.0.0'
+    googleCloudResourceManager     = 'v3-rev20220710-2.0.0'
+    googleCloudStorageVersion      = '2.12.0'
+    googleApiPlatformVersion       = '1.0.1'
+    googleCloudHadoopVersion       = 'hadoop3-2.2.9'
+    googleAuthVersion              = '1.11.0'
+    googleGaxVersion               = '2.19.1'
+    googleBigTableVersion          = '2.19.2'
+    gheatVersion                   = '1.0.0'
+    graphvizVersion                = '0.10.1'
+    // Keep guava version at 25.1-jre to avoid Cassandra unit having issue from CharMatcher.DIGIT being deprecated
+    guavaVersion                   = '25.1-jre'
+    h2Version                      = '2.2.220'
+    hadoopCommonVersion            = '3.3.6'
+    // TODO PLAT-83710 Remove once fixed
+    hadoopClientVersion            = '3.3.6'
+    hadoopMapReduceCoreVersion     = '3.3.6'
+    hadoopYarnServerCommonVersion  = '3.3.6'
+    hazelcastVersion               = '5.3.6'
+    hiveJdbcVersion                = '4.0.0-beta-1'
+    hprofVersion                   = '0.16'
+    httpAsyncClientVersion         = '4.1.3'
+    httpClientVersion              = '4.5.13'
+    hubspotJdbcVersion             = '18.0.6886'
+    jacksonVersion                 = '2.13.4.2'
+    jammVersion                    = '0.3.4'
+    // TODO PLAT-35589 jamm4 is used in KpiTest framework and jamm 0.3.x is used for Cassandra
+    jamm4Version                   = '0.4.0-c3.2'
+    jansiVersion                   = '1.18'
+    javaAllocationVersion          = '3.0'
+    javafakerVersion               = '1.0.2'
+    javaparserVersion              = '3.24.0'
+    javassistVersion               = '3.28.0-GA'
+    jblasVersion                   = '1.2.3'
+    jcabiVersion                   = '1.6.1'
+    jdomVersion                    = '2.0.6.1'
+    jepVersion                     = '4.0.3'
+    jetcdVersion                   = '0.4.1'
+    jettisonVersion                = '1.5.4'
+    jettyVersion                   = '9.4.54.v20240208'
+    jnaPlatformVersion             = '4.5.2'
+    jnaVersion                     = '4.5.2'
+    jnrPosixVersion                = '3.0.51'
+    jodaTimeVersion                = '2.12.6'
+    jsonVersion                    = '20231013'
+    jsoupVersion                   = '1.15.3'
+    jtarVersion                    = '2.3'
+    jungVersion                    = '2.0.1'
+    ldapSdkVersion                 = '6.0.2'
+    log4j2Version                  = '2.20.0'
+    junitVintageVersion            = '4.12'
+    luceneVersion                  = '8.11.2'
+    lz4Version                     = '1.7.1'
+    metricsVersion                 = '3.0.2'
+    mimeUtilVersion                = '2.1.3'
+    minlogVersion                  = '1.3.0'
+    mockitoVersion                 = '3.11.2'
+    mongoAuthVersion               = '1.1.0'
+    mssqlJdbcVersion               = '6.4.0.jre8'
+    netcdfJavaVersion              = '4.5.5'
+    nettyCodecVersion              = '4.1.100.Final'
+    ngdbcVersion                   = '2.16.14'
+    nuprocessVersion               = '2.0.5'
+    objenesisVersion               = '2.2'
+    ojdbcVersion                   = '18.3'
+    okhttpVersion                  = '4.9.3'
+    opensamlVersion                = '4.0.1'
+    pgvectorVersion                = '0.1.3'
+    postgisJdbcVersion             = '2023.1.0'
+    postgresqlVersion              = '42.7.2'
+    prometheusClientVersion        = '0.16.0'
+    prometheusClientCommonVersion  = '0.16.0'
+    vertxMicrometerMetrics         = '4.4.1'
+    micrometerRegistryPrometheus   = '1.11.0'
+    py4jVersion                    = '0.10.9.5'
+    redshiftJdbcVersion            = '2.1.0.8'
+    reflectasmVersion              = '1.11.9'
+    reflectionsVersion             = '0.9.10'
+    rhinoVersion                   = '1.7.14'
+    romeVersion                    = '0.9'
+    rrdiagramVersion               = '0.9.4-c3'
+    salesforceJdbcVersion          = '19.0.7216.0'
+    solrCoreVersion                = '9.1.0'
+    googlebigqueryVersion          = '22.0.8257.0'
+    saxonVersion                   = '9.7.0-3'
+    // Note that if the Selenium version is increased, we must validate that the dependency selenium-devtools,
+    // which is pegged to a Chrome version, is valid for the increased version of Selenium. This can be done by going to
+    // https://javadoc.io/doc/org.seleniumhq.selenium/selenium-devtools-vXXX/latest/index.html and selecting
+    // the associated Selenium version. If the Selenium and devtools versions are compatible, a list of
+    // downloadable packages will be provided.
+    seleniumChromeVersion          = '119'
+    seleniumVersion                = '4.15.0'
+    sforceVersion                  = '1.0'
+    simpleSmtpServerVersion        = '1.7.1'
+    slf4jVersion                   = '2.0.7'
+    snappyVersion                  = '1.1.10.5'
+    snowflakeJdbcVersion           = '3.13.29'
+    sourceforgeVersion             = '4.01'
+    sourcemapVersion               = '2.0.0'
+    splunkVersion                  = '1.6.0.0'
+    spymemcachedVersion            = '2.12.3'
+    swaggerParserVersion           = '1.0.63'
+    tagsoupVersion                 = '1.2.1'
+    teradataJdbcVersion            = '16.20.00.12'
+    tinkVersion                    = '1.7.0'
+    trove4jVersion                 = '3.0.3'
+    unidecodeVersion               = '0.0.7'
+    vertxVersion                   = '4.4.1'
+    vertxJavaIoVersion             = '1.1.0'
+    woodstoxVersion                = '6.4.0'
+    // newer version of xmlsecVersion is dependent on org.codehaus.woodstox:stax2-api:4.2, which
+    // introduces an error shown in https://c3energy.atlassian.net/browse/PLAT-40139. Make sure
+    // this error is resolved before update this.
+    xmlsecVersion                  = '2.1.7'
+    xmlUnitVersion                 = '1.6'
+    // zookeeper is necessary for databricks driver and spark core. The latest spark core version has a transitive
+    // dependency on zookeeper 3.6.3, which has a CVE. So we need to explicitly exclude it in spark's build.gradle
+    // and explicitly include 3.9.1 here. According to https://mvnrepository.com/artifact/org.apache.spark/, 3.9.1 is
+    // compatible with spark core 2.4.4+.
+    zookeeperVersion               = '3.9.1'
+
+    // TODO: https://c3energy.atlassian.net/browse/PLAT-21477 (Use Vertx http core equivalent)
+    apacheHttpCoreVersion          = '4.4.12'
+    apacheCsvVersion               = '1.5'
+    lz4Version                     = '1.7.1'
+    commonmarkVersion              = '0.16.1'
+    graphvizVersion                = '0.10.1'
+    classvizVisualizeVersion       = '1.0.0'
+    jsoupVersion                   = '1.14.2'
+    jungVersion                    = '2.0.1'
+    auth0JwtVersion                = '3.18.3'
+    vaultDriverVersion             = '5.1.0'
+
+    apacheKerberosVersion          = '2.0.0-M15'
+
+    rayVersion                     = '2.1.0'
+
+    apacheDirectoryApiVersion      = '2.1.6'
+    databricksJdbcVersion          = '23.0.8770.0'
+    cronUtilsVersion               = '9.2.0'
+    jsonSmartVersion               = '2.4.10'
+
+    junitJupiterVersion            = '5.8.2'
+    jqwikVersion                   = '1.7.3'
+
+    os                             = OperatingSystem.current()
+    junitReportsEnabled            = System.properties.getProperty("junitReportsEnabled") ?: "false"
+    configs                        = rootProject.file("config/gradle/").absolutePath + "/"
+    // This must be done at top-level so every subproject uses the same DateTime.
+    publishVersionSuffix           = Artifact.publishVersionSuffix(project)
+    ecjCompilerVersion             = setup.build.eclipse_compiler_version
+    pydevdPyCharmVersion           = setup.pydevd_pycharm
+    debugpyVersion                 = '1.8.0'
+
+    pythonEnvVars                  = "${project.property("c3.conda.envs")}/${project.property("c3.jep.env")}/lib"
+    pythonSystemProperties         = [
+            // conda environment location
+            "c3.conda.envs" : project.property("c3.conda.envs"),
+            // bootstrap environment name with jep installed
+            "c3.jep.env"    : project.property("c3.jep.env"),
+            // jep version
+            "c3.jep.version": rootProject.ext.jepVersion,
+            // pydevd-pycharm version
+            "c3.pydevd-pycharm": pydevdPyCharmVersion,
+            // debugpy version
+            "c3.debugpy": debugpyVersion
+    ]
+    javaPkgs = ["java.lang", "java.io", "java.net", "java.nio", "java.lang", "java.util.concurrent.atomic", "sun.nio.ch", "java.util", "java.util.concurrent"]
+    addOpens = javaPkgs.collect { "--add-opens=java.base/${it}=ALL-UNNAMED" }
+    gcloudOauthToken               = getGcpOauthToken()
+}
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
+        classpath group: 'org.yaml', name: 'snakeyaml', version: '2.0'
+    }
+}
+
+// Define shared configurations for all subprojects
+subprojects {
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.module.toString() == 'org.yaml:snakeyaml') {
+                details.artifactSelection {
+                    it.selectArtifact(DependencyArtifact.DEFAULT_TYPE, null, null)
+                }
+            }
+        }
+    }
+    configurations.configureEach {
+        // breaks Java 9 modularization constraints, includes a "javax.xml.namespace" package
+        exclude group: 'xml-apis', module: 'xml-apis'
+        exclude group: 'asm'
+
+        // From https://www.slf4j.org/manual.html
+        // Embedded components such as libraries or frameworks should not declare a dependency on any SLF4J binding/provider
+        // but only depend on slf4j-api. When a library declares a transitive dependency on a specific binding,
+        // that binding is imposed on the end-user negating the purpose of SLF4J
+        // exclude group: 'log4j'
+        // exclude group: 'ch.qos.logback'
+        // exclude group: 'org.slf4j', module: 'log4j-over-slf4j'
+        // exclude group: 'org.slf4j', module: 'slf4j-reload4j'
+        // exclude group: 'org.slf4j', module: 'jcl-over-slf4j'
+    }
+
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+            // url "https://ci-artifacts.c3.ai/v1/artifacts/maven-repo"
+        }
+        maven {url "https://mvnrepository.com/artifact"}
+        jcenter()
+        mavenCentral()
+    }
+
+    // extends the 'java' plugin and provides the 'api' function for exposing dependencies
+    apply plugin: 'java-library'
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+
+    // configure shadow jar plugin
+    apply plugin: 'com.github.johnrengelman.shadow'
+    shadowJar {
+        mergeServiceFiles()
+        zip64 true
+        exclude ('META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA')
+        // Fixes: log4j2 ERROR StatusLogger Unrecognized conversion specifier
+        transform(Log4j2PluginsCacheFileTransformer)
+    }
+
+    // separate source files per test type
+    apply from: file("${configs}test.gradle");
+    // instantiation of migration sourceSet must come before kpi because kpi depends on migration
+    apply from: file("${configs}migration-test.gradle");
+    apply from: file("${configs}kpi-test.gradle");
+    apply from: file("${configs}psr-test.gradle");
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src/main/java','src/gen/java']
+            resources.srcDirs = ['src/main/c3', 'src/main/resources', 'src/gen/resources']
+            resources.excludes = ['**/node_modules/**']
+        }
+    }
+
+    dependencies {
+        testImplementation "junit:junit:$junitVintageVersion"
+
+        // see doc/V8/JavaBytecode.md
+        implementation 'com.boundary:high-scale-lib'
+        constraints {
+            implementation('com.boundary:high-scale-lib:1.0.7.c3.1') {
+                because 'High-scale-lib has java.util package, which has been patched in this '
+            }
+        }
+    }
+
+    // For everything related to java compilation (or compileJava Gradle task)
+    apply from: file("${configs}java-compile.gradle")
+
+    tasks.withType(ProcessResources) {
+        dependsOn ':platform:createProperties'
+    }
+
+}
+
+tasks.withType(JavaExec) {
+    apply from: file("${configs}python.gradle")
+    apply from: file("${configs}logging.gradle")
+}
+
+task codeGen(type: JavaExec) {
+    group = "Code generation"
+    description = "Generate code"
+    minHeapSize = "16G"
+    maxHeapSize = "24G"
+
+    apply from: file("${configs}logging.gradle")
+
+    classpath = files([rootProject.file("config/c3/v8-code-gen.jar").absolutePath])
+}
+
+task startServer(type: JavaExec) {
+    group = "Start server"
+    description = "server start wrapped as a gradle task"
+    minHeapSize = maxHeapSize = "8G"
+    dependsOn ":server-jar:serverJar"
+    standardOutput = System.out
+    errorOutput = System.out
+
+    classpath = files([rootProject.file("platform/server-jar/build/libs/v8-server-${version}.jar").absolutePath])
+    jvmArgs = ["-server", "-XX:SurvivorRatio=8", "-XX:MaxTenuringThreshold=2", "-XX:+UseZGC", "-XX:-OmitStackTraceInFastThrow"]
+    jvmArgs += rootProject.ext.addOpens
+}
+
+task jvmOptions {
+    doLast {
+        println "${project.findProperty('addOpens').join(' ')}"
+    }
+}
+
+task version {
+    doLast {
+        println project.version
+    }
+}
+
+String getGcpOauthToken() {
+    def error = new ByteArrayOutputStream()
+    def output = new ByteArrayOutputStream()
+
+    exec {
+        //environment "CLOUDSDK_PYTHON", "/usr/bin/python3"
+        commandLine 'gcloud', 'config', 'get-value', 'account'
+        //commandLine "gcloud", "config", "config-helper", "--format=value(credential)"
+        standardOutput = output
+        errorOutput = error
+
+    }
+
+    if (error.toString().contains('unset')) {
+        exec {
+            commandLine 'gcloud', 'auth', 'login', '--update-adc'
+            standardOutput = output
+            errorOutput = error
+        }
+    }
+    ByteArrayOutputStream token = new ByteArrayOutputStream()
+    exec{
+        commandLine 'gcloud', 'auth', 'print-access-token'
+        standardOutput = token
+        errorOutput = error
+    }
+    return token.toString().trim()
+}
+
+def pythonEnvironment(task) {
+    if (os.isLinux()) {
+        task.environment "LD_LIBRARY_PATH", pythonEnvVars
+    } else if (os.isMacOsX()) {
+        if (majorOSVersion() <= 11) {
+            task.environment "LD_LIBRARY_PATH", pythonEnvVars
+        } else {
+            // see "man dyld"
+            task.environment "DYLD_FALLBACK_LIBRARY_PATH", pythonEnvVars
+        }
+    }
+    task.systemProperties pythonSystemProperties
+}
+
+String serverVersion() {
+    /*
+    ByteArrayOutputStream stdout = new ByteArrayOutputStream()
+    exec{
+        commandLine 'sh', '-c', './v8 version'
+        standardOutput = stdout;
+    }
+    //this extra processing needed b/c v8 / v8-common print extra output to stdout in CI
+    String[] stdoutLines = stdout.toString().trim().split('\n')
+    return stdoutLines[stdoutLines.length - 1]
+    */
+    return rootProject.file('platform/platform/src/main/resources/c3/server/version.txt').text.trim()
+}
+
+def majorOSVersion() {
+    return os.getVersion().tokenize(".")[0].toInteger()
+}

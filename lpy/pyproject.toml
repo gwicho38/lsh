@@ -44,6 +44,7 @@ tensorflow = "^2.16.1"
 flask = "^3.0.3"
 keras = "^3.3.3"
 scikit-learn = "^1.5.0"
+urllib3 = "^2.2.2"
 [tool.poetry.dev-dependencies]
 requests = "^2.31.0"
 
