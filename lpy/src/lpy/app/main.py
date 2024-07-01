@@ -54,8 +54,12 @@ lpy.add_command(lib)
 lpy.add_command(c3)
 lpy.add_command(save)
 
+# Add top level `lpy` options
 @click.group()
-def lpy() -> None:
+@click.option('--debug/--no-debug', 
+              default=False)
+def lpy(debug) -> None:
+    click.echo(f"Debug mode is {'on' if debug else 'off'}")
     pass
 
 

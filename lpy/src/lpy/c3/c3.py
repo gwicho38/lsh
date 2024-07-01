@@ -1,7 +1,10 @@
 import click
 from .api import write_content, delete_content
 from .watch import watch
-from .maven import maven
+from .vscode import vsce
+# from .maven import maven
+import requests
+import shutil
 from urllib.request import urlopen
 
 TOKEN = 'REDACTED'
@@ -65,6 +68,7 @@ def get_pkg_build():
 c3.add_command(write)
 c3.add_command(delete)
 c3.add_command(watch)
+c3.add_command(vsce)
 
 if __name__ == "__main__":
     c3()

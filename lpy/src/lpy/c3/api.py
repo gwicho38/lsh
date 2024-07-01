@@ -3,6 +3,7 @@ from .config import APPURL, AUTH_TOKEN, PATH_TO_PACKAGE_REPO
 from .file import encode_content, NO_CHANGE_TO_FILE
 import json
 import re
+import requests
 
 pkg_id = None
 s = Session()
