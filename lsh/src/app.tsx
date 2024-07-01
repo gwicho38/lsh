@@ -16,7 +16,7 @@ program
 await init_ishell(program);
 await init_lib(program);
 await init_c3(program);
-await init_gcloud(program);
-await init_search(program);
+// await init_gcloud(program);
+// await init_search(program);
 
 program.parse(process.argv);

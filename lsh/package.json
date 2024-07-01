@@ -25,6 +25,7 @@
   "license": "ISC",
   "dependencies": {
     "@deck.gl/core": "^8.9.33",
+    "@c3/remote": "file:c3-remote.tgz",
     "@inkjs/ui": "^1.0.0",
     "@octokit/rest": "^20.1.0",
     "@types/ink": "^2.0.3",
