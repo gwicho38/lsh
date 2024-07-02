@@ -63,9 +63,9 @@ def lpy(debug) -> None:
     pass
 
 
-@click.group()
-def coursera() -> None:
-    pass
+# @click.group()
+# def coursera() -> None:
+#     pass
 
 
 @click.group()
@@ -136,13 +136,13 @@ coursera.add_command(dropdb)
 coursera.add_command(connect)
 
 # Add subgroups to lpy group
-lpy.add_command(coursera)
+# lpy.add_command(coursera)
 lpy.add_command(lib)
 lpy.add_command(repl)
 # print(c3)
 lpy.add_command(c3)
-lpy.add_command(repo)
-lpy.add_command(save)
+# lpy.add_command(repo)
+# lpy.add_command(save)
 
 GLOBALS = {"C3": {}, "APP": {}, "C3_TOKEN": {}, "C3_URL": {}}
 
