@@ -1,5 +1,6 @@
 import AsyncLock from 'async-lock';
 import request from 'request';
+import { prettyPrintJson } from 'pretty-print-json';
 
 import { CONFIG } from './config.js';
 import { FILE } from './file.js';
@@ -8,31 +9,8 @@ const semaphore = new AsyncLock();
 
 let pkgId;
 
-import request from 'request';
-import semaphore from 'semaphore';
-import { CONFIG } from './config'; // Assume CONFIG is imported from a config module
-
-type MakePOSTRequest = (
-  typeName: string,
-  method: string,
-  data: any,
-  onSuccess?: (response: request.Response) => void
-) => Promise<void>;
-
-import request from 'request';
-import semaphore from 'semaphore';
-import { CONFIG } from './config'; // Assume CONFIG is imported from a config module
-
-type MakePOSTRequest = (
-  typeName: string,
-  method: string,
-  data: any,
-  onSuccess?: (response: request.Response) => void
-) => Promise<void>;
-
-export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
-  // const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
-  const url = 'http://localhost:8888/c3/c3' + '/api/8' + '/' + typeName + '/' + method;
+export const c3Request = async (typeName, method, data, onSuccess) => {
+  const url = process.env.APPURL + '/api/8' + '/' + typeName + '/' + method;
 
   // Prevent parallel writes/deletions
   return semaphore.acquire('request', (done) => {
@@ -41,13 +19,13 @@ export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
       body: data,
       json: true,
       headers: {
-        Authorization: CONFIG.AUTH_TOKEN,
+        Authorization: process.env.AUTH_TOKEN,
       },
     }, (err, response, body) => {
       onSuccess?.(body);
       done();
     });
-    console.log(JSON.stringify(response));
+    // console.log(JSON.stringify(response));
     return response;
   });
 };
@@ -62,7 +40,7 @@ const getPkgId = async () => {
     return pkgId;
   }
 
-  await makePOSTRequest('Pkg', 'inst', ['Pkg'], (body) => {
+  await c3Request('Pkg', 'inst', ['Pkg'], (body) => {
     pkgId = body;
   });
 
@@ -77,7 +55,7 @@ const writeContent = async (path) => {
   if (await content === FILE.NO_CHANGE_TO_FILE) {
     return;
   }
-  return makePOSTRequest('Pkg', 'writeContent', [pkgId, metadataPath, {
+  return c3Request('Pkg', 'writeContent', [pkgId, metadataPath, {
     type: 'ContentValue',
     content,
   }], () => console.log("Success"));
@@ -86,5 +64,5 @@ const writeContent = async (path) => {
 const deleteContent = async (path) => {
   const pkgId = await getPkgId();
   const metadataPath = getMetadataPath(path);
-  return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log("deleted!"));
+  return c3Request('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log("deleted!"));
 }

@@ -1,7 +1,8 @@
 import { Command } from "commander";
 import { loadCommands } from "../../util/lib.util.js";
 import { ExecException } from "child_process";
-import { makePOSTRequest } from "../../services/api/api.js";
+import { c3Request } from "../../services/api/api.js";
+import { prettyPrintJson, FormatOptions } from 'pretty-print-json';
 
 export async function init_c3(program: Command) {
   const cmd = program.command("c3");
@@ -14,9 +15,9 @@ export async function init_c3(program: Command) {
     cmd
       .command(commandName)
       .action(async () => {
-        console.log(commands[commandName]());
-        const res = await c3IsAvailable();
-        console.log(res);
+        // console.log(commands[commandName]());
+        const res = await bootC3();
+        // console.log(res);
       })
       .description("commandName")
       .usage(`${commandName} used as follows:`);
@@ -29,16 +30,20 @@ export async function init_c3(program: Command) {
   return cmd;
 }
 
-export async function c3IsAvailable(): Promise<boolean> {
+// this is where response is obtained
+export async function bootC3(): Promise<any> {
   const cb = (data: any) => {
-    console.log(typeof (data));
     console.log(data);
-    console.log(JSON.stringify(data));
   }
+  // create dev environment
+  // create dev app
+  // create start app spec
+  // start app
+  // install runtimes
+  return c3Request('Pkg', 'inst', {}, cb) || {};
 
-  const response = makePOSTRequest('Pkg', 'inst', {}, cb);
-  if (response) {
-    console.log(response);
-  }
-  return false;
+}
+
+export async function bootstrapUi() {
+
 }
