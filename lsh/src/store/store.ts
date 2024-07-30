@@ -35,7 +35,7 @@ type LSH = {
     id?: number;
     name?: string;
     session?: string;
-    pkgId?: string; 
+    pkgId?: string;
     get?: any;
     set?: any;
     commands?: any;
