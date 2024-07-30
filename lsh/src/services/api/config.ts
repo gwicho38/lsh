@@ -1,11 +1,10 @@
 export const CONFIG = {
     // Path to root repo. Exclude trailing slash
     PATH_TO_PACKAGE_REPO: '/home/lefv/repos/lsh',
-  
-    URL: "",
+
+    URL: "http://localhost:8888/c3/c3/",
 
     // Auth Token for Cluster Environment
-    AUTH_TOKEN: '00000000000000000000000000'
+    AUTH_TOKEN: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJhcHAiOiJsb2NhbC1jMy1jMyIsImlzcyI6ImMzLmFpIiwiZ3JvdXBzIjpbIkMzLkNsdXN0ZXJBZG1pbiJdLCJzaWQiOjEsImF1ZCI6ImMzLmFpIiwiaWRwIjoiIiwiYzNncm91cHMiOlsiQzMuQ2x1c3RlckFkbWluIl0sImlkcGdyb3VwcyI6Int9Iiwic3NpZHgiOiIiLCJuYW1lIjoiQkEiLCJhY3Rpb25pZCI6IjY5MzcuNDk1MzE4NyIsImlkIjoiQkEiLCJleHAiOjE3MjIzNjYxMTQwMDAsImVtYWlsIjoiYmFAYzMuYWkifQ.Zq1q9UIIZZ9-C90Pe5p7opEMzEMCNCrLMP_CoScM5mcJq3qI-tQo3LQFssO5a4RMg6zzLirnuUk36Fd5mOCzDVY_I8LEViFbjEZhqYWHR9JWvv3hqHE6L_to30DPY4tog-P5GknSWUzKo_NT9aFl_1-M3MpnD5UrC1x2FdfR16UwEB48wxojkKlFW5M94tzb4D-Sexd1mco7s5Sx1RoSHB8Ulr4VNuUndywuclHpusb2Oq4C7ZNdct0pWXHm1w29A7lpB-p6a6Vui36h9JTlpU6e0YXKeS74gqd9dNTnFLhGsoSi8ESrawmLGkcm-rzudkn6odU8E6-KenkFsqvY8Q'
 };
-  
-  
+

@@ -8,14 +8,35 @@ const semaphore = new AsyncLock();
 
 let pkgId;
 
+import request from 'request';
+import semaphore from 'semaphore';
+import { CONFIG } from './config'; // Assume CONFIG is imported from a config module
+
+type MakePOSTRequest = (
+  typeName: string,
+  method: string,
+  data: any,
+  onSuccess?: (response: request.Response) => void
+) => Promise<void>;
+
+import request from 'request';
+import semaphore from 'semaphore';
+import { CONFIG } from './config'; // Assume CONFIG is imported from a config module
+
+type MakePOSTRequest = (
+  typeName: string,
+  method: string,
+  data: any,
+  onSuccess?: (response: request.Response) => void
+) => Promise<void>;
+
 export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
-  console.log("makePostRequest");
-  const url = CONFIG.URL + '/api/8' + '/' + typeName + '/' + method;
-  console.log(url);
+  // const url = CONFIG.APPURL + '/api/8' + '/' + typeName + '/' + method;
+  const url = 'http://localhost:8888/c3/c3' + '/api/8' + '/' + typeName + '/' + method;
 
   // Prevent parallel writes/deletions
   return semaphore.acquire('request', (done) => {
-    return request.post(url, {
+    const response = request.post(url, {
       method: 'POST',
       body: data,
       json: true,
@@ -23,13 +44,13 @@ export const makePOSTRequest = async (typeName, method, data, onSuccess) => {
         Authorization: CONFIG.AUTH_TOKEN,
       },
     }, (err, response, body) => {
-      console.log(body);
-      onSuccess?.(response);
+      onSuccess?.(body);
       done();
     });
+    console.log(JSON.stringify(response));
+    return response;
   });
 };
-
 const getMetadataPath = (path) => {
   console.log("getMetadataPath");
   return path.substring(path.indexOf(CONFIG.PATH_TO_PACKAGE_REPO) + CONFIG.PATH_TO_PACKAGE_REPO.length);

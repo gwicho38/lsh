@@ -1,0 +1,9 @@
+{
+  "name": "nodejs-webpack",
+  "runtime": "Node.js",
+  "language": "JavaScript",
+  "modules": {
+    "npm": "6.14.14",
+    "proper-lockfile": "4.1.2"
+  }
+}

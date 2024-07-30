@@ -1,0 +1,64 @@
+import axios from 'axios';
+
+var TOKEN = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzUxMiJ9.eyJhcHAiOiJna2V2OGMzYXBwcy1sZWZ2Y29yMTEzNS1ndXJ1c2VhcmNoIiwiaXNzIjoiYzMuYWkiLCJncm91cHMiOlsiQzMuQXBwQWRtaW4iLCJDMy5FbnZBZG1pbiJdLCJzaWQiOjEsImF1ZCI6ImMzLmFpIiwiaWRwIjoiIiwiYzNncm91cHMiOlsiQzMuQXBwQWRtaW4iLCJDMy5FbnZBZG1pbiJdLCJpZHBncm91cHMiOiJ7XCJPaWRjSWRwQ29uZmlnOjpna2V2OGMzYXBwcy5jMy1lLmNvbVwiOltcImdrZXY4YzNhcHBzLmMzLWUuY29tL0MzLlN0dWRpb1VzZXJcIl19Iiwic3NpZHgiOiIiLCJuYW1lIjoiMzFjZjRmZWU4Y2FhMWE2ZTMwMWJkNzkzZDU1Mzg1M2JjNjc2MTNkZGNkOTIyYjVjZDU4NTcyMGQzMjdlNmYxMyIsImFjdGlvbmlkIjoiNjY0Ni41ODAwOTg3IiwiaWQiOiIzMWNmNGZlZThjYWExYTZlMzAxYmQ3OTNkNTUzODUzYmM2NzYxM2RkY2Q5MjJiNWNkNTg1NzIwZDMyN2U2ZjEzIiwiZXhwIjoxNzE5NTA4NDIyMDAwLCJlbWFpbCI6Imx1aXMuZmVybmFuZGV6LWRlLWxhLXZhcmFAYzMuYWkifQ.XWxj5iimPzfhV8dWmyq4oPEddWCynqWLXjqz7it_J8uLQk715_vtlq327E0C0u1aMaG2_0veTq9RDDD3qwq76RR80RyMZJJxZtgXeoE32Jrz1yqhWyvlu70pIY9Y-EEYmNsfum7pEFT9gli88v6gCFVoJtu9eKMWjsaBzlM8OIllCG9GAi5AC37j-TxnaQEIGynTHh3btYIGiejMqLs3LzAlQvFzNxW9vrbvr_chCDmNSMfuwIfKSI9rJ30dm7IiuCVPmgcUpBWZAde4Io4ofrO9vF62WH_q0lxyFvseZtfaUDQkXZncM09GNsWo_PQUJ5AVLPzC_h5towHKJHMcWQ';
+
+var URL = 'https://gkev8c3apps.c3-e.com/lefvcor1135/gurusearch/';
+
+function getAPIEndpoint(typeName: string, actionName: string): string {
+  if (!typeName || !actionName)
+    throw new Error(
+      `Missing required arguments (Type: ${typeName}, Action: ${actionName}`
+    );
+  return `api/8/${typeName}/${actionName}`;
+}
+
+async function c3FunctionCall(
+  typeName: string,
+  actionName: string,
+  functionArgs: any = {},
+  handleException: boolean = true
+) {
+  const url: string = URL + getAPIEndpoint(typeName, actionName);
+
+  try {
+    const response = await axios({
+      method: 'post',
+      url: url,
+      headers: {
+        Authorization: `Bearer ${TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('c3FunctionCall: ', response);
+    return response;
+  } catch (error: any) {
+    console.log(error);
+    return error;
+  }
+}
+
+const fetchData = async () => {
+  try {
+    // const response = await axios.get(
+    //   'http://worldtimeapi.org/api/timezone/Etc/UTC'
+    // );
+    const response = await c3FunctionCall(
+      'Pkg',
+      'appMode',
+      {},
+      true
+    );
+    console.log('Axios: ', response);
+    // console.log(await fetch('http://worldtimeapi.org/api/timezone/Etc/UTC'));
+    // if (!response.ok) {
+    //   throw new Error('Network response was not ok');
+    // }
+    // const data = await response.json();
+    // console.log('Current UTC Time:', data.datetime);
+  } catch (err: any) {
+    console.log(err.message);
+  } finally {
+    console.log(false);
+  }
+};
+fetchData();
