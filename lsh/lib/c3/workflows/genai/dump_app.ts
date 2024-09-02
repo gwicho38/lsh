@@ -1,6 +1,46 @@
 // get all configs from target
+
+import axios from "axios";
+import AsyncLock from "async-lock";
+
+const semaphore = new AsyncLock();
+
+// import { getAPIEndpoint } from "./utils";
+
+interface AxiosResponse {
+  data: any;
+}
+export const c3FunctionCall = async (
+  typeName: any,
+  method: any,
+  data?: any,
+  onSuccess?: (arg0: any) => void,
+  endpoint?: string,
+  token?: string
+) => {
+  const url = `/api/8/${typeName}/${method}`;
+  try {
+    // Prevent parallel writes/deletions
+    return semaphore.acquire("request", async (done) => {
+      try {
+        const response = await axios.post(url, data);
+        onSuccess?.(response.data);
+        return response?.data;
+      } catch (error) {
+        console.error(error);
+      } finally {
+        done();
+      }
+    });
+  } catch (e: any) {
+    console.error(`Error running function ${typeName}.${method}`);
+    return null;
+  }
+};
+
 function getRetrieverInfo(fromEnv) {
   var colbertRetrievers = Genai.Retriever.ColBERT.fetch().objs;
+
   return {
     colbertRetrievers: colbertRetrievers,
     colbertDataConfigs: colbertRetrievers.map((retriever) =>
