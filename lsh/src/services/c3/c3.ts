@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { loadCommands } from "../../util/lib.util.js";
 import { ExecException } from "child_process";
 import { c3_exec as c3_exec } from "../../services/api/api.js";
-import { prettyPrintJson, FormatOptions } from 'pretty-print-json';
+import { prettyPrintJson, FormatOptions } from "pretty-print-json";
 
 export async function init_c3(program: Command) {
   const cmd = program.command("c3");
@@ -32,7 +32,7 @@ export async function init_c3(program: Command) {
 
 // this is where response is obtained
 // create dev environment - done
-// create dev app - done 
+// create dev app - done
 // create start app spec - done
 // start app - done
 // install runtimes
@@ -46,9 +46,9 @@ export async function init_c3(program: Command) {
 // Configure Pkg.Store
 // Initialize connection to Pkg.Store
 // Start: Initialize c3typ Intellisense
-// Initialize c3typ Intellisense. 
+// Initialize c3typ Intellisense.
 export async function bootC3(): Promise<any> {
-  return c3_exec('Pkg', 'inst', {}) || {};
+  return c3_exec("Pkg", "inst", {}) || {};
 }
 
 export async function startDevEnv(): Promise<any> {
@@ -56,9 +56,9 @@ export async function startDevEnv(): Promise<any> {
   const spec = {
     waitForReady: true,
     serverVersion: process.env.C3_SERVER_VERSION,
-    singleNode: true
+    singleNode: true,
   };
-  return await c3_exec('Cluster', 'startEnv', spec);
+  return await c3_exec("Cluster", "startEnv", spec);
 }
 
 export async function startDevApp(): Promise<any> {
@@ -70,8 +70,8 @@ export async function startDevApp(): Promise<any> {
     waitForReady: true,
     serverVersion: process.env.C3_SERVER_VERSION,
   };
-  const env = await c3_exec('Env', 'forName', ['Env', 'c3']);
-  return await c3_exec('Env', 'startApp', [env, spec]);
+  const env = await c3_exec("Env", "forName", ["Env", "c3"]);
+  return await c3_exec("Env", "startApp", [env, spec]);
 }
 
 export async function assignAppUrl() {
@@ -93,11 +93,11 @@ export async function assignAppUrl() {
 // Js.Runtime.forName('js-ide-vscode-client-node')
 
 const RUNTIMES = [
-  'js-ide-vscode-client-node',
-  'js-webpack_c3',
-  'js-client-browser',
-  'js-server-node',
-  'nodejs-webpack_c3'
+  "js-ide-vscode-client-node",
+  "js-webpack_c3",
+  "js-client-browser",
+  "js-server-node",
+  "nodejs-webpack_c3",
 ];
 
 export async function installImplLanguages(): Promise<any> {
