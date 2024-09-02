@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "name": "js-webpack_c3",
+  "dependencies": {
+    "@c3/remote": "file:c3-remote.tgz",
+    "@c3/jasmine": "file:c3-jasmine-1.1.0.tgz"
+  }
+}

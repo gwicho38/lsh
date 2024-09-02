@@ -9,7 +9,7 @@ const semaphore = new AsyncLock();
 
 let pkgId;
 
-export const c3Request = async (typeName, method, data, onSuccess) => {
+export const c3_exec = async (typeName, method, data, onSuccess = (d) => console.log(d)) => {
   const url = process.env.APPURL + '/api/8' + '/' + typeName + '/' + method;
 
   // Prevent parallel writes/deletions
@@ -40,7 +40,7 @@ const getPkgId = async () => {
     return pkgId;
   }
 
-  await c3Request('Pkg', 'inst', ['Pkg'], (body) => {
+  await c3_exec('Pkg', 'inst', ['Pkg'], (body) => {
     pkgId = body;
   });
 
@@ -55,7 +55,7 @@ const writeContent = async (path) => {
   if (await content === FILE.NO_CHANGE_TO_FILE) {
     return;
   }
-  return c3Request('Pkg', 'writeContent', [pkgId, metadataPath, {
+  return c3_exec('Pkg', 'writeContent', [pkgId, metadataPath, {
     type: 'ContentValue',
     content,
   }], () => console.log("Success"));
@@ -64,5 +64,5 @@ const writeContent = async (path) => {
 const deleteContent = async (path) => {
   const pkgId = await getPkgId();
   const metadataPath = getMetadataPath(path);
-  return c3Request('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log("deleted!"));
+  return c3_exec('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log("deleted!"));
 }
