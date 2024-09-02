@@ -5,7 +5,6 @@ import { init_c3 } from "./services/c3/c3.js";
 import { init_gcloud } from "./services/gcloud/gcloud.js";
 import { init_search } from "./services/search/search.js";
 import { LoggerAdaptToConsole } from "console-log-json";
-// LoggerAdaptToConsole();
 
 const program = new Command();
 
