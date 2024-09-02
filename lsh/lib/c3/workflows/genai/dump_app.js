@@ -1,5 +1,5 @@
 // get all configs from target
-function getRetrieverInfo(refEnv) {
+function getRetrieverInfo(fromEnv) {
   var colbertRetrievers = Genai.Retriever.ColBERT.fetch().objs;
   return {
     colbertRetrievers: colbertRetrievers,
@@ -12,7 +12,7 @@ function getRetrieverInfo(refEnv) {
 }
 
 // get all configs from ref and set them on target
-function setRetrieverInfo(refEnv, targetEnv) {
+function setRetrieverInfo(fromEnv, toEnv) {
   var colbertRetrievers = Genai.Retriever.ColBERT.fetch().objs;
   return {
     colbertRetrievers: colbertRetrievers,
@@ -24,23 +24,23 @@ function setRetrieverInfo(refEnv, targetEnv) {
   };
 }
 
-function getQueryConfigs(refEnv) {
+function getQueryConfigs(fromEnv) {
   return {
-    queryEngineConfigs: getQueryEngineConfigs(refEnv),
+    queryEngineConfigs: getQueryEngineConfigs(fromEnv),
     // 'reaConfigs': reaConfigs(),
-    structuredDataConfigs: structuredDataConfigs(refEnv),
+    structuredDataConfigs: structuredDataConfigs(fromEnv),
   };
 }
 
-function setQueryConfigs(refEnv) {
+function setQueryConfigs(fromEnv) {
   return {
-    queryEngineConfigs: getQueryEngineConfigs(refEnv, targetEnv),
+    queryEngineConfigs: getQueryEngineConfigs(fromEnv, toEnv),
     // 'reaConfigs': reaConfigs(),
-    structuredDataConfigs: structuredDataConfigs(refEnv, targetEnv),
+    structuredDataConfigs: structuredDataConfigs(fromEnv, toEnv),
   };
 }
 
-function getQueryEngineConfigs(refEnv) {
+function getQueryEngineConfigs(fromEnv) {
   var engineConfig = Genai.UnstructuredQuery.Engine.Config.inst();
   return {
     queryEngineConfig: engineConfig,
@@ -57,7 +57,24 @@ function getQueryEngineConfigs(refEnv) {
   };
 }
 
-function queryEngineModelConfig(modelConfigName) {
+function setQueryEngineConfigs(fromEnv, toEnv) {
+  var engineConfig = Genai.UnstructuredQuery.Engine.Config.inst();
+  return {
+    queryEngineConfig: engineConfig,
+    modelConfig: queryEngineModelConfig(engineConfig.modelConfigName),
+    extractionModelConfig: queryEngineModelConfig(
+      engineConfig.extractionModelConfigName
+    ),
+    questionRewritingModelConfig: queryEngineModelConfig(
+      engineConfig.questionRewritingModelConfigName
+    ),
+    promptConfig: Genai.ConfigUtil.queryOrchestratorPromptConfig(
+      "QueryOrchestrator_default"
+    ),
+  };
+}
+
+function getQueryEngineModelConfig(fromEnv, modelConfigName) {
   return (
     modelConfigName &&
     Genai.UnstructuredQuery.Engine.ModelConfig.forConfigKey(
@@ -66,7 +83,16 @@ function queryEngineModelConfig(modelConfigName) {
   );
 }
 
-function reaConfigs() {
+function setQueryEngineModelConfig(fromEnv, toEnv, modelConfigName) {
+  return (
+    modelConfigName &&
+    Genai.UnstructuredQuery.Engine.ModelConfig.forConfigKey(
+      modelConfigName
+    ).getConfig()
+  );
+}
+
+function getReaConfigs(fromEnv) {
   var pipelineConfig = Genai.UnstructuredQuery.Engine.REA.PipelineConfig.inst();
 
   var extractionConfig = contextProcessorConfig(
@@ -97,13 +123,50 @@ function reaConfigs() {
   };
 }
 
-function contextProcessorConfig(configName) {
+function setReaConfigs(fromEnv, toEnv) {
+  var pipelineConfig = Genai.UnstructuredQuery.Engine.REA.PipelineConfig.inst();
+
+  var extractionConfig = contextProcessorConfig(
+    pipelineConfig.extractionConfigName
+  );
+  var qaConfig = contextProcessorConfig(
+    pipelineConfig.questionAnsweringConfigName
+  );
+  var questionRewriteConfig =
+    Genai.UnstructuredQuery.Engine.REA.QuestionRewritingConfig.make(
+      pipelineConfig.questionRewritingConfigName
+    ).getConfig();
+
+  return {
+    reaConfig: pipelineConfig,
+    extractionConfigs: modelInferenceConfigs(extractionConfig),
+    qaConfigs: modelInferenceConfigs(qaConfig),
+    questionRewriteConfigs: modelInferenceConfigs(questionRewriteConfig),
+    retrieverConfig: Genai.UnstructuredQuery.Engine.REA.RetrieverConfig.make(
+      pipelineConfig.retrieverConfigName
+    ).getConfig(),
+    rerankerConfig: contextProcessorConfig(pipelineConfig.rerankerConfigName),
+    attributorConfig:
+      pipelineConfig.attributorConfigName &&
+      Genai.AttributorConfig.make(
+        pipelineConfig.attributorConfigName
+      ).getConfig(),
+  };
+}
+
+function getContextProcessorConfig(fromEnv, configName) {
   return Genai.UnstructuredQuery.Engine.REA.ContextProcessorConfig.make(
     configName
   ).getConfig();
 }
 
-function modelInferenceConfigs(config) {
+function setContextProcessorConfig(fromEnv, toEnv, configName) {
+  return Genai.UnstructuredQuery.Engine.REA.ContextProcessorConfig.make(
+    configName
+  ).getConfig();
+}
+
+function getModelInferenceConfigs(fromEnv, toEnv, config) {
   var modelInferenceConfig =
     Genai.UnstructuredQuery.Engine.REA.ModelInferenceConfig.make({
       name: config.modelInferenceConfigName,
@@ -117,7 +180,21 @@ function modelInferenceConfigs(config) {
   };
 }
 
-function structuredDataConfigs(refEnv) {
+function setModelInferenceConfigs(fromEnv, toEnv, config) {
+  var modelInferenceConfig =
+    Genai.UnstructuredQuery.Engine.REA.ModelInferenceConfig.make({
+      name: config.modelInferenceConfigName,
+    }).getConfig();
+  return {
+    config: config,
+    inferenceConfig: modelInferenceConfig,
+    promptConfig: c3.Genai.ConfigUtil.queryOrchestratorPromptConfig(
+      "QueryOrchestrator_default"
+    ),
+  };
+}
+
+function getStructuredDataConfigs(fromEnv) {
   var queryOrchestratorConfig = Genai.Agent.Config.make({
     name: "QueryOrchestrator_default",
   }).getConfig();
@@ -141,7 +218,31 @@ function structuredDataConfigs(refEnv) {
   return structuredDataConfigs;
 }
 
-function queryOrchestratorPromptConfig(queryOrchestratorName) {
+function setStructuredDataConfigs(fromEnv, toEnv) {
+  var queryOrchestratorConfig = Genai.Agent.Config.make({
+    name: "QueryOrchestrator_default",
+  }).getConfig();
+  var structuredDataConfigs = {
+    structuredDataConfig: Genai.StructuredData.Config.getConfig(),
+    queryOrchestratorConfig: queryOrchestratorConfig,
+    queryOrchestratorModelConfig: queryEngineModelConfig(
+      queryOrchestratorConfig.llmConfigName
+    ),
+    queryOrchestratorPromptConfig: queryOrchestratorPromptConfig(
+      "QueryOrchestrator_default"
+    ),
+  };
+  var orchestratorToolkit = Genai.Agent.Toolkit.forName(
+    queryOrchestratorConfig.toolkitName
+  );
+  var tools = orchestratorToolkit.tools.map((tool) =>
+    Genai.Agent.Tool.forId(tool.id)
+  );
+  tools.each((tool) => (structuredDataConfigs[tool.id] = tool.config()));
+  return structuredDataConfigs;
+}
+
+function getQueryOrchestratorPromptConfig(fromEnv, queryOrchestratorName) {
   var promptConfigName = Genai.Agent.Config.forConfigKey(
     queryOrchestratorName
   ).getConfig().promptConfigName;
@@ -150,7 +251,20 @@ function queryOrchestratorPromptConfig(queryOrchestratorName) {
   ).getConfig();
 }
 
-function exportAppState() {
+function setQueryOrchestratorPromptConfig(
+  fromEnv,
+  toEnv,
+  queryOrchestratorName
+) {
+  var promptConfigName = Genai.Agent.Config.forConfigKey(
+    queryOrchestratorName
+  ).getConfig().promptConfigName;
+  return Genai.Agent.QueryOrchestrator.Prompt.Config.forConfigKey(
+    promptConfigName
+  ).getConfig();
+}
+
+function exportAppState(fromEnv) {
   var appState = dumpAppState();
   var downloadFileName =
     "genai_app_state_" + C3.app().id + "_" + DateTime.now() + ".json";
@@ -158,7 +272,15 @@ function exportAppState() {
   return appState;
 }
 
-function dumpAppState() {
+function importAppState(fromEnv, toEnv) {
+  var appState = dumpAppState();
+  var downloadFileName =
+    "genai_app_state_" + C3.app().id + "_" + DateTime.now() + ".json";
+  c3DL(appState, "json", downloadFileName);
+  return appState;
+}
+
+function getAppState(fromEnv) {
   var queryConfigs = getQueryConfigs();
   return Object.assign({}, queryConfigs, {
     environmentInfo: environmentInfo(),
@@ -167,7 +289,16 @@ function dumpAppState() {
   });
 }
 
-function environmentInfo() {
+function setAppState(fromEnv) {
+  var queryConfigs = getQueryConfigs();
+  return Object.assign({}, queryConfigs, {
+    environmentInfo: environmentInfo(),
+    retrieverInfo: retrieverInfo(),
+    projectConfigs: projectConfigs(),
+  });
+}
+
+function getEnvironmentInfo(fromEnv) {
   var app = C3.app();
   return {
     applicationInfo: app,
@@ -176,7 +307,16 @@ function environmentInfo() {
   };
 }
 
-function projectConfigs() {
+function setEnvironmentInfo(fromEnv, toEnv) {
+  var app = C3.app();
+  return {
+    applicationInfo: app,
+    nodes: app.nodes(),
+    nodePoolConfigs: app.nodePools().map((nodePool) => nodePool.config()),
+  };
+}
+
+function getProjectConfigs() {
   var projects = Genai.Project.fetch().objs;
   return {
     projectSettings: Genai.Project.Settings.fetch().objs,
@@ -193,6 +333,29 @@ function projectConfigs() {
     ),
   };
 }
+
+function setProjectConfigs() {
+  var projects = Genai.Project.fetch().objs;
+  return {
+    projectSettings: Genai.Project.Settings.fetch().objs,
+    projects: projects,
+    unstructuredQueryEngineConfigs: projects.map((project) =>
+      Genai.UnstructuredQuery.Engine.REA.PipelineConfig.forConfigKey(
+        project.unstructuredQueryEngineConfigName
+      )
+    ),
+    chunkerConfigs: projects.map((project) =>
+      Genai.SourceFile.Chunker.UniversalChunker.Config.forConfigKey(
+        project.chunkerConfig.name
+      )
+    ),
+  };
+}
+
+const fromEnv = "";
+const FROM_ENV_TOKEN = "";
+const toEnv = "";
+const TO_ENV_TOKEN = "";
 
 var result = exportAppState();
 
