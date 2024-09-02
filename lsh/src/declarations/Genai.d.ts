@@ -1,41 +1,11 @@
-import { CoLBERT } from "./CoLBERT";
+import { IRetriever as Retriever } from "./Retriever";
+import { ISourceCollection as SourceCollection } from "./SourceCollection";
+import { ISourceFile as SourceFile } from "./SourceFile";
+import { IChunker as Chunker } from "./Chunker";
 
-declare namespace Genai {
-  interface SourceCollection {
-    fetch: () => { objs: any[] };
-  }
-
-  namespace SourceFile {
-    namespace Chunker {
-      namespace UniversalChunker {
-        interface Config {
-          inst: () => any;
-        }
-      }
-    }
-  }
-
-  namespace UnstructuredQuery {
-    namespace Engine {
-      interface Config {
-        inst: () => {
-          modelConfigName: string;
-          extractionModelConfigName: string;
-          questionRewritingModelConfigName: string;
-        };
-      }
-    }
-  }
-
-  namespace ConfigUtil {
-    function queryOrchestratorPromptConfig(name: string): any;
-  }
-
-  // Declare interfaces
-  interface Retriever {
-    // Declare your interfaces, types, and other namespaces here...
-    interface ColBERT 
-  }
+export declare namespace Genai {
+  // type aliases
+  export const SourceCollection: SourceCollection;
+  export const Retriever: Retriever;
+  export const SourceFile: SourceFile;
 }
-
-export default Genai;
