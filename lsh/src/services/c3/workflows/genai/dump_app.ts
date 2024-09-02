@@ -1,16 +1,14 @@
 // get all configs from target
 
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import AsyncLock from "async-lock";
+import { c3, C3 } from "c3";
+import path from "path";
+import { Genai }  from "../../../../declarations/Genai";
 
 const semaphore = new AsyncLock();
 
-// import { getAPIEndpoint } from "./utils";
-
-interface AxiosResponse {
-  data: any;
-}
-export const c3FunctionCall = async (
+export const exec = async (
   typeName: any,
   method: any,
   data?: any,
@@ -23,7 +21,7 @@ export const c3FunctionCall = async (
     // Prevent parallel writes/deletions
     return semaphore.acquire("request", async (done) => {
       try {
-        const response = await axios.post(url, data);
+        const response: AxiosResponse = await axios.post(url, data);
         onSuccess?.(response.data);
         return response?.data;
       } catch (error) {
@@ -37,26 +35,26 @@ export const c3FunctionCall = async (
     return null;
   }
 };
-
-function getRetrieverInfo(fromEnv) {
+function getRetrieverInfo(fromEnv: any) {
+  Genai.
   var colbertRetrievers = Genai.Retriever.ColBERT.fetch().objs;
 
   return {
     colbertRetrievers: colbertRetrievers,
-    colbertDataConfigs: colbertRetrievers.map((retriever) =>
-      Genai.Retriever.ColBERT.DataConfig.forConfigKey(retriever.name)
-    ),
+    colbertDataConfigs: colbertRetrievers.map((retriever: { name: any }) => {
+      Genai.Retriever.ColBERT.DataConfig.forConfigKey(retriever.name);
+    }),
     sourceCollections: Genai.SourceCollection.fetch().objs,
     chunkerConfig: Genai.SourceFile.Chunker.UniversalChunker.Config.inst(),
   };
 }
 
 // get all configs from ref and set them on target
-function setRetrieverInfo(fromEnv, toEnv) {
+function setRetrieverInfo(fromEnv: any, toEnv: any) {
   var colbertRetrievers = Genai.Retriever.ColBERT.fetch().objs;
   return {
     colbertRetrievers: colbertRetrievers,
-    colbertDataConfigs: colbertRetrievers.map((retriever) =>
+    colbertDataConfigs: colbertRetrievers.map((retriever: { name: any }) =>
       Genai.Retriever.ColBERT.DataConfig.forConfigKey(retriever.name)
     ),
     sourceCollections: Genai.SourceCollection.fetch().objs,
@@ -64,7 +62,7 @@ function setRetrieverInfo(fromEnv, toEnv) {
   };
 }
 
-function getQueryConfigs(fromEnv) {
+function getQueryConfigs(fromEnv: any) {
   return {
     queryEngineConfigs: getQueryEngineConfigs(fromEnv),
     // 'reaConfigs': reaConfigs(),
@@ -72,7 +70,7 @@ function getQueryConfigs(fromEnv) {
   };
 }
 
-function setQueryConfigs(fromEnv) {
+function setQueryConfigs(fromEnv: any) {
   return {
     queryEngineConfigs: getQueryEngineConfigs(fromEnv, toEnv),
     // 'reaConfigs': reaConfigs(),
@@ -80,7 +78,7 @@ function setQueryConfigs(fromEnv) {
   };
 }
 
-function getQueryEngineConfigs(fromEnv) {
+function getQueryEngineConfigs(fromEnv: any) {
   var engineConfig = Genai.UnstructuredQuery.Engine.Config.inst();
   return {
     queryEngineConfig: engineConfig,
@@ -97,7 +95,7 @@ function getQueryEngineConfigs(fromEnv) {
   };
 }
 
-function setQueryEngineConfigs(fromEnv, toEnv) {
+function setQueryEngineConfigs(fromEnv: any, toEnv: any) {
   var engineConfig = Genai.UnstructuredQuery.Engine.Config.inst();
   return {
     queryEngineConfig: engineConfig,
@@ -114,7 +112,7 @@ function setQueryEngineConfigs(fromEnv, toEnv) {
   };
 }
 
-function getQueryEngineModelConfig(fromEnv, modelConfigName) {
+function getQueryEngineModelConfig(fromEnv: any, modelConfigName: any) {
   return (
     modelConfigName &&
     Genai.UnstructuredQuery.Engine.ModelConfig.forConfigKey(
@@ -123,7 +121,11 @@ function getQueryEngineModelConfig(fromEnv, modelConfigName) {
   );
 }
 
-function setQueryEngineModelConfig(fromEnv, toEnv, modelConfigName) {
+function setQueryEngineModelConfig(
+  fromEnv: any,
+  toEnv: any,
+  modelConfigName: any
+) {
   return (
     modelConfigName &&
     Genai.UnstructuredQuery.Engine.ModelConfig.forConfigKey(
@@ -132,7 +134,7 @@ function setQueryEngineModelConfig(fromEnv, toEnv, modelConfigName) {
   );
 }
 
-function getReaConfigs(fromEnv) {
+function getReaConfigs(fromEnv: any) {
   var pipelineConfig = Genai.UnstructuredQuery.Engine.REA.PipelineConfig.inst();
 
   var extractionConfig = contextProcessorConfig(
@@ -163,7 +165,7 @@ function getReaConfigs(fromEnv) {
   };
 }
 
-function setReaConfigs(fromEnv, toEnv) {
+function setReaConfigs(fromEnv: any, toEnv: any) {
   var pipelineConfig = Genai.UnstructuredQuery.Engine.REA.PipelineConfig.inst();
 
   var extractionConfig = contextProcessorConfig(
@@ -194,19 +196,23 @@ function setReaConfigs(fromEnv, toEnv) {
   };
 }
 
-function getContextProcessorConfig(fromEnv, configName) {
+function getContextProcessorConfig(fromEnv: any, configName: any) {
   return Genai.UnstructuredQuery.Engine.REA.ContextProcessorConfig.make(
     configName
   ).getConfig();
 }
 
-function setContextProcessorConfig(fromEnv, toEnv, configName) {
+function setContextProcessorConfig(fromEnv: any, toEnv: any, configName: any) {
   return Genai.UnstructuredQuery.Engine.REA.ContextProcessorConfig.make(
     configName
   ).getConfig();
 }
 
-function getModelInferenceConfigs(fromEnv, toEnv, config) {
+function getModelInferenceConfigs(
+  fromEnv: any,
+  toEnv: any,
+  config: { modelInferenceConfigName: any }
+) {
   var modelInferenceConfig =
     Genai.UnstructuredQuery.Engine.REA.ModelInferenceConfig.make({
       name: config.modelInferenceConfigName,
@@ -220,7 +226,11 @@ function getModelInferenceConfigs(fromEnv, toEnv, config) {
   };
 }
 
-function setModelInferenceConfigs(fromEnv, toEnv, config) {
+function setModelInferenceConfigs(
+  fromEnv: any,
+  toEnv: any,
+  config: { modelInferenceConfigName: any }
+) {
   var modelInferenceConfig =
     Genai.UnstructuredQuery.Engine.REA.ModelInferenceConfig.make({
       name: config.modelInferenceConfigName,
@@ -234,7 +244,7 @@ function setModelInferenceConfigs(fromEnv, toEnv, config) {
   };
 }
 
-function getStructuredDataConfigs(fromEnv) {
+function getStructuredDataConfigs(fromEnv: any) {
   var queryOrchestratorConfig = Genai.Agent.Config.make({
     name: "QueryOrchestrator_default",
   }).getConfig();
@@ -251,14 +261,17 @@ function getStructuredDataConfigs(fromEnv) {
   var orchestratorToolkit = Genai.Agent.Toolkit.forName(
     queryOrchestratorConfig.toolkitName
   );
-  var tools = orchestratorToolkit.tools.map((tool) =>
+  var tools = orchestratorToolkit.tools.map((tool: { id: any }) =>
     Genai.Agent.Tool.forId(tool.id)
   );
-  tools.each((tool) => (structuredDataConfigs[tool.id] = tool.config()));
+  tools.each(
+    (tool: { id: string | number; config: () => any }) =>
+      (structuredDataConfigs[tool.id] = tool.config())
+  );
   return structuredDataConfigs;
 }
 
-function setStructuredDataConfigs(fromEnv, toEnv) {
+function setStructuredDataConfigs(fromEnv: any, toEnv: any) {
   var queryOrchestratorConfig = Genai.Agent.Config.make({
     name: "QueryOrchestrator_default",
   }).getConfig();
@@ -275,26 +288,19 @@ function setStructuredDataConfigs(fromEnv, toEnv) {
   var orchestratorToolkit = Genai.Agent.Toolkit.forName(
     queryOrchestratorConfig.toolkitName
   );
-  var tools = orchestratorToolkit.tools.map((tool) =>
+  var tools = orchestratorToolkit.tools.map((tool: { id: any }) =>
     Genai.Agent.Tool.forId(tool.id)
   );
-  tools.each((tool) => (structuredDataConfigs[tool.id] = tool.config()));
+  tools.each(
+    (tool: { id: string | number; config: () => any }) =>
+      (structuredDataConfigs[tool.id] = tool.config())
+  );
   return structuredDataConfigs;
 }
 
-function getQueryOrchestratorPromptConfig(fromEnv, queryOrchestratorName) {
-  var promptConfigName = Genai.Agent.Config.forConfigKey(
-    queryOrchestratorName
-  ).getConfig().promptConfigName;
-  return Genai.Agent.QueryOrchestrator.Prompt.Config.forConfigKey(
-    promptConfigName
-  ).getConfig();
-}
-
-function setQueryOrchestratorPromptConfig(
-  fromEnv,
-  toEnv,
-  queryOrchestratorName
+function getQueryOrchestratorPromptConfig(
+  fromEnv: any,
+  queryOrchestratorName: any
 ) {
   var promptConfigName = Genai.Agent.Config.forConfigKey(
     queryOrchestratorName
@@ -304,7 +310,20 @@ function setQueryOrchestratorPromptConfig(
   ).getConfig();
 }
 
-function exportAppState(fromEnv) {
+function setQueryOrchestratorPromptConfig(
+  fromEnv: any,
+  toEnv: any,
+  queryOrchestratorName: any
+) {
+  var promptConfigName = Genai.Agent.Config.forConfigKey(
+    queryOrchestratorName
+  ).getConfig().promptConfigName;
+  return Genai.Agent.QueryOrchestrator.Prompt.Config.forConfigKey(
+    promptConfigName
+  ).getConfig();
+}
+
+function exportAppState(fromEnv: undefined) {
   var appState = dumpAppState();
   var downloadFileName =
     "genai_app_state_" + C3.app().id + "_" + DateTime.now() + ".json";
@@ -312,7 +331,7 @@ function exportAppState(fromEnv) {
   return appState;
 }
 
-function importAppState(fromEnv, toEnv) {
+function importAppState(fromEnv: any, toEnv: any) {
   var appState = dumpAppState();
   var downloadFileName =
     "genai_app_state_" + C3.app().id + "_" + DateTime.now() + ".json";
@@ -320,7 +339,7 @@ function importAppState(fromEnv, toEnv) {
   return appState;
 }
 
-function getAppState(fromEnv) {
+function getAppState(fromEnv: any) {
   var queryConfigs = getQueryConfigs();
   return Object.assign({}, queryConfigs, {
     environmentInfo: environmentInfo(),
@@ -329,7 +348,7 @@ function getAppState(fromEnv) {
   });
 }
 
-function setAppState(fromEnv) {
+function setAppState(fromEnv: any) {
   var queryConfigs = getQueryConfigs();
   return Object.assign({}, queryConfigs, {
     environmentInfo: environmentInfo(),
@@ -338,21 +357,25 @@ function setAppState(fromEnv) {
   });
 }
 
-function getEnvironmentInfo(fromEnv) {
+function getEnvironmentInfo(fromEnv: any) {
   var app = C3.app();
   return {
     applicationInfo: app,
     nodes: app.nodes(),
-    nodePoolConfigs: app.nodePools().map((nodePool) => nodePool.config()),
+    nodePoolConfigs: app
+      .nodePools()
+      .map((nodePool: { config: () => any }) => nodePool.config()),
   };
 }
 
-function setEnvironmentInfo(fromEnv, toEnv) {
+function setEnvironmentInfo(fromEnv: any, toEnv: any) {
   var app = C3.app();
   return {
     applicationInfo: app,
     nodes: app.nodes(),
-    nodePoolConfigs: app.nodePools().map((nodePool) => nodePool.config()),
+    nodePoolConfigs: app
+      .nodePools()
+      .map((nodePool: { config: () => any }) => nodePool.config()),
   };
 }
 
@@ -361,12 +384,13 @@ function getProjectConfigs() {
   return {
     projectSettings: Genai.Project.Settings.fetch().objs,
     projects: projects,
-    unstructuredQueryEngineConfigs: projects.map((project) =>
-      Genai.UnstructuredQuery.Engine.REA.PipelineConfig.forConfigKey(
-        project.unstructuredQueryEngineConfigName
-      )
+    unstructuredQueryEngineConfigs: projects.map(
+      (project: { unstructuredQueryEngineConfigName: any }) =>
+        Genai.UnstructuredQuery.Engine.REA.PipelineConfig.forConfigKey(
+          project.unstructuredQueryEngineConfigName
+        )
     ),
-    chunkerConfigs: projects.map((project) =>
+    chunkerConfigs: projects.map((project: { chunkerConfig: { name: any } }) =>
       Genai.SourceFile.Chunker.UniversalChunker.Config.forConfigKey(
         project.chunkerConfig.name
       )
@@ -379,12 +403,13 @@ function setProjectConfigs() {
   return {
     projectSettings: Genai.Project.Settings.fetch().objs,
     projects: projects,
-    unstructuredQueryEngineConfigs: projects.map((project) =>
-      Genai.UnstructuredQuery.Engine.REA.PipelineConfig.forConfigKey(
-        project.unstructuredQueryEngineConfigName
-      )
+    unstructuredQueryEngineConfigs: projects.map(
+      (project: { unstructuredQueryEngineConfigName: any }) =>
+        Genai.UnstructuredQuery.Engine.REA.PipelineConfig.forConfigKey(
+          project.unstructuredQueryEngineConfigName
+        )
     ),
-    chunkerConfigs: projects.map((project) =>
+    chunkerConfigs: projects.map((project: { chunkerConfig: { name: any } }) =>
       Genai.SourceFile.Chunker.UniversalChunker.Config.forConfigKey(
         project.chunkerConfig.name
       )
@@ -406,7 +431,7 @@ const homeDir = os.homedir();
 const outputPath = path.join(homeDir, "result.json");
 
 // Write the copied object to the file
-fs.writeFile(outputPath, JSON.stringify(result, null, 2), (err) => {
+fs.writeFile(outputPath, JSON.stringify(result, null, 2), (err: any) => {
   if (err) {
     console.error("Error writing to file:", err);
   } else {
