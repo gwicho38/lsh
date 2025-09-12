@@ -3,29 +3,133 @@ import TextInput from "ink-text-input";
 import { stdout } from "process";
 import React, { useEffect, useState } from "react";
 import { Script, createContext } from "vm";
+import { shell_exec } from "../lib/shell.lib.js";
 
 export const Terminal = () => {
   const [input, setInput] = useState("");
   const [lines, setLines] = useState([]);
+  const [mode, setMode] = useState("auto"); // auto, js, shell
+  const [workingDir, setWorkingDir] = useState(process.cwd());
   const { exit } = useApp();
 
-  // Execute JavaScript code in a new VM context
-  const executeScript = input => {
+  // Detect if input is a shell command or JavaScript
+  const detectInputType = (input: string): "shell" | "js" => {
+    const trimmed = input.trim();
+    
+    // Check for common shell commands
+    const shellCommands = ["ls", "cd", "pwd", "mkdir", "rm", "cp", "mv", "cat", "grep", "find", "ps", "kill", "chmod", "chown", "git", "npm", "node", "python", "curl", "wget"];
+    const firstWord = trimmed.split(' ')[0];
+    
+    // Check for JavaScript patterns
+    const jsPatterns = [
+      /^(const|let|var|function|class|\{|\[|if|for|while|try|async|await)/,
+      /^[a-zA-Z_$][a-zA-Z0-9_$]*\s*[=]/,
+      /\.(map|filter|reduce|forEach)/,
+      /^Math\.|^JSON\.|^console\./,
+      /^[0-9]+(\.[0-9]+)?(\s*[+\-*/])/
+    ];
+    
+    // Force modes
+    if (trimmed.startsWith("js:")) return "js";
+    if (trimmed.startsWith("sh:") || trimmed.startsWith("$")) return "shell";
+    
+    // JavaScript detection
+    if (jsPatterns.some(pattern => pattern.test(trimmed))) return "js";
+    
+    // Shell command detection
+    if (shellCommands.includes(firstWord)) return "shell";
+    
+    // Default to shell for most other cases
+    return "shell";
+  };
+
+  // Execute JavaScript code in a VM context with enhanced features
+  const executeScript = async (input: string) => {
     try {
-      const script = new Script(input);
-      const context = createContext({});
+      let code = input;
+      if (code.startsWith("js:")) code = code.substring(3).trim();
+      
+      // Create context with useful globals
+      const context = createContext({
+        console,
+        process,
+        __dirname: workingDir,
+        __filename: '',
+        global,
+        Buffer,
+        setTimeout,
+        setInterval,
+        clearTimeout,
+        clearInterval,
+        shell_exec, // Make shell_exec available in JS context
+        sh: shell_exec, // Short alias
+      });
+      
+      const script = new Script(code);
       const result = script.runInContext(context);
-      return `Result: ${result}`;
+      return `${result !== undefined ? result : '(undefined)'}`;
     } catch (error) {
-      return `Error: ${error.message}`;
+      return `JS Error: ${error.message}`;
+    }
+  };
+
+  // Execute shell command
+  const executeShell = async (input: string) => {
+    try {
+      let command = input.trim();
+      if (command.startsWith("sh:")) command = command.substring(3).trim();
+      if (command.startsWith("$")) command = command.substring(1).trim();
+      
+      // Handle cd command specially
+      if (command.startsWith("cd ")) {
+        const path = command.substring(3).trim() || process.env.HOME || "/";
+        try {
+          process.chdir(path);
+          setWorkingDir(process.cwd());
+          return `Changed directory to: ${process.cwd()}`;
+        } catch (error) {
+          return `cd error: ${error.message}`;
+        }
+      }
+      
+      const result = await shell_exec(command);
+      
+      if (result.error) {
+        return `Shell Error: ${result.error}`;
+      }
+      
+      let output = "";
+      if (result.stdout) output += result.stdout;
+      if (result.stderr) output += (output ? "\n" : "") + `stderr: ${result.stderr}`;
+      
+      return output || "(no output)";
+    } catch (error) {
+      return `Shell Error: ${error.message}`;
     }
   };
 
   // Handle input submission
-  const handleSubmit = () => {
-    const newLines = [...lines, "> " + input, executeScript(input)];
-    setLines(newLines);
-    setInput(""); // Clear input after execution
+  const handleSubmit = async () => {
+    if (!input.trim()) return;
+    
+    const inputType = detectInputType(input);
+    const prompt = `[${workingDir.split('/').pop() || '/'}] ${inputType === 'js' ? 'js>' : '$'} ${input}`;
+    
+    setLines(prev => [...prev, prompt]);
+    
+    try {
+      let result;
+      if (inputType === "js") {
+        result = await executeScript(input);
+      } else {
+        result = await executeShell(input);
+      }
+      setLines(prev => [...prev, result]);
+    } catch (error) {
+      setLines(prev => [...prev, `Error: ${error.message}`]);
+    }
+    
+    setInput("");
   };
 
   // Handle resizing of the terminal
@@ -48,7 +152,17 @@ export const Terminal = () => {
     };
   }, []);
 
+  // Only use input if raw mode is supported
+  const [isInteractive, setIsInteractive] = useState(false);
+  
+  useEffect(() => {
+    // Check if raw mode is supported
+    setIsInteractive(process.stdin.isTTY && process.stdin.setRawMode !== undefined);
+  }, []);
+
   useInput((input, key) => {
+    if (!isInteractive) return;
+    
     if (key.return) {
       handleSubmit();
     } else if (key.ctrl && input === "c") {
@@ -56,26 +170,66 @@ export const Terminal = () => {
     }
   });
 
+  // Initialize with welcome message
+  useEffect(() => {
+    setLines([
+      "🚀 LSH Interactive Shell",
+      "Mix shell commands and JavaScript seamlessly!",
+      "Examples:",
+      "  ls -la          (shell command)",
+      "  2 + 2           (JavaScript expression)",  
+      "  js: console.log('Hello')  (force JS mode)",
+      "  sh: echo 'Hi'   (force shell mode)",
+      "  await sh('ls')  (call shell from JS)",
+      "---"
+    ]);
+  }, []);
+
+  const currentDir = workingDir.split('/').pop() || '/';
+  const nextInputType = detectInputType(input);
+  const promptSymbol = nextInputType === 'js' ? 'js>' : '$';
+
+  if (!isInteractive) {
+    return (
+      <Box flexDirection="column" padding={1}>
+        <Text color="red" bold>⚠️  Interactive mode not supported</Text>
+        <Text color="yellow">Raw mode is not supported in this environment.</Text>
+        <Text color="gray">To use the interactive REPL, run this command in a proper terminal:</Text>
+        <Text color="cyan">  npm start repl</Text>
+        <Text color="gray">or</Text>
+        <Text color="cyan">  node dist/app.js repl</Text>
+        <Text color="gray">For testing, use the shell lib functions directly in your Node.js code.</Text>
+      </Box>
+    );
+  }
+
   return (
     <Box flexDirection="column" padding={1}>
-      <Box flexDirection="row" width={size.columns - 10} height={size.rows - 10}>
-        <Box width="50%" borderStyle="round" borderColor="green" paddingX={1}>
-          <Text color="lightgreen">Input:</Text>
-          <Box flexDirection="column" flexGrow={1} marginTop={1}>
-            <Text color="green">{">"}</Text>
-            <TextInput value={input} onChange={setInput} />
-          </Box>
-        </Box>
-        <Box width="50%" borderStyle="round" borderColor="cyan" paddingX={1}>
-          <Text color="yellow">Output:</Text>
-          <Box flexDirection="column" flexGrow={1} marginTop={1}>
+      <Box flexDirection="column" width={size.columns - 4} height={size.rows - 6}>
+        <Text color="cyan" bold>LSH - Interactive Shell with JavaScript</Text>
+        <Text color="gray">Current directory: {workingDir}</Text>
+        <Text color="gray">Mode: Auto-detect ({nextInputType === 'js' ? 'JavaScript' : 'Shell'})</Text>
+        
+        <Box borderStyle="round" borderColor="blue" paddingX={1} marginY={1} height={size.rows - 12} flexDirection="column">
+          <Box flexDirection="column" flexGrow={1} overflowY="scroll">
             {lines.map((line, index) => (
-              <Text key={index}>{line}</Text>
+              <Text key={index} wrap="wrap">{line}</Text>
             ))}
+          </Box>
+          
+          <Box flexDirection="row" marginTop={1}>
+            <Text color="green">[{currentDir}] {promptSymbol} </Text>
+            <Box flexGrow={1}>
+              <TextInput 
+                value={input} 
+                onChange={setInput}
+                placeholder="Enter shell command or JavaScript..."
+              />
+            </Box>
           </Box>
         </Box>
       </Box>
-      <Text color="grey">Press Ctrl+C to exit.</Text>
+      <Text color="grey">Press Ctrl+C to exit. Use js: or sh: to force execution mode.</Text>
     </Box>
   );
 };
