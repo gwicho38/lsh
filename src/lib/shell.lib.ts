@@ -1,70 +1,47 @@
-import { exec } from 'child_process';
-import { spawn } from 'child_process';
+import { exec, spawn } from 'child_process';
+import { promisify } from 'util';
 
-// TODO: sanitize inputs
-export async function shell_exec(command: string) {
-    // console.log(command);
-    // return;
-    exec(command, (error, stdout, stderr) => {
-    if (error) {
-        console.error(`exec error: ${error}`);
-        return;
+const execAsync = promisify(exec);
+
+// Execute shell command and return result
+export async function shell_exec(command: string): Promise<{stdout: string, stderr: string, error?: string}> {
+    try {
+        const { stdout, stderr } = await execAsync(command);
+        return { stdout: stdout.trim(), stderr: stderr.trim() };
+    } catch (error) {
+        return { 
+            stdout: '', 
+            stderr: '', 
+            error: error.message 
+        };
     }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
-    });
 }
 
-// TODO: sanitize inputs
-export async function shell_spawn(command: string) {
-
-    const ls = spawn('ls', ['-lh']);
-    
-    ls.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
+// Execute shell command with streaming output
+export function shell_spawn(command: string, args: string[] = []): Promise<{stdout: string, stderr: string, code: number}> {
+    return new Promise((resolve) => {
+        const [cmd, ...defaultArgs] = command.split(' ');
+        const finalArgs = args.length > 0 ? args : defaultArgs;
+        
+        const child = spawn(cmd, finalArgs);
+        
+        let stdout = '';
+        let stderr = '';
+        
+        child.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+        
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+        
+        child.on('close', (code) => {
+            resolve({ 
+                stdout: stdout.trim(), 
+                stderr: stderr.trim(), 
+                code: code || 0 
+            });
+        });
     });
-    
-    ls.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
-    });
-    
-    ls.on('close', (code) => {
-      console.log(`child process exited with code ${code}`);
-    });
-    
-}
-import { exec } from 'child_process';
-import { spawn } from 'child_process';
-
-// TODO: sanitize inputs
-export async function shell_exec(command: string) {
-    // console.log(command);
-    // return;
-    exec(command, (error, stdout, stderr) => {
-    if (error) {
-        console.error(`exec error: ${error}`);
-        return;
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
-    });
-}
-
-// TODO: sanitize inputs
-export async function shell_spawn(command: string) {
-
-    const ls = spawn('ls', ['-lh']);
-    
-    ls.stdout.on('data', (data) => {
-      console.log(`stdout: ${data}`);
-    });
-    
-    ls.stderr.on('data', (data) => {
-      console.error(`stderr: ${data}`);
-    });
-    
-    ls.on('close', (code) => {
-      console.log(`child process exited with code ${code}`);
-    });
-    
 }

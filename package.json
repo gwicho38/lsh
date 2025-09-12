@@ -10,7 +10,7 @@
     "compile-ts": "tsc -b",
     "compile-nexe": "node build.js",
     "build-bin": "npm run clean; npm run compile-ts; npm run compile-nexe",
-    "start": "./lsh",
+    "start": "node dist/app.js",
     "watch": "tsc --watch",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
     "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist"
