@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tsc --noEmit)",
+      "Bash(tsc:*)",
+      "Bash(npm run compile-ts:*)",
+      "Bash(node:*)",
+      "Bash(npm start:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(gh issue create:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
