@@ -4,12 +4,15 @@ import { stdout } from "process";
 import React, { useEffect, useState } from "react";
 import { Script, createContext } from "vm";
 import { shell_exec } from "../lib/shell.lib.js";
+import { parseShellCommand } from "../lib/shell-parser.js";
+import { ShellExecutor } from "../lib/shell-executor.js";
 
 export const Terminal = () => {
   const [input, setInput] = useState("");
   const [lines, setLines] = useState([]);
   const [mode, setMode] = useState("auto"); // auto, js, shell
   const [workingDir, setWorkingDir] = useState(process.cwd());
+  const [shellExecutor] = useState(() => new ShellExecutor());
   const { exit } = useApp();
 
   // Detect if input is a shell command or JavaScript
@@ -73,29 +76,27 @@ export const Terminal = () => {
     }
   };
 
-  // Execute shell command
+  // Execute shell command using POSIX parser and executor
   const executeShell = async (input: string) => {
     try {
       let command = input.trim();
       if (command.startsWith("sh:")) command = command.substring(3).trim();
       if (command.startsWith("$")) command = command.substring(1).trim();
       
-      // Handle cd command specially
-      if (command.startsWith("cd ")) {
-        const path = command.substring(3).trim() || process.env.HOME || "/";
-        try {
-          process.chdir(path);
-          setWorkingDir(process.cwd());
-          return `Changed directory to: ${process.cwd()}`;
-        } catch (error) {
-          return `cd error: ${error.message}`;
-        }
+      // Parse the command using POSIX grammar
+      const ast = parseShellCommand(command);
+      
+      // Execute the parsed command
+      const result = await shellExecutor.execute(ast);
+      
+      // Update working directory from executor context
+      const context = shellExecutor.getContext();
+      if (context.cwd !== workingDir) {
+        setWorkingDir(context.cwd);
       }
       
-      const result = await shell_exec(command);
-      
-      if (result.error) {
-        return `Shell Error: ${result.error}`;
+      if (!result.success && result.stderr) {
+        return `Shell Error: ${result.stderr}`;
       }
       
       let output = "";
@@ -104,7 +105,26 @@ export const Terminal = () => {
       
       return output || "(no output)";
     } catch (error) {
-      return `Shell Error: ${error.message}`;
+      // Fallback to old shell execution for unparseable commands
+      try {
+        let command = input.trim();
+        if (command.startsWith("sh:")) command = command.substring(3).trim();
+        if (command.startsWith("$")) command = command.substring(1).trim();
+        
+        const result = await shell_exec(command);
+        
+        if (result.error) {
+          return `Shell Error: ${result.error}`;
+        }
+        
+        let output = "";
+        if (result.stdout) output += result.stdout;
+        if (result.stderr) output += (output ? "\n" : "") + `stderr: ${result.stderr}`;
+        
+        return output || "(no output)";
+      } catch (fallbackError) {
+        return `Shell Error: ${error.message}`;
+      }
     }
   };
 
