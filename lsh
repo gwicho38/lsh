@@ -1,19 +1,9 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-console.log('Creating shell wrapper for LSH...');
-
-// Create a shell script wrapper that includes the dist directory
-const wrapperScript = `#!/bin/bash
+#!/bin/bash
 # LSH Wrapper Script
 # This script runs the LSH application with its bundled dependencies
 
 # Get the directory where this script is located
-SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check if we're running from the installed location
 if [[ "$SCRIPT_DIR" == "/usr/local/bin" ]]; then
@@ -30,10 +20,3 @@ else
     cd "$SCRIPT_DIR"
     exec node dist/app.js "$@"
 fi
-`;
-
-// Write the wrapper script
-fs.writeFileSync('lsh', wrapperScript, { mode: 0o755 });
-
-console.log('Shell wrapper created: lsh');
-console.log('Executable has been created!');

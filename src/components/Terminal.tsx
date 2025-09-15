@@ -15,6 +15,9 @@ export const Terminal = () => {
   const [shellExecutor] = useState(() => new ShellExecutor());
   const { exit } = useApp();
 
+  // Check if raw mode is supported synchronously
+  const isRawModeSupported = process.stdin.isTTY && process.stdin.setRawMode !== undefined;
+
   // Detect if input is a shell command or JavaScript
   const detectInputType = (input: string): "shell" | "js" => {
     const trimmed = input.trim();
@@ -144,9 +147,11 @@ export const Terminal = () => {
       } else {
         result = await executeShell(input);
       }
-      setLines(prev => [...prev, result]);
+      // Add result with proper formatting and spacing
+      setLines(prev => [...prev, result, ""]);
     } catch (error) {
-      setLines(prev => [...prev, `Error: ${error.message}`]);
+      // Add error and a blank line for spacing
+      setLines(prev => [...prev, `Error: ${error.message}`, ""]);
     }
     
     setInput("");
@@ -181,7 +186,7 @@ export const Terminal = () => {
   }, []);
 
   useInput((input, key) => {
-    if (!isInteractive) return;
+    if (!isRawModeSupported) return;
     
     if (key.return) {
       handleSubmit();
@@ -209,7 +214,7 @@ export const Terminal = () => {
   const nextInputType = detectInputType(input);
   const promptSymbol = nextInputType === 'js' ? 'js>' : '$';
 
-  if (!isInteractive) {
+  if (!isRawModeSupported) {
     return (
       <Box flexDirection="column" padding={1}>
         <Text color="red" bold>⚠️  Interactive mode not supported</Text>
@@ -224,24 +229,24 @@ export const Terminal = () => {
   }
 
   return (
-    <Box flexDirection="column" padding={1}>
-      <Box flexDirection="column" width={size.columns - 4} height={size.rows - 6}>
+    <Box flexDirection="column" padding={1} width={size.columns} height={size.rows}>
+      <Box flexDirection="column" width="100%">
         <Text color="cyan" bold>LSH - Interactive Shell with JavaScript</Text>
         <Text color="gray">Current directory: {workingDir}</Text>
         <Text color="gray">Mode: Auto-detect ({nextInputType === 'js' ? 'JavaScript' : 'Shell'})</Text>
-        
-        <Box borderStyle="round" borderColor="blue" paddingX={1} marginY={1} height={size.rows - 12} flexDirection="column">
-          <Box flexDirection="column" flexGrow={1} overflowY="scroll">
-            {lines.map((line, index) => (
-              <Text key={index} wrap="wrap">{line}</Text>
+
+        <Box borderStyle="round" borderColor="blue" paddingX={1} marginY={1} height={size.rows - 8} flexDirection="column" width="100%">
+          <Box flexDirection="column" flexGrow={1} overflowY="hidden" width="100%">
+            {lines.slice(Math.max(0, lines.length - (size.rows - 15))).map((line, index) => (
+              <Text key={index} wrap="wrap" width={size.columns - 6}>{line}</Text>
             ))}
           </Box>
-          
-          <Box flexDirection="row" marginTop={1}>
+
+          <Box flexDirection="row" marginTop={1} width="100%">
             <Text color="green">[{currentDir}] {promptSymbol} </Text>
-            <Box flexGrow={1}>
-              <TextInput 
-                value={input} 
+            <Box flexGrow={1} width={size.columns - currentDir.length - 8}>
+              <TextInput
+                value={input}
                 onChange={setInput}
                 placeholder="Enter shell command or JavaScript..."
               />

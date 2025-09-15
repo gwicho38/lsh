@@ -4,7 +4,7 @@
   "description": "extensible cli client",
   "main": "src/app.js",
   "bin": {
-    "lsh": "./dist/app.js"
+    "lsh": "./dist/cli.js"
   },
   "scripts": {
     "compile-ts": "tsc -b",

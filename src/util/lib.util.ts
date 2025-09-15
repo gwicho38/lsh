@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +27,9 @@ export interface CommandDictionary {
 }
 
 export async function getFiles() {
-  return await fs.promises.readdir("./src/services/lib/");
+  // Build path relative to this file's location
+  // This file is at dist/util/lib.util.js, so services/lib is at ../services/lib/
+  const libPath = join(__dirname, '../services/lib');
+  return await fs.promises.readdir(libPath);
 }
 
