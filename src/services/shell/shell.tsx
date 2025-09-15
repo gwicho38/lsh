@@ -21,7 +21,18 @@ async function cmd_interactive(program: Command) {
     .command("repl")
     .description("lsh interactive shell")
     .action(async (type: String, action: String, spec: Spec) => {
-      // render(<UserInput userInput={program} Props={undefined} />);
-      render(<Terminal/>);
+      // Check if raw mode is supported before rendering
+      if (process.stdin.isTTY && process.stdin.setRawMode !== undefined) {
+        render(<Terminal/>);
+      } else {
+        console.log('⚠️  Interactive mode not supported');
+        console.log('Raw mode is not supported in this environment.');
+        console.log('To use the interactive REPL, run this command in a proper terminal:');
+        console.log('  npm start repl');
+        console.log('or');
+        console.log('  node dist/app.js repl');
+        console.log('For testing, use the shell lib functions directly in your Node.js code.');
+        process.exit(1);
+      }
     });
 }
