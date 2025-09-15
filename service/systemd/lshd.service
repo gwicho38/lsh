@@ -1,0 +1,37 @@
+[Unit]
+Description=LSHD - LSH Daemon service
+Documentation=https://github.com/yourorg/lsh
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/lsh
+ExecStart=/usr/local/bin/node /opt/lsh/dist/daemon/lshd.js start
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/usr/local/bin/node /opt/lsh/dist/daemon/lshd.js stop
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lshd
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/tmp /var/log/lsh
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=32768
+
+# Environment
+Environment=NODE_ENV=production
+Environment=LSH_LOG_LEVEL=info
+
+[Install]
+WantedBy=multi-user.target
