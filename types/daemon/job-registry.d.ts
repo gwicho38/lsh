@@ -2,7 +2,6 @@
  * Job Registry - Comprehensive job execution history and analytics
  * Tracks all job runs with detailed pass/failure history, output logs, and performance metrics
  */
-/// <reference types="node" />
 import { EventEmitter } from 'events';
 import { JobSpec } from '../lib/job-manager.js';
 export interface JobExecutionRecord {
