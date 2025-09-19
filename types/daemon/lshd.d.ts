@@ -47,6 +47,14 @@ export declare class LSHJobDaemon extends EventEmitter {
      */
     startJob(jobId: string): Promise<JobSpec>;
     /**
+     * Trigger a job to run immediately (returns sanitized result with output)
+     */
+    triggerJob(jobId: string): Promise<{
+        success: boolean;
+        output?: string;
+        error?: string;
+    }>;
+    /**
      * Stop a job
      */
     stopJob(jobId: string, signal?: string): Promise<JobSpec>;

@@ -243,7 +243,7 @@ async function cmd_daemon(program: Command) {
     .action(async (jobId) => {
       try {
         const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`);
-        
+
         if (!client.isDaemonRunning()) {
           console.error('❌ Daemon is not running. Start it with: lsh daemon start');
           process.exit(1);
@@ -251,12 +251,79 @@ async function cmd_daemon(program: Command) {
 
         await client.connect();
         await client.startJob(jobId);
-        
+
         console.log(`✅ Job ${jobId} started`);
-        
+
         client.disconnect();
       } catch (error) {
         console.error('❌ Failed to start job:', error);
+        process.exit(1);
+      }
+    });
+
+  jobCmd
+    .command('trigger <jobId>')
+    .description('Trigger a job to run immediately (bypass schedule)')
+    .action(async (jobId) => {
+      try {
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`);
+
+        if (!client.isDaemonRunning()) {
+          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          process.exit(1);
+        }
+
+        await client.connect();
+        const result = await client.triggerJob(jobId);
+
+        console.log(`🚀 Job ${jobId} triggered successfully`);
+        if (result.output) {
+          console.log('📄 Output:');
+          console.log(result.output);
+        }
+
+        client.disconnect();
+      } catch (error) {
+        console.error('❌ Failed to trigger job:', error.message || error);
+        process.exit(1);
+      }
+    });
+
+  jobCmd
+    .command('trigger-all')
+    .description('Trigger all active jobs to run immediately')
+    .option('-f, --filter <status>', 'Filter by job status (default: created)', 'created')
+    .action(async (options) => {
+      try {
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`);
+
+        if (!client.isDaemonRunning()) {
+          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          process.exit(1);
+        }
+
+        await client.connect();
+        const jobs = await client.listJobs({ status: options.filter });
+
+        console.log(`🚀 Triggering ${jobs.length} jobs...`);
+
+        for (const job of jobs) {
+          try {
+            console.log(`  ⏳ Triggering ${job.name} (${job.id})...`);
+            const result = await client.triggerJob(job.id);
+            console.log(`  ✅ ${job.name} completed`);
+            if (result.output) {
+              console.log(`  📄 Output: ${result.output.substring(0, 100)}${result.output.length > 100 ? '...' : ''}`);
+            }
+          } catch (error) {
+            console.log(`  ❌ ${job.name} failed: ${error.message || error}`);
+          }
+        }
+
+        console.log('🎉 All jobs triggered');
+        client.disconnect();
+      } catch (error) {
+        console.error('❌ Failed to trigger jobs:', error.message || error);
         process.exit(1);
       }
     });

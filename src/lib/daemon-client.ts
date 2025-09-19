@@ -341,6 +341,23 @@ export class DaemonClient extends EventEmitter {
   }
 
   /**
+   * Trigger a job to run immediately (bypass schedule)
+   */
+  public async triggerJob(jobId: string): Promise<any> {
+    const result = await this.sendMessage({
+      command: 'triggerJob',
+      args: { jobId }
+    });
+
+    // Sync to database
+    if (this.databasePersistence) {
+      await this.syncJobToDatabase({ id: jobId } as CronJobSpec, 'triggered');
+    }
+
+    return result;
+  }
+
+  /**
    * Stop a job
    */
   public async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<any> {
