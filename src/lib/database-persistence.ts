@@ -212,8 +212,8 @@ export class DatabasePersistence {
       let query = this.client
         .from('shell_jobs')
         .select('*')
-        .in('status', ['running', 'stopped'])
-        .order('started_at', { ascending: false });
+        .in('status', ['running', 'stopped', 'completed', 'failed'])
+        .order('created_at', { ascending: false });
 
       // Only filter by user_id if it's not undefined
       if (this.userId !== undefined) {

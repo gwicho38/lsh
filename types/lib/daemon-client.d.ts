@@ -41,6 +41,8 @@ export declare class DaemonClient extends EventEmitter {
     private messageId;
     private pendingMessages;
     private databasePersistence?;
+    private userId?;
+    private sessionId;
     constructor(socketPath?: string, userId?: string);
     /**
      * Connect to the daemon
@@ -105,7 +107,7 @@ export declare class DaemonClient extends EventEmitter {
     /**
      * Sync job status to Supabase database
      */
-    private syncJobToDatabase;
+    syncJobToDatabase(jobSpec: CronJobSpec, status: string): Promise<void>;
     /**
      * Create a database-backed cron job
      */
