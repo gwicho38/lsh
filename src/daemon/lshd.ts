@@ -36,11 +36,13 @@ export class LSHJobDaemon extends EventEmitter {
   constructor(config?: Partial<DaemonConfig>) {
     super();
 
+    const userSuffix = process.env.USER ? `-${process.env.USER}` : '';
+    
     this.config = {
-      pidFile: '/tmp/lsh-job-daemon.pid',
-      logFile: '/tmp/lsh-job-daemon.log',
-      jobsFile: '/tmp/lsh-daemon-jobs.json',
-      socketPath: '/tmp/lsh-job-daemon.sock',
+      pidFile: `/tmp/lsh-job-daemon${userSuffix}.pid`,
+      logFile: `/tmp/lsh-job-daemon${userSuffix}.log`,
+      jobsFile: `/tmp/lsh-daemon-jobs${userSuffix}.json`,
+      socketPath: `/tmp/lsh-job-daemon${userSuffix}.sock`,
       checkInterval: 10000, // 10 seconds
       maxLogSize: 10 * 1024 * 1024, // 10MB
       autoRestart: true,
@@ -182,8 +184,22 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * List all jobs
    */
-  listJobs(filter?: any): JobSpec[] {
-    return this.jobManager.listJobs(filter);
+  listJobs(filter?: any, limit?: number): JobSpec[] {
+    try {
+      const jobs = this.jobManager.listJobs(filter);
+
+      // Apply limit if specified
+      if (limit && limit > 0) {
+        return jobs.slice(0, limit);
+      }
+
+      // Default limit to prevent oversized responses
+      const defaultLimit = 100;
+      return jobs.slice(0, defaultLimit);
+    } catch (error) {
+      this.log('ERROR', `Failed to list jobs: ${error.message}`);
+      return [];
+    }
   }
 
   /**
@@ -196,6 +212,9 @@ export class LSHJobDaemon extends EventEmitter {
 
   private async isDaemonRunning(): Promise<boolean> {
     try {
+      // First, kill any existing daemon processes for this socket path
+      await this.killExistingDaemons();
+
       const pidData = await fs.promises.readFile(this.config.pidFile, 'utf8');
       const pid = parseInt(pidData.trim());
 
@@ -210,6 +229,31 @@ export class LSHJobDaemon extends EventEmitter {
       }
     } catch (error) {
       return false; // PID file doesn't exist
+    }
+  }
+
+  private async killExistingDaemons(): Promise<void> {
+    try {
+      // Find all lshd processes with the same socket path
+      const { stdout } = await execAsync(`ps aux | grep "lshd.js" | grep "${this.config.socketPath}" | grep -v grep || true`);
+
+      if (stdout.trim()) {
+        const lines = stdout.trim().split('\n');
+        for (const line of lines) {
+          const parts = line.trim().split(/\s+/);
+          const pid = parseInt(parts[1]);
+          if (pid && pid !== process.pid) {
+            try {
+              this.log('INFO', `Killing existing daemon process ${pid}`);
+              process.kill(pid, 9); // Force kill
+            } catch (error) {
+              // Process might already be dead
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // ps command failed, ignore
     }
   }
 
@@ -332,12 +376,22 @@ export class LSHJobDaemon extends EventEmitter {
 
     this.ipcServer = net.createServer((socket: any) => {
       socket.on('data', async (data: Buffer) => {
+        let messageId: string | undefined;
         try {
           const message = JSON.parse(data.toString());
+          messageId = message.id;
           const response = await this.handleIPCMessage(message);
-          socket.write(JSON.stringify(response));
+          socket.write(JSON.stringify({
+            success: true,
+            data: response,
+            id: messageId
+          }));
         } catch (error) {
-          socket.write(JSON.stringify({ error: error.message }));
+          socket.write(JSON.stringify({
+            success: false,
+            error: error.message,
+            id: messageId
+          }));
         }
       });
     });
@@ -345,8 +399,34 @@ export class LSHJobDaemon extends EventEmitter {
 
   private startIPCServer(): void {
     if (this.ipcServer) {
-      this.ipcServer.listen(this.config.socketPath);
-      this.log('INFO', `IPC server listening on ${this.config.socketPath}`);
+      // Clean up any existing socket file
+      try {
+        if (fs.existsSync(this.config.socketPath)) {
+          fs.unlinkSync(this.config.socketPath);
+        }
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+
+      this.ipcServer.listen(this.config.socketPath, () => {
+        this.log('INFO', `IPC server listening on ${this.config.socketPath}`);
+      });
+
+      this.ipcServer.on('error', (error) => {
+        this.log('ERROR', `IPC server error: ${error.message}`);
+        if (error.message.includes('EADDRINUSE')) {
+          this.log('INFO', 'Socket already in use, attempting cleanup...');
+          try {
+            fs.unlinkSync(this.config.socketPath);
+            // Retry after cleanup
+            setTimeout(() => {
+              this.ipcServer.listen(this.config.socketPath);
+            }, 1000);
+          } catch (cleanupError) {
+            this.log('ERROR', `Failed to cleanup socket: ${cleanupError.message}`);
+          }
+        }
+      });
     }
   }
 
@@ -363,7 +443,7 @@ export class LSHJobDaemon extends EventEmitter {
       case 'stopJob':
         return await this.stopJob(args.jobId, args.signal);
       case 'listJobs':
-        return this.listJobs(args.filter);
+        return this.listJobs(args.filter, args.limit);
       case 'getJob':
         return this.getJob(args.jobId);
       case 'removeJob':
@@ -439,27 +519,90 @@ export class LSHJobDaemon extends EventEmitter {
 // CLI interface for the daemon
 if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv[2];
-  const daemon = new LSHJobDaemon();
+  const subCommand = process.argv[3];
+  const args = process.argv.slice(4);
 
-  switch (command) {
-    case 'start':
-      daemon.start().catch(console.error);
-      break;
-    case 'stop':
-      daemon.stop().catch(console.error);
-      break;
-    case 'restart':
-      daemon.restart().catch(console.error);
-      break;
-    case 'status':
-      daemon.getStatus().then(status => {
-        console.log(JSON.stringify(status, null, 2));
+  // Handle job commands
+  if (command === 'job-add') {
+    (async () => {
+      try {
+        const jobCommand = subCommand;
+        if (!jobCommand) {
+          console.error('❌ Usage: lshd job-add "command-to-run"');
+          process.exit(1);
+        }
+
+        const client = new (await import('../lib/daemon-client.js')).default();
+
+        if (!client.isDaemonRunning()) {
+          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          process.exit(1);
+        }
+
+        await client.connect();
+
+        const jobSpec = {
+          id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          name: `Manual Job - ${jobCommand}`,
+          command: jobCommand,
+          type: 'manual',
+          schedule: { interval: 0 }, // Run once
+          env: process.env,
+          cwd: process.cwd(),
+          user: process.env.USER,
+          priority: 5,
+          tags: ['manual'],
+          enabled: true,
+          maxRetries: 0,
+          timeout: 0,
+        };
+
+        const result = await client.addJob(jobSpec);
+        console.log('✅ Job added successfully:');
+        console.log(`  ID: ${result.id}`);
+        console.log(`  Command: ${result.command}`);
+        console.log(`  Status: ${result.status}`);
+
+        // Start the job immediately
+        await client.startJob(result.id);
+        console.log(`✅ Job ${result.id} started`);
+
+        client.disconnect();
         process.exit(0);
-      }).catch(console.error);
-      break;
-    default:
-      console.log('Usage: lsh-job-daemon {start|stop|restart|status}');
-      process.exit(1);
+      } catch (error) {
+        console.error('❌ Failed to add job:', error.message);
+        process.exit(1);
+      }
+    })();
+  } else {
+    const socketPath = subCommand;
+    const daemon = new LSHJobDaemon(socketPath ? { socketPath } : undefined);
+
+    switch (command) {
+      case 'start':
+        daemon.start().catch(console.error);
+        // Keep the process alive
+        process.stdin.resume();
+        break;
+      case 'stop':
+        daemon.stop().catch(console.error);
+        break;
+      case 'restart':
+        daemon.restart().catch(console.error);
+        // Keep the process alive
+        process.stdin.resume();
+        break;
+      case 'status':
+        daemon.getStatus().then(status => {
+          console.log(JSON.stringify(status, null, 2));
+          process.exit(0);
+        }).catch(console.error);
+        break;
+      default:
+        console.log('Usage: lshd {start|stop|restart|status|job-add}');
+        console.log('  lshd job-add "command" - Add and start a job');
+        process.exit(1);
+    }
   }
 }
 
