@@ -3,7 +3,6 @@
  * LSH Job Daemon - Persistent job execution service
  * Runs independently of LSH shell processes to ensure reliable job execution
  */
-/// <reference types="node" />
 import { EventEmitter } from 'events';
 import { JobSpec } from '../lib/job-manager.js';
 export interface DaemonConfig {
@@ -58,12 +57,13 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * List all jobs
      */
-    listJobs(filter?: any): JobSpec[];
+    listJobs(filter?: any, limit?: number): JobSpec[];
     /**
      * Remove a job
      */
     removeJob(jobId: string, force?: boolean): Promise<boolean>;
     private isDaemonRunning;
+    private killExistingDaemons;
     private startJobScheduler;
     private checkScheduledJobs;
     private shouldRunByCron;
