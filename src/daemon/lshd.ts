@@ -167,6 +167,43 @@ export class LSHJobDaemon extends EventEmitter {
   }
 
   /**
+   * Trigger a job to run immediately (returns sanitized result with output)
+   */
+  async triggerJob(jobId: string): Promise<{ success: boolean; output?: string; error?: string }> {
+    this.log('INFO', `Triggering job: ${jobId}`);
+
+    try {
+      // Get the job details
+      const job = this.jobManager.getJob(jobId);
+      if (!job) {
+        throw new Error(`Job ${jobId} not found`);
+      }
+
+      // Execute the job command directly and capture output
+      const { stdout, stderr } = await execAsync(job.command, {
+        cwd: job.cwd || process.cwd(),
+        env: { ...process.env, ...job.env },
+        timeout: job.timeout || 30000 // 30 second timeout
+      });
+
+      this.log('INFO', `Job ${jobId} triggered successfully`);
+
+      return {
+        success: true,
+        output: stdout || stderr || 'Job completed with no output'
+      };
+    } catch (error) {
+      this.log('ERROR', `Failed to trigger job ${jobId}: ${error.message}`);
+
+      return {
+        success: false,
+        error: error.message,
+        output: error.stdout || error.stderr
+      };
+    }
+  }
+
+  /**
    * Stop a job
    */
   async stopJob(jobId: string, signal = 'SIGTERM'): Promise<JobSpec> {
@@ -440,6 +477,8 @@ export class LSHJobDaemon extends EventEmitter {
         return await this.addJob(args.jobSpec);
       case 'startJob':
         return await this.startJob(args.jobId);
+      case 'triggerJob':
+        return await this.triggerJob(args.jobId);
       case 'stopJob':
         return await this.stopJob(args.jobId, args.signal);
       case 'listJobs':
