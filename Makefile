@@ -30,6 +30,7 @@ NEXE := $(NODE) build.js
 MAIN_OUTPUT := $(DIST_DIR)/app.js
 BINARY_OUTPUT := lsh
 DAEMON_SCRIPT := $(SCRIPTS_DIR)/install-daemon.sh
+UNINSTALL_SCRIPT := $(SCRIPTS_DIR)/uninstall.sh
 
 # ANSI color codes for prettier output
 CYAN := \033[36m
@@ -55,6 +56,10 @@ help: ## Show this help message
 	@echo "  $(GREEN)install-system$(RESET)       Install LSH binary to system PATH"
 	@echo "  $(GREEN)uninstall-system$(RESET)     Remove LSH binary from system PATH"
 	@echo "  $(GREEN)reinstall-system$(RESET)     Reinstall LSH binary to system PATH"
+	@echo ""
+	@echo "$(CYAN)Complete Installation:$(RESET)"
+	@echo "  $(GREEN)install-full$(RESET)         Install LSH binary + daemon service"
+	@echo "  $(GREEN)uninstall-full$(RESET)       Complete uninstall (binary + daemon)"
 	@echo ""
 	@echo "$(CYAN)Build Targets:$(RESET)"
 	@echo "  $(GREEN)compile$(RESET)              Compile TypeScript to JavaScript"
@@ -260,6 +265,58 @@ reinstall-system: uninstall-system install-system ## Reinstall LSH binary to sys
 	@echo "$(GREEN)LSH reinstallation completed ✅$(RESET)"
 
 # =============================================================================
+# COMPLETE INSTALLATION TARGETS
+# =============================================================================
+
+.PHONY: install-full
+install-full: compile build-binary ## Install LSH binary and daemon service
+	@echo "$(CYAN)Installing LSH binary to system...$(RESET)"
+	@if [ ! -f "$(BINARY_OUTPUT)" ]; then \
+		echo "$(RED)❌ Binary not found$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "Creating LSH system directory..."
+	sudo mkdir -p /usr/local/lib/lsh
+	@echo "Copying LSH files..."
+	sudo cp -r dist /usr/local/lib/lsh/
+	sudo cp -r node_modules /usr/local/lib/lsh/
+	sudo cp package.json /usr/local/lib/lsh/
+	@echo "Installing wrapper script to $(SYS_BIN_DIR)/$(PROJECT_NAME)"
+	sudo cp "$(BINARY_OUTPUT)" "$(SYS_BIN_DIR)/$(PROJECT_NAME)"
+	sudo chmod +x "$(SYS_BIN_DIR)/$(PROJECT_NAME)"
+	@echo "$(GREEN)LSH installed to $(SYS_BIN_DIR)/$(PROJECT_NAME) ✅$(RESET)"
+	@echo ""
+	@echo "$(CYAN)Verification:$(RESET)"
+	@if command -v $(PROJECT_NAME) >/dev/null 2>&1; then \
+		echo "$(GREEN)✅ LSH is available in PATH$(RESET)"; \
+		echo "Try: $(YELLOW)$(PROJECT_NAME) --help$(RESET)"; \
+	else \
+		echo "$(YELLOW)⚠️  LSH may not be in PATH. Try: $(SYS_BIN_DIR)/$(PROJECT_NAME)$(RESET)"; \
+	fi
+	@echo "$(CYAN)Installing LSHD...$(RESET)"
+	@if [ ! -f "$(DAEMON_SCRIPT)" ]; then \
+		echo "$(RED)❌ Daemon installation script not found: $(DAEMON_SCRIPT)$(RESET)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(MAIN_OUTPUT)" ]; then \
+		echo "$(RED)❌ Application not built$(RESET)"; \
+		exit 1; \
+	fi
+	sudo bash $(DAEMON_SCRIPT)
+	@echo "$(GREEN)Daemon installation completed ✅$(RESET)"
+	@echo "$(GREEN)LSH complete installation completed ✅$(RESET)"
+
+.PHONY: uninstall-full
+uninstall-full: ## Complete uninstall (binary + daemon)
+	@echo "$(CYAN)Uninstalling LSH completely...$(RESET)"
+	@if [ ! -f "$(UNINSTALL_SCRIPT)" ]; then \
+		echo "$(RED)❌ Uninstall script not found: $(UNINSTALL_SCRIPT)$(RESET)"; \
+		exit 1; \
+	fi
+	sudo bash $(UNINSTALL_SCRIPT)
+	@echo "$(GREEN)Complete uninstall completed ✅$(RESET)"
+
+# =============================================================================
 # SERVICE MANAGEMENT TARGETS
 # =============================================================================
 
@@ -315,6 +372,83 @@ daemon-restart: ## Restart the daemon service
 	else \
 		echo "$(YELLOW)Daemon not installed. Use 'make install-daemon' to install.$(RESET)"; \
 	fi
+
+.PHONY: daemon-cleanup
+daemon-cleanup: ## Clean up all daemon processes and files
+	@echo "$(CYAN)Cleaning up LSH daemon...$(RESET)"
+	@echo "$(YELLOW)Killing all daemon processes...$(RESET)"
+	@sudo pkill -f "lshd.js" 2>/dev/null || echo "No daemon processes found"
+	@sleep 2
+	@echo "$(YELLOW)Removing socket files...$(RESET)"
+	@sudo rm -f /tmp/lsh-*daemon*.sock 2>/dev/null || true
+	@echo "$(YELLOW)Removing PID files...$(RESET)"
+	@sudo rm -f /tmp/lsh-*daemon*.pid 2>/dev/null || true
+	@echo "$(YELLOW)Verifying cleanup...$(RESET)"
+	@if pgrep -f "lshd.js" >/dev/null 2>&1; then \
+		echo "$(RED)⚠️  Some daemon processes may still be running$(RESET)"; \
+		echo "$(YELLOW)Attempting force kill...$(RESET)"; \
+		sudo kill -9 $$(pgrep -f "lshd.js") 2>/dev/null || true; \
+		sleep 1; \
+	fi
+	@if ls /tmp/lsh-*daemon*.sock /tmp/lsh-*daemon*.pid >/dev/null 2>&1; then \
+		echo "$(RED)⚠️  Some daemon files may still exist$(RESET)"; \
+		sudo rm -f /tmp/lsh-*daemon*.sock /tmp/lsh-*daemon*.pid 2>/dev/null || true; \
+	fi
+	@echo "$(GREEN)Daemon cleanup completed ✅$(RESET)"
+	@echo ""
+	@echo "$(CYAN)Next steps:$(RESET)"
+	@echo "  $(YELLOW)Start daemon: sudo lsh daemon start$(RESET)"
+	@echo "  $(YELLOW)Check status: sudo lsh daemon status$(RESET)"
+
+.PHONY: daemon-reset
+daemon-reset: daemon-cleanup ## Complete daemon reset (cleanup + restart)
+	@echo "$(CYAN)Resetting daemon...$(RESET)"
+	@sleep 2
+	@echo "$(YELLOW)Starting fresh daemon...$(RESET)"
+	@sudo lsh daemon start || echo "$(RED)Failed to start daemon - check logs$(RESET)"
+	@sleep 3
+	@echo "$(YELLOW)Checking daemon status...$(RESET)"
+	@if sudo lsh daemon status >/dev/null 2>&1; then \
+		echo "$(GREEN)✅ Daemon successfully reset and running!$(RESET)"; \
+		sudo lsh daemon status; \
+	else \
+		echo "$(RED)❌ Daemon failed to start properly$(RESET)"; \
+		echo "$(YELLOW)Check logs: tail -f /tmp/lsh-job-daemon*.log$(RESET)"; \
+	fi
+
+.PHONY: daemon-logs
+daemon-logs: ## Show daemon logs
+	@echo "$(CYAN)LSH Daemon Logs:$(RESET)"
+	@echo ""
+	@for log in $$(ls /tmp/lsh-*daemon*.log 2>/dev/null); do \
+		echo "$(YELLOW)=== $$log ===$(RESET)"; \
+		tail -20 "$$log" 2>/dev/null || echo "Cannot read $$log"; \
+		echo ""; \
+	done
+
+.PHONY: daemon-debug
+daemon-debug: ## Debug daemon issues
+	@echo "$(CYAN)LSH Daemon Debug Information:$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)1. Running processes:$(RESET)"
+	@ps aux | grep lshd | grep -v grep || echo "No daemon processes found"
+	@echo ""
+	@echo "$(YELLOW)2. Socket files:$(RESET)"
+	@ls -la /tmp/lsh-*daemon*.sock 2>/dev/null || echo "No socket files found"
+	@echo ""
+	@echo "$(YELLOW)3. PID files:$(RESET)"
+	@ls -la /tmp/lsh-*daemon*.pid 2>/dev/null || echo "No PID files found"
+	@echo ""
+	@echo "$(YELLOW)4. Recent logs:$(RESET)"
+	@for log in $$(ls /tmp/lsh-*daemon*.log 2>/dev/null | head -3); do \
+		echo "$(CYAN)--- Last 5 lines of $$log ---$(RESET)"; \
+		tail -5 "$$log" 2>/dev/null || echo "Cannot read $$log"; \
+		echo ""; \
+	done
+	@echo "$(CYAN)Debug commands:$(RESET)"
+	@echo "  $(YELLOW)make daemon-cleanup$(RESET)  - Clean up all daemon files"
+	@echo "  $(YELLOW)make daemon-reset$(RESET)    - Complete daemon reset"
+	@echo "  $(YELLOW)make daemon-logs$(RESET)     - View full daemon logs"
 
 # =============================================================================
 # MAINTENANCE TARGETS
