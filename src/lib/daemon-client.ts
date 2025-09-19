@@ -50,12 +50,16 @@ export class DaemonClient extends EventEmitter {
   private messageId: number = 0;
   private pendingMessages: Map<string, { resolve: Function; reject: Function }> = new Map();
   private databasePersistence?: DatabasePersistence;
+  private userId?: string;
+  private sessionId: string;
 
   constructor(socketPath?: string, userId?: string) {
     super();
     // Use user-specific socket path if not provided
     this.socketPath = socketPath || `/tmp/lsh-job-daemon-${process.env.USER || 'default'}.sock`;
-    
+    this.userId = userId;
+    this.sessionId = `lsh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     if (userId) {
       this.databasePersistence = new DatabasePersistence(userId);
     }
@@ -349,9 +353,26 @@ export class DaemonClient extends EventEmitter {
       args: { jobId }
     });
 
-    // Sync to database
+    // Record job execution in database
     if (this.databasePersistence) {
-      await this.syncJobToDatabase({ id: jobId } as CronJobSpec, 'triggered');
+      try {
+        await this.databasePersistence.saveJob({
+          user_id: this.userId,
+          session_id: this.sessionId,
+          job_id: jobId,
+          command: `Triggered execution of ${jobId}`,
+          status: result.success ? 'completed' : 'failed',
+          working_directory: process.cwd(),
+          started_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+          exit_code: result.success ? 0 : 1,
+          output: result.output,
+          error: result.error
+        });
+      } catch (error) {
+        // Don't fail the trigger if database save fails
+        console.warn('❌ Failed to save job execution to database:', error.message);
+      }
     }
 
     return result;
@@ -448,7 +469,7 @@ export class DaemonClient extends EventEmitter {
   /**
    * Sync job status to Supabase database
    */
-  private async syncJobToDatabase(jobSpec: CronJobSpec, status: string): Promise<void> {
+  public async syncJobToDatabase(jobSpec: CronJobSpec, status: string): Promise<void> {
     if (!this.databasePersistence) return;
 
     try {
