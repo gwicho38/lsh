@@ -26,6 +26,7 @@
     "@deck.gl/core": "^8.9.33",
     "@inkjs/ui": "^1.0.0",
     "@octokit/rest": "^20.1.0",
+    "@supabase/supabase-js": "^2.57.4",
     "@types/ink": "^2.0.3",
     "@xstate/react": "^4.1.0",
     "async": "^3.2.5",

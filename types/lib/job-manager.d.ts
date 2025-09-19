@@ -2,9 +2,6 @@
  * Comprehensive Job Management System for LSH Shell
  * Supports CRUD operations on shell jobs and system processes
  */
-/// <reference types="node" />
-/// <reference types="node" />
-/// <reference types="node" />
 import { ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 export interface JobSpec {
