@@ -266,7 +266,7 @@ async function cmd_daemon(program: Command) {
     .description('Trigger a job to run immediately (bypass schedule)')
     .action(async (jobId) => {
       try {
-        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`);
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`, process.env.USER || 'user');
 
         if (!client.isDaemonRunning()) {
           console.error('❌ Daemon is not running. Start it with: lsh daemon start');
@@ -295,7 +295,7 @@ async function cmd_daemon(program: Command) {
     .option('-f, --filter <status>', 'Filter by job status (default: created)', 'created')
     .action(async (options) => {
       try {
-        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`);
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`, process.env.USER || 'user');
 
         if (!client.isDaemonRunning()) {
           console.error('❌ Daemon is not running. Start it with: lsh daemon start');
@@ -471,6 +471,166 @@ async function cmd_daemon(program: Command) {
         });
       } catch (error) {
         console.error('❌ Failed to get job statistics:', error);
+        process.exit(1);
+      }
+    });
+
+  dbCmd
+    .command('recent')
+    .description('Show most recent job executions with output')
+    .option('-l, --limit <limit>', 'Number of recent executions to show', '5')
+    .action(async (options) => {
+      try {
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`, process.env.USER || 'user');
+
+        if (!client.isDaemonRunning()) {
+          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          process.exit(1);
+        }
+
+        await client.connect();
+        const jobs = await client.getJobHistory(undefined, parseInt(options.limit));
+
+        console.log(`🕒 Recent Job Executions (${jobs.length} records):`);
+
+        jobs.forEach((job, index) => {
+          const started = new Date(job.started_at).toLocaleString();
+          const status = job.status === 'completed' ? '✅' :
+                        job.status === 'failed' ? '❌' :
+                        job.status === 'running' ? '⏳' : '⏸️';
+
+          console.log(`\n${index + 1}. ${status} ${job.job_id}`);
+          console.log(`   Executed: ${started}`);
+          console.log(`   Status: ${job.status}`);
+          if (job.output) {
+            console.log(`   Output: ${job.output.substring(0, 200)}${job.output.length > 200 ? '...' : ''}`);
+          }
+          if (job.error) {
+            console.log(`   Error: ${job.error}`);
+          }
+        });
+
+        if (jobs.length === 0) {
+          console.log('\n💡 No recent executions found.');
+          console.log('   Trigger jobs to see execution history:');
+          console.log('   lsh daemon job trigger <jobId>');
+          console.log('   lsh daemon job trigger-all');
+        }
+
+        client.disconnect();
+      } catch (error) {
+        console.error('❌ Failed to get recent executions:', error.message || error);
+        process.exit(1);
+      }
+    });
+
+  dbCmd
+    .command('status <jobId>')
+    .description('Show detailed status and recent executions of a specific job')
+    .action(async (jobId) => {
+      try {
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`, process.env.USER || 'user');
+
+        if (!client.isDaemonRunning()) {
+          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          process.exit(1);
+        }
+
+        await client.connect();
+
+        // Get job info from daemon
+        const jobs = await client.listJobs();
+        const job = jobs.find(j => j.id === jobId);
+
+        if (!job) {
+          console.error(`❌ Job ${jobId} not found in daemon registry`);
+          process.exit(1);
+        }
+
+        console.log(`📋 Job Status: ${job.name} (${jobId})`);
+        console.log(`   Command: ${job.command.substring(0, 100)}${job.command.length > 100 ? '...' : ''}`);
+        console.log(`   Status: ${job.status}`);
+        console.log(`   Schedule: ${job.schedule?.cron || `${job.schedule?.interval}ms interval`}`);
+        console.log(`   Priority: ${job.priority}`);
+
+        // Get execution history for this job
+        const executions = await client.getJobHistory(jobId, 5);
+
+        if (executions.length > 0) {
+          console.log(`\n🕒 Recent Executions (${executions.length} records):`);
+          executions.forEach((exec, index) => {
+            const started = new Date(exec.started_at).toLocaleString();
+            const status = exec.status === 'completed' ? '✅' :
+                          exec.status === 'failed' ? '❌' :
+                          exec.status === 'running' ? '⏳' : '⏸️';
+
+            console.log(`\n${index + 1}. ${status} ${started}`);
+            console.log(`   Status: ${exec.status} (Exit Code: ${exec.exit_code || 'N/A'})`);
+            if (exec.output) {
+              console.log(`   Output: ${exec.output.substring(0, 150)}${exec.output.length > 150 ? '...' : ''}`);
+            }
+          });
+        } else {
+          console.log('\n💡 No execution history found for this job.');
+          console.log(`   Run: lsh daemon job trigger ${jobId}`);
+        }
+
+        client.disconnect();
+      } catch (error) {
+        console.error('❌ Failed to get job status:', error.message || error);
+        process.exit(1);
+      }
+    });
+
+  dbCmd
+    .command('sync')
+    .description('Sync current in-memory jobs to database')
+    .action(async () => {
+      try {
+        const client = new DaemonClient(`/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`, process.env.USER || 'user');
+
+        if (!client.isDaemonRunning()) {
+          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          process.exit(1);
+        }
+
+        await client.connect();
+
+        // Get all current jobs
+        const jobs = await client.listJobs();
+        console.log(`🔄 Syncing ${jobs.length} jobs to database...`);
+
+        let synced = 0;
+        for (const job of jobs) {
+          try {
+            // Map job status to database-compatible status
+            const dbStatus = job.status === 'created' ? 'stopped' :
+                           job.status === 'running' ? 'running' :
+                           job.status === 'completed' ? 'completed' : 'failed';
+
+            await client.syncJobToDatabase({
+              id: job.id,
+              name: job.name,
+              command: job.command,
+              schedule: job.schedule,
+              enabled: true,
+              databaseSync: true
+            } as any, dbStatus);
+            console.log(`  ✅ Synced ${job.name} (${job.id}) - status: ${dbStatus}`);
+            synced++;
+          } catch (error) {
+            console.log(`  ❌ Failed to sync ${job.name}: ${error.message}`);
+          }
+        }
+
+        console.log(`\n🎉 Successfully synced ${synced}/${jobs.length} jobs to database`);
+        console.log('\n📊 Check results with:');
+        console.log('  lsh daemon db stats');
+        console.log('  lsh daemon db history');
+
+        client.disconnect();
+      } catch (error) {
+        console.error('❌ Failed to sync jobs:', error.message || error);
         process.exit(1);
       }
     });
