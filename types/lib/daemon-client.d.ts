@@ -75,6 +75,10 @@ export declare class DaemonClient extends EventEmitter {
      */
     startJob(jobId: string): Promise<any>;
     /**
+     * Trigger a job to run immediately (bypass schedule)
+     */
+    triggerJob(jobId: string): Promise<any>;
+    /**
      * Stop a job
      */
     stopJob(jobId: string, signal?: string): Promise<any>;
