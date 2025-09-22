@@ -21,6 +21,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     private checkTimer?;
     private logStream?;
     private ipcServer?;
+    private lastRunTimes;
     constructor(config?: Partial<DaemonConfig>);
     /**
      * Start the daemon
@@ -63,6 +64,10 @@ export declare class LSHJobDaemon extends EventEmitter {
      */
     getJob(jobId: string): JobSpec | undefined;
     /**
+     * Sanitize job objects for safe JSON serialization
+     */
+    private sanitizeJobForSerialization;
+    /**
      * List all jobs
      */
     listJobs(filter?: any, limit?: number): JobSpec[];
@@ -75,6 +80,11 @@ export declare class LSHJobDaemon extends EventEmitter {
     private startJobScheduler;
     private checkScheduledJobs;
     private shouldRunByCron;
+    private matchesCronField;
+    /**
+     * Reset job status for recurring cron jobs after completion
+     */
+    private resetRecurringJobStatus;
     private cleanupCompletedJobs;
     private stopAllJobs;
     private setupLogging;

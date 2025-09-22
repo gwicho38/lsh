@@ -179,28 +179,85 @@ async function cmd_supabase(program: Command) {
     .action(async (options) => {
       try {
         console.log('Synchronizing data with Supabase...');
-        
+
         const configManager = new CloudConfigManager();
         const persistence = new DatabasePersistence();
-        
+
         // Test connection first
         const isConnected = await persistence.testConnection();
         if (!isConnected) {
           console.log('❌ Cannot sync - database not available');
           process.exit(1);
         }
-        
+
         // Sync configuration
         console.log('Syncing configuration...');
         // Configuration sync is handled automatically by CloudConfigManager
-        
+
         // Sync history (this would be done automatically by the enhanced history system)
         console.log('Syncing history...');
         // History sync is handled by EnhancedHistorySystem
-        
+
         console.log('✅ Synchronization completed');
       } catch (error) {
         console.error('❌ Synchronization failed:', error);
+        process.exit(1);
+      }
+    });
+
+  // Database rows management
+  supabaseCmd
+    .command('rows')
+    .description('Show latest database entries')
+    .option('-l, --limit <number>', 'Number of rows to show per table', '5')
+    .option('-t, --table <name>', 'Show rows from specific table only')
+    .action(async (options) => {
+      try {
+        const persistence = new DatabasePersistence();
+        const limit = parseInt(options.limit);
+
+        // Test connection first
+        const isConnected = await persistence.testConnection();
+        if (!isConnected) {
+          console.log('❌ Cannot fetch rows - database not available');
+          process.exit(1);
+        }
+
+        if (options.table) {
+          // Show rows from specific table
+          console.log(`Latest ${limit} entries from table '${options.table}':`);
+          const rows = await persistence.getLatestRowsFromTable(options.table, limit);
+
+          if (rows.length === 0) {
+            console.log('No entries found.');
+          } else {
+            rows.forEach((row, index) => {
+              const timestamp = row.created_at ? new Date(row.created_at).toLocaleString() : 'N/A';
+              console.log(`\n${index + 1}. [${timestamp}]`);
+              console.log(JSON.stringify(row, null, 2));
+            });
+          }
+        } else {
+          // Show rows from all tables
+          console.log(`Latest ${limit} entries from each table:`);
+          const allRows = await persistence.getLatestRows(limit);
+
+          for (const [tableName, rows] of Object.entries(allRows)) {
+            console.log(`\n=== ${tableName.toUpperCase()} ===`);
+
+            if (rows.length === 0) {
+              console.log('No entries found.');
+            } else {
+              rows.forEach((row, index) => {
+                const timestamp = row.created_at ? new Date(row.created_at).toLocaleString() : 'N/A';
+                console.log(`\n${index + 1}. [${timestamp}]`);
+                console.log(JSON.stringify(row, null, 2));
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch database rows:', error);
         process.exit(1);
       }
     });

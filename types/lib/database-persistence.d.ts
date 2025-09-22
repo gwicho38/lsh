@@ -80,5 +80,15 @@ export declare class DatabasePersistence {
      * Get session ID
      */
     getSessionId(): string;
+    /**
+     * Get latest rows from all database tables
+     */
+    getLatestRows(limit?: number): Promise<{
+        [tableName: string]: any[];
+    }>;
+    /**
+     * Get latest rows from a specific table
+     */
+    getLatestRowsFromTable(tableName: string, limit?: number): Promise<any[]>;
 }
 export default DatabasePersistence;
