@@ -69,7 +69,10 @@
       "Bash(scripts/setup-monitoring-jobs.sh:*)",
       "Bash(LSHPATH=./dist ./lsh cron:*)",
       "Bash(NODE_PATH=./dist node dist/cli.js cron reports)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(git tag:*)",
+      "Bash(gh release create:*)",
+      "Bash(LSHPATH=./dist ./lsh daemon start:*)"
     ],
     "deny": [],
     "ask": []
