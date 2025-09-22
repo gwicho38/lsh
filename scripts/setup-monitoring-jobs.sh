@@ -109,7 +109,7 @@ setup_monitoring_jobs() {
     create_monitoring_job \
         "db-health-monitor" \
         "*/5 * * * *" \
-        "echo '[$(date)] 🏥 DB Health Check: mcli=✅ conduit=✅ lefv.io=⚠️ inactive' && lsh supabase test && echo 'Response time: 45ms, Status: Healthy'" \
+        "echo '[$(date)] 🏥 DB Health Check: mcli politician trading database' && lsh supabase test && echo 'Response time: 45ms, Status: Healthy'" \
         "Monitor all database connections and health status" \
         "monitoring,database,health"
 

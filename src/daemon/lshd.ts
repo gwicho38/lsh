@@ -32,6 +32,7 @@ export class LSHJobDaemon extends EventEmitter {
   private checkTimer?: NodeJS.Timeout;
   private logStream?: fs.WriteStream;
   private ipcServer?: any; // Unix socket server for communication
+  private lastRunTimes = new Map<string, number>(); // Track last run time per job
 
   constructor(config?: Partial<DaemonConfig>) {
     super();
@@ -43,7 +44,7 @@ export class LSHJobDaemon extends EventEmitter {
       logFile: `/tmp/lsh-job-daemon${userSuffix}.log`,
       jobsFile: `/tmp/lsh-daemon-jobs${userSuffix}.json`,
       socketPath: `/tmp/lsh-job-daemon${userSuffix}.sock`,
-      checkInterval: 10000, // 10 seconds
+      checkInterval: 2000, // 2 seconds for better cron accuracy
       maxLogSize: 10 * 1024 * 1024, // 10MB
       autoRestart: true,
       ...config
@@ -215,7 +216,39 @@ export class LSHJobDaemon extends EventEmitter {
    * Get job information
    */
   getJob(jobId: string): JobSpec | undefined {
-    return this.jobManager.getJob(jobId);
+    const job = this.jobManager.getJob(jobId);
+    return job ? this.sanitizeJobForSerialization(job) : undefined;
+  }
+
+  /**
+   * Sanitize job objects for safe JSON serialization
+   */
+  private sanitizeJobForSerialization(job: any): any {
+    const sanitized = { ...job };
+
+    // Remove any properties that may contain circular references
+    if (sanitized.process) {
+      // Keep only basic process info, remove the actual process object
+      sanitized.process = {
+        pid: sanitized.process.pid || null,
+        exitCode: sanitized.process.exitCode || null
+      };
+    }
+
+    // Remove timeout objects that contain circular references
+    delete sanitized.timeout;
+    delete sanitized.killTimeout;
+    delete sanitized._timeout;
+    delete sanitized._killTimeout;
+
+    // Remove any other potential circular reference properties
+    delete sanitized.childProcess;
+    delete sanitized._handle;
+    delete sanitized._events;
+    delete sanitized._eventsCount;
+    delete sanitized._maxListeners;
+
+    return sanitized;
   }
 
   /**
@@ -225,14 +258,17 @@ export class LSHJobDaemon extends EventEmitter {
     try {
       const jobs = this.jobManager.listJobs(filter);
 
+      // Sanitize jobs to remove circular references before serialization
+      const sanitizedJobs = jobs.map(job => this.sanitizeJobForSerialization(job));
+
       // Apply limit if specified
       if (limit && limit > 0) {
-        return jobs.slice(0, limit);
+        return sanitizedJobs.slice(0, limit);
       }
 
       // Default limit to prevent oversized responses
       const defaultLimit = 100;
-      return jobs.slice(0, defaultLimit);
+      return sanitizedJobs.slice(0, defaultLimit);
     } catch (error) {
       this.log('ERROR', `Failed to list jobs: ${error.message}`);
       return [];
@@ -295,15 +331,32 @@ export class LSHJobDaemon extends EventEmitter {
   }
 
   private startJobScheduler(): void {
-    this.checkTimer = setInterval(() => {
-      this.checkScheduledJobs();
-      this.cleanupCompletedJobs();
-      this.rotateLogs();
-    }, this.config.checkInterval);
+    try {
+      this.log('INFO', `📅 Starting job scheduler with ${this.config.checkInterval}ms interval`);
+      this.checkTimer = setInterval(() => {
+        try {
+          this.checkScheduledJobs();
+          this.cleanupCompletedJobs();
+          this.rotateLogs();
+        } catch (error) {
+          this.log('ERROR', `❌ Scheduler error: ${error.message}`);
+        }
+      }, this.config.checkInterval);
+      this.log('INFO', `✅ Job scheduler started successfully`);
+    } catch (error) {
+      this.log('ERROR', `❌ Failed to start job scheduler: ${error.message}`);
+      throw error;
+    }
   }
 
   private async checkScheduledJobs(): Promise<void> {
-    const jobs = this.jobManager.listJobs({ status: ['created'] });
+    // Debug: Log scheduler activity periodically
+    if (Date.now() % 60000 < 5000) { // Log once per minute approximately
+      this.log('DEBUG', `🔄 Scheduler check: Looking for jobs to run...`);
+    }
+
+    // Check both created and completed jobs (for recurring schedules)
+    const jobs = this.jobManager.listJobs({ status: ['created', 'completed'] });
     const now = new Date();
 
     for (const job of jobs) {
@@ -312,7 +365,17 @@ export class LSHJobDaemon extends EventEmitter {
 
         // Check cron schedule
         if (job.schedule.cron) {
-          shouldRun = this.shouldRunByCron(job.schedule.cron, now);
+          // For completed jobs, check if cron schedule matches (allow re-run)
+          // For created jobs, check if we haven't run this job in the current minute
+          const currentMinute = Math.floor(now.getTime() / 60000);
+          const lastRun = this.lastRunTimes.get(job.id);
+
+          if (job.status === 'completed') {
+            // Always check cron for completed jobs to allow recurring execution
+            shouldRun = this.shouldRunByCron(job.schedule.cron, now);
+          } else if (!lastRun || lastRun < currentMinute) {
+            shouldRun = this.shouldRunByCron(job.schedule.cron, now);
+          }
         }
 
         // Check interval schedule
@@ -322,15 +385,31 @@ export class LSHJobDaemon extends EventEmitter {
 
         if (shouldRun) {
           try {
-            await this.jobManager.startJob(job.id);
+            // For completed cron jobs, reset to created status before starting
+            if (job.schedule.cron && job.status === 'completed') {
+              job.status = 'created';
+              job.completedAt = undefined;
+              job.stdout = '';
+              job.stderr = '';
+              (this.jobManager as any).persistJobs();
+              this.log('INFO', `🔄 Reset completed job for recurring execution: ${job.id} (${job.name})`);
+            }
+
+            // Track that we're running this job now
+            if (job.schedule.cron) {
+              const currentMinute = Math.floor(now.getTime() / 60000);
+              this.lastRunTimes.set(job.id, currentMinute);
+            }
+
             this.log('INFO', `Started scheduled job: ${job.id} (${job.name})`);
+            await this.jobManager.startJob(job.id);
 
             // Schedule next run for interval jobs
             if (job.schedule.interval) {
               job.schedule.nextRun = new Date(now.getTime() + job.schedule.interval);
             }
           } catch (error) {
-            this.log('ERROR', `Failed to start scheduled job ${job.id}: ${error.message}`);
+            this.log('ERROR', `❌ Failed to start scheduled job ${job.id}: ${error.message}`);
           }
         }
       }
@@ -338,21 +417,114 @@ export class LSHJobDaemon extends EventEmitter {
   }
 
   private shouldRunByCron(cronExpr: string, now: Date): boolean {
-    // Simple cron parser - would need full implementation for production
-    // For now, implement basic patterns like "*/5 * * * *" (every 5 minutes)
     try {
       const [minute, hour, day, month, weekday] = cronExpr.split(' ');
 
-      if (minute.startsWith('*/')) {
-        const interval = parseInt(minute.substring(2));
-        return now.getMinutes() % interval === 0 && now.getSeconds() < 30;
+      // We check if we're at the exact minute/second to avoid duplicate runs
+      // Only run in the first 30 seconds of the target minute
+      // This gives us a wider window with 2-second check intervals
+      if (now.getSeconds() > 30) {
+        return false;
       }
 
-      // More cron patterns would be implemented here
-      return false;
+      // Check minute field
+      if (!this.matchesCronField(minute, now.getMinutes(), 0, 59)) {
+        return false;
+      }
+
+      // Check hour field
+      if (!this.matchesCronField(hour, now.getHours(), 0, 23)) {
+        return false;
+      }
+
+      // Check day field
+      if (!this.matchesCronField(day, now.getDate(), 1, 31)) {
+        return false;
+      }
+
+      // Check month field
+      if (!this.matchesCronField(month, now.getMonth() + 1, 1, 12)) {
+        return false;
+      }
+
+      // Check weekday field (0 = Sunday, 6 = Saturday)
+      if (!this.matchesCronField(weekday, now.getDay(), 0, 6)) {
+        return false;
+      }
+
+      return true;
     } catch (error) {
-      this.log('ERROR', `Invalid cron expression: ${cronExpr}`);
+      this.log('ERROR', `Invalid cron expression: ${cronExpr} - ${error.message}`);
       return false;
+    }
+  }
+
+  private matchesCronField(field: string, currentValue: number, min: number, max: number): boolean {
+    // Handle wildcard
+    if (field === '*') {
+      return true;
+    }
+
+    // Handle specific number (e.g., "0", "2", "15")
+    if (/^\d+$/.test(field)) {
+      return parseInt(field) === currentValue;
+    }
+
+    // Handle intervals (e.g., "*/5", "*/2", "*/30")
+    if (field.startsWith('*/')) {
+      const interval = parseInt(field.substring(2));
+      return currentValue % interval === 0;
+    }
+
+    // Handle ranges (e.g., "1-5", "10-15")
+    if (field.includes('-')) {
+      const [start, end] = field.split('-').map(x => parseInt(x));
+      return currentValue >= start && currentValue <= end;
+    }
+
+    // Handle lists (e.g., "1,3,5", "10,20,30")
+    if (field.includes(',')) {
+      const values = field.split(',').map(x => parseInt(x));
+      return values.includes(currentValue);
+    }
+
+    // Handle step values (e.g., "1-10/2" = every 2 from 1 to 10)
+    if (field.includes('/')) {
+      const [range, step] = field.split('/');
+      const stepNum = parseInt(step);
+
+      if (range.includes('-')) {
+        const [start, end] = range.split('-').map(x => parseInt(x));
+        if (currentValue < start || currentValue > end) return false;
+        return (currentValue - start) % stepNum === 0;
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Reset job status for recurring cron jobs after completion
+   */
+  private async resetRecurringJobStatus(jobId: string): Promise<void> {
+    try {
+      const job = this.jobManager.getJob(jobId);
+
+      if (job && job.schedule?.cron && job.status === 'completed') {
+        // Reset status for next scheduled run
+        job.status = 'created';
+        job.completedAt = undefined;
+        job.stdout = '';
+        job.stderr = '';
+
+        // Force persistence by calling internal method via reflection
+        // Note: This is a temporary workaround for private method access
+        (this.jobManager as any).persistJobs();
+
+        this.log('INFO', `🔄 Reset recurring job status: ${jobId} (${job.name}) for next scheduled run`);
+      }
+    } catch (error) {
+      this.log('ERROR', `Failed to reset recurring job status ${jobId}: ${error.message}`);
     }
   }
 

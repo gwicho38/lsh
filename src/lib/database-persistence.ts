@@ -520,6 +520,210 @@ export class DatabasePersistence {
   public getSessionId(): string {
     return this.sessionId;
   }
+
+  /**
+   * Get latest rows from all database tables
+   */
+  public async getLatestRows(limit: number = 5): Promise<{
+    [tableName: string]: any[]
+  }> {
+    const result: { [tableName: string]: any[] } = {};
+
+    try {
+      // Get latest shell history entries
+      const historyQuery = this.client
+        .from('shell_history')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        historyQuery.eq('user_id', this.userId);
+      } else {
+        historyQuery.is('user_id', null);
+      }
+
+      const { data: historyData } = await historyQuery;
+      result.shell_history = historyData || [];
+
+      // Get latest shell jobs
+      const jobsQuery = this.client
+        .from('shell_jobs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        jobsQuery.eq('user_id', this.userId);
+      } else {
+        jobsQuery.is('user_id', null);
+      }
+
+      const { data: jobsData } = await jobsQuery;
+      result.shell_jobs = jobsData || [];
+
+      // Get latest shell configuration
+      const configQuery = this.client
+        .from('shell_configuration')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        configQuery.eq('user_id', this.userId);
+      } else {
+        configQuery.is('user_id', null);
+      }
+
+      const { data: configData } = await configQuery;
+      result.shell_configuration = configData || [];
+
+      // Get latest shell sessions
+      const sessionsQuery = this.client
+        .from('shell_sessions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        sessionsQuery.eq('user_id', this.userId);
+      } else {
+        sessionsQuery.is('user_id', null);
+      }
+
+      const { data: sessionsData } = await sessionsQuery;
+      result.shell_sessions = sessionsData || [];
+
+      // Get latest shell aliases
+      const aliasesQuery = this.client
+        .from('shell_aliases')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        aliasesQuery.eq('user_id', this.userId);
+      } else {
+        aliasesQuery.is('user_id', null);
+      }
+
+      const { data: aliasesData } = await aliasesQuery;
+      result.shell_aliases = aliasesData || [];
+
+      // Get latest shell functions
+      const functionsQuery = this.client
+        .from('shell_functions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        functionsQuery.eq('user_id', this.userId);
+      } else {
+        functionsQuery.is('user_id', null);
+      }
+
+      const { data: functionsData } = await functionsQuery;
+      result.shell_functions = functionsData || [];
+
+      // Get latest shell completions
+      const completionsQuery = this.client
+        .from('shell_completions')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (this.userId !== undefined) {
+        completionsQuery.eq('user_id', this.userId);
+      } else {
+        completionsQuery.is('user_id', null);
+      }
+
+      const { data: completionsData } = await completionsQuery;
+      result.shell_completions = completionsData || [];
+
+      // Get latest politician trading disclosures (global data, no user filtering)
+      const { data: tradingData } = await this.client
+        .from('trading_disclosures')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      result.trading_disclosures = tradingData || [];
+
+      // Get latest politicians (global data, no user filtering)
+      const { data: politiciansData } = await this.client
+        .from('politicians')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      result.politicians = politiciansData || [];
+
+      // Get latest data pull jobs (global data, no user filtering)
+      const { data: dataPullJobsData } = await this.client
+        .from('data_pull_jobs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+      result.data_pull_jobs = dataPullJobsData || [];
+
+      return result;
+    } catch (error) {
+      console.error('Error getting latest rows:', error);
+      return {};
+    }
+  }
+
+  /**
+   * Get latest rows from a specific table
+   */
+  public async getLatestRowsFromTable(tableName: string, limit: number = 5): Promise<any[]> {
+    try {
+      const validTables = [
+        'shell_history',
+        'shell_jobs',
+        'shell_configuration',
+        'shell_sessions',
+        'shell_aliases',
+        'shell_functions',
+        'shell_completions',
+        'trading_disclosures',
+        'politicians',
+        'data_pull_jobs'
+      ];
+
+      if (!validTables.includes(tableName)) {
+        throw new Error(`Invalid table name: ${tableName}`);
+      }
+
+      let query = this.client
+        .from(tableName)
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      // Filter by user_id if available (except for politician trading tables which are global)
+      const globalTables = ['trading_disclosures', 'politicians', 'data_pull_jobs'];
+      if (!globalTables.includes(tableName)) {
+        if (this.userId !== undefined) {
+          query = query.eq('user_id', this.userId);
+        } else {
+          query = query.is('user_id', null);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(`Failed to get latest rows from ${tableName}:`, error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error(`Error getting latest rows from ${tableName}:`, error);
+      return [];
+    }
+  }
 }
 
 export default DatabasePersistence;
