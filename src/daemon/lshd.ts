@@ -224,29 +224,57 @@ export class LSHJobDaemon extends EventEmitter {
    * Sanitize job objects for safe JSON serialization
    */
   private sanitizeJobForSerialization(job: any): any {
-    const sanitized = { ...job };
+    // Use a whitelist approach - only include safe properties
+    const sanitized: any = {
+      id: job.id,
+      name: job.name,
+      command: job.command,
+      args: job.args,
+      type: job.type,
+      status: job.status,
+      priority: job.priority,
+      pid: job.pid,
+      ppid: job.ppid,
+      createdAt: job.createdAt,
+      startedAt: job.startedAt,
+      completedAt: job.completedAt,
+      cpuUsage: job.cpuUsage,
+      memoryUsage: job.memoryUsage,
+      env: job.env,
+      cwd: job.cwd,
+      user: job.user,
+      maxMemory: job.maxMemory,
+      maxCpu: job.maxCpu,
+      timeout: typeof job.timeout === 'number' ? job.timeout : undefined,
+      stdout: job.stdout,
+      stderr: job.stderr,
+      exitCode: job.exitCode,
+      error: job.error,
+      tags: job.tags,
+      maxRetries: job.maxRetries,
+      retryCount: job.retryCount,
+      killSignal: job.killSignal,
+      killed: job.killed,
+      description: job.description,
+      workingDirectory: job.workingDirectory,
+      databaseSync: job.databaseSync
+    };
 
-    // Remove any properties that may contain circular references
-    if (sanitized.process) {
-      // Keep only basic process info, remove the actual process object
-      sanitized.process = {
-        pid: sanitized.process.pid || null,
-        exitCode: sanitized.process.exitCode || null
+    // Handle schedule object safely
+    if (job.schedule) {
+      sanitized.schedule = {
+        cron: job.schedule.cron,
+        interval: job.schedule.interval,
+        nextRun: job.schedule.nextRun
       };
     }
 
-    // Remove timeout objects that contain circular references
-    delete sanitized.timeout;
-    delete sanitized.killTimeout;
-    delete sanitized._timeout;
-    delete sanitized._killTimeout;
-
-    // Remove any other potential circular reference properties
-    delete sanitized.childProcess;
-    delete sanitized._handle;
-    delete sanitized._events;
-    delete sanitized._eventsCount;
-    delete sanitized._maxListeners;
+    // Remove any undefined properties to keep the object clean
+    Object.keys(sanitized).forEach(key => {
+      if (sanitized[key] === undefined) {
+        delete sanitized[key];
+      }
+    });
 
     return sanitized;
   }
