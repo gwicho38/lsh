@@ -192,8 +192,19 @@ export class CronJobManager {
    * Get job execution report
    */
   public async getJobReport(jobId: string): Promise<JobExecutionReport> {
-    const jobs = await this.daemonClient.getJobHistory(jobId, 1000);
-    
+    // Try to get historical data from database if available, otherwise use current job info
+    let jobs: any[] = [];
+
+    try {
+      jobs = await this.daemonClient.getJobHistory(jobId, 1000);
+    } catch (error) {
+      // Fallback: use current job information for basic report
+      const currentJob = await this.daemonClient.getJob(jobId);
+      if (currentJob) {
+        jobs = [currentJob];
+      }
+    }
+
     const executions = jobs.length;
     const successes = jobs.filter(job => job.status === 'completed').length;
     const failures = jobs.filter(job => job.status === 'failed').length;
@@ -202,22 +213,24 @@ export class CronJobManager {
     const durations = jobs
       .filter(job => job.duration_ms)
       .map(job => job.duration_ms);
-    const averageDuration = durations.length > 0 
-      ? durations.reduce((sum, duration) => sum + duration, 0) / durations.length 
+    const averageDuration = durations.length > 0
+      ? durations.reduce((sum, duration) => sum + duration, 0) / durations.length
       : 0;
 
-    const lastExecution = jobs.length > 0 ? new Date(jobs[0].started_at) : undefined;
-    const lastSuccess = jobs.find(job => job.status === 'completed')?.started_at 
-      ? new Date(jobs.find(job => job.status === 'completed')!.started_at) 
+    const lastExecution = jobs.length > 0 ? (jobs[0].startedAt || jobs[0].createdAt || jobs[0].started_at)
+      ? new Date(jobs[0].startedAt || jobs[0].createdAt || jobs[0].started_at)
+      : undefined : undefined;
+    const lastSuccess = jobs.find(job => job.status === 'completed')
+      ? new Date(jobs.find(job => job.status === 'completed')!.startedAt || jobs.find(job => job.status === 'completed')!.createdAt || jobs.find(job => job.status === 'completed')!.started_at)
       : undefined;
-    const lastFailure = jobs.find(job => job.status === 'failed')?.started_at 
-      ? new Date(jobs.find(job => job.status === 'failed')!.started_at) 
+    const lastFailure = jobs.find(job => job.status === 'failed')
+      ? new Date(jobs.find(job => job.status === 'failed')!.startedAt || jobs.find(job => job.status === 'failed')!.createdAt || jobs.find(job => job.status === 'failed')!.started_at)
       : undefined;
 
     // Analyze common errors
     const errorCounts = new Map<string, number>();
-    jobs.filter(job => job.status === 'failed' && job.error).forEach(job => {
-      const error = job.error;
+    jobs.filter(job => job.status === 'failed' && (job.error || job.stderr)).forEach(job => {
+      const error = job.error || job.stderr || 'Unknown error';
       errorCounts.set(error, (errorCounts.get(error) || 0) + 1);
     });
 
