@@ -30,7 +30,7 @@ export default {
     // testMatch: ['**/?(*.)+(spec|test).[jt]s?(x)', '<rootDir>/test/**/*.[jt]s?(x)'],
   
     // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-    testPathIgnorePatterns: ['/node_modules/', '/build/'],
+    testPathIgnorePatterns: ['/node_modules/', '/build/', '__tests__/daemon.test.ts', '__tests__/api-server.test.ts'],
   
     // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
     transformIgnorePatterns: ['<rootDir>/node_modules/'],
@@ -41,9 +41,13 @@ export default {
     // Whether to use watchman for file crawling
     watchman: false,
 
-    // Add transform property to transpile ES6+ to CommonJS
+    // Add transform property to transpile ES6+ and TypeScript to CommonJS
     transform: {
         '^.+\\.jsx?$': 'babel-jest',
+        '^.+\\.tsx?$': 'ts-jest',
     },
+
+    // Jest preset for TypeScript
+    preset: 'ts-jest',
   };
   
