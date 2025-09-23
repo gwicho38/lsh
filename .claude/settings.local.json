@@ -72,7 +72,16 @@
       "Bash(curl:*)",
       "Bash(git tag:*)",
       "Bash(gh release create:*)",
-      "Bash(LSHPATH=./dist ./lsh daemon start:*)"
+      "Bash(LSHPATH=./dist ./lsh daemon start:*)",
+      "Bash(pip install:*)",
+      "Bash(lsof:*)",
+      "Bash(export LSH_API_ENABLED=true)",
+      "Bash(export LSH_API_PORT=3030)",
+      "Bash(LSH_API_ENABLED=true LSH_API_PORT=3030 node dist/daemon/lshd.js start)",
+      "Bash(export LSH_API_URL=http://localhost:3030)",
+      "Bash(python3:*)",
+      "Bash(LSH_API_URL=http://localhost:3030 python3 end_to_end_integration_test.py)",
+      "Bash(LSH_API_URL=http://localhost:3030 python3 test_lsh_integration.py)"
     ],
     "deny": [],
     "ask": []
