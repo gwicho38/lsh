@@ -81,7 +81,12 @@
       "Bash(export LSH_API_URL=http://localhost:3030)",
       "Bash(python3:*)",
       "Bash(LSH_API_URL=http://localhost:3030 python3 end_to_end_integration_test.py)",
-      "Bash(LSH_API_URL=http://localhost:3030 python3 test_lsh_integration.py)"
+      "Bash(LSH_API_URL=http://localhost:3030 python3 test_lsh_integration.py)",
+      "Bash(python -m pytest --version)",
+      "Bash(python -m pytest tests/test_lsh_client.py -v)",
+      "Bash(python -m pytest tests/test_lsh_client.py tests/test_data_pipeline.py -v)",
+      "Bash(python:*)",
+      "Bash(npx jest:*)"
     ],
     "deny": [],
     "ask": []
