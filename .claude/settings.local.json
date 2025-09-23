@@ -86,7 +86,12 @@
       "Bash(python -m pytest tests/test_lsh_client.py -v)",
       "Bash(python -m pytest tests/test_lsh_client.py tests/test_data_pipeline.py -v)",
       "Bash(python:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(mcli:*)",
+      "Bash(mlflow:*)",
+      "Bash(dvc:*)",
+      "Bash(PYTHONPATH=src python -m pytest tests/test_lsh_client.py tests/test_data_pipeline.py -v --tb=short)",
+      "Bash(PYTHONPATH=src python -m pytest tests/test_lsh_client.py tests/test_data_pipeline.py -v)"
     ],
     "deny": [],
     "ask": []
