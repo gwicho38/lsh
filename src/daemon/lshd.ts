@@ -12,6 +12,7 @@ import * as os from 'os';
 import * as net from 'net';
 import { EventEmitter } from 'events';
 import JobManager, { JobSpec } from '../lib/job-manager.js';
+import { LSHApiServer, ApiConfig } from './api-server.js';
 
 const execAsync = promisify(exec);
 
@@ -23,6 +24,11 @@ export interface DaemonConfig {
   checkInterval: number;
   maxLogSize: number;
   autoRestart: boolean;
+  apiEnabled?: boolean;
+  apiPort?: number;
+  apiKey?: string;
+  enableWebhooks?: boolean;
+  webhookEndpoints?: string[];
 }
 
 export class LSHJobDaemon extends EventEmitter {
@@ -33,6 +39,7 @@ export class LSHJobDaemon extends EventEmitter {
   private logStream?: fs.WriteStream;
   private ipcServer?: any; // Unix socket server for communication
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
+  private apiServer?: LSHApiServer; // API server instance
 
   constructor(config?: Partial<DaemonConfig>) {
     super();
@@ -47,6 +54,10 @@ export class LSHJobDaemon extends EventEmitter {
       checkInterval: 2000, // 2 seconds for better cron accuracy
       maxLogSize: 10 * 1024 * 1024, // 10MB
       autoRestart: true,
+      apiEnabled: process.env.LSH_API_ENABLED === 'true' || false,
+      apiPort: parseInt(process.env.LSH_API_PORT || '3030'),
+      apiKey: process.env.LSH_API_KEY,
+      enableWebhooks: process.env.LSH_ENABLE_WEBHOOKS === 'true',
       ...config
     };
 
@@ -77,6 +88,22 @@ export class LSHJobDaemon extends EventEmitter {
     this.startJobScheduler();
     this.startIPCServer();
 
+    // Start API server if enabled
+    if (this.config.apiEnabled) {
+      try {
+        this.apiServer = new LSHApiServer(this, {
+          port: this.config.apiPort,
+          apiKey: this.config.apiKey,
+          enableWebhooks: this.config.enableWebhooks,
+          webhookEndpoints: this.config.webhookEndpoints
+        });
+        await this.apiServer.start();
+        this.log('INFO', `API Server started on port ${this.config.apiPort}`);
+      } catch (error: any) {
+        this.log('ERROR', `Failed to start API server: ${error.message}`);
+      }
+    }
+
     // Setup cleanup handlers
     this.setupSignalHandlers();
 
@@ -95,6 +122,12 @@ export class LSHJobDaemon extends EventEmitter {
     this.log('INFO', 'Stopping LSH Job Daemon');
 
     this.isRunning = false;
+
+    // Stop API server if running
+    if (this.apiServer) {
+      await this.apiServer.stop();
+      this.log('INFO', 'API Server stopped');
+    }
 
     if (this.checkTimer) {
       clearInterval(this.checkTimer);

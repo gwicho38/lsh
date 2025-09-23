@@ -13,6 +13,11 @@ export interface DaemonConfig {
     checkInterval: number;
     maxLogSize: number;
     autoRestart: boolean;
+    apiEnabled?: boolean;
+    apiPort?: number;
+    apiKey?: string;
+    enableWebhooks?: boolean;
+    webhookEndpoints?: string[];
 }
 export declare class LSHJobDaemon extends EventEmitter {
     private config;
@@ -22,6 +27,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     private logStream?;
     private ipcServer?;
     private lastRunTimes;
+    private apiServer?;
     constructor(config?: Partial<DaemonConfig>);
     /**
      * Start the daemon
