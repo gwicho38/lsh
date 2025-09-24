@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Pipeline Dashboard</title>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .header h1 {
+      color: #1a202c;
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: #718096;
+      font-size: 16px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-label {
+      color: #718096;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      color: #1a202c;
+      font-size: 36px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .stat-change {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .stat-change.positive {
+      color: #48bb78;
+    }
+
+    .stat-change.negative {
+      color: #f56565;
+    }
+
+    .jobs-container {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      margin-bottom: 24px;
+    }
+
+    .jobs-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .jobs-header h2 {
+      color: #2d3748;
+      font-size: 24px;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-button {
+      padding: 8px 16px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 8px;
+      color: #4a5568;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-button:hover {
+      background: #f7fafc;
+    }
+
+    .filter-button.active {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+    }
+
+    .jobs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .job-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .job-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .job-status {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .job-status.pending {
+      background: #cbd5e0;
+    }
+
+    .job-status.queued {
+      background: #805ad5;
+    }
+
+    .job-status.running {
+      background: #3182ce;
+      animation: pulse 2s infinite;
+    }
+
+    .job-status.completed {
+      background: #48bb78;
+    }
+
+    .job-status.failed {
+      background: #f56565;
+    }
+
+    .job-status.cancelled {
+      background: #a0aec0;
+    }
+
+    .job-status.retrying {
+      background: #ed8936;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    .job-info {
+      flex: 1;
+    }
+
+    .job-name {
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 16px;
+      margin-bottom: 4px;
+    }
+
+    .job-meta {
+      display: flex;
+      gap: 16px;
+      color: #718096;
+      font-size: 14px;
+    }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .job-action-button {
+      padding: 6px 12px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 6px;
+      color: #4a5568;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .job-action-button:hover {
+      background: #f7fafc;
+    }
+
+    .job-action-button.danger {
+      color: #f56565;
+      border-color: #feb2b2;
+    }
+
+    .job-action-button.danger:hover {
+      background: #fff5f5;
+    }
+
+    .submit-form {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      color: #4a5568;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .submit-button {
+      background: #667eea;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .submit-button:hover {
+      background: #5a67d8;
+      transform: translateY(-1px);
+    }
+
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateX(400px);
+      transition: transform 0.3s;
+      z-index: 1000;
+    }
+
+    .notification.show {
+      transform: translateX(0);
+    }
+
+    .notification.success {
+      background: #48bb78;
+    }
+
+    .notification.error {
+      background: #f56565;
+    }
+
+    .notification.info {
+      background: #4299e1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Data Pipeline Dashboard</h1>
+      <p>Monitor and manage data integration jobs between LSH and MCLI</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Total Jobs</div>
+        <div class="stat-value" id="total-jobs">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active Jobs</div>
+        <div class="stat-value" id="active-jobs">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-value" id="success-rate">0%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Avg Duration</div>
+        <div class="stat-value" id="avg-duration">0s</div>
+      </div>
+    </div>
+
+    <div class="jobs-container">
+      <div class="jobs-header">
+        <h2>Active Jobs</h2>
+        <div class="filter-buttons">
+          <button class="filter-button active" onclick="filterJobs('all')">All</button>
+          <button class="filter-button" onclick="filterJobs('running')">Running</button>
+          <button class="filter-button" onclick="filterJobs('queued')">Queued</button>
+          <button class="filter-button" onclick="filterJobs('failed')">Failed</button>
+        </div>
+      </div>
+      <div class="jobs-list" id="jobs-list">
+        <!-- Jobs will be rendered here -->
+      </div>
+    </div>
+
+    <div class="submit-form">
+      <h2 style="margin-bottom: 20px; color: #2d3748;">Submit New Job</h2>
+      <form id="job-form">
+        <div class="form-group">
+          <label class="form-label">Job Name</label>
+          <input type="text" class="form-input" id="job-name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Job Type</label>
+          <select class="form-select" id="job-type" required>
+            <option value="data_ingestion">Data Ingestion</option>
+            <option value="etl">ETL Process</option>
+            <option value="ml_training">ML Training</option>
+            <option value="batch_prediction">Batch Prediction</option>
+            <option value="data_export">Data Export</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="job-priority">
+            <option value="low">Low</option>
+            <option value="normal" selected>Normal</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Configuration (JSON)</label>
+          <textarea class="form-textarea" id="job-config" placeholder='{"key": "value"}'>{}</textarea>
+        </div>
+        <button type="submit" class="submit-button">Submit Job</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const API_BASE = 'http://localhost:3034';
+    const socket = io(API_BASE);
+
+    let allJobs = [];
+    let currentFilter = 'all';
+
+    // Socket event listeners
+    socket.on('connect', () => {
+      console.log('Connected to pipeline service');
+      showNotification('Connected to pipeline service', 'info');
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Disconnected from pipeline service');
+      showNotification('Disconnected from pipeline service', 'error');
+    });
+
+    socket.on('job:created', (event) => {
+      console.log('Job created:', event);
+      loadJobs();
+      loadStatistics();
+      showNotification(`Job created: ${event.data.name}`, 'success');
+    });
+
+    socket.on('job:status_changed', (event) => {
+      console.log('Job status changed:', event);
+      loadJobs();
+      loadStatistics();
+    });
+
+    // Load initial data
+    async function loadStatistics() {
+      try {
+        const response = await axios.get(`${API_BASE}/api/pipeline/statistics`);
+        const stats = response.data;
+
+        document.getElementById('total-jobs').textContent = stats.total_jobs || 0;
+        document.getElementById('active-jobs').textContent = stats.active_jobs || 0;
+
+        const successRate = stats.total_jobs > 0
+          ? ((stats.completed_jobs / stats.total_jobs) * 100).toFixed(1)
+          : 0;
+        document.getElementById('success-rate').textContent = `${successRate}%`;
+
+        const avgDuration = stats.avg_duration_ms
+          ? (stats.avg_duration_ms / 1000).toFixed(1)
+          : 0;
+        document.getElementById('avg-duration').textContent = `${avgDuration}s`;
+      } catch (error) {
+        console.error('Failed to load statistics:', error);
+      }
+    }
+
+    async function loadJobs() {
+      try {
+        const response = await axios.get(`${API_BASE}/api/pipeline/jobs`, {
+          params: { limit: 50 }
+        });
+        allJobs = response.data.jobs;
+        renderJobs();
+      } catch (error) {
+        console.error('Failed to load jobs:', error);
+      }
+    }
+
+    function renderJobs() {
+      const jobsList = document.getElementById('jobs-list');
+      const filteredJobs = currentFilter === 'all'
+        ? allJobs
+        : allJobs.filter(job => job.status === currentFilter);
+
+      if (filteredJobs.length === 0) {
+        jobsList.innerHTML = '<p style="color: #718096; text-align: center;">No jobs found</p>';
+        return;
+      }
+
+      jobsList.innerHTML = filteredJobs.map(job => `
+        <div class="job-card" onclick="viewJob('${job.id}')">
+          <div class="job-status ${job.status}"></div>
+          <div class="job-info">
+            <div class="job-name">${job.name}</div>
+            <div class="job-meta">
+              <span>${job.type}</span>
+              <span>${job.owner || 'Unknown'}</span>
+              <span>${formatDate(job.createdAt)}</span>
+            </div>
+          </div>
+          <div class="job-actions">
+            ${job.status === 'failed' ? `
+              <button class="job-action-button" onclick="retryJob('${job.id}', event)">Retry</button>
+            ` : ''}
+            ${job.status === 'running' || job.status === 'queued' ? `
+              <button class="job-action-button danger" onclick="cancelJob('${job.id}', event)">Cancel</button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterJobs(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      renderJobs();
+    }
+
+    async function cancelJob(jobId, event) {
+      event.stopPropagation();
+      if (!confirm('Are you sure you want to cancel this job?')) return;
+
+      try {
+        await axios.put(`${API_BASE}/api/pipeline/jobs/${jobId}/cancel`);
+        showNotification('Job cancelled successfully', 'success');
+        loadJobs();
+      } catch (error) {
+        showNotification('Failed to cancel job', 'error');
+      }
+    }
+
+    async function retryJob(jobId, event) {
+      event.stopPropagation();
+      try {
+        await axios.put(`${API_BASE}/api/pipeline/jobs/${jobId}/retry`);
+        showNotification('Job retry initiated', 'success');
+        loadJobs();
+      } catch (error) {
+        showNotification('Failed to retry job', 'error');
+      }
+    }
+
+    function viewJob(jobId) {
+      // Subscribe to job updates
+      socket.emit('subscribe:job', jobId);
+      // In a real app, this would navigate to a job detail page
+      console.log('View job:', jobId);
+    }
+
+    // Form submission
+    document.getElementById('job-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const jobData = {
+        name: document.getElementById('job-name').value,
+        type: document.getElementById('job-type').value,
+        priority: document.getElementById('job-priority').value,
+        config: JSON.parse(document.getElementById('job-config').value || '{}'),
+        sourceSystem: 'lsh',
+        targetSystem: 'mcli',
+        owner: 'dashboard_user'
+      };
+
+      try {
+        const response = await axios.post(`${API_BASE}/api/pipeline/jobs`, jobData);
+        showNotification('Job submitted successfully', 'success');
+        document.getElementById('job-form').reset();
+        loadJobs();
+      } catch (error) {
+        showNotification('Failed to submit job', 'error');
+      }
+    });
+
+    function showNotification(message, type = 'info') {
+      const notification = document.getElementById('notification');
+      notification.textContent = message;
+      notification.className = `notification ${type} show`;
+
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diff = now - date;
+
+      if (diff < 60000) return 'Just now';
+      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+      if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+      return date.toLocaleDateString();
+    }
+
+    // Load initial data
+    loadStatistics();
+    loadJobs();
+
+    // Refresh periodically
+    setInterval(() => {
+      loadStatistics();
+      loadJobs();
+    }, 10000);
+  </script>
+</body>
+</html>
