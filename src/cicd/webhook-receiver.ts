@@ -4,6 +4,20 @@ import { Server } from 'socket.io';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import Redis from 'ioredis';
+import { Pool } from 'pg';
+import {
+  generateAnalyticsReport,
+  generateTrendAnalysis,
+  detectBuildAnomalies,
+  generateInsights,
+  predictNextPeriod,
+  calculateCostAnalysis,
+  detectBottlenecks
+} from './analytics.js';
+import { CacheManager } from './cache-manager.js';
+import { AuthService, authenticate, authorize, requirePermission, rateLimit } from './auth.js';
+import { performanceMonitor } from './performance-monitor.js';
+import { DataRetentionService } from './data-retention.js';
 
 const app = express();
 const server = createServer(app);
@@ -27,6 +41,19 @@ const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ?
   createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const redis = new Redis(REDIS_URL);
+
+// Initialize PostgreSQL pool
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/cicd'
+});
+
+// Initialize services
+const cacheManager = new CacheManager(REDIS_URL);
+const authService = new AuthService(pool);
+const retentionService = new DataRetentionService(pool, redis);
+
+// Apply performance monitoring middleware
+app.use(performanceMonitor.middleware());
 
 interface PipelineEvent {
   id: string;
@@ -449,13 +476,16 @@ app.post('/webhook/jenkins', async (req: Request, res: Response) => {
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
+  const health = performanceMonitor.getHealthStatus();
   res.json({
-    status: 'healthy',
+    status: health.status,
     timestamp: new Date().toISOString(),
     services: {
       supabase: !!supabase,
-      redis: redis.status === 'ready'
-    }
+      redis: redis.status === 'ready',
+      postgres: pool ? 'connected' : 'disconnected'
+    },
+    performance: health.details
   });
 });
 
@@ -525,10 +555,183 @@ app.get('/api/metrics', async (req: Request, res: Response) => {
   }
 });
 
+// Analytics endpoints
+app.get('/api/analytics/report', async (req: Request, res: Response) => {
+  try {
+    const { period = 'weekly' } = req.query;
+    const report = await generateAnalyticsReport(period as 'daily' | 'weekly' | 'monthly');
+    res.json(report);
+  } catch (error) {
+    console.error('Error generating analytics report:', error);
+    res.status(500).json({ error: 'Failed to generate report' });
+  }
+});
+
+app.get('/api/analytics/trends', async (req: Request, res: Response) => {
+  try {
+    const { days = 30 } = req.query;
+    const trends = await generateTrendAnalysis(Number(days));
+    res.json(trends);
+  } catch (error) {
+    console.error('Error fetching trends:', error);
+    res.status(500).json({ error: 'Failed to fetch trends' });
+  }
+});
+
+app.get('/api/analytics/anomalies', async (req: Request, res: Response) => {
+  try {
+    const { days = 30 } = req.query;
+    const trends = await generateTrendAnalysis(Number(days));
+    const anomalies = await detectBuildAnomalies(trends);
+    res.json(anomalies);
+  } catch (error) {
+    console.error('Error detecting anomalies:', error);
+    res.status(500).json({ error: 'Failed to detect anomalies' });
+  }
+});
+
+app.get('/api/analytics/insights', async (req: Request, res: Response) => {
+  try {
+    const { days = 30 } = req.query;
+    const trends = await generateTrendAnalysis(Number(days));
+    const insights = await generateInsights(trends);
+    res.json(insights);
+  } catch (error) {
+    console.error('Error generating insights:', error);
+    res.status(500).json({ error: 'Failed to generate insights' });
+  }
+});
+
+app.get('/api/analytics/predictions', async (req: Request, res: Response) => {
+  try {
+    const { days = 30 } = req.query;
+    const trends = await generateTrendAnalysis(Number(days));
+    const predictions = await predictNextPeriod(trends);
+    res.json(predictions);
+  } catch (error) {
+    console.error('Error generating predictions:', error);
+    res.status(500).json({ error: 'Failed to generate predictions' });
+  }
+});
+
+app.get('/api/analytics/costs', async (req: Request, res: Response) => {
+  try {
+    const { days = 30 } = req.query;
+    const trends = await generateTrendAnalysis(Number(days));
+    const costAnalysis = await calculateCostAnalysis(trends);
+    res.json(costAnalysis);
+  } catch (error) {
+    console.error('Error calculating costs:', error);
+    res.status(500).json({ error: 'Failed to calculate costs' });
+  }
+});
+
+app.get('/api/analytics/bottlenecks', async (req: Request, res: Response) => {
+  try {
+    const bottlenecks = await detectBottlenecks();
+    res.json(bottlenecks);
+  } catch (error) {
+    console.error('Error detecting bottlenecks:', error);
+    res.status(500).json({ error: 'Failed to detect bottlenecks' });
+  }
+});
+
+// Authentication endpoints
+app.post('/auth/register', async (req: Request, res: Response) => {
+  try {
+    const { email, password, name, role } = req.body;
+    const user = await authService.register(email, password, name, role);
+    const token = authService.generateToken(user);
+    res.json({ user, token });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.post('/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    const result = await authService.login(email, password);
+    res.json(result);
+  } catch (error: any) {
+    res.status(401).json({ error: error.message });
+  }
+});
+
+app.post('/auth/api-key',
+  authenticate(authService),
+  authorize('admin', 'developer'),
+  async (req: Request, res: Response) => {
+    try {
+      const { name, permissions } = req.body;
+      const apiKey = await authService.generateApiKey(req.user!.userId, name, permissions);
+      res.json({ apiKey });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  }
+);
+
+// Protected admin endpoints
+app.get('/api/admin/performance',
+  authenticate(authService),
+  authorize('admin'),
+  (req: Request, res: Response) => {
+    const metrics = performanceMonitor.getMetrics();
+    res.json(metrics);
+  }
+);
+
+app.get('/api/admin/cache/stats',
+  authenticate(authService),
+  authorize('admin'),
+  async (req: Request, res: Response) => {
+    const stats = await cacheManager.getStats();
+    res.json(stats);
+  }
+);
+
+app.post('/api/admin/cache/clear',
+  authenticate(authService),
+  authorize('admin'),
+  async (req: Request, res: Response) => {
+    await cacheManager.clear();
+    res.json({ message: 'Cache cleared successfully' });
+  }
+);
+
+app.get('/api/admin/retention/stats',
+  authenticate(authService),
+  authorize('admin'),
+  async (req: Request, res: Response) => {
+    const stats = await retentionService.getRetentionStats();
+    res.json(stats);
+  }
+);
+
+app.post('/api/admin/retention/cleanup',
+  authenticate(authService),
+  authorize('admin'),
+  async (req: Request, res: Response) => {
+    const { tableName } = req.body;
+    const result = await retentionService.triggerCleanup(tableName);
+    res.json(result);
+  }
+);
+
+// Apply rate limiting to API endpoints
+const apiRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each user to 100 requests per windowMs
+});
+
+app.use('/api/', apiRateLimit);
+
 const PORT = process.env.WEBHOOK_PORT || 3033;
 
 server.listen(PORT, () => {
   console.log(`🚀 CI/CD Webhook receiver running on port ${PORT}`);
   console.log(`📊 Health check available at http://localhost:${PORT}/health`);
   console.log(`🔄 WebSocket server enabled for real-time updates`);
+  console.log(`📈 Analytics API available at http://localhost:${PORT}/api/analytics/*`);
 });
