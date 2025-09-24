@@ -107,7 +107,8 @@
       "Bash(uv pip install:*)",
       "Bash(open monitoring-dashboard.html)",
       "Bash(for endpoint in health metrics jobs trades alerts)",
-      "Bash(do echo \"=== /api/$endpoint ===\")"
+      "Bash(do echo \"=== /api/$endpoint ===\")",
+      "Bash(open monitoring-dashboard-v2.html)"
     ],
     "deny": [],
     "ask": []

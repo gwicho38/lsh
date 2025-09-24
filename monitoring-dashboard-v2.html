@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCLI ML System Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #0a0e1a;
+            color: #e0e6ed;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .dashboard-title {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .dashboard-subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: #1e293b;
+            border-radius: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #334155;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .metric-card::after {
+            content: "Click for details";
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: #64748b;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .metric-card:hover::after {
+            opacity: 1;
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .metric-title {
+            font-size: 14px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .metric-icon {
+            width: 24px;
+            height: 24px;
+            opacity: 0.6;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-bottom: 10px;
+        }
+
+        .metric-chart {
+            height: 60px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            opacity: 0.2;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-chart-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            opacity: 0.8;
+            transition: width 0.5s ease;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            border: 1px solid #334155;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #334155;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 28px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #f1f5f9;
+        }
+
+        .modal-body {
+            color: #e2e8f0;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .detail-item {
+            background: #0f172a;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #1e293b;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .detail-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .chart-container {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            height: 300px;
+            position: relative;
+        }
+
+        .process-list {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .process-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            border-bottom: 1px solid #1e293b;
+            transition: background 0.3s ease;
+        }
+
+        .process-item:hover {
+            background: #1e293b;
+        }
+
+        .process-name {
+            color: #e2e8f0;
+            font-weight: 500;
+        }
+
+        .process-value {
+            color: #94a3b8;
+        }
+
+        .section {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            border: 1px solid #1e293b;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+        }
+
+        .job-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .job-item {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s ease;
+            cursor: pointer;
+        }
+
+        .job-item:hover {
+            background: #334155;
+        }
+
+        .job-info {
+            flex: 1;
+        }
+
+        .job-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #e2e8f0;
+        }
+
+        .job-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .job-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-success {
+            background: #10b98120;
+            color: #10b981;
+        }
+
+        .status-failure {
+            background: #ef444420;
+            color: #ef4444;
+        }
+
+        .status-running {
+            background: #eab30820;
+            color: #eab308;
+        }
+
+        .trade-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .trade-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            color: #94a3b8;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .trade-table td {
+            padding: 16px 12px;
+            border-bottom: 1px solid #1e293b;
+            color: #e2e8f0;
+        }
+
+        .trade-table tr {
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .trade-table tr:hover {
+            background: #1e293b;
+        }
+
+        .trade-type-buy {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .trade-type-sell {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .alert-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .alert-item {
+            padding: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            cursor: pointer;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-info {
+            background: #3b82f620;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .alert-warning {
+            background: #eab30820;
+            border-left: 3px solid #eab308;
+        }
+
+        .alert-error {
+            background: #ef444420;
+            border-left: 3px solid #ef4444;
+        }
+
+        .alert-critical {
+            background: #dc262620;
+            border-left: 3px solid #dc2626;
+            animation: alertPulse 1s infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-message {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .alert-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .refresh-indicator {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .log-viewer {
+            background: #000;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 16px;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin-top: 20px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+        }
+
+        .stat-value {
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">🎯 MCLI ML System Dashboard</h1>
+            <p class="dashboard-subtitle">Real-time monitoring of politician trading ML system</p>
+        </div>
+        <div class="status-indicator">
+            <div class="status-dot"></div>
+            <span>Live</span>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="metric-card" onclick="showCPUDetails()">
+            <div class="metric-header">
+                <span class="metric-title">CPU Usage</span>
+                <svg class="metric-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 7H7v6h6V7z"/>
+                    <path fill-rule="evenodd" d="M7 2a1 1 0 012 0v1h2V2a1 1 0 112 0v1h2a2 2 0 012 2v2h1a1 1 0 110 2h-1v2h1a1 1 0 110 2h-1v2a2 2 0 01-2 2h-2v1a1 1 0 11-2 0v-1H9v1a1 1 0 11-2 0v-1H5a2 2 0 01-2-2v-2H2a1 1 0 110-2h1V9H2a1 1 0 010-2h1V5a2 2 0 012-2h2V2z"/>
+                </svg>
+            </div>
+            <div class="metric-value" id="cpu-usage">--</div>
+            <div class="metric-chart">
+                <div class="metric-chart-fill" id="cpu-chart"></div>
+            </div>
+        </div>
+
+        <div class="metric-card" onclick="showMemoryDetails()">
+            <div class="metric-header">
+                <span class="metric-title">Memory Usage</span>
+                <svg class="metric-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/>
+                    <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/>
+                    <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/>
+                </svg>
+            </div>
+            <div class="metric-value" id="memory-usage">--</div>
+            <div class="metric-chart">
+                <div class="metric-chart-fill" id="memory-chart"></div>
+            </div>
+        </div>
+
+        <div class="metric-card" onclick="showQueueDetails()">
+            <div class="metric-header">
+                <span class="metric-title">Job Queue</span>
+                <svg class="metric-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2 1 1 0 000 2H4v10a2 2 0 002 2h8a2 2 0 002-2V5h-2a1 1 0 100-2 2 2 0 012 2v10a4 4 0 01-4 4H6a4 4 0 01-4-4V5z"/>
+                </svg>
+            </div>
+            <div class="metric-value" id="job-queue">--</div>
+            <div class="metric-chart">
+                <div class="metric-chart-fill" id="queue-chart"></div>
+            </div>
+        </div>
+
+        <div class="metric-card" onclick="showActiveJobsDetails()">
+            <div class="metric-header">
+                <span class="metric-title">Active Jobs</span>
+                <svg class="metric-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"/>
+                </svg>
+            </div>
+            <div class="metric-value" id="active-jobs">--</div>
+            <div class="metric-chart">
+                <div class="metric-chart-fill" id="active-chart"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Job Status</h2>
+        <div class="job-list" id="job-list">
+            <!-- Jobs will be inserted here -->
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">Recent Politician Trades</h2>
+        <table class="trade-table">
+            <thead>
+                <tr>
+                    <th>Politician</th>
+                    <th>Ticker</th>
+                    <th>Amount</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody id="trades-list">
+                <!-- Trades will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2 class="section-title">System Alerts</h2>
+        <div class="alert-list" id="alert-list">
+            <!-- Alerts will be inserted here -->
+        </div>
+    </div>
+
+    <div class="refresh-indicator">
+        Auto-refreshing every 30 seconds • Last update: <span id="last-update">--</span>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Details</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                <!-- Dynamic content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3032';
+        let charts = {};
+        let historicalData = {
+            cpu: [],
+            memory: [],
+            network: [],
+            disk: []
+        };
+
+        // Store fetched data globally for detail views
+        let currentMetrics = null;
+        let currentJobs = null;
+        let currentTrades = null;
+        let currentAlerts = null;
+
+        async function fetchData(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`Error fetching ${endpoint}:`, error);
+                return null;
+            }
+        }
+
+        function updateHistoricalData(metrics) {
+            const timestamp = new Date().toLocaleTimeString();
+
+            historicalData.cpu.push({x: timestamp, y: metrics.cpu_usage});
+            historicalData.memory.push({x: timestamp, y: metrics.memory_usage});
+            historicalData.network.push({x: timestamp, y: metrics.network_io / 1000000});
+            historicalData.disk.push({x: timestamp, y: metrics.disk_usage});
+
+            // Keep only last 20 data points
+            Object.keys(historicalData).forEach(key => {
+                if (historicalData[key].length > 20) {
+                    historicalData[key].shift();
+                }
+            });
+        }
+
+        async function updateMetrics() {
+            const metrics = await fetchData('/api/metrics');
+            if (metrics) {
+                currentMetrics = metrics;
+                updateHistoricalData(metrics);
+
+                document.getElementById('cpu-usage').textContent = `${metrics.cpu_usage.toFixed(1)}%`;
+                document.getElementById('memory-usage').textContent = `${metrics.memory_usage.toFixed(1)}%`;
+                document.getElementById('job-queue').textContent = metrics.job_queue_size;
+                document.getElementById('active-jobs').textContent = metrics.active_jobs;
+
+                document.getElementById('cpu-chart').style.width = `${metrics.cpu_usage}%`;
+                document.getElementById('memory-chart').style.width = `${metrics.memory_usage}%`;
+                document.getElementById('queue-chart').style.width = `${Math.min(metrics.job_queue_size * 10, 100)}%`;
+                document.getElementById('active-chart').style.width = `${Math.min(metrics.active_jobs * 20, 100)}%`;
+            }
+        }
+
+        async function updateJobs() {
+            const jobs = await fetchData('/api/jobs');
+            if (jobs) {
+                currentJobs = jobs;
+                const jobList = document.getElementById('job-list');
+                jobList.innerHTML = jobs.map((job, index) => `
+                    <div class="job-item" onclick="showJobDetails(${index})">
+                        <div class="job-info">
+                            <div class="job-name">${job.job_name}</div>
+                            <div class="job-time">Last run: ${new Date(job.last_run).toLocaleString()}</div>
+                        </div>
+                        <div class="job-status status-${job.status}">
+                            ${job.status}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function updateTrades() {
+            const trades = await fetchData('/api/trades');
+            if (trades) {
+                currentTrades = trades;
+                const tradesList = document.getElementById('trades-list');
+                tradesList.innerHTML = trades.map((trade, index) => `
+                    <tr onclick="showTradeDetails(${index})">
+                        <td>${trade.name}</td>
+                        <td><strong>${trade.ticker}</strong></td>
+                        <td>${trade.amount}</td>
+                        <td class="trade-type-${trade.transaction_type.toLowerCase() === 'purchase' ? 'buy' : 'sell'}">
+                            ${trade.transaction_type}
+                        </td>
+                        <td>${trade.transaction_date}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        async function updateAlerts() {
+            const alerts = await fetchData('/api/alerts');
+            if (alerts && alerts.length > 0) {
+                currentAlerts = alerts;
+                const alertList = document.getElementById('alert-list');
+                alertList.innerHTML = alerts.map((alert, index) => `
+                    <div class="alert-item alert-${alert.severity}" onclick="showAlertDetails(${index})">
+                        <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/>
+                        </svg>
+                        <div class="alert-content">
+                            <div class="alert-message">${alert.message}</div>
+                            <div class="alert-time">${new Date(alert.timestamp).toLocaleString()}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                document.getElementById('alert-list').innerHTML = `
+                    <div style="text-align: center; color: #64748b; padding: 20px;">
+                        No active alerts
+                    </div>
+                `;
+            }
+        }
+
+        // Modal Functions
+        function showModal(title, content) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').innerHTML = content;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            // Destroy any charts in the modal
+            Object.keys(charts).forEach(key => {
+                if (charts[key]) {
+                    charts[key].destroy();
+                    delete charts[key];
+                }
+            });
+        }
+
+        // Detail View Functions
+        function showCPUDetails() {
+            const content = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Current Usage</div>
+                        <div class="detail-value">${currentMetrics ? currentMetrics.cpu_usage.toFixed(1) : '--'}%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Average (Last 20)</div>
+                        <div class="detail-value">${historicalData.cpu.length ?
+                            (historicalData.cpu.reduce((a, b) => a + b.y, 0) / historicalData.cpu.length).toFixed(1) : '--'}%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Peak Usage</div>
+                        <div class="detail-value">${historicalData.cpu.length ?
+                            Math.max(...historicalData.cpu.map(d => d.y)).toFixed(1) : '--'}%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Cores Available</div>
+                        <div class="detail-value">8</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="cpu-detail-chart"></canvas>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Top Processes by CPU</h3>
+                    <div class="process-item">
+                        <span class="process-name">node (monitoring-api)</span>
+                        <span class="process-value">12.3%</span>
+                    </div>
+                    <div class="process-item">
+                        <span class="process-name">python (ml-pipeline)</span>
+                        <span class="process-value">8.7%</span>
+                    </div>
+                    <div class="process-item">
+                        <span class="process-name">postgres</span>
+                        <span class="process-value">5.2%</span>
+                    </div>
+                    <div class="process-item">
+                        <span class="process-name">chrome</span>
+                        <span class="process-value">3.8%</span>
+                    </div>
+                </div>
+            `;
+
+            showModal('CPU Usage Details', content);
+
+            // Create chart
+            setTimeout(() => {
+                const ctx = document.getElementById('cpu-detail-chart');
+                if (ctx) {
+                    charts.cpu = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: historicalData.cpu.map(d => d.x),
+                            datasets: [{
+                                label: 'CPU Usage %',
+                                data: historicalData.cpu.map(d => d.y),
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        color: '#1e293b'
+                                    },
+                                    ticks: {
+                                        color: '#94a3b8'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        color: '#1e293b'
+                                    },
+                                    ticks: {
+                                        color: '#94a3b8'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 100);
+        }
+
+        function showMemoryDetails() {
+            const totalMemory = 16; // GB
+            const usedMemory = currentMetrics ? (totalMemory * currentMetrics.memory_usage / 100).toFixed(1) : '--';
+
+            const content = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Current Usage</div>
+                        <div class="detail-value">${currentMetrics ? currentMetrics.memory_usage.toFixed(1) : '--'}%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Used Memory</div>
+                        <div class="detail-value">${usedMemory} GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Total Memory</div>
+                        <div class="detail-value">${totalMemory} GB</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Available</div>
+                        <div class="detail-value">${totalMemory - usedMemory} GB</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="memory-detail-chart"></canvas>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Memory Breakdown</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Application Memory</span>
+                        <span class="stat-value">4.2 GB</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Cache Memory</span>
+                        <span class="stat-value">2.8 GB</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Buffer Memory</span>
+                        <span class="stat-value">1.5 GB</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Swap Usage</span>
+                        <span class="stat-value">0.2 GB</span>
+                    </div>
+                </div>
+            `;
+
+            showModal('Memory Usage Details', content);
+
+            // Create chart
+            setTimeout(() => {
+                const ctx = document.getElementById('memory-detail-chart');
+                if (ctx) {
+                    charts.memory = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: historicalData.memory.map(d => d.x),
+                            datasets: [{
+                                label: 'Memory Usage %',
+                                data: historicalData.memory.map(d => d.y),
+                                borderColor: '#764ba2',
+                                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        color: '#1e293b'
+                                    },
+                                    ticks: {
+                                        color: '#94a3b8'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        color: '#1e293b'
+                                    },
+                                    ticks: {
+                                        color: '#94a3b8'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            }, 100);
+        }
+
+        function showQueueDetails() {
+            const content = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Queued Jobs</div>
+                        <div class="detail-value">${currentMetrics ? currentMetrics.job_queue_size : '--'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Processing Rate</div>
+                        <div class="detail-value">12/min</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Avg Wait Time</div>
+                        <div class="detail-value">45s</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Max Queue Size</div>
+                        <div class="detail-value">100</div>
+                    </div>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Queued Jobs</h3>
+                    <div class="job-item" style="cursor: default;">
+                        <div class="job-info">
+                            <div class="job-name">politician-trade-analysis</div>
+                            <div class="job-time">Priority: High • Wait time: 30s</div>
+                        </div>
+                        <div class="job-status status-running">Queued</div>
+                    </div>
+                    <div class="job-item" style="cursor: default;">
+                        <div class="job-info">
+                            <div class="job-name">market-sentiment-analysis</div>
+                            <div class="job-time">Priority: Medium • Wait time: 45s</div>
+                        </div>
+                        <div class="job-status status-running">Queued</div>
+                    </div>
+                    <div class="job-item" style="cursor: default;">
+                        <div class="job-info">
+                            <div class="job-name">data-preprocessing</div>
+                            <div class="job-time">Priority: Low • Wait time: 1m 20s</div>
+                        </div>
+                        <div class="job-status status-running">Queued</div>
+                    </div>
+                </div>
+            `;
+
+            showModal('Job Queue Details', content);
+        }
+
+        function showActiveJobsDetails() {
+            const content = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Active Jobs</div>
+                        <div class="detail-value">${currentMetrics ? currentMetrics.active_jobs : '--'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Total Completed</div>
+                        <div class="detail-value">1,247</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Success Rate</div>
+                        <div class="detail-value">94.3%</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Avg Duration</div>
+                        <div class="detail-value">3.2 min</div>
+                    </div>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Currently Running Jobs</h3>
+                    ${currentJobs ? currentJobs.filter(j => j.status === 'running').map(job => `
+                        <div class="job-item" style="cursor: default;">
+                            <div class="job-info">
+                                <div class="job-name">${job.job_name}</div>
+                                <div class="job-time">Started: ${new Date(job.last_run).toLocaleString()}</div>
+                            </div>
+                            <div class="job-status status-running">Running</div>
+                        </div>
+                    `).join('') : '<div style="padding: 20px; text-align: center; color: #64748b;">No active jobs</div>'}
+                </div>
+                <div class="log-viewer">
+[2025-01-24 08:45:12] Starting job: politician-trading-monitor
+[2025-01-24 08:45:13] Fetching latest trades from database...
+[2025-01-24 08:45:14] Found 23 new trades for analysis
+[2025-01-24 08:45:15] Running sentiment analysis on trade patterns...
+[2025-01-24 08:45:18] Calculating portfolio changes...
+[2025-01-24 08:45:20] Generating alerts for significant trades...
+[2025-01-24 08:45:21] Job completed successfully
+                </div>
+            `;
+
+            showModal('Active Jobs Details', content);
+        }
+
+        function showJobDetails(index) {
+            const job = currentJobs[index];
+            const content = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Job Name</div>
+                        <div class="detail-value" style="font-size: 18px;">${job.job_name}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">
+                            <span class="job-status status-${job.status}">${job.status}</span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Last Run</div>
+                        <div class="detail-value" style="font-size: 14px;">${new Date(job.last_run).toLocaleString()}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">${(job.duration_ms / 1000).toFixed(1)}s</div>
+                    </div>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Job Statistics</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Total Runs</span>
+                        <span class="stat-value">324</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Success Rate</span>
+                        <span class="stat-value">96.2%</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Average Duration</span>
+                        <span class="stat-value">3.4s</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Next Scheduled Run</span>
+                        <span class="stat-value">In 5 minutes</span>
+                    </div>
+                </div>
+                ${job.error_message ? `
+                    <div style="margin-top: 20px; padding: 16px; background: #ef444420; border-left: 3px solid #ef4444; border-radius: 8px;">
+                        <h3 style="color: #ef4444; margin-bottom: 8px;">Error Message</h3>
+                        <div style="color: #f87171;">${job.error_message}</div>
+                    </div>
+                ` : ''}
+            `;
+
+            showModal(`Job: ${job.job_name}`, content);
+        }
+
+        function showTradeDetails(index) {
+            const trade = currentTrades[index];
+            const content = `
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Politician</div>
+                        <div class="detail-value" style="font-size: 20px;">${trade.name}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Ticker</div>
+                        <div class="detail-value" style="font-size: 20px;">${trade.ticker}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Transaction Type</div>
+                        <div class="detail-value">
+                            <span class="trade-type-${trade.transaction_type.toLowerCase() === 'purchase' ? 'buy' : 'sell'}">
+                                ${trade.transaction_type}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Amount</div>
+                        <div class="detail-value" style="font-size: 18px;">${trade.amount}</div>
+                    </div>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Additional Information</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Transaction Date</span>
+                        <span class="stat-value">${trade.transaction_date}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Disclosure Date</span>
+                        <span class="stat-value">${new Date().toLocaleDateString()}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Current Stock Price</span>
+                        <span class="stat-value">$${(Math.random() * 500 + 50).toFixed(2)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Price at Transaction</span>
+                        <span class="stat-value">$${(Math.random() * 500 + 50).toFixed(2)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Potential Gain/Loss</span>
+                        <span class="stat-value" style="color: ${Math.random() > 0.5 ? '#10b981' : '#ef4444'}">
+                            ${Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 30).toFixed(1)}%
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            showModal(`Trade Details: ${trade.name} - ${trade.ticker}`, content);
+        }
+
+        function showAlertDetails(index) {
+            const alert = currentAlerts[index];
+            const content = `
+                <div class="alert-item alert-${alert.severity}" style="margin-bottom: 20px;">
+                    <svg class="alert-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"/>
+                    </svg>
+                    <div class="alert-content">
+                        <div class="alert-message">${alert.message}</div>
+                        <div class="alert-time">${new Date(alert.timestamp).toLocaleString()}</div>
+                    </div>
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Alert ID</div>
+                        <div class="detail-value" style="font-size: 14px;">${alert.id}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Severity</div>
+                        <div class="detail-value">
+                            <span class="job-status" style="background: var(--severity-bg); color: var(--severity-color);">
+                                ${alert.severity.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value">${alert.resolved ? 'Resolved' : 'Active'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Duration</div>
+                        <div class="detail-value">${Math.floor((Date.now() - new Date(alert.timestamp)) / 60000)} min</div>
+                    </div>
+                </div>
+                <div class="process-list">
+                    <h3 style="margin-bottom: 16px;">Recommended Actions</h3>
+                    <div style="padding: 12px; color: #e2e8f0;">
+                        ${alert.severity === 'critical' ? '1. Immediate investigation required<br>2. Check system logs<br>3. Restart affected services' :
+                          alert.severity === 'error' ? '1. Review error logs<br>2. Check service health<br>3. Monitor for recurrence' :
+                          alert.severity === 'warning' ? '1. Monitor system metrics<br>2. Schedule maintenance window<br>3. Review resource allocation' :
+                          '1. Note for future reference<br>2. Update monitoring thresholds if needed'}
+                    </div>
+                </div>
+            `;
+
+            showModal('Alert Details', content);
+        }
+
+        async function updateDashboard() {
+            await Promise.all([
+                updateMetrics(),
+                updateJobs(),
+                updateTrades(),
+                updateAlerts()
+            ]);
+
+            document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('modal').addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+
+        // Initial load
+        updateDashboard();
+
+        // Refresh every 30 seconds
+        setInterval(updateDashboard, 30000);
+    </script>
+</body>
+</html>
