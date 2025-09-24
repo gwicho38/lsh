@@ -4,6 +4,11 @@ import { JobTracker, PipelineJob, JobStatus, JobPriority } from './job-tracker.j
 import { MCLIBridge } from './mcli-bridge.js';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export interface PipelineServiceConfig {
   port?: number;
@@ -67,6 +72,9 @@ export class PipelineService {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
+    // Serve dashboard
+    this.app.use('/dashboard', express.static(path.join(__dirname, 'dashboard')));
+
     // CORS
     this.app.use((req, res, next) => {
       res.header('Access-Control-Allow-Origin', '*');
@@ -87,6 +95,16 @@ export class PipelineService {
 
   private setupRoutes() {
     const router = Router();
+
+    // Root route - redirect to dashboard
+    router.get('/', (req: Request, res: Response) => {
+      res.redirect('/dashboard/');
+    });
+
+    // Dashboard route
+    router.get('/dashboard/', (req: Request, res: Response) => {
+      res.sendFile(path.join(__dirname, 'dashboard', 'index.html'));
+    });
 
     // Health check
     router.get('/health', (req: Request, res: Response) => {
@@ -379,8 +397,14 @@ export class PipelineService {
   async start(): Promise<void> {
     try {
       // Test database connection
-      await this.pool.query('SELECT 1');
-      console.log('✅ Database connected');
+      try {
+        await this.pool.query('SELECT 1');
+        console.log('✅ Database connected');
+      } catch (dbError) {
+        console.warn('⚠️  Database not available - running in demo mode');
+        console.log('   To enable full functionality, create a PostgreSQL database named "pipeline"');
+        console.log('   and run: psql -d pipeline -f src/pipeline/schema.sql');
+      }
 
       // Start job tracker polling
       this.jobTracker.startPolling();
