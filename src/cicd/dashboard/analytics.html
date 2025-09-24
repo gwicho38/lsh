@@ -272,9 +272,9 @@
         </div>
 
         <div class="period-selector">
-            <button class="period-button" onclick="loadAnalytics('daily')">Daily</button>
-            <button class="period-button active" onclick="loadAnalytics('weekly')">Weekly</button>
-            <button class="period-button" onclick="loadAnalytics('monthly')">Monthly</button>
+            <button class="period-button" onclick="loadAnalytics('daily', event)">Daily</button>
+            <button class="period-button active" onclick="loadAnalytics('weekly', event)">Weekly</button>
+            <button class="period-button" onclick="loadAnalytics('monthly', event)">Monthly</button>
         </div>
 
         <div class="analytics-grid">
@@ -385,12 +385,17 @@
         let trendsChart = null;
         let costChart = null;
 
-        async function loadAnalytics(period = 'weekly') {
+        async function loadAnalytics(period = 'weekly', event = null) {
             // Update button states
             document.querySelectorAll('.period-button').forEach(btn => {
                 btn.classList.remove('active');
+                if (btn.textContent.toLowerCase() === period) {
+                    btn.classList.add('active');
+                }
             });
-            event.target?.classList.add('active');
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
 
             try {
                 // Fetch analytics report
