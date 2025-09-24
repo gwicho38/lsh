@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workflow Management - Pipeline Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .workflow-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .workflow-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .workflow-diagram {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 300px;
+            position: relative;
+        }
+        .node {
+            position: absolute;
+            background: white;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .node:hover {
+            background: #e3f2fd;
+            transform: scale(1.05);
+        }
+        .node.job { border-color: #007bff; }
+        .node.condition { border-color: #ffc107; }
+        .node.parallel { border-color: #28a745; }
+        .node.wait { border-color: #6c757d; }
+
+        .node.running { border-color: #17a2b8; animation: pulse 1s infinite; }
+        .node.completed { border-color: #28a745; background: #d4edda; }
+        .node.failed { border-color: #dc3545; background: #f8d7da; }
+        .node.skipped { border-color: #6c757d; background: #e9ecef; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(23, 162, 184, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(23, 162, 184, 0); }
+        }
+
+        /* Workflow Builder Styles */
+        .node-palette {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background: #f8f9fa;
+        }
+
+        .palette-node {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .palette-node:hover {
+            background: #e9ecef;
+            transform: translateX(2px);
+        }
+
+        .palette-node:active {
+            cursor: grabbing;
+        }
+
+        .node-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .workflow-canvas {
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            min-height: 400px;
+            position: relative;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .workflow-canvas canvas {
+            background: white;
+        }
+
+        .canvas-placeholder {
+            text-align: center;
+            color: #666;
+            font-size: 16px;
+        }
+        }
+
+        .connection {
+            position: absolute;
+            height: 2px;
+            background: #6c757d;
+            z-index: 1;
+        }
+
+        .sidebar {
+            background: #f8f9fa;
+            min-height: calc(100vh - 56px);
+            border-right: 1px solid #dee2e6;
+        }
+
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+
+        .execution-timeline {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .timeline-item {
+            border-left: 3px solid #007bff;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -7px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            background: #007bff;
+            border-radius: 50%;
+        }
+
+        .timeline-item.success::before { background: #28a745; }
+        .timeline-item.failure::before { background: #dc3545; }
+        .timeline-item.running::before { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-project-diagram me-2"></i>
+                Pipeline Dashboard
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="../"><i class="fas fa-home me-1"></i>Jobs</a>
+                <a class="nav-link active" href="workflow.html"><i class="fas fa-sitemap me-1"></i>Workflows</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 sidebar p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Workflows</h5>
+                    <button class="btn btn-primary btn-sm" onclick="showCreateWorkflowModal()">
+                        <i class="fas fa-plus me-1"></i>New
+                    </button>
+                </div>
+
+                <!-- Workflow Filters -->
+                <div class="mb-3">
+                    <input type="text" class="form-control form-control-sm" id="workflowSearch" placeholder="Search workflows...">
+                </div>
+
+                <div class="mb-3">
+                    <select class="form-select form-select-sm" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="draft">Draft</option>
+                    </select>
+                </div>
+
+                <!-- Workflow List -->
+                <div id="workflowList" class="list-group">
+                    <!-- Workflows will be loaded here -->
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="mt-4">
+                    <h6>Quick Stats</h6>
+                    <div class="card metric-card mb-2">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between">
+                                <small>Total Workflows</small>
+                                <strong id="totalWorkflows">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card metric-card mb-2">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between">
+                                <small>Running</small>
+                                <strong id="runningWorkflows">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card metric-card">
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between">
+                                <small>Success Rate</small>
+                                <strong id="successRate">-</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 main-content p-3">
+                <!-- Workflow Detail View -->
+                <div id="workflowDetail" style="display: none;">
+                    <!-- Workflow Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 id="workflowName">Workflow Name</h4>
+                            <small class="text-muted" id="workflowDescription">Workflow description</small>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary" onclick="executeWorkflow()">
+                                <i class="fas fa-play me-1"></i>Execute
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="editWorkflow()">
+                                <i class="fas fa-edit me-1"></i>Edit
+                            </button>
+                            <button class="btn btn-outline-info" onclick="validateWorkflow()">
+                                <i class="fas fa-check-circle me-1"></i>Validate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Workflow Diagram -->
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between">
+                                    <h6 class="mb-0">Workflow Diagram</h6>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-secondary" onclick="refreshDiagram()">
+                                            <i class="fas fa-sync-alt"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" onclick="exportDiagram()">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="workflowDiagram" class="workflow-diagram">
+                                        <!-- Diagram will be rendered here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Workflow Info -->
+                        <div class="col-lg-4">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Workflow Info</h6>
+                                </div>
+                                <div class="card-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-5">Version:</dt>
+                                        <dd class="col-sm-7" id="workflowVersion">-</dd>
+                                        <dt class="col-sm-5">Owner:</dt>
+                                        <dd class="col-sm-7" id="workflowOwner">-</dd>
+                                        <dt class="col-sm-5">Team:</dt>
+                                        <dd class="col-sm-7" id="workflowTeam">-</dd>
+                                        <dt class="col-sm-5">Status:</dt>
+                                        <dd class="col-sm-7">
+                                            <span id="workflowStatus" class="badge">-</span>
+                                        </dd>
+                                        <dt class="col-sm-5">Nodes:</dt>
+                                        <dd class="col-sm-7" id="workflowNodeCount">-</dd>
+                                    </dl>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Recent Executions</h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div id="recentExecutions" class="execution-timeline p-3">
+                                        <!-- Timeline will be populated here -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-5">
+                    <i class="fas fa-sitemap fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Select a workflow to view details</h5>
+                    <p class="text-muted">Choose a workflow from the sidebar to see its diagram and execution history</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Workflow Modal -->
+    <div class="modal fade" id="workflowModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Create Workflow</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="workflowForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="modalWorkflowName" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Version</label>
+                                    <input type="text" class="form-control" id="modalWorkflowVersion" value="1.0.0" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" id="modalWorkflowDescription" rows="3"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Owner</label>
+                                    <input type="text" class="form-control" id="modalWorkflowOwner">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Team</label>
+                                    <input type="text" class="form-control" id="modalWorkflowTeam">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tags</label>
+                            <input type="text" class="form-control" id="modalWorkflowTags" placeholder="comma,separated,tags">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label">Workflow Definition</label>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <button type="button" class="btn btn-outline-primary" onclick="showGraphicalBuilder()">
+                                        <i class="fas fa-project-diagram me-1"></i>Graphical Builder
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="showJSONEditor()">
+                                        <i class="fas fa-code me-1"></i>JSON Editor
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Graphical Workflow Builder -->
+                            <div id="graphicalBuilder" class="mt-3" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <h6>Node Palette</h6>
+                                        <div id="nodePalette" class="node-palette">
+                                            <!-- Node types will be populated here -->
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <h6>Workflow Info</h6>
+                                            <div class="mb-2">
+                                                <input type="text" class="form-control form-control-sm" id="workflowBuilderName" placeholder="Workflow Name">
+                                            </div>
+                                            <div class="mb-2">
+                                                <textarea class="form-control form-control-sm" id="workflowBuilderDescription" rows="2" placeholder="Description"></textarea>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <h6>Actions</h6>
+                                            <div class="d-grid gap-2">
+                                                <button type="button" class="btn btn-success btn-sm" onclick="exportBuilderWorkflow()">
+                                                    <i class="fas fa-download me-1"></i>Export to JSON
+                                                </button>
+                                                <button type="button" class="btn btn-warning btn-sm" onclick="clearBuilder()">
+                                                    <i class="fas fa-trash me-1"></i>Clear
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-9">
+                                        <h6>Workflow Canvas</h6>
+                                        <div id="workflowCanvas" class="workflow-canvas">
+                                            <!-- Canvas will be created here -->
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                <strong>Instructions:</strong>
+                                                Drag nodes from palette to canvas •
+                                                Ctrl+Click to connect nodes •
+                                                Double-click to edit •
+                                                Delete key to remove selected node
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- JSON Editor -->
+                            <div id="jsonEditor">
+                                <textarea class="form-control font-monospace" id="modalWorkflowDefinition" rows="10" placeholder='{"nodes": [{"id": "node1", "name": "Sample Node", "type": "job", "dependencies": [], "config": {}}]}'></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveWorkflow()">Save Workflow</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Execute Workflow Modal -->
+    <div class="modal fade" id="executeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Execute Workflow</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Triggered By</label>
+                        <input type="text" class="form-control" id="executeTriggeredBy" value="manual" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Parameters (JSON)</label>
+                        <textarea class="form-control font-monospace" id="executeParameters" rows="4" placeholder='{"key": "value"}'>{}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmExecuteWorkflow()">Execute</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node Editor Modal -->
+    <div class="modal fade" id="nodeEditorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="nodeEditorTitle">Edit Node</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="nodeEditorForm">
+                        <div class="mb-3">
+                            <label class="form-label">Node Name</label>
+                            <input type="text" class="form-control" id="editNodeName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Node Type</label>
+                            <select class="form-select" id="editNodeType" disabled>
+                                <option value="job">Job</option>
+                                <option value="condition">Condition</option>
+                                <option value="parallel">Parallel</option>
+                                <option value="wait">Wait</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Configuration (JSON)</label>
+                            <textarea class="form-control font-monospace" id="editNodeConfig" rows="6"></textarea>
+                            <div class="form-text">
+                                <small>
+                                    <strong>Job:</strong> {"type": "data_processing", "targetSystem": "mcli"}<br>
+                                    <strong>Condition:</strong> {"condition": "params.status === 'ready'"}<br>
+                                    <strong>Wait:</strong> {"waitMs": 5000}
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveNodeEdit()">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="workflow.js"></script>
+    <script src="workflow-builder.js"></script>
+</body>
+</html>

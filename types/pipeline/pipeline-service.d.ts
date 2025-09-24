@@ -12,6 +12,7 @@ export declare class PipelineService {
     private pool;
     private jobTracker;
     private mcliBridge;
+    private workflowEngine;
     private config;
     constructor(config?: PipelineServiceConfig);
     private setupMiddleware;

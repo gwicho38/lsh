@@ -2,6 +2,7 @@ import express, { Request, Response, Router } from 'express';
 import { Pool } from 'pg';
 import { JobTracker, PipelineJob, JobStatus, JobPriority } from './job-tracker.js';
 import { MCLIBridge } from './mcli-bridge.js';
+import { WorkflowEngine } from './workflow-engine.js';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import * as path from 'path';
@@ -25,6 +26,7 @@ export class PipelineService {
   private pool: Pool;
   private jobTracker: JobTracker;
   private mcliBridge: MCLIBridge;
+  private workflowEngine: WorkflowEngine;
   private config: PipelineServiceConfig;
 
   constructor(config: PipelineServiceConfig = {}) {
@@ -51,6 +53,7 @@ export class PipelineService {
       },
       this.jobTracker
     );
+    this.workflowEngine = new WorkflowEngine(this.pool, this.jobTracker);
 
     // Initialize Express app
     this.app = express();
@@ -72,8 +75,10 @@ export class PipelineService {
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
 
-    // Serve dashboard
-    this.app.use('/dashboard', express.static(path.join(__dirname, 'dashboard')));
+    // Serve dashboard from src directory
+    const dashboardPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard');
+    console.log(`Serving dashboard from: ${dashboardPath}`);
+    this.app.use('/dashboard', express.static(dashboardPath));
 
     // CORS
     this.app.use((req, res, next) => {
@@ -103,7 +108,8 @@ export class PipelineService {
 
     // Dashboard route
     router.get('/dashboard/', (req: Request, res: Response) => {
-      res.sendFile(path.join(__dirname, 'dashboard', 'index.html'));
+      const dashboardPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard', 'index.html');
+      res.sendFile(dashboardPath);
     });
 
     // Health check
@@ -331,6 +337,136 @@ export class PipelineService {
       }
     });
 
+    // Workflow Management Routes
+    router.post('/api/pipeline/workflows', async (req: Request, res: Response) => {
+      try {
+        const workflow = await this.workflowEngine.createWorkflow(req.body);
+        res.status(201).json(workflow);
+      } catch (error) {
+        console.error('Error creating workflow:', error);
+        res.status(500).json({ error: 'Failed to create workflow' });
+      }
+    });
+
+    router.get('/api/pipeline/workflows', async (req: Request, res: Response) => {
+      try {
+        const workflows = await this.workflowEngine.listWorkflows({
+          status: req.query.status as string,
+          limit: parseInt(req.query.limit as string) || 50,
+          offset: parseInt(req.query.offset as string) || 0
+        });
+        res.json(workflows);
+      } catch (error) {
+        console.error('Error listing workflows:', error);
+        res.status(500).json({ error: 'Failed to list workflows' });
+      }
+    });
+
+    router.get('/api/pipeline/workflows/:id', async (req: Request, res: Response) => {
+      try {
+        const workflow = await this.workflowEngine.getWorkflow(req.params.id);
+        if (!workflow) {
+          return res.status(404).json({ error: 'Workflow not found' });
+        }
+        res.json(workflow);
+      } catch (error) {
+        console.error('Error getting workflow:', error);
+        res.status(500).json({ error: 'Failed to get workflow' });
+      }
+    });
+
+    router.post('/api/pipeline/workflows/:id/execute', async (req: Request, res: Response) => {
+      try {
+        const { triggeredBy = 'api', triggerType = 'manual', parameters = {} } = req.body;
+        const execution = await this.workflowEngine.executeWorkflow(
+          req.params.id,
+          triggeredBy,
+          triggerType,
+          parameters
+        );
+        res.status(201).json(execution);
+      } catch (error) {
+        console.error('Error executing workflow:', error);
+        res.status(500).json({ error: 'Failed to execute workflow' });
+      }
+    });
+
+    router.get('/api/pipeline/workflows/:id/executions', async (req: Request, res: Response) => {
+      try {
+        const executions = await this.workflowEngine.getWorkflowExecutions(req.params.id, {
+          limit: parseInt(req.query.limit as string) || 50,
+          offset: parseInt(req.query.offset as string) || 0
+        });
+        res.json(executions);
+      } catch (error) {
+        console.error('Error getting workflow executions:', error);
+        res.status(500).json({ error: 'Failed to get workflow executions' });
+      }
+    });
+
+    router.get('/api/pipeline/executions/:id', async (req: Request, res: Response) => {
+      try {
+        const execution = await this.workflowEngine.getExecution(req.params.id);
+        if (!execution) {
+          return res.status(404).json({ error: 'Execution not found' });
+        }
+        res.json(execution);
+      } catch (error) {
+        console.error('Error getting execution:', error);
+        res.status(500).json({ error: 'Failed to get execution' });
+      }
+    });
+
+    router.post('/api/pipeline/executions/:id/cancel', async (req: Request, res: Response) => {
+      try {
+        await this.workflowEngine.cancelExecution(req.params.id);
+        res.json({ message: 'Execution cancelled successfully' });
+      } catch (error) {
+        console.error('Error cancelling execution:', error);
+        res.status(500).json({ error: 'Failed to cancel execution' });
+      }
+    });
+
+    router.put('/api/pipeline/workflows/:id', async (req: Request, res: Response) => {
+      try {
+        const workflow = await this.workflowEngine.updateWorkflow(req.params.id, req.body);
+        res.json(workflow);
+      } catch (error) {
+        console.error('Error updating workflow:', error);
+        res.status(500).json({ error: 'Failed to update workflow' });
+      }
+    });
+
+    router.delete('/api/pipeline/workflows/:id', async (req: Request, res: Response) => {
+      try {
+        await this.workflowEngine.deleteWorkflow(req.params.id);
+        res.json({ message: 'Workflow deleted successfully' });
+      } catch (error) {
+        console.error('Error deleting workflow:', error);
+        res.status(500).json({ error: 'Failed to delete workflow' });
+      }
+    });
+
+    router.post('/api/pipeline/workflows/:id/validate', async (req: Request, res: Response) => {
+      try {
+        const validation = await this.workflowEngine.validateWorkflowById(req.params.id);
+        res.json(validation);
+      } catch (error) {
+        console.error('Error validating workflow:', error);
+        res.status(500).json({ error: 'Failed to validate workflow' });
+      }
+    });
+
+    router.get('/api/pipeline/workflows/:id/dependencies', async (req: Request, res: Response) => {
+      try {
+        const dependencies = await this.workflowEngine.getWorkflowDependencies(req.params.id);
+        res.json(dependencies);
+      } catch (error) {
+        console.error('Error getting workflow dependencies:', error);
+        res.status(500).json({ error: 'Failed to get workflow dependencies' });
+      }
+    });
+
     this.app.use('/', router);
   }
 
@@ -350,6 +486,16 @@ export class PipelineService {
       socket.on('unsubscribe:job', (jobId: string) => {
         socket.leave(`job:${jobId}`);
         console.log(`Client ${socket.id} unsubscribed from job ${jobId}`);
+      });
+
+      socket.on('subscribe:workflow', (workflowId: string) => {
+        socket.join(`workflow:${workflowId}`);
+        console.log(`Client ${socket.id} subscribed to workflow ${workflowId}`);
+      });
+
+      socket.on('unsubscribe:workflow', (workflowId: string) => {
+        socket.leave(`workflow:${workflowId}`);
+        console.log(`Client ${socket.id} unsubscribed from workflow ${workflowId}`);
       });
     });
   }
@@ -392,6 +538,38 @@ export class PipelineService {
         this.io.to(`job:${event.pipelineJobId}`).emit('mcli:update', event);
       }
     });
+
+    // Workflow Engine events
+    this.workflowEngine.on('workflow:created', (event) => {
+      this.io.emit('workflow:created', event);
+    });
+
+    this.workflowEngine.on('execution:started', (event) => {
+      this.io.emit('workflow:execution:started', event);
+      this.io.to(`workflow:${event.workflowId}`).emit('execution:started', event);
+    });
+
+    this.workflowEngine.on('execution:completed', (event) => {
+      this.io.emit('workflow:execution:completed', event);
+      this.io.to(`workflow:${event.workflowId}`).emit('execution:completed', event);
+    });
+
+    this.workflowEngine.on('execution:failed', (event) => {
+      this.io.emit('workflow:execution:failed', event);
+      this.io.to(`workflow:${event.workflowId}`).emit('execution:failed', event);
+    });
+
+    this.workflowEngine.on('node:started', (event) => {
+      this.io.to(`workflow:${event.workflowId}`).emit('node:started', event);
+    });
+
+    this.workflowEngine.on('node:completed', (event) => {
+      this.io.to(`workflow:${event.workflowId}`).emit('node:completed', event);
+    });
+
+    this.workflowEngine.on('node:failed', (event) => {
+      this.io.to(`workflow:${event.workflowId}`).emit('node:failed', event);
+    });
   }
 
   async start(): Promise<void> {
@@ -413,6 +591,10 @@ export class PipelineService {
       // Start MCLI periodic sync
       this.mcliBridge.startPeriodicSync();
       console.log('✅ MCLI bridge started');
+
+      // Start workflow engine
+      await this.workflowEngine.start();
+      console.log('✅ Workflow engine started');
 
       // Start server
       this.server.listen(this.config.port, () => {
@@ -436,6 +618,7 @@ export class PipelineService {
     // Cleanup services
     await this.jobTracker.cleanup();
     this.mcliBridge.cleanup();
+    await this.workflowEngine.stop();
 
     // Close database pool
     await this.pool.end();
