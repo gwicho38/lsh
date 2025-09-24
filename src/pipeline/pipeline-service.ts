@@ -155,6 +155,8 @@ export class PipelineService {
           {
             id: 'demo-job-1',
             name: 'Data Sync - Users',
+            type: 'batch',
+            owner: 'data-team',
             status: 'completed',
             sourceSystem: 'lsh',
             targetSystem: 'mcli',
@@ -165,6 +167,8 @@ export class PipelineService {
           {
             id: 'demo-job-2',
             name: 'ML Model Training',
+            type: 'ml-training',
+            owner: 'ml-team',
             status: 'running',
             sourceSystem: 'mcli',
             targetSystem: 'ml-pipeline',
@@ -175,6 +179,8 @@ export class PipelineService {
           {
             id: 'demo-job-3',
             name: 'Metrics Collection',
+            type: 'monitoring',
+            owner: 'ops-team',
             status: 'queued',
             sourceSystem: 'lsh',
             targetSystem: 'monitoring',
@@ -209,6 +215,8 @@ export class PipelineService {
         const demoJob = {
           id: req.params.id,
           name: 'Demo Job',
+          type: 'batch',
+          owner: 'demo-user',
           status: 'running',
           sourceSystem: 'lsh',
           targetSystem: 'mcli',
@@ -294,13 +302,25 @@ export class PipelineService {
           {
             id: 'active-1',
             name: 'Real-time Data Sync',
+            type: 'streaming',
+            owner: 'data-team',
             status: 'running',
+            sourceSystem: 'lsh',
+            targetSystem: 'mcli',
+            createdAt: new Date(Date.now() - 900000).toISOString(),
+            updatedAt: new Date().toISOString(),
             progress: 45
           },
           {
             id: 'active-2',
             name: 'Log Processing',
+            type: 'batch',
+            owner: 'ops-team',
             status: 'running',
+            sourceSystem: 'logging',
+            targetSystem: 'analytics',
+            createdAt: new Date(Date.now() - 600000).toISOString(),
+            updatedAt: new Date().toISOString(),
             progress: 82
           }
         ];

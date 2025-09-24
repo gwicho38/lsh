@@ -115,7 +115,9 @@
       "Bash(open http://localhost:3034/dashboard/workflow.html)",
       "Bash(open /Users/lefv/repos/lsh/dashboard-hub.html)",
       "Bash(MONITORING_API_PORT=3033 node dist/daemon/monitoring-api.js)",
-      "Bash(MONITORING_API_PORT=3035 node dist/daemon/monitoring-api.js)"
+      "Bash(MONITORING_API_PORT=3035 node dist/daemon/monitoring-api.js)",
+      "Bash(open /tmp/test-dashboard.html)",
+      "Bash(open http://localhost:3034/dashboard/)"
     ],
     "deny": [],
     "ask": []
