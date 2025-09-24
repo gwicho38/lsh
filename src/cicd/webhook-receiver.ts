@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import Redis from 'ioredis';
 import { Pool } from 'pg';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
 import {
   generateAnalyticsReport,
   generateTrendAnalysis,
@@ -19,6 +21,9 @@ import { AuthService, authenticate, authorize, requirePermission, rateLimit } fr
 import { performanceMonitor } from './performance-monitor.js';
 import { DataRetentionService } from './data-retention.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const server = createServer(app);
 const io = new Server(server, {
@@ -30,6 +35,9 @@ const io = new Server(server, {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.raw({ type: 'application/json', limit: '10mb' }));
+
+// Serve static dashboard files
+app.use('/dashboard', express.static(path.join(__dirname, 'dashboard')));
 
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET;
 const GITLAB_WEBHOOK_SECRET = process.env.GITLAB_WEBHOOK_SECRET;
@@ -472,6 +480,24 @@ app.post('/webhook/jenkins', async (req: Request, res: Response) => {
     console.error('Jenkins webhook error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Root route - redirect to main dashboard
+app.get('/', (req: Request, res: Response) => {
+  res.redirect('/dashboard/');
+});
+
+// Dashboard routes
+app.get('/dashboard/', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'dashboard', 'index.html'));
+});
+
+app.get('/dashboard/analytics', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'dashboard', 'analytics.html'));
+});
+
+app.get('/dashboard/admin', (req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'dashboard', 'admin.html'));
 });
 
 // Health check endpoint
