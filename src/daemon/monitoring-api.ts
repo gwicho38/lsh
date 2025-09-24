@@ -8,13 +8,19 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+console.log('Setting up monitoring API...');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+console.log('Express middleware configured');
+
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+console.log('Supabase client:', supabase ? 'configured' : 'not configured');
 
 const CACHE_DIR = '/Users/lefv/.lsh/cache';
 const MONITORING_DIR = '/Users/lefv/.lsh/monitoring';
@@ -212,6 +218,23 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.MONITORING_API_PORT || 3031;
 
-app.listen(PORT, () => {
+console.log('Starting server on port', PORT);
+
+const server = app.listen(PORT, () => {
   console.log(`Monitoring API running on port ${PORT}`);
 });
+
+server.on('error', (err) => {
+  console.error('Server error:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+console.log('Server and error handlers configured');
