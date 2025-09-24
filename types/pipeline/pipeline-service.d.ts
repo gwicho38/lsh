@@ -14,6 +14,7 @@ export declare class PipelineService {
     private mcliBridge;
     private workflowEngine;
     private config;
+    private isDemoMode;
     constructor(config?: PipelineServiceConfig);
     private setupMiddleware;
     private setupRoutes;
