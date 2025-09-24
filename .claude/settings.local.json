@@ -108,7 +108,10 @@
       "Bash(open monitoring-dashboard.html)",
       "Bash(for endpoint in health metrics jobs trades alerts)",
       "Bash(do echo \"=== /api/$endpoint ===\")",
-      "Bash(open monitoring-dashboard-v2.html)"
+      "Bash(open monitoring-dashboard-v2.html)",
+      "Bash(brew install:*)",
+      "Bash(brew services start:*)",
+      "Bash(open src/cicd/dashboard/index.html)"
     ],
     "deny": [],
     "ask": []
