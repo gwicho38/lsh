@@ -8,6 +8,7 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -226,6 +227,9 @@
 
         const API_BASE = 'http://localhost:3033';
 
+        // Initialize Socket.IO connection
+        const socket = io('http://localhost:3033');
+
         function formatDuration(ms) {
             if (!ms) return 'N/A';
             const seconds = Math.floor(ms / 1000);
@@ -260,12 +264,22 @@
         function PipelineItem({ pipeline }) {
             const statusClass = `pipeline-status status-${pipeline.status}${pipeline.conclusion ? ` ${pipeline.conclusion}` : ''}`;
 
+            const platformEmoji = {
+                github: '🐙',
+                gitlab: '🦊',
+                jenkins: '🏗️'
+            };
+
             return (
                 <div className="pipeline-item">
                     <div className="pipeline-header">
                         <div>
-                            <div className="pipeline-title">{pipeline.workflow_name}</div>
-                            <div className="pipeline-repo">{pipeline.repository} • {pipeline.branch}</div>
+                            <div className="pipeline-title">
+                                {platformEmoji[pipeline.platform] || '⚡'} {pipeline.workflow_name}
+                            </div>
+                            <div className="pipeline-repo">
+                                {pipeline.repository} • {pipeline.branch} • {pipeline.platform.toUpperCase()}
+                            </div>
                         </div>
                         <div className={statusClass}>
                             {pipeline.conclusion || pipeline.status}
@@ -287,6 +301,11 @@
             const [pipelines, setPipelines] = useState([]);
             const [loading, setLoading] = useState(true);
             const [error, setError] = useState(null);
+            const [selectedPlatform, setSelectedPlatform] = useState('');
+
+            const filteredPipelines = selectedPlatform
+                ? pipelines.filter(p => p.platform === selectedPlatform)
+                : pipelines;
 
             const fetchData = async () => {
                 try {
@@ -316,8 +335,43 @@
 
             useEffect(() => {
                 fetchData();
-                const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
-                return () => clearInterval(interval);
+
+                // Set up real-time event listeners
+                socket.on('pipeline_event', (data) => {
+                    console.log('Real-time pipeline update:', data);
+                    setPipelines(prev => {
+                        const existing = prev.find(p => p.id === data.event.id);
+                        if (existing) {
+                            return prev.map(p => p.id === data.event.id ? data.event : p);
+                        } else {
+                            return [data.event, ...prev.slice(0, 19)]; // Keep only latest 20
+                        }
+                    });
+                });
+
+                socket.on('metrics_update', (data) => {
+                    console.log('Real-time metrics update:', data);
+                    setMetrics(data.metrics);
+                });
+
+                socket.on('connect', () => {
+                    console.log('Connected to WebSocket server');
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Disconnected from WebSocket server');
+                });
+
+                // Fallback polling every 60 seconds (reduced since we have real-time updates)
+                const interval = setInterval(fetchData, 60000);
+
+                return () => {
+                    clearInterval(interval);
+                    socket.off('pipeline_event');
+                    socket.off('metrics_update');
+                    socket.off('connect');
+                    socket.off('disconnect');
+                };
             }, []);
 
             if (loading) {
@@ -371,10 +425,46 @@
                     )}
 
                     <div className="pipelines-section">
-                        <h2 className="section-title">Recent Pipeline Runs</h2>
-                        {pipelines.length > 0 ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h2 className="section-title" style={{ margin: 0 }}>Recent Pipeline Runs</h2>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => setSelectedPlatform('')}
+                                    style={{
+                                        padding: '6px 12px',
+                                        borderRadius: '16px',
+                                        border: 'none',
+                                        backgroundColor: selectedPlatform === '' ? '#3b82f6' : '#1e293b',
+                                        color: '#e2e8f0',
+                                        cursor: 'pointer',
+                                        fontSize: '12px'
+                                    }}
+                                >
+                                    All
+                                </button>
+                                {['github', 'gitlab', 'jenkins'].map(platform => (
+                                    <button
+                                        key={platform}
+                                        onClick={() => setSelectedPlatform(platform)}
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '16px',
+                                            border: 'none',
+                                            backgroundColor: selectedPlatform === platform ? '#3b82f6' : '#1e293b',
+                                            color: '#e2e8f0',
+                                            cursor: 'pointer',
+                                            fontSize: '12px',
+                                            textTransform: 'capitalize'
+                                        }}
+                                    >
+                                        {platform}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        {filteredPipelines.length > 0 ? (
                             <div className="pipeline-list">
-                                {pipelines.map(pipeline => (
+                                {filteredPipelines.map(pipeline => (
                                     <PipelineItem key={pipeline.id} pipeline={pipeline} />
                                 ))}
                             </div>
@@ -386,7 +476,7 @@
                     </div>
 
                     <div className="refresh-indicator">
-                        Last updated: {new Date().toLocaleTimeString()} • Auto-refresh every 30s
+                        🔄 Real-time updates enabled • Last update: {new Date().toLocaleTimeString()}
                     </div>
                 </div>
             );
