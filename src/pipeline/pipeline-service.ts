@@ -28,6 +28,7 @@ export class PipelineService {
   private mcliBridge: MCLIBridge;
   private workflowEngine: WorkflowEngine;
   private config: PipelineServiceConfig;
+  private isDemoMode: boolean = false;
 
   constructor(config: PipelineServiceConfig = {}) {
     this.config = {
@@ -127,6 +128,16 @@ export class PipelineService {
 
     // Job Management Routes
     router.post('/api/pipeline/jobs', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const demoJob = {
+          id: `job-${Date.now()}`,
+          ...req.body,
+          status: 'queued',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        return res.status(201).json(demoJob);
+      }
       try {
         const job: PipelineJob = req.body;
         const createdJob = await this.jobTracker.createJob(job);
@@ -138,6 +149,42 @@ export class PipelineService {
     });
 
     router.get('/api/pipeline/jobs', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        // Return demo jobs
+        const demoJobs = [
+          {
+            id: 'demo-job-1',
+            name: 'Data Sync - Users',
+            status: 'completed',
+            sourceSystem: 'lsh',
+            targetSystem: 'mcli',
+            createdAt: new Date(Date.now() - 3600000).toISOString(),
+            updatedAt: new Date(Date.now() - 1800000).toISOString(),
+            progress: 100
+          },
+          {
+            id: 'demo-job-2',
+            name: 'ML Model Training',
+            status: 'running',
+            sourceSystem: 'mcli',
+            targetSystem: 'ml-pipeline',
+            createdAt: new Date(Date.now() - 1800000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            progress: 65
+          },
+          {
+            id: 'demo-job-3',
+            name: 'Metrics Collection',
+            status: 'queued',
+            sourceSystem: 'lsh',
+            targetSystem: 'monitoring',
+            createdAt: new Date(Date.now() - 600000).toISOString(),
+            updatedAt: new Date().toISOString(),
+            progress: 0
+          }
+        ];
+        return res.json({ jobs: demoJobs, total: demoJobs.length });
+      }
       try {
         const filters = {
           status: req.query.status as JobStatus,
@@ -158,6 +205,19 @@ export class PipelineService {
     });
 
     router.get('/api/pipeline/jobs/:id', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const demoJob = {
+          id: req.params.id,
+          name: 'Demo Job',
+          status: 'running',
+          sourceSystem: 'lsh',
+          targetSystem: 'mcli',
+          createdAt: new Date(Date.now() - 1800000).toISOString(),
+          updatedAt: new Date().toISOString(),
+          progress: 75
+        };
+        return res.json(demoJob);
+      }
       try {
         const job = await this.jobTracker.getJob(req.params.id);
         if (!job) {
@@ -229,6 +289,23 @@ export class PipelineService {
 
     // Active Jobs
     router.get('/api/pipeline/jobs/active', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const activeJobs = [
+          {
+            id: 'active-1',
+            name: 'Real-time Data Sync',
+            status: 'running',
+            progress: 45
+          },
+          {
+            id: 'active-2',
+            name: 'Log Processing',
+            status: 'running',
+            progress: 82
+          }
+        ];
+        return res.json(activeJobs);
+      }
       try {
         const jobs = await this.jobTracker.getActiveJobs();
         res.json(jobs);
@@ -240,6 +317,19 @@ export class PipelineService {
 
     // Success Rates
     router.get('/api/pipeline/metrics/success-rates', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const successRates = {
+          overall: 0.95,
+          bySystem: {
+            lsh: 0.97,
+            mcli: 0.94,
+            monitoring: 0.93
+          },
+          last24h: 0.96,
+          last7d: 0.95
+        };
+        return res.json(successRates);
+      }
       try {
         const rates = await this.jobTracker.getJobSuccessRates();
         res.json(rates);
@@ -295,6 +385,20 @@ export class PipelineService {
 
     // Pipeline Statistics
     router.get('/api/pipeline/statistics', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        // Return demo statistics
+        const demoStats = {
+          total_jobs: '42',
+          total_executions: '156',
+          completed_jobs: '38',
+          failed_jobs: '2',
+          active_jobs: '2',
+          avg_duration_ms: '45000',
+          max_duration_ms: '180000',
+          min_duration_ms: '5000'
+        };
+        return res.json(demoStats);
+      }
       try {
         const query = `
           SELECT
@@ -321,6 +425,30 @@ export class PipelineService {
 
     // Recent Events
     router.get('/api/pipeline/events', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        // Return demo events
+        const demoEvents = [
+          {
+            id: 'event-1',
+            type: 'job_completed',
+            message: 'Job "Data Sync - Users" completed successfully',
+            occurred_at: new Date(Date.now() - 300000).toISOString()
+          },
+          {
+            id: 'event-2',
+            type: 'job_started',
+            message: 'Job "ML Model Training" started',
+            occurred_at: new Date(Date.now() - 600000).toISOString()
+          },
+          {
+            id: 'event-3',
+            type: 'job_queued',
+            message: 'Job "Metrics Collection" queued for processing',
+            occurred_at: new Date(Date.now() - 900000).toISOString()
+          }
+        ];
+        return res.json(demoEvents);
+      }
       try {
         const limit = parseInt(req.query.limit as string) || 100;
         const query = `
@@ -339,6 +467,16 @@ export class PipelineService {
 
     // Workflow Management Routes
     router.post('/api/pipeline/workflows', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const demoWorkflow = {
+          id: `workflow-${Date.now()}`,
+          ...req.body,
+          status: 'draft',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        return res.status(201).json(demoWorkflow);
+      }
       try {
         const workflow = await this.workflowEngine.createWorkflow(req.body);
         res.status(201).json(workflow);
@@ -349,6 +487,27 @@ export class PipelineService {
     });
 
     router.get('/api/pipeline/workflows', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const demoWorkflows = [
+          {
+            id: 'workflow-1',
+            name: 'Daily Data Pipeline',
+            description: 'Syncs data from LSH to MCLI daily',
+            status: 'active',
+            nodes: 3,
+            createdAt: new Date(Date.now() - 86400000).toISOString()
+          },
+          {
+            id: 'workflow-2',
+            name: 'ML Training Pipeline',
+            description: 'Trains and deploys ML models',
+            status: 'active',
+            nodes: 5,
+            createdAt: new Date(Date.now() - 172800000).toISOString()
+          }
+        ];
+        return res.json({ workflows: demoWorkflows, total: demoWorkflows.length });
+      }
       try {
         const workflows = await this.workflowEngine.listWorkflows({
           status: req.query.status as string,
@@ -363,6 +522,21 @@ export class PipelineService {
     });
 
     router.get('/api/pipeline/workflows/:id', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const demoWorkflow = {
+          id: req.params.id,
+          name: 'Demo Workflow',
+          description: 'A demo workflow for testing',
+          status: 'active',
+          nodes: [
+            { id: 'node1', type: 'trigger', name: 'Start' },
+            { id: 'node2', type: 'action', name: 'Process Data' },
+            { id: 'node3', type: 'condition', name: 'Check Status' }
+          ],
+          createdAt: new Date(Date.now() - 86400000).toISOString()
+        };
+        return res.json(demoWorkflow);
+      }
       try {
         const workflow = await this.workflowEngine.getWorkflow(req.params.id);
         if (!workflow) {
@@ -392,6 +566,24 @@ export class PipelineService {
     });
 
     router.get('/api/pipeline/workflows/:id/executions', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const demoExecutions = [
+          {
+            id: 'exec-1',
+            workflowId: req.params.id,
+            status: 'completed',
+            startedAt: new Date(Date.now() - 7200000).toISOString(),
+            completedAt: new Date(Date.now() - 6000000).toISOString()
+          },
+          {
+            id: 'exec-2',
+            workflowId: req.params.id,
+            status: 'running',
+            startedAt: new Date(Date.now() - 1800000).toISOString()
+          }
+        ];
+        return res.json({ executions: demoExecutions, total: 2 });
+      }
       try {
         const executions = await this.workflowEngine.getWorkflowExecutions(req.params.id, {
           limit: parseInt(req.query.limit as string) || 50,
@@ -578,10 +770,12 @@ export class PipelineService {
       try {
         await this.pool.query('SELECT 1');
         console.log('✅ Database connected');
+        this.isDemoMode = false;
       } catch (dbError) {
         console.warn('⚠️  Database not available - running in demo mode');
         console.log('   To enable full functionality, create a PostgreSQL database named "pipeline"');
         console.log('   and run: psql -d pipeline -f src/pipeline/schema.sql');
+        this.isDemoMode = true;
       }
 
       // Start job tracker polling
