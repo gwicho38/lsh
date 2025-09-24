@@ -69,6 +69,7 @@
     "request": "^2.88.2",
     "sendgrid": "^5.2.3",
     "socket.io": "^4.8.1",
+    "uuid": "^10.0.0",
     "xstate": "^5.9.1",
     "zapier-platform-core": "15.4.1",
     "zx": "^7.2.3"
