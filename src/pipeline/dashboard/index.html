@@ -600,6 +600,11 @@
       return date.toLocaleDateString();
     }
 
+    function viewDetails(jobId, event) {
+      event.stopPropagation();
+      window.location.href = `/dashboard/job-detail.html?id=${jobId}`;
+    }
+
     // Load initial data
     loadStatistics();
     loadJobs();
