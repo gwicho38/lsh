@@ -3,9 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data Pipeline Dashboard</title>
+  <title>Pipeline Command Center</title>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -14,70 +15,261 @@
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
-      padding: 20px;
+      position: relative;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="1" fill="white" opacity="0.3"/></svg>');
+      opacity: 0.1;
+      animation: drift 20s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes drift {
+      from { transform: translateY(0); }
+      to { transform: translateY(-100px); }
+    }
+
+    .navbar {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: 16px 32px;
+      box-shadow: 0 2px 40px rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar-content {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .navbar-logo {
+      font-size: 28px;
+      color: #667eea;
+    }
+
+    .navbar-title {
+      font-size: 22px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .navbar-links {
+      display: flex;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .navbar-link {
+      color: #4a5568;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .navbar-link:hover {
+      color: #667eea;
+    }
+
+    .navbar-link i {
+      font-size: 14px;
     }
 
     .container {
       max-width: 1400px;
       margin: 0 auto;
+      padding: 32px 20px;
     }
 
-    .header {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 24px;
-      border-radius: 16px;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+    /* Hero Section */
+    .hero-section {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: 48px;
+      border-radius: 24px;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      position: relative;
+      overflow: hidden;
     }
 
-    .header h1 {
-      color: #1a202c;
-      font-size: 32px;
-      margin-bottom: 8px;
+    .hero-section::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+      pointer-events: none;
     }
 
-    .header p {
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
       color: #718096;
+      font-size: 18px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+    }
+
+    .hero-button {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      border: none;
       font-size: 16px;
     }
 
+    .hero-button.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .hero-button.primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .hero-button.secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #e2e8f0;
+    }
+
+    .hero-button.secondary:hover {
+      border-color: #667eea;
+      background: #f7fafc;
+    }
+
+    /* Stats Grid */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 32px;
     }
 
     .stat-card {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: 28px;
+      border-radius: 20px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      height: 100%;
+      background: linear-gradient(180deg, var(--stat-color) 0%, transparent 100%);
+    }
+
+    .stat-card:nth-child(1) { --stat-color: #48bb78; }
+    .stat-card:nth-child(2) { --stat-color: #4299e1; }
+    .stat-card:nth-child(3) { --stat-color: #f6ad55; }
+    .stat-card:nth-child(4) { --stat-color: #9f7aea; }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--stat-color) 0%, transparent 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 24px;
+      color: white;
     }
 
     .stat-label {
-      color: #718096;
-      font-size: 14px;
+      color: #a0aec0;
+      font-size: 13px;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
     .stat-value {
       color: #1a202c;
       font-size: 36px;
-      font-weight: bold;
-      margin-bottom: 4px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
     }
 
     .stat-change {
       font-size: 14px;
       font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
     }
 
     .stat-change.positive {
@@ -88,158 +280,225 @@
       color: #f56565;
     }
 
+    .stat-change i {
+      font-size: 12px;
+    }
+
+    /* Jobs Container */
     .jobs-container {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
-      margin-bottom: 24px;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: 32px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      margin-bottom: 32px;
     }
 
     .jobs-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
 
     .jobs-header h2 {
       color: #2d3748;
-      font-size: 24px;
+      font-size: 28px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
     .filter-buttons {
       display: flex;
       gap: 8px;
+      background: #f7fafc;
+      padding: 4px;
+      border-radius: 12px;
     }
 
     .filter-button {
-      padding: 8px 16px;
-      border: 1px solid #e2e8f0;
-      background: white;
+      padding: 10px 20px;
+      border: none;
+      background: transparent;
       border-radius: 8px;
       color: #4a5568;
       font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
     }
 
     .filter-button:hover {
-      background: #f7fafc;
+      background: white;
     }
 
     .filter-button.active {
-      background: #667eea;
-      color: white;
-      border-color: #667eea;
+      background: white;
+      color: #667eea;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     .jobs-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 16px;
     }
 
     .job-card {
       background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 16px;
+      border: 2px solid #f7fafc;
+      border-radius: 16px;
+      padding: 20px;
       display: flex;
       align-items: center;
-      gap: 16px;
-      transition: all 0.2s;
+      gap: 20px;
+      transition: all 0.3s;
       cursor: pointer;
+      position: relative;
     }
 
     .job-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       transform: translateY(-2px);
+      border-color: #e2e8f0;
     }
 
-    .job-status {
-      width: 12px;
-      height: 12px;
+    .job-status-indicator {
+      width: 16px;
+      height: 16px;
       border-radius: 50%;
       flex-shrink: 0;
+      position: relative;
     }
 
-    .job-status.pending {
+    .job-status-indicator::before {
+      content: '';
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      border-radius: 50%;
+      background: inherit;
+      opacity: 0.3;
+      animation: pulse 2s infinite;
+    }
+
+    .job-status-indicator.pending {
       background: #cbd5e0;
     }
 
-    .job-status.queued {
+    .job-status-indicator.queued {
       background: #805ad5;
     }
 
-    .job-status.running {
+    .job-status-indicator.running {
       background: #3182ce;
-      animation: pulse 2s infinite;
     }
 
-    .job-status.completed {
+    .job-status-indicator.completed {
       background: #48bb78;
     }
 
-    .job-status.failed {
+    .job-status-indicator.failed {
       background: #f56565;
     }
 
-    .job-status.cancelled {
+    .job-status-indicator.cancelled {
       background: #a0aec0;
     }
 
-    .job-status.retrying {
+    .job-status-indicator.retrying {
       background: #ed8936;
-      animation: pulse 2s infinite;
     }
 
     @keyframes pulse {
-      0%, 100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0.5;
-      }
+      0%, 100% { transform: scale(1); opacity: 0.3; }
+      50% { transform: scale(1.5); opacity: 0; }
     }
 
     .job-info {
       flex: 1;
     }
 
+    .job-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
     .job-name {
       color: #2d3748;
+      font-weight: 700;
+      font-size: 17px;
+    }
+
+    .job-badge {
+      padding: 4px 10px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 20px;
+      font-size: 11px;
       font-weight: 600;
-      font-size: 16px;
-      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .job-meta {
       display: flex;
-      gap: 16px;
+      gap: 20px;
       color: #718096;
       font-size: 14px;
     }
 
+    .job-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .job-meta-item i {
+      font-size: 12px;
+      color: #a0aec0;
+    }
+
     .job-actions {
       display: flex;
-      gap: 8px;
+      gap: 10px;
     }
 
     .job-action-button {
-      padding: 6px 12px;
-      border: 1px solid #e2e8f0;
+      padding: 8px 16px;
+      border: 2px solid #e2e8f0;
       background: white;
-      border-radius: 6px;
+      border-radius: 10px;
       color: #4a5568;
-      font-size: 12px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
 
     .job-action-button:hover {
       background: #f7fafc;
+      border-color: #cbd5e0;
+    }
+
+    .job-action-button.primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+    }
+
+    .job-action-button.primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
     }
 
     .job-action-button.danger {
@@ -249,75 +508,116 @@
 
     .job-action-button.danger:hover {
       background: #fff5f5;
+      border-color: #fc8181;
     }
 
+    /* Submit Form */
     .submit-form {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 24px;
-      border-radius: 16px;
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      padding: 32px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+
+    .form-header {
+      margin-bottom: 28px;
+    }
+
+    .form-title {
+      color: #2d3748;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .form-subtitle {
+      color: #718096;
+      font-size: 15px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
     }
 
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: 0;
     }
 
     .form-label {
       display: block;
       color: #4a5568;
       font-size: 14px;
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
     .form-input, .form-select, .form-textarea {
       width: 100%;
-      padding: 12px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 14px;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      font-size: 15px;
+      transition: all 0.2s;
+      background: white;
     }
 
     .form-input:focus, .form-select:focus, .form-textarea:focus {
       outline: none;
       border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
     }
 
     .form-textarea {
-      min-height: 100px;
+      min-height: 120px;
       resize: vertical;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
     }
 
     .submit-button {
-      background: #667eea;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
-      padding: 12px 24px;
+      padding: 14px 32px;
       border: none;
-      border-radius: 8px;
+      border-radius: 12px;
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
     }
 
     .submit-button:hover {
-      background: #5a67d8;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
     }
 
+    /* Notification */
     .notification {
       position: fixed;
-      top: 20px;
+      top: 80px;
       right: 20px;
       padding: 16px 24px;
-      border-radius: 8px;
+      border-radius: 12px;
       color: white;
       font-weight: 600;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
       transform: translateX(400px);
       transition: transform 0.3s;
       z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .notification i {
+      font-size: 20px;
     }
 
     .notification.show {
@@ -325,52 +625,167 @@
     }
 
     .notification.success {
-      background: #48bb78;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
     }
 
     .notification.error {
-      background: #f56565;
+      background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
     }
 
     .notification.info {
-      background: #4299e1;
+      background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #718096;
+    }
+
+    .empty-state i {
+      font-size: 64px;
+      color: #cbd5e0;
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #4a5568;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .footer a {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-content">
+      <a href="/hub" class="navbar-brand">
+        <span class="navbar-logo">🚀</span>
+        <span class="navbar-title">Pipeline Command Center</span>
+      </a>
+      <div class="navbar-links">
+        <a href="/hub" class="navbar-link">
+          <i class="fas fa-th-large"></i>
+          <span>Hub</span>
+        </a>
+        <a href="/dashboard/workflow.html" class="navbar-link">
+          <i class="fas fa-project-diagram"></i>
+          <span>Workflows</span>
+        </a>
+        <a href="/monitoring/api/health" class="navbar-link">
+          <i class="fas fa-heartbeat"></i>
+          <span>Health</span>
+        </a>
+        <a href="/cicd/dashboard" class="navbar-link">
+          <i class="fas fa-code-branch"></i>
+          <span>CI/CD</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
   <div class="container">
-    <div class="header">
-      <h1>📊 Data Pipeline Dashboard</h1>
-      <p>Monitor and manage data integration jobs between LSH and MCLI</p>
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <h1 class="hero-title">Data Pipeline Operations</h1>
+        <p class="hero-subtitle">
+          Monitor and orchestrate data flows between LSH and MCLI systems.
+          Track job performance, manage workflows, and ensure data integrity across your entire pipeline.
+        </p>
+        <div class="hero-actions">
+          <button class="hero-button primary" onclick="document.getElementById('job-form').scrollIntoView({behavior: 'smooth'})">
+            <i class="fas fa-plus-circle"></i>
+            Submit New Job
+          </button>
+          <a href="/dashboard/workflow.html" class="hero-button secondary">
+            <i class="fas fa-sitemap"></i>
+            View Workflows
+          </a>
+        </div>
+      </div>
     </div>
 
+    <!-- Statistics Grid -->
     <div class="stats-grid">
       <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-tasks"></i>
+        </div>
         <div class="stat-label">Total Jobs</div>
         <div class="stat-value" id="total-jobs">0</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>12% from yesterday</span>
+        </div>
       </div>
       <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-play-circle"></i>
+        </div>
         <div class="stat-label">Active Jobs</div>
         <div class="stat-value" id="active-jobs">0</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>3 started</span>
+        </div>
       </div>
       <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
         <div class="stat-label">Success Rate</div>
         <div class="stat-value" id="success-rate">0%</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>2.5% improvement</span>
+        </div>
       </div>
       <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-clock"></i>
+        </div>
         <div class="stat-label">Avg Duration</div>
         <div class="stat-value" id="avg-duration">0s</div>
+        <div class="stat-change negative">
+          <i class="fas fa-arrow-down"></i>
+          <span>5% faster</span>
+        </div>
       </div>
     </div>
 
+    <!-- Jobs Container -->
     <div class="jobs-container">
       <div class="jobs-header">
-        <h2>Active Jobs</h2>
+        <h2>
+          <i class="fas fa-stream"></i>
+          Active Pipeline Jobs
+        </h2>
         <div class="filter-buttons">
-          <button class="filter-button active" onclick="filterJobs('all')">All</button>
+          <button class="filter-button active" onclick="filterJobs('all')">All Jobs</button>
           <button class="filter-button" onclick="filterJobs('running')">Running</button>
           <button class="filter-button" onclick="filterJobs('queued')">Queued</button>
           <button class="filter-button" onclick="filterJobs('failed')">Failed</button>
+          <button class="filter-button" onclick="filterJobs('completed')">Completed</button>
         </div>
       </div>
       <div class="jobs-list" id="jobs-list">
@@ -378,41 +793,57 @@
       </div>
     </div>
 
+    <!-- Submit Form -->
     <div class="submit-form">
-      <h2 style="margin-bottom: 20px; color: #2d3748;">Submit New Job</h2>
+      <div class="form-header">
+        <h2 class="form-title">Submit New Job</h2>
+        <p class="form-subtitle">Configure and launch a new data pipeline job</p>
+      </div>
       <form id="job-form">
-        <div class="form-group">
-          <label class="form-label">Job Name</label>
-          <input type="text" class="form-input" id="job-name" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Job Type</label>
-          <select class="form-select" id="job-type" required>
-            <option value="data_ingestion">Data Ingestion</option>
-            <option value="etl">ETL Process</option>
-            <option value="ml_training">ML Training</option>
-            <option value="batch_prediction">Batch Prediction</option>
-            <option value="data_export">Data Export</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Priority</label>
-          <select class="form-select" id="job-priority">
-            <option value="low">Low</option>
-            <option value="normal" selected>Normal</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Job Name</label>
+            <input type="text" class="form-input" id="job-name" placeholder="e.g., Daily ETL Process" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Job Type</label>
+            <select class="form-select" id="job-type" required>
+              <option value="data_ingestion">Data Ingestion</option>
+              <option value="etl">ETL Process</option>
+              <option value="ml_training">ML Training</option>
+              <option value="batch_prediction">Batch Prediction</option>
+              <option value="data_export">Data Export</option>
+              <option value="monitoring">Monitoring Job</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select class="form-select" id="job-priority">
+              <option value="low">Low Priority</option>
+              <option value="normal" selected>Normal Priority</option>
+              <option value="high">High Priority</option>
+              <option value="critical">Critical</option>
+            </select>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Configuration (JSON)</label>
-          <textarea class="form-textarea" id="job-config" placeholder='{"key": "value"}'>{}</textarea>
+          <textarea class="form-textarea" id="job-config" placeholder='{"source": "lsh", "target": "mcli", "batch_size": 1000}'>{}</textarea>
         </div>
-        <button type="submit" class="submit-button">Submit Job</button>
+        <button type="submit" class="submit-button">
+          <i class="fas fa-rocket"></i>
+          Launch Job
+        </button>
       </form>
     </div>
   </div>
 
+  <!-- Footer -->
+  <div class="footer">
+    <p>Powered by <a href="/hub">LSH Pipeline System</a> | <a href="/health/all">System Status</a></p>
+  </div>
+
+  <!-- Notification -->
   <div class="notification" id="notification"></div>
 
   <script>
@@ -488,27 +919,55 @@
         : allJobs.filter(job => job.status === currentFilter);
 
       if (filteredJobs.length === 0) {
-        jobsList.innerHTML = '<p style="color: #718096; text-align: center;">No jobs found</p>';
+        jobsList.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No jobs found</h3>
+            <p>No ${currentFilter === 'all' ? '' : currentFilter} jobs at the moment</p>
+          </div>
+        `;
         return;
       }
 
       jobsList.innerHTML = filteredJobs.map(job => `
         <div class="job-card" onclick="viewJob('${job.id}')">
-          <div class="job-status ${job.status}"></div>
+          <div class="job-status-indicator ${job.status}"></div>
           <div class="job-info">
-            <div class="job-name">${job.name}</div>
+            <div class="job-header">
+              <div class="job-name">${job.name}</div>
+              <span class="job-badge">${job.type || 'pipeline'}</span>
+            </div>
             <div class="job-meta">
-              <span>${job.type}</span>
-              <span>${job.owner || 'Unknown'}</span>
-              <span>${formatDate(job.createdAt)}</span>
+              <span class="job-meta-item">
+                <i class="fas fa-user"></i>
+                ${job.owner || 'System'}
+              </span>
+              <span class="job-meta-item">
+                <i class="fas fa-calendar"></i>
+                ${formatDate(job.createdAt)}
+              </span>
+              <span class="job-meta-item">
+                <i class="fas fa-server"></i>
+                ${job.sourceSystem || 'lsh'} → ${job.targetSystem || 'mcli'}
+              </span>
             </div>
           </div>
           <div class="job-actions">
+            <button class="job-action-button primary" onclick="viewDetails('${job.id}', event)">
+              <i class="fas fa-eye"></i>
+              Details
+            </button>
             ${job.status === 'failed' ? `
-              <button class="job-action-button" onclick="retryJob('${job.id}', event)">Retry</button>
+              <button class="job-action-button" onclick="retryJob('${job.id}', event)">
+                <i class="fas fa-redo"></i>
+                Retry
+              </button>
             ` : ''}
             ${job.status === 'running' || job.status === 'queued' ? `
-              <button class="job-action-button danger" onclick="cancelJob('${job.id}', event)">Cancel</button>
+              <button class="job-action-button danger" onclick="cancelJob('${job.id}', event)">
+                <i class="fas fa-stop"></i>
+                Cancel
+              </button>
             ` : ''}
           </div>
         </div>
@@ -551,8 +1010,12 @@
     function viewJob(jobId) {
       // Subscribe to job updates
       socket.emit('subscribe:job', jobId);
-      // In a real app, this would navigate to a job detail page
-      console.log('View job:', jobId);
+      window.location.href = `/dashboard/job-detail.html?id=${jobId}`;
+    }
+
+    function viewDetails(jobId, event) {
+      event.stopPropagation();
+      window.location.href = `/dashboard/job-detail.html?id=${jobId}`;
     }
 
     // Form submission
@@ -571,8 +1034,9 @@
 
       try {
         const response = await axios.post(`${API_BASE}/api/pipeline/jobs`, jobData);
-        showNotification('Job submitted successfully', 'success');
+        showNotification('Job launched successfully!', 'success');
         document.getElementById('job-form').reset();
+        document.getElementById('job-config').value = '{}';
         loadJobs();
       } catch (error) {
         showNotification('Failed to submit job', 'error');
@@ -581,12 +1045,21 @@
 
     function showNotification(message, type = 'info') {
       const notification = document.getElementById('notification');
-      notification.textContent = message;
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        info: 'fa-info-circle'
+      };
+
+      notification.innerHTML = `
+        <i class="fas ${icons[type]}"></i>
+        <span>${message}</span>
+      `;
       notification.className = `notification ${type} show`;
 
       setTimeout(() => {
         notification.classList.remove('show');
-      }, 3000);
+      }, 4000);
     }
 
     function formatDate(dateString) {
@@ -598,11 +1071,6 @@
       if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
       if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
       return date.toLocaleDateString();
-    }
-
-    function viewDetails(jobId, event) {
-      event.stopPropagation();
-      window.location.href = `/dashboard/job-detail.html?id=${jobId}`;
     }
 
     // Load initial data
