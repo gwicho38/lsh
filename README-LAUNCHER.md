@@ -1,23 +1,27 @@
-# Dashboard Launcher 🚀
+# myAI Dashboard 🤖
 
-Multiple ways to launch the dashboard as a native desktop application!
+Multiple ways to launch your AI/ML pipeline dashboard as a native desktop application!
 
 ## Option 1: macOS App (Recommended)
 
-A **Dashboard Launcher.app** has been created on your Desktop.
+A **myAiDashboard.app** has been created on your Desktop with a beautiful AI-themed icon.
 
-**Simply double-click the app icon to launch the desktop application!**
+**Simply double-click the app icon to launch the native desktop application!**
 
 ## Option 2: Shell Command
 
 Add this alias to your shell profile (~/.zshrc or ~/.bashrc):
 
 ```bash
+alias myai='/Users/lefv/repos/lsh/launch-dashboard.sh'
+# or keep the legacy alias
 alias dashboard='/Users/lefv/repos/lsh/launch-dashboard.sh'
 ```
 
 Then use:
 ```bash
+myai
+# or
 dashboard
 ```
 

@@ -16,8 +16,8 @@ DASHBOARD_URL="http://localhost:3034/hub"
 LSH_PATH="/Users/lefv/repos/lsh"
 MCLI_PATH="/Users/lefv/repos/mcli"
 
-echo -e "${BLUE}🚀 MCLI Workflow Dashboard Launcher${NC}"
-echo -e "${BLUE}=====================================${NC}"
+echo -e "${BLUE}🚀 myAI Dashboard Launcher${NC}"
+echo -e "${BLUE}==========================${NC}"
 echo ""
 
 # Check if uv is available
