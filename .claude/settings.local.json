@@ -118,7 +118,8 @@
       "Bash(MONITORING_API_PORT=3035 node dist/daemon/monitoring-api.js)",
       "Bash(open /tmp/test-dashboard.html)",
       "Bash(open http://localhost:3034/dashboard/)",
-      "Read(//Users/lefv/**)"
+      "Read(//Users/lefv/**)",
+      "Bash(open http://localhost:3034/dashboard/job-detail.html?id=job-db-health-monitor)"
     ],
     "deny": [],
     "ask": []
