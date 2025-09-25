@@ -1,7 +1,6 @@
 import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { LSHJobDaemon } from '../src/daemon/lshd';
 import * as fs from 'fs';
-import * as path from 'path';
 import { exec } from 'child_process';
 
 // Mock fs and child_process

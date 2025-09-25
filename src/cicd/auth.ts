@@ -96,8 +96,8 @@ export class AuthService {
     try {
       const result = await this.pool.query(query, [email, name, passwordHash, role]);
       return result.rows[0];
-    } catch (error: any) {
-      if (error.code === '23505') { // Unique constraint violation
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === '23505') { // Unique constraint violation
         throw new Error('User with this email already exists');
       }
       throw error;
@@ -149,7 +149,7 @@ export class AuthService {
   verifyToken(token: string): TokenPayload {
     try {
       return jwt.verify(token, JWT_SECRET) as TokenPayload;
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Invalid or expired token');
     }
   }
@@ -263,8 +263,9 @@ export function authenticate(authService: AuthService) {
 
       req.user = user;
       next();
-    } catch (error: any) {
-      return res.status(401).json({ error: error.message });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Authentication failed';
+      return res.status(401).json({ error: message });
     }
   };
 }

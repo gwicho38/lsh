@@ -165,7 +165,7 @@ export class JobBuiltins {
 
     try {
       let signal = 'SIGTERM';
-      let jobId = args[args.length - 1];
+      const jobId = args[args.length - 1];
 
       for (let i = 0; i < args.length - 1; i++) {
         if (args[i] === '-9' || args[i] === '--kill') {
@@ -243,7 +243,7 @@ export class JobBuiltins {
 
     try {
       let force = false;
-      let jobId = args[args.length - 1];
+      const jobId = args[args.length - 1];
 
       for (const arg of args.slice(0, -1)) {
         if (arg === '-f' || arg === '--force') {
@@ -461,7 +461,7 @@ export class JobBuiltins {
 
     try {
       let signal = 'SIGTERM';
-      let pidStr = args[args.length - 1];
+      const pidStr = args[args.length - 1];
       const pid = parseInt(pidStr);
 
       if (isNaN(pid)) {

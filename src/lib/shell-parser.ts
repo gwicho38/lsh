@@ -657,7 +657,7 @@ export class ShellParser {
   }
 
   private parsePipeline(): Pipeline | ASTNode {
-    let left = this.parsePipelineElement();
+    const left = this.parsePipelineElement();
 
     if (this.peek().type === TokenType.PIPE) {
       const commands = [left];
@@ -771,7 +771,7 @@ export class ShellParser {
       this.advance();
     }
     
-    let words: string[] = [];
+    const words: string[] = [];
     
     if (this.peek().type === TokenType.IN) {
       this.advance();
