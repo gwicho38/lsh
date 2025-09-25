@@ -2,7 +2,7 @@ import { Command } from "commander";
 import { getFiles } from "../../util/lib.util.js";
 
 async function parseCommands(files: any) {
-  let commands = {};
+  const commands = {};
 
   for (const file of files) {
     if (file !== "lib.ts") {

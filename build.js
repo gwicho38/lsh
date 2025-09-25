@@ -3,9 +3,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __dirname = path.dirname(__filename); // Not used in this script
 
-console.log('Creating shell wrapper for LSH...');
+console.warn('Creating shell wrapper for LSH...');
 
 // Create a shell script wrapper that includes the dist directory
 const wrapperScript = `#!/bin/bash
@@ -35,5 +35,5 @@ fi
 // Write the wrapper script
 fs.writeFileSync('lsh', wrapperScript, { mode: 0o755 });
 
-console.log('Shell wrapper created: lsh');
-console.log('Executable has been created!');
+console.warn('Shell wrapper created: lsh');
+console.warn('Executable has been created!');

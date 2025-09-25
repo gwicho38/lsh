@@ -256,7 +256,7 @@ export class VariableExpander {
 
   private patternToRegex(pattern: string): RegExp {
     // Convert shell pattern to regex
-    let regex = pattern
+    const regex = pattern
       .replace(/\*/g, '.*')       // * matches any string
       .replace(/\?/g, '.')        // ? matches any single character
       .replace(/\[([^\]]+)\]/g, '[$1]'); // [abc] character class
@@ -333,7 +333,7 @@ export class VariableExpander {
   private evaluateArithmetic(expression: string): number {
     // Simple arithmetic evaluator
     // Replace variables with their numeric values
-    let expr = expression.replace(/[a-zA-Z_][a-zA-Z0-9_]*/g, (match) => {
+    const expr = expression.replace(/[a-zA-Z_][a-zA-Z0-9_]*/g, (match) => {
       const value = this.getParameterValue(match);
       const numValue = parseInt(value, 10);
       return isNaN(numValue) ? '0' : numValue.toString();

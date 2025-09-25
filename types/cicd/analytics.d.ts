@@ -53,5 +53,9 @@ export declare function generateInsights(trends: TrendData[]): Promise<Insight[]
 export declare function predictNextPeriod(trends: TrendData[]): Promise<Prediction[]>;
 export declare function calculateCostAnalysis(trends: TrendData[]): Promise<CostAnalysis>;
 export declare function generateAnalyticsReport(period?: 'daily' | 'weekly' | 'monthly'): Promise<AnalyticsReport>;
-export declare function detectBottlenecks(): Promise<any>;
+export declare function detectBottlenecks(): Promise<Array<{
+    stage: string;
+    avgDuration: number;
+    impact: string;
+}>>;
 export {};

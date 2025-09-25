@@ -32,7 +32,7 @@ async function executeCommand(input, workingDir = process.cwd()) {
     
     if (type === "js") {
         try {
-            let code = input.startsWith("js:") ? input.substring(3).trim() : input;
+            const code = input.startsWith("js:") ? input.substring(3).trim() : input;
             const context = createContext({
                 console, process, Buffer, shell_exec, sh: shell_exec,
                 __dirname: workingDir,

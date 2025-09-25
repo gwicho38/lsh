@@ -50,19 +50,19 @@ export class DataRetentionService {
   private setupCronJobs() {
     // Daily cleanup at 2 AM
     const dailyCleanup = cron.schedule('0 2 * * *', async () => {
-      console.log('Running daily data cleanup...');
+      console.warn('Running daily data cleanup...');
       await this.runCleanup();
     });
 
     // Weekly archive at Sunday 3 AM
     const weeklyArchive = cron.schedule('0 3 * * 0', async () => {
-      console.log('Running weekly data archive...');
+      console.warn('Running weekly data archive...');
       await this.runArchive();
     });
 
     // Hourly Redis cleanup
     const hourlyRedisCleanup = cron.schedule('0 * * * *', async () => {
-      console.log('Running Redis cleanup...');
+      console.warn('Running Redis cleanup...');
       await this.cleanupRedis();
     });
 
@@ -150,13 +150,13 @@ export class DataRetentionService {
     }
   }
 
-  private async saveToS3(archiveData: any) {
+  private async saveToS3(archiveData: { recordCount: number; tableName: string; [key: string]: unknown }) {
     // Implementation would use AWS SDK
-    console.log(`Would save ${archiveData.recordCount} records from ${archiveData.tableName} to S3`);
+    console.warn(`Would save ${archiveData.recordCount} records from ${archiveData.tableName} to S3`);
     // Placeholder for S3 upload logic
   }
 
-  private async saveToLocal(archiveData: any) {
+  private async saveToLocal(archiveData: { recordCount: number; tableName: string; [key: string]: unknown }) {
     const fs = await import('fs/promises');
     const path = await import('path');
     const zlib = await import('zlib');
@@ -164,7 +164,12 @@ export class DataRetentionService {
 
     const gzip = promisify(zlib.gzip);
 
-    const fileName = `${archiveData.tableName}_${archiveData.archiveDate.replace(/:/g, '-')}.json`;
+    const timestamp = 'archiveDate' in archiveData && typeof archiveData.archiveDate === 'string'
+      ? archiveData.archiveDate.replace(/:/g, '-')
+      : 'weekOf' in archiveData && typeof archiveData.weekOf === 'string'
+        ? archiveData.weekOf
+        : new Date().toISOString().replace(/:/g, '-');
+    const fileName = `${archiveData.tableName}_${timestamp}.json`;
     const filePath = path.join(this.archiveConfig.localPath!, fileName);
 
     let data = JSON.stringify(archiveData);
@@ -173,10 +178,10 @@ export class DataRetentionService {
       data = (await gzip(data)).toString('base64');
       const compressedPath = filePath + '.gz';
       await fs.writeFile(compressedPath, data);
-      console.log(`Archived ${archiveData.recordCount} records to ${compressedPath}`);
+      console.warn(`Archived ${archiveData.recordCount} records to ${compressedPath}`);
     } else {
       await fs.writeFile(filePath, data);
-      console.log(`Archived ${archiveData.recordCount} records to ${filePath}`);
+      console.warn(`Archived ${archiveData.recordCount} records to ${filePath}`);
     }
   }
 
@@ -215,12 +220,12 @@ export class DataRetentionService {
       }
     }
 
-    console.log('Redis cleanup completed');
+    console.warn('Redis cleanup completed');
   }
 
   async runArchive() {
     if (!this.archiveConfig.enabled) {
-      console.log('Archiving is disabled');
+      console.warn('Archiving is disabled');
       return;
     }
 
@@ -274,7 +279,7 @@ export class DataRetentionService {
     return results;
   }
 
-  private async logCleanupResults(results: any[]) {
+  private async logCleanupResults(results: Array<{ status: string; deletedRecords?: number; [key: string]: unknown }>) {
     const query = `
       INSERT INTO data_retention_logs (
         execution_time, tables_processed, records_deleted, status, details
@@ -344,7 +349,7 @@ export class DataRetentionService {
     try {
       const result = await this.pool.query(query, [cutoffDate]);
       return parseInt(result.rows[0].count);
-    } catch (error) {
+    } catch (_error) {
       return 0;
     }
   }

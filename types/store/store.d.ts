@@ -5,22 +5,30 @@ export declare const setPrivateKey: (value: string) => void;
 export declare const getKey: () => string;
 export declare const setKey: (value: string) => void;
 export declare const getShell: () => void;
-export declare const setShell: (value: any) => void;
-export declare const setCmdMap: (key: string, value: any) => void;
+export declare const setShell: (_value: unknown) => void;
+export declare const setCmdMap: (key: string, value: unknown) => void;
 export declare const getCmdMap: () => Map<any, any>;
-export declare const get: (key: any) => any;
-export declare const set: (key: any, value: any) => any;
-export declare const inst: (value: any) => void;
-export declare const kill: (value: any) => void;
+export declare const get: (_key: unknown) => unknown;
+export declare const set: (_key: unknown, value: unknown) => unknown;
+export declare const inst: (value: unknown) => void;
+export declare const kill: (value: unknown) => void;
 type LSH = {
-    key?: any;
+    key?: unknown;
     id?: number;
     name?: string;
     session?: string;
     pkgId?: string;
-    get?: any;
-    set?: any;
-    commands?: any;
+    get?: unknown;
+    set?: unknown;
+    commands?: unknown;
 };
 export declare const lsh: LSH;
+declare global {
+    var lsh: {
+        get: (key: unknown) => unknown;
+        set: (key: unknown, value: unknown) => unknown;
+        inst: (value: unknown) => void;
+        kill: (value: unknown) => void;
+    };
+}
 export {};

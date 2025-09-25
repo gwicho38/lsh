@@ -120,7 +120,7 @@ export class CacheManager {
     return value;
   }
 
-  async warmup(namespace: string, items: Array<{ id: string; factory: () => Promise<any>; ttl?: number }>) {
+  async warmup<T>(namespace: string, items: Array<{ id: string; factory: () => Promise<T>; ttl?: number }>) {
     const promises = items.map(async (item) => {
       await this.getOrSet(namespace, item.id, item.factory, item.ttl);
     });
@@ -146,7 +146,7 @@ export class CacheManager {
         return parseFloat(size);
       }
       return 0;
-    } catch (error) {
+    } catch (_error) {
       return 0;
     }
   }
@@ -187,11 +187,11 @@ export class CacheManager {
 
 // Decorator for method-level caching
 export function Cacheable(namespace: string, ttl?: number) {
-  return function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function(target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function(...args: any[]) {
-      const cacheManager = (this as any).cacheManager;
+    descriptor.value = async function(...args: unknown[]) {
+      const cacheManager = (this as { cacheManager?: CacheManager }).cacheManager;
       if (!cacheManager) {
         return originalMethod.apply(this, args);
       }
