@@ -177,7 +177,7 @@
                 Monitor politician trading data, ML predictions, and system health.
                 Built with Streamlit for interactive data analysis.
             </p>
-            <a href="http://localhost:8501" target="_blank" class="dashboard-button">
+            <a href="http://localhost:3034/ml/dashboard" target="_blank" class="dashboard-button">
                 <i class="fas fa-external-link-alt me-2"></i>Launch Dashboard
             </a>
         </div>
@@ -225,7 +225,7 @@
                 Monitor continuous integration and deployment across GitHub Actions,
                 GitLab CI, and Jenkins with real-time build analytics.
             </p>
-            <a href="http://localhost:3033/dashboard/" target="_blank" class="dashboard-button">
+            <a href="http://localhost:3034/cicd/dashboard" target="_blank" class="dashboard-button">
                 <i class="fas fa-external-link-alt me-2"></i>View CI/CD
             </a>
         </div>
@@ -241,7 +241,7 @@
                 Monitor system health, API endpoints, and service status.
                 Real-time alerts and performance metrics for all services.
             </p>
-            <a href="http://localhost:3035/api/health" target="_blank" class="dashboard-button">
+            <a href="http://localhost:3034/monitoring/api/health" target="_blank" class="dashboard-button">
                 <i class="fas fa-external-link-alt me-2"></i>Check Health
             </a>
         </div>
@@ -263,11 +263,11 @@
         // Check service health status
         async function checkServiceHealth() {
             const services = [
-                { id: 'streamlit-status', url: 'http://localhost:8501' },
+                { id: 'streamlit-status', url: 'http://localhost:3034/ml/dashboard' },
                 { id: 'pipeline-status', url: 'http://localhost:3034/health' },
                 { id: 'workflow-status', url: 'http://localhost:3034/health' },
-                { id: 'cicd-status', url: 'http://localhost:3033/health' },
-                { id: 'monitoring-status', url: 'http://localhost:3035/api/health' }
+                { id: 'cicd-status', url: 'http://localhost:3034/cicd/health' },
+                { id: 'monitoring-status', url: 'http://localhost:3034/monitoring/api/health' }
             ];
 
             for (const service of services) {
