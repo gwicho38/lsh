@@ -52,10 +52,18 @@ function createWindow() {
     mainWindow.focus();
   });
 
-  // Handle external links
+  // Handle external links - only deny if trying to open in new window
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
+    const parsedUrl = new URL(url);
+
+    // Allow localhost navigation within the same window, open external links in browser
+    if (parsedUrl.hostname === 'localhost' && parsedUrl.port === '3034') {
+      mainWindow.loadURL(url);
+      return { action: 'deny' };
+    } else {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
   });
 
   // Open DevTools in development
@@ -68,11 +76,16 @@ function createWindow() {
     mainWindow = null;
   });
 
-  // Handle navigation
+  // Handle navigation - allow localhost:3034, prevent external
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl);
 
-    if (parsedUrl.origin !== 'http://localhost:3034') {
+    // Allow navigation within our localhost dashboard
+    if (parsedUrl.hostname === 'localhost' && parsedUrl.port === '3034') {
+      // Allow the navigation to proceed within the app
+      return;
+    } else {
+      // Prevent navigation and open external links in browser
       event.preventDefault();
       shell.openExternal(navigationUrl);
     }
@@ -273,7 +286,9 @@ function createMenu() {
         {
           label: 'System Health',
           click: () => {
-            shell.openExternal('http://localhost:3034/health/all');
+            if (mainWindow) {
+              mainWindow.loadURL('http://localhost:3034/health/all');
+            }
           }
         }
       ]
