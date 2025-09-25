@@ -50,6 +50,14 @@ function createWindow() {
       app.dock.show();
     }
     mainWindow.focus();
+
+    // Inject navigation bar into every page
+    injectNavigationBar();
+  });
+
+  // Re-inject navigation bar after each navigation
+  mainWindow.webContents.on('did-finish-load', () => {
+    injectNavigationBar();
   });
 
   // Handle external links - only deny if trying to open in new window
@@ -89,6 +97,167 @@ function createWindow() {
       event.preventDefault();
       shell.openExternal(navigationUrl);
     }
+  });
+}
+
+function injectNavigationBar() {
+  if (!mainWindow) return;
+
+  const navigationBarScript = `
+    (function() {
+      // Remove existing navigation bar if it exists
+      const existingNav = document.getElementById('electron-nav-bar');
+      if (existingNav) {
+        existingNav.remove();
+      }
+
+      // Create navigation bar
+      const navBar = document.createElement('div');
+      navBar.id = 'electron-nav-bar';
+      navBar.style.cssText = \`
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 50px;
+        background: linear-gradient(135deg, #1e293b, #334155);
+        border-bottom: 1px solid #475569;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 16px;
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(8px);
+      \`;
+
+      // Navigation buttons
+      const backBtn = document.createElement('button');
+      backBtn.innerHTML = '← Back';
+      backBtn.style.cssText = \`
+        background: rgba(55, 65, 81, 0.8);
+        border: none;
+        color: #e5e7eb;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: all 0.2s ease;
+      \`;
+      backBtn.onmouseover = () => backBtn.style.background = 'rgba(75, 85, 99, 0.9)';
+      backBtn.onmouseout = () => backBtn.style.background = 'rgba(55, 65, 81, 0.8)';
+      backBtn.onclick = () => history.back();
+
+      const forwardBtn = document.createElement('button');
+      forwardBtn.innerHTML = 'Forward →';
+      forwardBtn.style.cssText = backBtn.style.cssText;
+      forwardBtn.onmouseover = backBtn.onmouseover;
+      forwardBtn.onmouseout = backBtn.onmouseout;
+      forwardBtn.onclick = () => history.forward();
+
+      // Current page indicator
+      const pageIndicator = document.createElement('div');
+      pageIndicator.style.cssText = \`
+        flex: 1;
+        text-align: center;
+        color: #f1f5f9;
+        font-size: 14px;
+        font-weight: 500;
+      \`;
+
+      // Determine current page name
+      const path = window.location.pathname;
+      let pageName = 'Dashboard Hub';
+      if (path.includes('/dashboard/workflow')) {
+        pageName = '⚙️ Workflows';
+      } else if (path.includes('/dashboard/')) {
+        pageName = '📊 Pipeline Jobs';
+      } else if (path.includes('/cicd/dashboard')) {
+        pageName = '🔧 CI/CD Pipeline';
+      } else if (path.includes('/ml/dashboard')) {
+        pageName = '🤖 ML Dashboard';
+      } else if (path.includes('/health')) {
+        pageName = '💗 System Health';
+      }
+      pageIndicator.textContent = pageName;
+
+      // Quick nav buttons
+      const quickNavContainer = document.createElement('div');
+      quickNavContainer.style.cssText = \`
+        display: flex;
+        gap: 8px;
+      \`;
+
+      const navItems = [
+        { label: '🏠', url: '/hub', title: 'Hub' },
+        { label: '📊', url: '/dashboard/', title: 'Pipeline' },
+        { label: '⚙️', url: '/dashboard/workflow.html', title: 'Workflows' },
+        { label: '🤖', url: '/ml/dashboard', title: 'ML Dashboard' },
+        { label: '🔧', url: '/cicd/dashboard', title: 'CI/CD' },
+        { label: '💗', url: '/health/all', title: 'Health' }
+      ];
+
+      navItems.forEach(item => {
+        const btn = document.createElement('button');
+        btn.innerHTML = item.label;
+        btn.title = item.title;
+        btn.style.cssText = \`
+          background: rgba(55, 65, 81, 0.6);
+          border: none;
+          color: #e5e7eb;
+          width: 32px;
+          height: 32px;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s ease;
+        \`;
+
+        // Highlight current page
+        if (window.location.pathname === item.url ||
+            (item.url === '/hub' && window.location.pathname === '/') ||
+            (item.url === '/dashboard/' && window.location.pathname.includes('/dashboard/') && !window.location.pathname.includes('workflow'))) {
+          btn.style.background = 'rgba(59, 130, 246, 0.8)';
+          btn.style.color = '#ffffff';
+        }
+
+        btn.onmouseover = () => {
+          if (!btn.style.background.includes('59, 130, 246')) {
+            btn.style.background = 'rgba(75, 85, 99, 0.8)';
+          }
+        };
+        btn.onmouseout = () => {
+          if (!btn.style.background.includes('59, 130, 246')) {
+            btn.style.background = 'rgba(55, 65, 81, 0.6)';
+          }
+        };
+        btn.onclick = () => window.location.href = item.url;
+
+        quickNavContainer.appendChild(btn);
+      });
+
+      // Assemble navigation bar
+      navBar.appendChild(backBtn);
+      navBar.appendChild(forwardBtn);
+      navBar.appendChild(pageIndicator);
+      navBar.appendChild(quickNavContainer);
+
+      // Add to page
+      document.body.insertBefore(navBar, document.body.firstChild);
+
+      // Adjust body padding to accommodate nav bar
+      if (!document.body.style.paddingTop || document.body.style.paddingTop === '0px') {
+        document.body.style.paddingTop = '50px';
+      }
+    })();
+  `;
+
+  mainWindow.webContents.executeJavaScript(navigationBarScript).catch(err => {
+    console.error('Failed to inject navigation bar:', err);
   });
 }
 
