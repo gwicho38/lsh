@@ -19,6 +19,63 @@
             min-height: 100vh;
         }
 
+        .nav-header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 12px 0;
+            margin-bottom: 20px;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-back {
+            background: #374151;
+            border: none;
+            color: #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s ease;
+        }
+
+        .nav-back:hover {
+            background: #4b5563;
+        }
+
+        .nav-title {
+            color: #f1f5f9;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 16px;
+            margin-left: auto;
+        }
+
+        .nav-link {
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            transition: color 0.2s ease, background 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #e2e8f0;
+            background: #374151;
+        }
+
         .dashboard {
             padding: 20px;
             max-width: 1400px;
@@ -220,15 +277,27 @@
     </style>
 </head>
 <body>
+    <div class="nav-header">
+        <div class="nav-container">
+            <button class="nav-back" onclick="window.location.href='/hub'">← Back to Hub</button>
+            <div class="nav-title">CI/CD Dashboard</div>
+            <div class="nav-links">
+                <a href="/hub" class="nav-link">🏠 Hub</a>
+                <a href="/dashboard/" class="nav-link">📊 Pipeline</a>
+                <a href="/dashboard/workflow.html" class="nav-link">⚙️ Workflows</a>
+                <a href="/ml/dashboard" class="nav-link">🤖 ML</a>
+            </div>
+        </div>
+    </div>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const API_BASE = 'http://localhost:3033';
+        const API_BASE = 'http://localhost:3034';
 
         // Initialize Socket.IO connection
-        const socket = io('http://localhost:3033');
+        const socket = io('http://localhost:3034');
 
         function formatDuration(ms) {
             if (!ms) return 'N/A';
