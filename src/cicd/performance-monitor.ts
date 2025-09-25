@@ -1,5 +1,4 @@
-import { performance, PerformanceObserver } from 'perf_hooks';
-import * as v8 from 'v8';
+import { performance } from 'perf_hooks';
 import * as os from 'os';
 
 interface PerformanceMetrics {
@@ -185,7 +184,7 @@ export class PerformanceMonitor {
     };
   }
 
-  getHealthStatus(): { status: string; details: any } {
+  getHealthStatus(): { status: string; details: { uptime: number; issues: string[]; metrics: Record<string, string | number> } } {
     const metrics = this.getMetrics();
     let status = 'healthy';
     const issues = [];
@@ -233,12 +232,12 @@ export class PerformanceMonitor {
 
   // Middleware for Express
   middleware() {
-    return (req: any, res: any, next: any) => {
+    return (req: { method: string; path: string }, res: { statusCode: number; end: (...args: unknown[]) => void }, next: () => void) => {
       const start = Date.now();
 
       // Override res.end to capture response time
       const originalEnd = res.end;
-      res.end = (...args: any[]) => {
+      res.end = (...args: unknown[]) => {
         const responseTime = Date.now() - start;
 
         this.recordRequest({
@@ -270,10 +269,10 @@ export class PerformanceMonitor {
 export const performanceMonitor = new PerformanceMonitor();
 
 // Helper to measure function execution time
-export function measurePerformance(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+export function measurePerformance(target: unknown, propertyKey: string, descriptor: PropertyDescriptor) {
   const originalMethod = descriptor.value;
 
-  descriptor.value = async function(...args: any[]) {
+  descriptor.value = async function(...args: unknown[]) {
     const start = performance.now();
 
     try {

@@ -2,12 +2,9 @@ import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals
 import request from 'supertest';
 import { LSHApiServer } from '../src/daemon/api-server';
 import { LSHJobDaemon } from '../src/daemon/lshd';
-import * as fs from 'fs';
-import * as path from 'path';
 
 // Mock dependencies
 jest.mock('../src/daemon/lshd');
-jest.mock('fs');
 
 describe('LSH API Server', () => {
   let apiServer: LSHApiServer;

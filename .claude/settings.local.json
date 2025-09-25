@@ -125,7 +125,16 @@
       "Bash(if grep -q \"lsh \" \"$script\")",
       "Bash(then)",
       "Bash(fi)",
-      "Bash(do echo \"Testing $endpoint:\")"
+      "Bash(do echo \"Testing $endpoint:\")",
+      "Bash(sips:*)",
+      "Bash(iconutil:*)",
+      "Bash(open:*)",
+      "Bash(killall:*)",
+      "Bash(\"/Users/lefv/Desktop/myAiDashboard.app/Contents/MacOS/myAiDashboard\")",
+      "Bash(npm audit:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm test:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": [],
     "ask": []

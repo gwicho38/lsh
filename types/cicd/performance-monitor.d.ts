@@ -48,13 +48,23 @@ export declare class PerformanceMonitor {
     getMetrics(): PerformanceMetrics;
     getHealthStatus(): {
         status: string;
-        details: any;
+        details: {
+            uptime: number;
+            issues: string[];
+            metrics: Record<string, string | number>;
+        };
     };
     private triggerAlert;
-    middleware(): (req: any, res: any, next: any) => void;
+    middleware(): (req: {
+        method: string;
+        path: string;
+    }, res: {
+        statusCode: number;
+        end: (...args: unknown[]) => void;
+    }, next: () => void) => void;
     shutdown(): Promise<PerformanceMetrics>;
 }
 export declare const performanceMonitor: PerformanceMonitor;
-export declare function measurePerformance(target: any, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor;
+export declare function measurePerformance(target: unknown, propertyKey: string, descriptor: PropertyDescriptor): PropertyDescriptor;
 export declare function profileMemory(label: string): () => void;
 export {};

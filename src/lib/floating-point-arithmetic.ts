@@ -132,7 +132,7 @@ export class FloatingPointArithmetic {
    */
   private cleanExpression(expression: string): string {
     // Remove whitespace
-    let cleaned = expression.replace(/\s/g, '');
+    const cleaned = expression.replace(/\s/g, '');
     
     // Validate characters (allow numbers, operators, parentheses, function names, and dots)
     if (!/^[0-9+\-*/().,a-zA-Z_]+$/.test(cleaned)) {

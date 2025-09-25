@@ -22,9 +22,9 @@ export declare class CacheManager {
     set<T>(namespace: string, identifier: string, value: T, ttl?: number): Promise<void>;
     invalidate(namespace: string, identifier?: string): Promise<void>;
     getOrSet<T>(namespace: string, identifier: string, factory: () => Promise<T>, ttl?: number): Promise<T>;
-    warmup(namespace: string, items: Array<{
+    warmup<T>(namespace: string, items: Array<{
         id: string;
-        factory: () => Promise<any>;
+        factory: () => Promise<T>;
         ttl?: number;
     }>): Promise<void>;
     private updateHitRate;
@@ -34,6 +34,6 @@ export declare class CacheManager {
     private resetStats;
     disconnect(): Promise<void>;
 }
-export declare function Cacheable(namespace: string, ttl?: number): (target: any, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
+export declare function Cacheable(namespace: string, ttl?: number): (target: unknown, propertyKey: string, descriptor: PropertyDescriptor) => PropertyDescriptor;
 export declare const cacheManager: CacheManager;
 export {};

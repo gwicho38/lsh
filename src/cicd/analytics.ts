@@ -5,7 +5,8 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 
-const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ?
+// Future use for Supabase integration - keeping for planned features
+const _supabase = SUPABASE_URL && SUPABASE_ANON_KEY ?
   createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 const redis = new Redis(REDIS_URL);
 
@@ -61,8 +62,8 @@ interface CostAnalysis {
   savingsOpportunities: string[];
 }
 
-// Calculate moving average for trend smoothing
-function movingAverage(data: number[], window: number): number[] {
+// Calculate moving average for trend smoothing - utility function for future features
+function _movingAverage(data: number[], window: number): number[] {
   const result: number[] = [];
   for (let i = 0; i < data.length; i++) {
     const start = Math.max(0, i - window + 1);
@@ -139,7 +140,7 @@ export async function detectBuildAnomalies(trends: TrendData[]): Promise<Anomaly
   // Extract metrics
   const durations = trends.map(t => t.avgDuration);
   const failureRates = trends.map(t => t.failureRate);
-  const buildCounts = trends.map(t => t.totalBuilds);
+  const _buildCounts = trends.map(t => t.totalBuilds);
 
   // Detect duration anomalies
   const durationAnomalies = detectAnomalies(durations);
@@ -350,7 +351,7 @@ export async function generateAnalyticsReport(
 }
 
 // Export functions for bottleneck detection
-export async function detectBottlenecks(): Promise<any> {
+export async function detectBottlenecks(): Promise<Array<{ stage: string; avgDuration: number; impact: string }>> {
   // Analyze stage durations to find slowest parts
   const stageData = await redis.hgetall('stage_durations');
   const bottlenecks = Object.entries(stageData)

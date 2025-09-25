@@ -207,7 +207,7 @@ export class ExtendedParameterExpander {
    * Convert shell pattern to regex
    */
   private patternToRegex(pattern: string): RegExp {
-    let regex = pattern
+    const regex = pattern
       .replace(/\\/g, '\\\\')  // Escape backslashes first
       .replace(/\*/g, '.*')    // * matches any string
       .replace(/\?/g, '.')     // ? matches any single character

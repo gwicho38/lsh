@@ -8,10 +8,22 @@ import { createServer } from 'http';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execSync, spawn, ChildProcess } from 'child_process';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Compatibility function for ES modules and CommonJS
+function getCurrentDirname(): string {
+  // Use eval to avoid TypeScript compilation issues in CommonJS mode
+  try {
+    const importMeta = eval('import.meta');
+    return path.dirname(fileURLToPath(importMeta.url));
+  } catch {
+    // Use src/pipeline directory as fallback for testing
+    return path.join(process.cwd(), 'src', 'pipeline');
+  }
+}
+
+const currentDir = getCurrentDirname();
 
 export interface PipelineServiceConfig {
   port?: number;
@@ -31,6 +43,7 @@ export class PipelineService {
   private workflowEngine: WorkflowEngine;
   private config: PipelineServiceConfig;
   private isDemoMode: boolean = false;
+  private streamlitProcess: ChildProcess | null = null;
 
   private getSystemJobs(): any[] {
     const jobs: any[] = [];
@@ -133,6 +146,67 @@ export class PipelineService {
     this.setupRoutes();
     this.setupWebSocket();
     this.setupEventListeners();
+    this.startStreamlit();
+  }
+
+  private async startStreamlit() {
+    try {
+      // Check if Streamlit is already running on port 8501
+      const checkCmd = 'lsof -i :8501';
+      try {
+        execSync(checkCmd, { stdio: 'ignore' });
+        console.log('✅ Streamlit ML Dashboard is already running on port 8501');
+        return;
+      } catch {
+        // Port is free, continue to start Streamlit
+      }
+
+      console.log('🚀 Starting Streamlit ML Dashboard...');
+
+      // Path to MCLI repo and Streamlit app
+      const mcliPath = '/Users/lefv/repos/mcli';
+      const streamlitAppPath = 'src/mcli/ml/dashboard/app_supabase.py';
+
+      // Start Streamlit process
+      this.streamlitProcess = spawn('uv', [
+        'run', 'streamlit', 'run', streamlitAppPath,
+        '--server.port', '8501',
+        '--server.address', 'localhost',
+        '--browser.gatherUsageStats', 'false',
+        '--server.headless', 'true'
+      ], {
+        cwd: mcliPath,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+
+      // Handle process output
+      this.streamlitProcess.stdout?.on('data', (data) => {
+        const output = data.toString();
+        if (output.includes('You can now view your Streamlit app')) {
+          console.log('✅ Streamlit ML Dashboard started successfully at http://localhost:8501');
+        }
+      });
+
+      this.streamlitProcess.stderr?.on('data', (data) => {
+        const error = data.toString();
+        if (!error.includes('WARNING') && !error.includes('INFO')) {
+          console.error('❌ Streamlit Error:', error);
+        }
+      });
+
+      this.streamlitProcess.on('exit', (code) => {
+        if (code !== 0 && code !== null) {
+          console.error(`❌ Streamlit process exited with code ${code}`);
+        }
+        this.streamlitProcess = null;
+      });
+
+      // Wait a moment for Streamlit to start
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+    } catch (error) {
+      console.error('❌ Failed to start Streamlit ML Dashboard:', error);
+    }
   }
 
   private setupMiddleware() {
@@ -140,7 +214,7 @@ export class PipelineService {
     this.app.use(express.urlencoded({ extended: true }));
 
     // Serve dashboard from src directory
-    const dashboardPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard');
+    const dashboardPath = path.join(currentDir, '..', '..', 'src', 'pipeline', 'dashboard');
     console.log(`Serving dashboard from: ${dashboardPath}`);
     this.app.use('/dashboard', express.static(dashboardPath));
 
@@ -172,13 +246,13 @@ export class PipelineService {
 
     // Dashboard routes
     router.get('/dashboard/', (req: Request, res: Response) => {
-      const dashboardPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard', 'index.html');
+      const dashboardPath = path.join(currentDir, '..', '..', 'src', 'pipeline', 'dashboard', 'index.html');
       res.sendFile(dashboardPath);
     });
 
     // Hub route - central dashboard hub
     router.get('/hub', (req: Request, res: Response) => {
-      const hubPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard', 'hub.html');
+      const hubPath = path.join(currentDir, '..', '..', 'src', 'pipeline', 'dashboard', 'hub.html');
       res.sendFile(hubPath);
     });
 
@@ -189,48 +263,17 @@ export class PipelineService {
       res.redirect('/ml/dashboard');
     });
 
-    router.get('/ml/dashboard', (req: Request, res: Response) => {
-      // For now, serve a simple HTML page that explains the ML dashboard
-      // In production, this could proxy to Streamlit or serve a React dashboard
-      res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <title>ML Dashboard</title>
-          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-        </head>
-        <body class="bg-light">
-          <div class="container py-5">
-            <h1>🤖 ML Dashboard</h1>
-            <p class="lead">Machine Learning & Trading Analytics</p>
-            <div class="alert alert-info">
-              <strong>Note:</strong> The Streamlit ML dashboard needs to be started separately:
-              <pre class="mt-2"><code>cd /path/to/mcli && streamlit run app.py</code></pre>
-              Once running, it will be available at <a href="http://localhost:8501">http://localhost:8501</a>
-            </div>
-            <div class="row mt-4">
-              <div class="col-md-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">Trading Analytics</h5>
-                    <p class="card-text">Monitor politician trading patterns and ML predictions</p>
-                  </div>
-                </div>
-              </div>
-              <div class="col-md-6">
-                <div class="card">
-                  <div class="card-body">
-                    <h5 class="card-title">Model Performance</h5>
-                    <p class="card-text">Track ML model accuracy and performance metrics</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </body>
-        </html>
-      `);
+    // ML Dashboard proxy to Streamlit
+    const mlDashboardProxy = createProxyMiddleware({
+      target: 'http://localhost:8501',
+      changeOrigin: true,
+      ws: true,
+      pathRewrite: {
+        '^/ml/dashboard': '',
+      },
     });
+
+    router.use('/ml/dashboard', mlDashboardProxy);
 
     // CI/CD Dashboard endpoints (replaces port 3033)
     router.get('/cicd', (req: Request, res: Response) => {
@@ -239,7 +282,7 @@ export class PipelineService {
 
     router.get('/cicd/dashboard', (req: Request, res: Response) => {
       // Serve CI/CD dashboard
-      const cicdPath = path.join(__dirname, '..', '..', 'src', 'cicd', 'dashboard', 'index.html');
+      const cicdPath = path.join(currentDir, '..', '..', 'src', 'cicd', 'dashboard', 'index.html');
       if (fs.existsSync(cicdPath)) {
         res.sendFile(cicdPath);
       } else {
@@ -1074,6 +1117,14 @@ export class PipelineService {
     });
   }
 
+  getApp(): express.Application {
+    return this.app;
+  }
+
+  getServer() {
+    return this.server;
+  }
+
   async start(): Promise<void> {
     try {
       // Test database connection
@@ -1119,6 +1170,13 @@ export class PipelineService {
     // Stop polling
     this.jobTracker.stopPolling();
 
+    // Stop Streamlit process
+    if (this.streamlitProcess) {
+      console.log('Stopping Streamlit ML Dashboard...');
+      this.streamlitProcess.kill('SIGTERM');
+      this.streamlitProcess = null;
+    }
+
     // Cleanup services
     await this.jobTracker.cleanup();
     this.mcliBridge.cleanup();
@@ -1142,7 +1200,17 @@ export async function startPipelineService(config?: PipelineServiceConfig): Prom
 }
 
 // Handle process termination
-if (import.meta.url === `file://${process.argv[1]}`) {
+function isMainModule(): boolean {
+  try {
+    const importMeta = eval('import.meta');
+    return importMeta.url === `file://${process.argv[1]}`;
+  } catch {
+    // Fallback: check if this file is being run directly
+    return process.argv[1] && process.argv[1].endsWith('pipeline-service.js');
+  }
+}
+
+if (isMainModule()) {
   const service = new PipelineService();
 
   process.on('SIGINT', async () => {
