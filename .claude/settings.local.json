@@ -119,7 +119,12 @@
       "Bash(open /tmp/test-dashboard.html)",
       "Bash(open http://localhost:3034/dashboard/)",
       "Read(//Users/lefv/**)",
-      "Bash(open http://localhost:3034/dashboard/job-detail.html?id=job-db-health-monitor)"
+      "Bash(open http://localhost:3034/dashboard/job-detail.html?id=job-db-health-monitor)",
+      "Bash(for:*)",
+      "Bash(do)",
+      "Bash(if grep -q \"lsh \" \"$script\")",
+      "Bash(then)",
+      "Bash(fi)"
     ],
     "deny": [],
     "ask": []
