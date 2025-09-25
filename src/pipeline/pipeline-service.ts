@@ -170,10 +170,16 @@ export class PipelineService {
       res.redirect('/dashboard/');
     });
 
-    // Dashboard route
+    // Dashboard routes
     router.get('/dashboard/', (req: Request, res: Response) => {
       const dashboardPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard', 'index.html');
       res.sendFile(dashboardPath);
+    });
+
+    // Hub route - central dashboard hub
+    router.get('/hub', (req: Request, res: Response) => {
+      const hubPath = path.join(__dirname, '..', '..', 'src', 'pipeline', 'dashboard', 'hub.html');
+      res.sendFile(hubPath);
     });
 
     // Health check
