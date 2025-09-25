@@ -1,12 +1,12 @@
 # Dashboard Launcher 🚀
 
-Multiple ways to launch the dashboard with a single click!
+Multiple ways to launch the dashboard as a native desktop application!
 
 ## Option 1: macOS App (Recommended)
 
 A **Dashboard Launcher.app** has been created on your Desktop.
 
-**Simply double-click the app icon to launch the dashboard!**
+**Simply double-click the app icon to launch the desktop application!**
 
 ## Option 2: Shell Command
 
@@ -21,7 +21,16 @@ Then use:
 dashboard
 ```
 
-## Option 3: Direct Script
+## Option 3: Direct npm Script
+
+Run directly from the project:
+```bash
+npm run dashboard
+# or
+npm run electron
+```
+
+## Option 4: Direct Script
 
 Run the launcher script directly:
 ```bash
@@ -34,8 +43,9 @@ The launcher will:
 
 1. **First try**: `mcli workflow dashboard run` (preferred method)
 2. **Fallback**: Start the LSH pipeline service directly
-3. **Auto-open** browser to the dashboard hub
+3. **Launch Electron**: Native desktop application window
 4. **Smart detection** - won't start if already running
+5. **Auto-cleanup**: Stops service when app is closed
 
 ## Dashboard URLs
 

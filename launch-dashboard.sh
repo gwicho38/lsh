@@ -81,15 +81,25 @@ else
     done
 fi
 
-# Open dashboard in default browser
-echo -e "${BLUE}🌐 Opening dashboard in browser...${NC}"
-open "$DASHBOARD_URL"
+# Launch Electron desktop app
+echo -e "${BLUE}🖥️  Launching desktop application...${NC}"
+
+cd "$LSH_PATH" || {
+    echo -e "${RED}❌ Error: Cannot find LSH directory at $LSH_PATH${NC}"
+    exit 1
+}
+
+# Launch the Electron app
+npm run electron 2>/dev/null &
+ELECTRON_PID=$!
 
 echo ""
-echo -e "${GREEN}✨ Dashboard launched successfully!${NC}"
+echo -e "${GREEN}✨ Dashboard desktop app launched successfully!${NC}"
+echo -e "${BLUE}🖥️  Running as native desktop application${NC}"
 echo -e "${BLUE}📊 Hub: ${NC}$DASHBOARD_URL"
 echo -e "${BLUE}📈 Pipeline: ${NC}http://localhost:3034/dashboard/"
 echo -e "${BLUE}🤖 ML: ${NC}http://localhost:3034/ml/dashboard"
 echo -e "${BLUE}🔧 CI/CD: ${NC}http://localhost:3034/cicd/dashboard"
 echo ""
-echo -e "${YELLOW}💡 To stop the service, run:${NC} pkill -f 'node dist/pipeline/pipeline-service.js'"
+echo -e "${YELLOW}💡 The app will manage the service automatically when you close it${NC}"
+echo -e "${YELLOW}💡 Or manually stop the service with:${NC} pkill -f 'node dist/pipeline/pipeline-service.js'"

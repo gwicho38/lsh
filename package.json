@@ -13,7 +13,11 @@
     "start": "node dist/app.js",
     "watch": "tsc --watch",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
-    "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist"
+    "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist",
+    "electron": "npm run compile-ts && electron src/electron/main.cjs",
+    "electron-dev": "NODE_ENV=development npm run electron",
+    "dashboard": "npm run electron",
+    "app": "npm run electron"
   },
   "keywords": [
     "cli",
@@ -84,6 +88,7 @@
     "@types/request": "^2.48.12",
     "@types/supertest": "^6.0.3",
     "babel-jest": "^29.7.0",
+    "electron": "^38.1.2",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.4",
     "typescript": "^5.4.5"
