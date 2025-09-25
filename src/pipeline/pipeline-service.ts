@@ -236,8 +236,62 @@ export class PipelineService {
       }
     });
 
+    // Job logs endpoint
+    router.get('/api/pipeline/jobs/:id/logs', async (req: Request, res: Response) => {
+      if (this.isDemoMode) {
+        const jobId = req.params.id;
+        const scriptName = jobId.replace('job-', '');
+        const logPath = `/Users/lefv/repos/lsh/logs/${scriptName}.log`;
+
+        try {
+          if (fs.existsSync(logPath)) {
+            const logContent = fs.readFileSync(logPath, 'utf-8');
+            const lines = logContent.split('\n').slice(-100); // Last 100 lines
+
+            const logs = lines.filter(line => line.trim()).map(line => {
+              let level = 'info';
+              if (line.includes('ERROR') || line.includes('error')) level = 'error';
+              else if (line.includes('WARNING') || line.includes('warning')) level = 'warning';
+              else if (line.includes('SUCCESS') || line.includes('✅')) level = 'success';
+
+              return {
+                timestamp: new Date().toISOString(),
+                level,
+                message: line
+              };
+            });
+
+            return res.json({ logs });
+          }
+        } catch (error) {
+          console.error('Error reading log file:', error);
+        }
+
+        // Return demo logs if file doesn't exist
+        return res.json({
+          logs: [
+            { timestamp: new Date().toISOString(), level: 'info', message: 'Job started' },
+            { timestamp: new Date().toISOString(), level: 'info', message: 'Processing data...' },
+            { timestamp: new Date().toISOString(), level: 'success', message: 'Job completed successfully' }
+          ]
+        });
+      }
+
+      // Real implementation would fetch from database
+      res.json({ logs: [] });
+    });
+
     router.get('/api/pipeline/jobs/:id', async (req: Request, res: Response) => {
       if (this.isDemoMode) {
+        // Find the actual job from the system jobs
+        const allJobs = this.getSystemJobs();
+        const job = allJobs.find(j => j.id === req.params.id);
+
+        if (job) {
+          return res.json(job);
+        }
+
+        // Fallback to demo job if not found
         const demoJob = {
           id: req.params.id,
           name: 'Demo Job',
@@ -248,7 +302,8 @@ export class PipelineService {
           targetSystem: 'mcli',
           createdAt: new Date(Date.now() - 1800000).toISOString(),
           updatedAt: new Date().toISOString(),
-          progress: 75
+          progress: 75,
+          schedule: '*/5 * * * *'
         };
         return res.json(demoJob);
       }
