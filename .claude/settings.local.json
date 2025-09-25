@@ -124,7 +124,8 @@
       "Bash(do)",
       "Bash(if grep -q \"lsh \" \"$script\")",
       "Bash(then)",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(do echo \"Testing $endpoint:\")"
     ],
     "deny": [],
     "ask": []
