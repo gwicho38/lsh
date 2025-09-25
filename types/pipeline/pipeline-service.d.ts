@@ -15,6 +15,7 @@ export declare class PipelineService {
     private workflowEngine;
     private config;
     private isDemoMode;
+    private getSystemJobs;
     constructor(config?: PipelineServiceConfig);
     private setupMiddleware;
     private setupRoutes;
