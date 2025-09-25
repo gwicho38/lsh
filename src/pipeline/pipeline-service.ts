@@ -294,6 +294,65 @@ export class PipelineService {
       res.json({ status: 'healthy', service: 'CI/CD Dashboard', timestamp: new Date().toISOString() });
     });
 
+    // CI/CD API endpoints
+    router.get('/api/metrics', (req: Request, res: Response) => {
+      // Return demo CI/CD metrics
+      const today = new Date();
+      const totalBuilds = Math.floor(Math.random() * 50) + 20;
+      const successfulBuilds = Math.floor(totalBuilds * (0.8 + Math.random() * 0.15));
+      const failedBuilds = totalBuilds - successfulBuilds;
+      const avgDurationMs = (5 + Math.random() * 15) * 60 * 1000; // 5-20 minutes
+      const activePipelines = Math.floor(Math.random() * 5);
+
+      res.json({
+        totalBuilds,
+        successfulBuilds,
+        failedBuilds,
+        successRate: totalBuilds > 0 ? (successfulBuilds / totalBuilds) * 100 : 0,
+        avgDurationMs,
+        activePipelines,
+        lastUpdated: today.toISOString()
+      });
+    });
+
+    router.get('/api/pipelines', (req: Request, res: Response) => {
+      // Return demo CI/CD pipeline data
+      const limit = parseInt(req.query.limit as string) || 20;
+      const platforms = ['github', 'gitlab', 'jenkins'];
+      const repositories = ['lsh', 'mcli', 'data-pipeline', 'monitoring', 'frontend'];
+      const statuses = ['completed', 'in_progress', 'failed', 'queued'];
+      const actors = ['alice', 'bob', 'charlie', 'diana', 'eve'];
+      const workflows = ['CI', 'Deploy', 'Test', 'Release', 'Hotfix'];
+
+      const pipelines = Array.from({ length: limit }, (_, i) => {
+        const platform = platforms[Math.floor(Math.random() * platforms.length)];
+        const repository = repositories[Math.floor(Math.random() * repositories.length)];
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        const actor = actors[Math.floor(Math.random() * actors.length)];
+        const workflow = workflows[Math.floor(Math.random() * workflows.length)];
+        const startedAt = new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000);
+        const duration = status === 'completed' ? Math.random() * 1800000 : null; // up to 30 minutes
+        const conclusion = status === 'completed' ? (Math.random() > 0.2 ? 'success' : 'failure') : null;
+
+        return {
+          id: `pipeline_${i + 1}`,
+          workflow_name: workflow,
+          repository,
+          branch: Math.random() > 0.3 ? 'main' : 'develop',
+          platform,
+          status,
+          conclusion,
+          actor,
+          started_at: startedAt.toISOString(),
+          duration_ms: duration,
+          created_at: startedAt.toISOString(),
+          updated_at: new Date(startedAt.getTime() + (duration || 0)).toISOString()
+        };
+      });
+
+      res.json(pipelines);
+    });
+
     // Monitoring API endpoints (replaces port 3035)
     router.get('/monitoring/api/health', (req: Request, res: Response) => {
       res.json({
