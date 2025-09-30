@@ -134,7 +134,10 @@
       "Bash(npm audit:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm test:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(gh run list:*)",
+      "Bash(gh run view:*)",
+      "Bash(git log:*)"
     ],
     "deny": [],
     "ask": []

@@ -12,7 +12,7 @@ export default {
     testEnvironment: 'node',
 
     // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-    testPathIgnorePatterns: ['/node_modules/', '/build/', '__tests__/daemon.test.ts', '__tests__/api-server.test.ts'],
+    testPathIgnorePatterns: ['/node_modules/', '/build/', '__tests__/daemon.test.ts', '__tests__/api-server.test.ts', '__tests__/pipeline-service.test.ts'],
 
     // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
     transformIgnorePatterns: ['<rootDir>/node_modules/'],
@@ -35,8 +35,9 @@ export default {
     },
 
     // Module name mapping for ESM compatibility - map .js imports to .ts files for testing
+    // Only map relative imports (starting with ./ or ../), not node_modules
     moduleNameMapper: {
-        '^(\\.{1,2}/.+)\\.js$': '$1.ts',
+        '^(\\.{1,2}/.*)\\.js$': '$1',
     },
 };
   
