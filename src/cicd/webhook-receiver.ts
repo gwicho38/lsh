@@ -85,7 +85,19 @@ interface PipelineEvent {
 }
 
 function verifyGitHubSignature(payload: string, signature: string): boolean {
-  if (!GITHUB_WEBHOOK_SECRET) return true; // Skip verification if no secret
+  if (!GITHUB_WEBHOOK_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('GITHUB_WEBHOOK_SECRET not set in production');
+      return false;
+    }
+    console.warn('WARNING: GITHUB_WEBHOOK_SECRET not set - skipping verification (dev mode)');
+    return true;
+  }
+
+  if (!signature) {
+    console.error('No signature provided in webhook request');
+    return false;
+  }
 
   const hmac = crypto.createHmac('sha256', GITHUB_WEBHOOK_SECRET);
   const digest = hmac.update(payload, 'utf8').digest('hex');
@@ -153,7 +165,19 @@ function calculateDuration(startTime: string, endTime?: string): number | undefi
 }
 
 function verifyGitLabSignature(payload: string, signature: string): boolean {
-  if (!GITLAB_WEBHOOK_SECRET) return true; // Skip verification if no secret
+  if (!GITLAB_WEBHOOK_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('GITLAB_WEBHOOK_SECRET not set in production');
+      return false;
+    }
+    console.warn('WARNING: GITLAB_WEBHOOK_SECRET not set - skipping verification (dev mode)');
+    return true;
+  }
+
+  if (!signature) {
+    console.error('No signature provided in GitLab webhook request');
+    return false;
+  }
 
   const hmac = crypto.createHmac('sha256', GITLAB_WEBHOOK_SECRET);
   const digest = hmac.update(payload, 'utf8').digest('hex');
