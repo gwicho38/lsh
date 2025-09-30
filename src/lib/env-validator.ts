@@ -15,7 +15,7 @@ export interface EnvRequirement {
   name: string;
   required: boolean;
   requireInProduction: boolean;
-  // eslint-disable-next-line no-unused-vars
+   
   validate?: (val: string) => boolean;
   description?: string;
   defaultValue?: string;
