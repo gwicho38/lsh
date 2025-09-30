@@ -675,7 +675,9 @@ export class JobManager extends EventEmitter {
         if (job.status === 'running' && job.pid) {
           try {
             process.kill(job.pid, 'SIGTERM');
-          } catch {}
+          } catch (_) {
+            // Ignore errors when killing jobs during cleanup
+          }
         }
       }
     };

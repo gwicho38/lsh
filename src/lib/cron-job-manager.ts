@@ -3,9 +3,8 @@
  * Manages scheduled jobs with database persistence and monitoring
  */
 
-import DaemonClient from './daemon-client.js';
+import DaemonClient, { CronJobSpec } from './daemon-client.js';
 import DatabasePersistence from './database-persistence.js';
-import { CronJobSpec } from './daemon-client.js';
 
 export interface CronJobTemplate {
   id: string;
