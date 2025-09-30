@@ -702,43 +702,43 @@ class WorkflowDashboard {
 // Global functions for HTML onclick handlers
 let dashboard;
 
-function showCreateWorkflowModal() {
+function _showCreateWorkflowModal() {
     dashboard.showCreateWorkflowModal();
 }
 
-function saveWorkflow() {
+function _saveWorkflow() {
     dashboard.saveWorkflow();
 }
 
-function executeWorkflow() {
+function _executeWorkflow() {
     dashboard.executeWorkflow();
 }
 
-function confirmExecuteWorkflow() {
+function _confirmExecuteWorkflow() {
     dashboard.confirmExecuteWorkflow();
 }
 
-function validateWorkflow() {
+function _validateWorkflow() {
     dashboard.validateWorkflow();
 }
 
-function editWorkflow() {
+function _editWorkflow() {
     dashboard.editWorkflow();
 }
 
-function refreshDiagram() {
+function _refreshDiagram() {
     dashboard.refreshDiagram();
 }
 
-function exportDiagram() {
+function _exportDiagram() {
     dashboard.exportDiagram();
 }
 
-function showGraphicalBuilder() {
+function _showGraphicalBuilder() {
     dashboard.showGraphicalBuilder();
 }
 
-function showJSONEditor() {
+function _showJSONEditor() {
     dashboard.showJSONEditor();
 }
 

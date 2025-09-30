@@ -29,7 +29,7 @@ export class BraceExpander {
       }
 
       return results;
-    } catch (error) {
+    } catch (_error) {
       // If expansion fails, return original pattern
       return [pattern];
     }

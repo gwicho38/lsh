@@ -45,7 +45,7 @@ export class SupabaseClient {
    */
   public async testConnection(): Promise<boolean> {
     try {
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_history')
         .select('count')
         .limit(1);

@@ -9,10 +9,10 @@ import {
   ShellHistoryEntry,
   ShellJob,
   ShellConfiguration,
-  ShellSession,
+  _ShellSession,
   ShellAlias,
   ShellFunction,
-  ShellCompletion,
+  _ShellCompletion,
 } from './database-schema.js';
 
 export class DatabasePersistence {
@@ -80,7 +80,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_history')
         .insert([insertData]);
 
@@ -145,7 +145,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_jobs')
         .insert([insertData]);
 
@@ -190,7 +190,7 @@ export class DatabasePersistence {
         query = query.is('user_id', null);
       }
 
-      const { data, error } = await query;
+      const { _data, error } = await query;
 
       if (error) {
         console.error('Failed to update job status:', error);
@@ -252,7 +252,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_configuration')
         .upsert([upsertData], {
           onConflict: 'user_id,config_key'
@@ -321,7 +321,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_aliases')
         .upsert([upsertData], {
           onConflict: 'user_id,alias_name'
@@ -386,7 +386,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_functions')
         .upsert([upsertData], {
           onConflict: 'user_id,function_name'
@@ -456,7 +456,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { data, error } = await this.client
+      const { _data, error } = await this.client
         .from('shell_sessions')
         .insert([insertData]);
 
@@ -493,7 +493,7 @@ export class DatabasePersistence {
         query = query.is('user_id', null);
       }
 
-      const { data, error } = await query;
+      const { _data, error } = await query;
 
       if (error) {
         console.error('Failed to end session:', error);

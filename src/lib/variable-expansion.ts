@@ -295,7 +295,7 @@ export class VariableExpander {
         });
         // Remove trailing newlines as per POSIX
         result += stdout.replace(/\n+$/, '');
-      } catch (error) {
+      } catch (_error) {
         // Command substitution failed, leave empty
         result += '';
       }
@@ -343,7 +343,7 @@ export class VariableExpander {
       // Use Function constructor for safe evaluation
       // This is a simplified version - full implementation would need proper arithmetic parser
       return Function(`"use strict"; return (${expr})`)() || 0;
-    } catch (error) {
+    } catch (_error) {
       return 0;
     }
   }
