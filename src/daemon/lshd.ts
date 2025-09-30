@@ -13,6 +13,7 @@ import * as net from 'net';
 import { EventEmitter } from 'events';
 import JobManager, { JobSpec } from '../lib/job-manager.js';
 import { LSHApiServer, ApiConfig } from './api-server.js';
+import { validateCommand } from '../lib/command-validator.js';
 
 const execAsync = promisify(exec);
 
@@ -203,7 +204,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Trigger a job to run immediately (returns sanitized result with output)
    */
-  async triggerJob(jobId: string): Promise<{ success: boolean; output?: string; error?: string }> {
+  async triggerJob(jobId: string): Promise<{ success: boolean; output?: string; error?: string; warnings?: string[] }> {
     this.log('INFO', `Triggering job: ${jobId}`);
 
     try {
@@ -211,6 +212,23 @@ export class LSHJobDaemon extends EventEmitter {
       const job = this.jobManager.getJob(jobId);
       if (!job) {
         throw new Error(`Job ${jobId} not found`);
+      }
+
+      // Validate command for security issues
+      const validation = validateCommand(job.command, {
+        allowDangerousCommands: process.env.LSH_ALLOW_DANGEROUS_COMMANDS === 'true',
+        maxLength: 10000
+      });
+
+      if (!validation.isValid) {
+        const errorMsg = `Command validation failed: ${validation.errors.join(', ')}`;
+        this.log('ERROR', `${errorMsg} - Risk level: ${validation.riskLevel}`);
+        throw new Error(errorMsg);
+      }
+
+      // Log warnings if any
+      if (validation.warnings.length > 0) {
+        this.log('WARN', `Command warnings for job ${jobId}: ${validation.warnings.join(', ')}`);
       }
 
       // Execute the job command directly and capture output
@@ -224,7 +242,8 @@ export class LSHJobDaemon extends EventEmitter {
 
       return {
         success: true,
-        output: stdout || stderr || 'Job completed with no output'
+        output: stdout || stderr || 'Job completed with no output',
+        warnings: validation.warnings.length > 0 ? validation.warnings : undefined
       };
     } catch (error) {
       this.log('ERROR', `Failed to trigger job ${jobId}: ${error.message}`);

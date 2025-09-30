@@ -60,6 +60,7 @@ export declare class LSHJobDaemon extends EventEmitter {
         success: boolean;
         output?: string;
         error?: string;
+        warnings?: string[];
     }>;
     /**
      * Stop a job

@@ -137,7 +137,10 @@
       "Bash(npx eslint:*)",
       "Bash(gh run list:*)",
       "Bash(gh run view:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(gh issue close:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(gh issue view:*)"
     ],
     "deny": [],
     "ask": []
