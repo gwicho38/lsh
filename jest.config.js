@@ -5,6 +5,31 @@ export default {
     // The directory where Jest should output its coverage files
     coverageDirectory: 'coverage',
 
+    // Collect coverage information
+    collectCoverage: false, // Enable with --coverage flag
+    collectCoverageFrom: [
+        'src/**/*.{ts,tsx}',
+        '!src/**/*.d.ts',
+        '!src/**/__tests__/**',
+        '!src/**/types/**',
+        '!src/electron/**', // Exclude Electron main process
+        '!src/index.ts',
+    ],
+
+    // Coverage threshold - Set realistic baseline to prevent regression
+    // Current baseline: 1.45% statements, 2.36% branches, 1.43% functions, 1.53% lines
+    coverageThreshold: {
+        global: {
+            branches: 2,
+            functions: 1,
+            lines: 1,
+            statements: 1
+        }
+    },
+
+    // Coverage reporters
+    coverageReporters: ['text', 'lcov', 'html', 'json-summary'],
+
     // An array of file extensions your modules use
     moduleFileExtensions: ['js', 'ts'],
 

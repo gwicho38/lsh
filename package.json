@@ -15,6 +15,7 @@
     "start:pipeline": "npm run compile-ts && node dist/pipeline/pipeline-service.js",
     "watch": "tsc --watch",
     "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "test:coverage": "node --experimental-vm-modules ./node_modules/.bin/jest --coverage",
     "test:integration": "npm run test -- --testMatch=\"**/*.integration.test.(js|ts)\"",
     "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist",
     "electron": "npm run compile-ts && electron src/electron/main.cjs",
