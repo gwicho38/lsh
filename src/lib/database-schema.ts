@@ -95,6 +95,114 @@ export interface ShellCompletion {
   updated_at: string;
 }
 
+export interface MLTrainingJob {
+  id: string;
+  user_id?: string;
+  job_name: string;
+  model_type: string;
+  dataset_name: string;
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  hyperparameters: Record<string, any>;
+  feature_names: string[];
+  target_variable: string;
+  train_rmse?: number;
+  train_mae?: number;
+  train_r2?: number;
+  test_rmse?: number;
+  test_mae?: number;
+  test_r2?: number;
+  mape?: number;
+  cv_scores?: number[];
+  cv_mean?: number;
+  cv_std?: number;
+  model_path?: string;
+  scaler_path?: string;
+  started_at?: string;
+  completed_at?: string;
+  duration_ms?: number;
+  error_message?: string;
+  notes?: string;
+  metadata_json?: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MLModelVersion {
+  id: string;
+  user_id?: string;
+  training_job_id: string;
+  model_name: string;
+  version: string;
+  model_type: string;
+  test_rmse: number;
+  test_mae: number;
+  test_r2: number;
+  test_mape?: number;
+  feature_importance?: Record<string, number>;
+  rank_by_rmse?: number;
+  rank_by_r2?: number;
+  is_deployed: boolean;
+  deployed_at?: string;
+  model_path: string;
+  predictions_file?: string;
+  residuals_file?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MLFeatureSet {
+  id: string;
+  user_id?: string;
+  feature_set_name: string;
+  version: string;
+  features: Array<{
+    name: string;
+    type: 'lag' | 'ma' | 'volatility' | 'pct_change' | 'technical' | 'custom';
+    params?: Record<string, any>;
+    importance?: number;
+  }>;
+  feature_count: number;
+  correlation_with_target?: Record<string, number>;
+  used_in_models: string[];
+  description?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MLPrediction {
+  id: string;
+  user_id?: string;
+  model_version_id: string;
+  prediction_date: string;
+  target_date?: string;
+  predicted_value: number;
+  actual_value?: number;
+  confidence_score?: number;
+  features_json: Record<string, any>;
+  residual?: number;
+  absolute_error?: number;
+  created_at: string;
+}
+
+export interface MLModelComparison {
+  id: string;
+  user_id?: string;
+  comparison_name: string;
+  model_ids: string[];
+  comparison_results: Array<{
+    model_id: string;
+    model_name: string;
+    rmse: number;
+    mae: number;
+    r2: number;
+    rank: number;
+  }>;
+  best_model_id: string;
+  best_model_metric: 'rmse' | 'mae' | 'r2';
+  notes?: string;
+  created_at: string;
+}
+
 // SQL schema for creating tables
 export const CREATE_TABLES_SQL = `
 -- Shell History Table
@@ -223,6 +331,129 @@ CREATE INDEX IF NOT EXISTS idx_shell_functions_name ON shell_functions(function_
 
 CREATE INDEX IF NOT EXISTS idx_shell_completions_user_id ON shell_completions(user_id);
 CREATE INDEX IF NOT EXISTS idx_shell_completions_command ON shell_completions(command);
+
+-- ML Training Jobs Table
+CREATE TABLE IF NOT EXISTS ml_training_jobs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID,
+  job_name TEXT NOT NULL,
+  model_type TEXT NOT NULL,
+  dataset_name TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+  hyperparameters JSONB NOT NULL,
+  feature_names TEXT[] NOT NULL,
+  target_variable TEXT NOT NULL,
+  train_rmse FLOAT,
+  train_mae FLOAT,
+  train_r2 FLOAT,
+  test_rmse FLOAT,
+  test_mae FLOAT,
+  test_r2 FLOAT,
+  mape FLOAT,
+  cv_scores FLOAT[],
+  cv_mean FLOAT,
+  cv_std FLOAT,
+  model_path TEXT,
+  scaler_path TEXT,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  duration_ms INTEGER,
+  error_message TEXT,
+  notes TEXT,
+  metadata_json JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ML Model Versions Table
+CREATE TABLE IF NOT EXISTS ml_model_versions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID,
+  training_job_id UUID REFERENCES ml_training_jobs(id) ON DELETE CASCADE,
+  model_name TEXT NOT NULL,
+  version TEXT NOT NULL,
+  model_type TEXT NOT NULL,
+  test_rmse FLOAT NOT NULL,
+  test_mae FLOAT NOT NULL,
+  test_r2 FLOAT NOT NULL,
+  test_mape FLOAT,
+  feature_importance JSONB,
+  rank_by_rmse INTEGER,
+  rank_by_r2 INTEGER,
+  is_deployed BOOLEAN DEFAULT FALSE,
+  deployed_at TIMESTAMPTZ,
+  model_path TEXT NOT NULL,
+  predictions_file TEXT,
+  residuals_file TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(model_name, version)
+);
+
+-- ML Feature Sets Table
+CREATE TABLE IF NOT EXISTS ml_feature_sets (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID,
+  feature_set_name TEXT NOT NULL,
+  version TEXT NOT NULL,
+  features JSONB NOT NULL,
+  feature_count INTEGER NOT NULL,
+  correlation_with_target JSONB,
+  used_in_models TEXT[],
+  description TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(feature_set_name, version)
+);
+
+-- ML Predictions Table
+CREATE TABLE IF NOT EXISTS ml_predictions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID,
+  model_version_id UUID REFERENCES ml_model_versions(id) ON DELETE CASCADE,
+  prediction_date TIMESTAMPTZ NOT NULL,
+  target_date TIMESTAMPTZ,
+  predicted_value FLOAT NOT NULL,
+  actual_value FLOAT,
+  confidence_score FLOAT,
+  features_json JSONB NOT NULL,
+  residual FLOAT,
+  absolute_error FLOAT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ML Model Comparisons Table
+CREATE TABLE IF NOT EXISTS ml_model_comparisons (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID,
+  comparison_name TEXT NOT NULL,
+  model_ids UUID[] NOT NULL,
+  comparison_results JSONB NOT NULL,
+  best_model_id UUID NOT NULL,
+  best_model_metric TEXT NOT NULL CHECK (best_model_metric IN ('rmse', 'mae', 'r2')),
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for ML tables
+CREATE INDEX IF NOT EXISTS idx_ml_training_jobs_user_id ON ml_training_jobs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ml_training_jobs_status ON ml_training_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_ml_training_jobs_created ON ml_training_jobs(created_at);
+
+CREATE INDEX IF NOT EXISTS idx_ml_model_versions_user_id ON ml_model_versions(user_id);
+CREATE INDEX IF NOT EXISTS idx_ml_model_versions_training_job ON ml_model_versions(training_job_id);
+CREATE INDEX IF NOT EXISTS idx_ml_model_versions_deployed ON ml_model_versions(is_deployed);
+CREATE INDEX IF NOT EXISTS idx_ml_model_versions_performance ON ml_model_versions(test_r2 DESC, test_rmse ASC);
+
+CREATE INDEX IF NOT EXISTS idx_ml_feature_sets_user_id ON ml_feature_sets(user_id);
+CREATE INDEX IF NOT EXISTS idx_ml_feature_sets_name ON ml_feature_sets(feature_set_name);
+
+CREATE INDEX IF NOT EXISTS idx_ml_predictions_user_id ON ml_predictions(user_id);
+CREATE INDEX IF NOT EXISTS idx_ml_predictions_model ON ml_predictions(model_version_id);
+CREATE INDEX IF NOT EXISTS idx_ml_predictions_date ON ml_predictions(prediction_date);
+
+CREATE INDEX IF NOT EXISTS idx_ml_model_comparisons_user_id ON ml_model_comparisons(user_id);
+CREATE INDEX IF NOT EXISTS idx_ml_model_comparisons_created ON ml_model_comparisons(created_at);
 `;
 
 export default {
