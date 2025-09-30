@@ -140,7 +140,8 @@
       "Bash(git log:*)",
       "Bash(gh issue close:*)",
       "Bash(gh issue comment:*)",
-      "Bash(gh issue view:*)"
+      "Bash(gh issue view:*)",
+      "Bash(column:*)"
     ],
     "deny": [],
     "ask": []
