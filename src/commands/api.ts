@@ -121,7 +121,7 @@ export function registerApiCommands(program: Command) {
         const baseUrl = `http://localhost:${options.port}`;
 
         switch (action) {
-          case 'add':
+          case 'add': {
             if (!endpoint) {
               console.error(chalk.red('❌ Endpoint URL required'));
               process.exit(1);
@@ -144,8 +144,9 @@ export function registerApiCommands(program: Command) {
               console.error(chalk.red('❌ Failed to add webhook'));
             }
             break;
+          }
 
-          case 'list':
+          case 'list': {
             const listResponse = await fetch(`${baseUrl}/api/webhooks`, {
               headers: { 'X-API-Key': apiKey }
             });
@@ -157,6 +158,7 @@ export function registerApiCommands(program: Command) {
               console.log('Endpoints:', webhooks.endpoints);
             }
             break;
+          }
 
           default:
             console.error(chalk.red(`❌ Unknown action: ${action}`));

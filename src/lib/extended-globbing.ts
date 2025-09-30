@@ -259,10 +259,10 @@ export class ExtendedGlobber {
    */
   private matchesQualifier(file: string, stats: fs.Stats, qualifier: GlobQualifier): boolean {
     switch (qualifier.type) {
-      case 'size':
+      case 'size': {
         const size = stats.size;
         const targetSize = parseInt(qualifier.value, 10);
-        
+
         switch (qualifier.operator) {
           case '=': return size === targetSize;
           case '+': return size > targetSize;
@@ -270,13 +270,14 @@ export class ExtendedGlobber {
           case '>': return size >= targetSize;
           default: return false;
         }
-        
-      case 'time':
+      }
+
+      case 'time': {
         const now = Date.now();
         const fileTime = stats.mtime.getTime();
         const daysDiff = (now - fileTime) / (1000 * 60 * 60 * 24);
         const targetDays = parseInt(qualifier.value, 10);
-        
+
         switch (qualifier.operator) {
           case '=': return Math.abs(daysDiff) <= targetDays;
           case '+': return daysDiff > targetDays;
@@ -284,6 +285,7 @@ export class ExtendedGlobber {
           case '>': return daysDiff >= targetDays;
           default: return false;
         }
+      }
         
       case 'type':
         switch (qualifier.value) {
@@ -428,7 +430,7 @@ export class ExtendedGlobber {
           regexStr += '.';
           break;
 
-        case '[':
+        case '[': {
           const closeIdx = this.findClosingBracket(pattern, i);
           if (closeIdx === -1) {
             regexStr += '\\[';
@@ -441,6 +443,7 @@ export class ExtendedGlobber {
             i = closeIdx;
           }
           break;
+        }
 
         case '\\':
           if (i + 1 < pattern.length) {
@@ -495,7 +498,7 @@ export class ExtendedGlobber {
    * Escape regex special characters
    */
   private escapeRegex(str: string): string {
-    return str.replace(/[.+^$()|\[\]{}\\]/g, '\\$&');
+    return str.replace(/[.+^$()|[\]{}\\]/g, '\\$&');
   }
 }
 

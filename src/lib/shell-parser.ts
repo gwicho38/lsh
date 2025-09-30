@@ -126,14 +126,14 @@ export class ShellLexer {
         word += this.advance();
       } else if (inBraces) {
         // Inside braces, allow more characters for parameter expansion
-        if (char.match(/[a-zA-Z0-9_\-\.\/~:+=?#%*@!$]/)) {
+        if (char.match(/[a-zA-Z0-9_\-./~:+=?#%*@!$]/)) {
           word += this.advance();
         } else {
           break;
         }
       } else {
         // Word characters (including $ for variables, = for assignments, and glob characters)
-        if (char.match(/[a-zA-Z0-9_\-\.\/~$=*?[\]]/)) {
+        if (char.match(/[a-zA-Z0-9_\-./~$=*?[\]]/)) {
           word += this.advance();
         } else {
           break;
@@ -392,7 +392,7 @@ export class ShellLexer {
         tokens.push(this.createToken(TokenType.SINGLE_QUOTE, value));
       }
       // Words and numbers
-      else if (char.match(/[a-zA-Z_$*?[\]\.]/)) {
+      else if (char.match(/[a-zA-Z_$*?[\].]/)) {
         const word = this.readWord();
         const tokenType = this.getKeywordType(word);
         tokens.push(this.createToken(tokenType, word));
@@ -979,9 +979,8 @@ export class ShellParser {
       } else if (this.peek().type === TokenType.AND_IF || this.peek().type === TokenType.OR_IF) {
         const operator = this.advance();
         const right = this.parsePipeline();
-        
-        let op: '&&' | '||';
-        op = operator.type === TokenType.AND_IF ? '&&' : '||';
+
+        const op: '&&' | '||' = operator.type === TokenType.AND_IF ? '&&' : '||';
         
         const lastCmd = commands.pop()!;
         commands.push({ type: 'CommandList', left: lastCmd, operator: op, right } as CommandList);

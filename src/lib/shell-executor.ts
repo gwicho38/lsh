@@ -26,11 +26,10 @@ import {
 import { VariableExpander, VariableContext } from './variable-expansion.js';
 import { PathnameExpander } from './pathname-expansion.js';
 import { BraceExpander } from './brace-expansion.js';
-import { CompletionFunction } from './completion-system.js';
+import CompletionSystem, { CompletionFunction } from './completion-system.js';
 import JobManager from './job-manager.js';
 import JobBuiltins from './job-builtins.js';
 import HistorySystem from './history-system.js';
-import CompletionSystem from './completion-system.js';
 import AssociativeArrayManager from './associative-arrays.js';
 import ExtendedParameterExpander from './extended-parameter-expansion.js';
 import ExtendedGlobber from './extended-globbing.js';
@@ -168,13 +167,6 @@ export class ShellExecutor {
       },
       options: this.context.options, // Pass shell options for set -u behavior
     };
-
-    // Initialize zshCompatibility after constructor to avoid circular dependency
-    this.context.zshCompatibility = new ZshCompatibility(this, {
-      sourceZshrc: true,
-      respectZshCompletions: true,
-      installPackages: true,
-    });
   }
 
   private updateExpander(): void {
@@ -1431,17 +1423,20 @@ export class ShellExecutor {
   // Helper method to convert AST node back to string (for fallback cases)
   private nodeToString(node: ASTNode): string {
     switch (node.type) {
-      case 'SimpleCommand':
+      case 'SimpleCommand': {
         const cmd = node as SimpleCommand;
         return [cmd.name, ...cmd.args].join(' ');
-      case 'Pipeline':
+      }
+      case 'Pipeline': {
         const pipeline = node as Pipeline;
         return pipeline.commands.map(c => this.nodeToString(c)).join(' | ');
-      case 'CommandList':
+      }
+      case 'CommandList': {
         const cmdList = node as CommandList;
         const left = this.nodeToString(cmdList.left);
         const right = cmdList.right ? this.nodeToString(cmdList.right) : '';
         return `${left} ${cmdList.operator} ${right}`.trim();
+      }
       case 'IfStatement':
       case 'ForStatement':
       case 'WhileStatement':
@@ -1933,7 +1928,7 @@ export class ShellExecutor {
           throw new Error(`cannot open ${target}: ${error.message}`);
         }
 
-      case 'heredoc': // <<
+      case 'heredoc': { // <<
         // Create a temporary file with the here document content
         const tmpFile = `/tmp/lsh-heredoc-${Date.now()}`;
         fs.writeFileSync(tmpFile, target); // target contains the here-doc content
@@ -1941,9 +1936,12 @@ export class ShellExecutor {
         redirectionFiles[0] = fd; // stdin
         // Schedule cleanup of temp file
         setTimeout(() => {
-          try { fs.unlinkSync(tmpFile); } catch {}
+          try { fs.unlinkSync(tmpFile); } catch (_) {
+            // Ignore cleanup errors
+          }
         }, 1000);
         break;
+      }
 
       default:
         throw new Error(`unsupported redirection type: ${redir.type}`);
@@ -2086,7 +2084,9 @@ export class ShellExecutor {
       // Clean up on error
       try {
         await fs.promises.unlink(fifoPath);
-      } catch {}
+      } catch (_) {
+        // Ignore cleanup errors
+      }
       throw new Error(`Process substitution failed: ${error.message}`);
     }
   }
