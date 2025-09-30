@@ -105,7 +105,7 @@ export class PathnameExpander {
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist or not readable, return empty
       return [];
     }

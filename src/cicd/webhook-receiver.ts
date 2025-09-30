@@ -17,7 +17,7 @@ import {
   detectBottlenecks
 } from './analytics.js';
 import { CacheManager } from './cache-manager.js';
-import { AuthService, authenticate, authorize, requirePermission, rateLimit } from './auth.js';
+import { AuthService, authenticate, authorize, requirePermission as _requirePermission, rateLimit } from './auth.js';
 import { performanceMonitor } from './performance-monitor.js';
 import { DataRetentionService } from './data-retention.js';
 

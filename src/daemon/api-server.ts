@@ -9,7 +9,7 @@ import jwt from 'jsonwebtoken';
 import { EventEmitter } from 'events';
 import crypto from 'crypto';
 import type { LSHJobDaemon } from './lshd.js';
-import type { JobSpec } from '../lib/job-manager.js';
+import type { JobSpec as _JobSpec } from '../lib/job-manager.js';
 
 export interface ApiConfig {
   port: number;
@@ -92,7 +92,7 @@ export class LSHApiServer extends EventEmitter {
       try {
         jwt.verify(token, this.config.jwtSecret!);
         return next();
-      } catch (err) {
+      } catch (_err) {
         return res.status(401).json({ error: 'Invalid token' });
       }
     }

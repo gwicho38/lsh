@@ -176,7 +176,7 @@ export class JobBuiltins {
         }
       }
 
-      const job = await this.jobManager.killJob(jobId, signal);
+      const _job = await this.jobManager.killJob(jobId, signal);
 
       return {
         stdout: `Job ${jobId} stopped with signal ${signal}\n`,
@@ -287,7 +287,7 @@ export class JobBuiltins {
       const jobId = args[args.length - 1];
       const updates = this.parseUpdateOptions(args.slice(0, -1));
 
-      const job = await this.jobManager.updateJob(jobId, updates);
+      const _job = await this.jobManager.updateJob(jobId, updates);
 
       return { stdout: `Job ${jobId} updated successfully\n`, stderr: '', exitCode: 0 };
     } catch (error) {
@@ -355,7 +355,7 @@ export class JobBuiltins {
    * job-stats - Show job statistics
    * Usage: job-stats
    */
-  async jobStats(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
+  async jobStats(_args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     try {
       const stats = this.jobManager.getJobStats();
 

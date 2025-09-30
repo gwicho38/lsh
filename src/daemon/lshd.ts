@@ -4,15 +4,15 @@
  * Runs independently of LSH shell processes to ensure reliable job execution
  */
 
-import { spawn, exec, ChildProcess } from 'child_process';
+import { spawn as _spawn, exec, ChildProcess as _ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
+import * as _os from 'os';
 import * as net from 'net';
 import { EventEmitter } from 'events';
 import JobManager, { JobSpec } from '../lib/job-manager.js';
-import { LSHApiServer, ApiConfig } from './api-server.js';
+import { LSHApiServer, ApiConfig as _ApiConfig } from './api-server.js';
 import { validateCommand } from '../lib/command-validator.js';
 import { validateEnvironment, printValidationResults } from '../lib/env-validator.js';
 
@@ -166,8 +166,8 @@ export class LSHJobDaemon extends EventEmitter {
     // Remove PID file
     try {
       await fs.promises.unlink(this.config.pidFile);
-    } catch (error) {
-      // Ignore if file doesn't exist
+    } catch (_error) {
+      // Ignore if file doesn\'t exist
     }
 
     // Close log stream
@@ -396,12 +396,12 @@ export class LSHJobDaemon extends EventEmitter {
       try {
         process.kill(pid, 0); // Signal 0 just checks if process exists
         return true;
-      } catch (error) {
+      } catch (_error) {
         // Process doesn't exist, remove stale PID file
         await fs.promises.unlink(this.config.pidFile);
         return false;
       }
-    } catch (error) {
+    } catch (_error) {
       return false; // PID file doesn't exist
     }
   }
@@ -420,13 +420,13 @@ export class LSHJobDaemon extends EventEmitter {
             try {
               this.log('INFO', `Killing existing daemon process ${pid}`);
               process.kill(pid, 9); // Force kill
-            } catch (error) {
+            } catch (_error) {
               // Process might already be dead
             }
           }
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // ps command failed, ignore
     }
   }
@@ -560,7 +560,7 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
-  private matchesCronField(field: string, currentValue: number, min: number, max: number): boolean {
+  private matchesCronField(field: string, currentValue: number, _min: number, _max: number): boolean {
     // Handle wildcard
     if (field === '*') {
       return true;
@@ -680,7 +680,7 @@ export class LSHJobDaemon extends EventEmitter {
     // Remove existing socket file
     try {
       fs.unlinkSync(this.config.socketPath);
-    } catch (error) {
+    } catch (_error) {
       // Ignore if doesn't exist
     }
 
@@ -714,7 +714,7 @@ export class LSHJobDaemon extends EventEmitter {
         if (fs.existsSync(this.config.socketPath)) {
           fs.unlinkSync(this.config.socketPath);
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
 
@@ -803,7 +803,7 @@ export class LSHJobDaemon extends EventEmitter {
 
         this.log('INFO', `Rotated log file to ${backupFile}`);
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore rotation errors
     }
   }
@@ -832,7 +832,7 @@ export class LSHJobDaemon extends EventEmitter {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv[2];
   const subCommand = process.argv[3];
-  const args = process.argv.slice(4);
+  const _args = process.argv.slice(4);
 
   // Handle job commands
   if (command === 'job-add') {

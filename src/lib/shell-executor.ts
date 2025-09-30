@@ -20,7 +20,7 @@ import {
   WhileStatement,
   CaseStatement,
   FunctionDefinition,
-  ProcessSubstitution,
+  ProcessSubstitution as _ProcessSubstitution,
   parseShellCommand
 } from './shell-parser.js';
 import { VariableExpander, VariableContext } from './variable-expansion.js';
@@ -504,7 +504,7 @@ export class ShellExecutor {
     }
   }
   
-  private async builtin_pwd(args: string[]): Promise<ExecutionResult> {
+  private async builtin_pwd(_args: string[]): Promise<ExecutionResult> {
     return {
       stdout: this.context.cwd,
       stderr: '',
@@ -1077,7 +1077,7 @@ export class ShellExecutor {
 
   // Job Control Built-ins
 
-  private async builtin_jobs(args: string[]): Promise<ExecutionResult> {
+  private async builtin_jobs(_args: string[]): Promise<ExecutionResult> {
     const jobs = Array.from(this.context.jobControl.jobs.values());
 
     if (jobs.length === 0) {
@@ -1103,7 +1103,7 @@ export class ShellExecutor {
     };
   }
 
-  private async builtin_fg(args: string[]): Promise<ExecutionResult> {
+  private async builtin_fg(_args: string[]): Promise<ExecutionResult> {
     // In a real implementation, this would bring a background job to foreground
     // For now, just return a message
     return {
@@ -1114,7 +1114,7 @@ export class ShellExecutor {
     };
   }
 
-  private async builtin_bg(args: string[]): Promise<ExecutionResult> {
+  private async builtin_bg(_args: string[]): Promise<ExecutionResult> {
     // In a real implementation, this would resume a stopped job in background
     // For now, just return a message
     return {
@@ -1230,7 +1230,7 @@ export class ShellExecutor {
       };
     }
 
-    const optstring = args[0];
+    const _optstring = args[0]; // TODO: Use this to validate options
     const varName = args[1];
     const optargs = args.length > 2 ? args.slice(2) : this.context.positionalParams;
 
@@ -1376,7 +1376,7 @@ export class ShellExecutor {
         });
       });
       
-      child.on('error', (error) => {
+      child.on('error', (_error) => {
         resolve({
           stdout: '',
           stderr: `${cmd.name}: command not found`,
@@ -1686,7 +1686,7 @@ export class ShellExecutor {
         if (this.context.jobControl.jobs.has(jobId)) {
           this.context.jobControl.jobs.get(jobId)!.status = 'done';
         }
-      } catch (error) {
+      } catch (_error) {
         // Mark job as done with error
         if (this.context.jobControl.jobs.has(jobId)) {
           this.context.jobControl.jobs.get(jobId)!.status = 'done';
@@ -2039,7 +2039,7 @@ export class ShellExecutor {
         if (typeof fd === 'number') {
           fs.closeSync(fd);
         }
-      } catch (error) {
+      } catch (_error) {
         // Ignore cleanup errors
       }
     }
@@ -2209,7 +2209,7 @@ export class ShellExecutor {
     };
   }
 
-  private async builtin_r(args: string[]): Promise<ExecutionResult> {
+  private async builtin_r(_args: string[]): Promise<ExecutionResult> {
     // Repeat last command
     const entries = this.context.history.getAllEntries();
     if (entries.length === 0) {
@@ -2241,7 +2241,7 @@ export class ShellExecutor {
     if (args.length === 0) {
       // List all aliases
       const aliases = Object.entries(this.context.variables)
-        .filter(([key, value]) => key.startsWith('alias_'))
+        .filter(([key, _value]) => key.startsWith('alias_'))
         .map(([key, value]) => `${key.substring(6)}='${value}'`)
         .join('\n');
       
@@ -2309,7 +2309,7 @@ export class ShellExecutor {
     // Try extended parameter expansion first
     try {
       return this.extendedExpander.expandParameter(paramExpr);
-    } catch (error) {
+    } catch (_error) {
       // Fall back to regular parameter expansion
       return this.expander.expandParameterExpression(paramExpr);
     }
@@ -2325,7 +2325,7 @@ export class ShellExecutor {
           includeHidden: this.context.zshOptions.isOptionSet('GLOB_DOTS'),
           extendedGlob: true,
         });
-      } catch (error) {
+      } catch (_error) {
         // Fall back to regular globbing
       }
     }
@@ -2342,7 +2342,7 @@ export class ShellExecutor {
     try {
       const result = this.context.floatingPoint.evaluate(expression);
       return result.toString();
-    } catch (error) {
+    } catch (_error) {
       // Fall back to integer arithmetic
       return this.expander.evaluateArithmeticExpression(expression).toString();
     }
@@ -2507,7 +2507,7 @@ export class ShellExecutor {
     };
   }
 
-  private async builtin_zsh_migrate(args: string[]): Promise<ExecutionResult> {
+  private async builtin_zsh_migrate(_args: string[]): Promise<ExecutionResult> {
     const result = await this.context.zshCompatibility.migrateZshConfig();
 
     return {
@@ -2518,7 +2518,7 @@ export class ShellExecutor {
     };
   }
 
-  private async builtin_zsh_source(args: string[]): Promise<ExecutionResult> {
+  private async builtin_zsh_source(_args: string[]): Promise<ExecutionResult> {
     const result = await this.context.zshCompatibility.sourceZshConfig();
 
     return {

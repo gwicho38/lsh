@@ -196,7 +196,7 @@ export class CronJobManager {
 
     try {
       jobs = await this.daemonClient.getJobHistory(jobId, 1000);
-    } catch (error) {
+    } catch (_error) {
       // Fallback: use current job information for basic report
       const currentJob = await this.daemonClient.getJob(jobId);
       if (currentJob) {

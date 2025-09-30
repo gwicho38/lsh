@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import * as os from 'os';
+import * as _os from 'os';
 
 export interface CompletionCandidate {
   word: string;
@@ -63,7 +63,7 @@ export class CompletionSystem {
       try {
         const commandCompletions = await commandFunc(context);
         candidates.push(...commandCompletions);
-      } catch (error) {
+      } catch (_error) {
         // Continue with default completions if command-specific fails
       }
     }
@@ -74,7 +74,7 @@ export class CompletionSystem {
         try {
           const defaultCompletions = await defaultFunc(context);
           candidates.push(...defaultCompletions);
-        } catch (error) {
+        } catch (_error) {
           // Continue with other default completions
         }
       }
@@ -158,7 +158,7 @@ export class CompletionSystem {
           });
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist or not readable
     }
 
@@ -206,7 +206,7 @@ export class CompletionSystem {
             }
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Directory doesn't exist or not readable
       }
     }
@@ -310,7 +310,7 @@ export class CompletionSystem {
           });
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist or not readable
     }
 
@@ -353,7 +353,7 @@ export class CompletionSystem {
   /**
    * Complete job IDs (placeholder - would integrate with job manager)
    */
-  private async completeJobIds(context: CompletionContext): Promise<CompletionCandidate[]> {
+  private async completeJobIds(_context: CompletionContext): Promise<CompletionCandidate[]> {
     // This would integrate with the job manager to get actual job IDs
     return [
       { word: '1', description: 'Job ID 1' },
@@ -389,7 +389,7 @@ export class CompletionSystem {
    */
   private filterAndSortCandidates(
     candidates: CompletionCandidate[],
-    currentWord: string
+    _currentWord: string
   ): CompletionCandidate[] {
     // Remove duplicates
     const unique = new Map<string, CompletionCandidate>();

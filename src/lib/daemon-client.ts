@@ -5,7 +5,7 @@
 
 import * as net from 'net';
 import * as fs from 'fs';
-import * as path from 'path';
+import * as _path from 'path';
 import { EventEmitter } from 'events';
 import DatabasePersistence from './database-persistence.js';
 
@@ -84,7 +84,7 @@ export class DaemonClient extends EventEmitter {
       // Check socket permissions
       try {
         fs.accessSync(this.socketPath, fs.constants.R_OK | fs.constants.W_OK);
-      } catch (err) {
+      } catch (_err) {
         const stats = fs.statSync(this.socketPath);
         const owner = stats.uid === process.getuid() ? 'you' : 'another user';
         reject(new Error(`Permission denied to access socket at ${this.socketPath}. Socket is owned by ${owner}. You may need to start your own daemon with: lsh daemon start`));
@@ -578,7 +578,7 @@ export class DaemonClient extends EventEmitter {
       // Try to access the socket to verify it's working
       fs.accessSync(this.socketPath, fs.constants.R_OK | fs.constants.W_OK);
       return true;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

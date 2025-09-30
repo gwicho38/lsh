@@ -2,29 +2,29 @@ import { useInput, useStdout } from 'ink';
 import React, { useState } from 'react';
 import { Divider } from './Divider.js';
 
-type Props = {
+type _Props = {
 	name: string | undefined;
 };
 
 
-export function UserInput({ ...props }) {
-	const [feature, setFeature] = useState('');
-	const [readData, setReadData] = useState([]);
-	const [writeData, setWriteData] = useState([]);
-	const [userInput, setUserInput] = useState('');
-	const [name, setName] = useState('');
-	const handleSubmit = query => {
+export function UserInput({ ..._props }) {
+	const [_feature, _setFeature] = useState('');
+	const [_readData, _setReadData] = useState([]);
+	const [_writeData, _setWriteData] = useState([]);
+	const [_userInput, _setUserInput] = useState('');
+	const [_name, _setName] = useState('');
+	const _handleSubmit = (_query: string) => {
 		// Do something with query
-		console.log(query);
-		setUserInput('');
+		console.log(_query);
+		_setUserInput('');
 
 	};
-	const {stdout, write} = useStdout();
+	const {stdout: _stdout, write: _write} = useStdout();
 
-	const handleChange = query => {
+	const _handleChange = (_query: string) => {
 	};
 
-	useInput((input, key) => {
+	useInput((input, _key) => {
 		console.log(input);
 		// console.log(key);
 		if (input === 'q') {

@@ -245,7 +245,7 @@ export class HistorySystem {
           }
         });
       }
-    } catch (error) {
+    } catch (_error) {
       // If loading fails, start with empty history
       this.entries = [];
     }
@@ -267,7 +267,7 @@ export class HistorySystem {
       }
 
       fs.writeFileSync(this.config.filePath, content, 'utf8');
-    } catch (error) {
+    } catch (_error) {
       // Silently fail if we can't save history
     }
   }
