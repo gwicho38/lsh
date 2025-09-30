@@ -261,4 +261,236 @@ async function cmd_supabase(program: Command) {
         process.exit(1);
       }
     });
+
+  // ML Training Jobs management
+  supabaseCmd
+    .command('ml-train')
+    .description('Manage ML training jobs')
+    .option('-l, --list', 'List training jobs')
+    .option('-s, --status <status>', 'Filter by status (pending, running, completed, failed)')
+    .option('-c, --create <name>', 'Create new training job')
+    .option('--model-type <type>', 'Model type for new job')
+    .option('--dataset <name>', 'Dataset name for new job')
+    .action(async (options) => {
+      try {
+        if (options.list) {
+          let query = supabaseClient.getClient()
+            .from('ml_training_jobs')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (options.status) {
+            query = query.eq('status', options.status);
+          }
+
+          const { data: jobs, error } = await query.limit(20);
+
+          if (error) {
+            console.error('❌ Failed to fetch training jobs:', error);
+            process.exit(1);
+          }
+
+          console.log(`Training Jobs (${jobs?.length || 0}):`);
+          jobs?.forEach(job => {
+            const created = new Date(job.created_at).toLocaleString();
+            console.log(`\n${job.job_name} (${job.model_type})`);
+            console.log(`  Status: ${job.status}`);
+            console.log(`  Dataset: ${job.dataset_name}`);
+            if (job.test_rmse) {
+              console.log(`  Test RMSE: ${job.test_rmse.toFixed(4)}`);
+              console.log(`  Test MAE: ${job.test_mae.toFixed(4)}`);
+              console.log(`  Test R²: ${job.test_r2.toFixed(4)}`);
+            }
+            console.log(`  Created: ${created}`);
+          });
+        } else if (options.create) {
+          if (!options.modelType || !options.dataset) {
+            console.error('❌ --model-type and --dataset are required for creating jobs');
+            process.exit(1);
+          }
+
+          const newJob = {
+            job_name: options.create,
+            model_type: options.modelType,
+            dataset_name: options.dataset,
+            status: 'pending',
+            hyperparameters: {},
+            feature_names: [],
+            target_variable: 'target'
+          };
+
+          const { data, error } = await supabaseClient.getClient()
+            .from('ml_training_jobs')
+            .insert(newJob)
+            .select()
+            .single();
+
+          if (error) {
+            console.error('❌ Failed to create training job:', error);
+            process.exit(1);
+          }
+
+          console.log('✅ Training job created:');
+          console.log(JSON.stringify(data, null, 2));
+        } else {
+          console.log('Use --list or --create to manage training jobs');
+        }
+      } catch (error) {
+        console.error('❌ ML training job management failed:', error);
+        process.exit(1);
+      }
+    });
+
+  // ML Model Versions management
+  supabaseCmd
+    .command('ml-models')
+    .description('Manage ML model versions')
+    .option('-l, --list', 'List model versions')
+    .option('-c, --compare', 'Compare model performance')
+    .option('-d, --deploy <id>', 'Deploy a model version')
+    .option('--top <n>', 'Show top N models by performance', '10')
+    .action(async (options) => {
+      try {
+        if (options.list || options.compare) {
+          const { data: models, error } = await supabaseClient.getClient()
+            .from('ml_model_versions')
+            .select('*')
+            .order('test_r2', { ascending: false })
+            .limit(parseInt(options.top));
+
+          if (error) {
+            console.error('❌ Failed to fetch models:', error);
+            process.exit(1);
+          }
+
+          console.log(`\nTop ${models?.length || 0} Models by R² Score:`);
+          console.log('='.repeat(80));
+
+          models?.forEach((model, index) => {
+            console.log(`\n${index + 1}. ${model.model_name} v${model.version} (${model.model_type})`);
+            console.log(`   RMSE: ${model.test_rmse.toFixed(4)} | MAE: ${model.test_mae.toFixed(4)} | R²: ${model.test_r2.toFixed(4)}`);
+            if (model.test_mape) {
+              console.log(`   MAPE: ${model.test_mape.toFixed(2)}%`);
+            }
+            console.log(`   Deployed: ${model.is_deployed ? '✅ Yes' : '❌ No'}`);
+            console.log(`   Path: ${model.model_path}`);
+
+            if (model.feature_importance) {
+              const topFeatures = Object.entries(model.feature_importance)
+                .sort((a: any, b: any) => b[1] - a[1])
+                .slice(0, 5);
+              console.log(`   Top Features: ${topFeatures.map(([name, imp]) => `${name}(${(imp as number).toFixed(3)})`).join(', ')}`);
+            }
+          });
+
+          if (options.compare && models && models.length > 1) {
+            console.log('\n\nModel Comparison Summary:');
+            console.log('='.repeat(80));
+            console.log(`Best by RMSE: ${models[0].model_name} v${models[0].version} (${models[0].test_rmse.toFixed(4)})`);
+
+            const sortedByR2 = [...models].sort((a, b) => b.test_r2 - a.test_r2);
+            console.log(`Best by R²: ${sortedByR2[0].model_name} v${sortedByR2[0].version} (${sortedByR2[0].test_r2.toFixed(4)})`);
+
+            const sortedByMAE = [...models].sort((a, b) => a.test_mae - b.test_mae);
+            console.log(`Best by MAE: ${sortedByMAE[0].model_name} v${sortedByMAE[0].version} (${sortedByMAE[0].test_mae.toFixed(4)})`);
+          }
+        } else if (options.deploy) {
+          const { data, error } = await supabaseClient.getClient()
+            .from('ml_model_versions')
+            .update({
+              is_deployed: true,
+              deployed_at: new Date().toISOString()
+            })
+            .eq('id', options.deploy)
+            .select()
+            .single();
+
+          if (error) {
+            console.error('❌ Failed to deploy model:', error);
+            process.exit(1);
+          }
+
+          console.log(`✅ Model ${data.model_name} v${data.version} deployed successfully`);
+        } else {
+          console.log('Use --list, --compare, or --deploy to manage models');
+        }
+      } catch (error) {
+        console.error('❌ ML model management failed:', error);
+        process.exit(1);
+      }
+    });
+
+  // ML Feature Sets management
+  supabaseCmd
+    .command('ml-features')
+    .description('Manage ML feature sets')
+    .option('-l, --list', 'List feature sets')
+    .option('-d, --details <name>', 'Show feature set details')
+    .action(async (options) => {
+      try {
+        if (options.list) {
+          const { data: featureSets, error } = await supabaseClient.getClient()
+            .from('ml_feature_sets')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) {
+            console.error('❌ Failed to fetch feature sets:', error);
+            process.exit(1);
+          }
+
+          console.log(`Feature Sets (${featureSets?.length || 0}):`);
+          featureSets?.forEach(fs => {
+            console.log(`\n${fs.feature_set_name} v${fs.version}`);
+            console.log(`  Features: ${fs.feature_count}`);
+            console.log(`  Used in: ${fs.used_in_models?.length || 0} models`);
+            if (fs.description) {
+              console.log(`  Description: ${fs.description}`);
+            }
+          });
+        } else if (options.details) {
+          const { data: fs, error } = await supabaseClient.getClient()
+            .from('ml_feature_sets')
+            .select('*')
+            .eq('feature_set_name', options.details)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (error) {
+            console.error('❌ Failed to fetch feature set details:', error);
+            process.exit(1);
+          }
+
+          console.log(`\nFeature Set: ${fs.feature_set_name} v${fs.version}`);
+          console.log('='.repeat(80));
+          console.log(`\nFeatures (${fs.feature_count}):`);
+
+          fs.features.forEach((feature: any, index: number) => {
+            console.log(`  ${index + 1}. ${feature.name} (${feature.type})`);
+            if (feature.params) {
+              console.log(`     Params: ${JSON.stringify(feature.params)}`);
+            }
+            if (feature.importance) {
+              console.log(`     Importance: ${feature.importance.toFixed(4)}`);
+            }
+          });
+
+          if (fs.correlation_with_target) {
+            console.log(`\nTop Correlations with Target:`);
+            const topCorr = Object.entries(fs.correlation_with_target)
+              .sort((a: any, b: any) => Math.abs(b[1]) - Math.abs(a[1]))
+              .slice(0, 10);
+            topCorr.forEach(([name, corr]: [string, any]) => {
+              console.log(`  ${name}: ${corr.toFixed(4)}`);
+            });
+          }
+        } else {
+          console.log('Use --list or --details to manage feature sets');
+        }
+      } catch (error) {
+        console.error('❌ ML feature set management failed:', error);
+        process.exit(1);
+      }
+    });
 }
