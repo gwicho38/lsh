@@ -6,7 +6,7 @@
 import { ShellExecutor } from './shell-executor.js';
 import { parseShellCommand } from './shell-parser.js';
 import * as fs from 'fs';
-import * as path from 'path';
+import * as _path from 'path';
 
 export interface ScriptExecutionOptions {
   cwd?: string;
@@ -187,7 +187,7 @@ export class ScriptRunner {
   public validateScript(scriptPath: string): { valid: boolean; errors: string[] } {
     try {
       const scriptContent = fs.readFileSync(scriptPath, 'utf8');
-      const ast = parseShellCommand(scriptContent);
+      const _ast = parseShellCommand(scriptContent);
       
       // Basic validation - if parsing succeeds, syntax is valid
       return { valid: true, errors: [] };

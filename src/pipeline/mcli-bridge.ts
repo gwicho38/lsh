@@ -378,7 +378,7 @@ export class MCLIBridge extends EventEmitter {
     try {
       const response = await this.client.get('/health');
       return response.status === 200;
-    } catch (error) {
+    } catch (_error) {
       return false;
     }
   }

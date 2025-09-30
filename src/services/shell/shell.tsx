@@ -8,8 +8,8 @@ interface Spec {
 }
 
 export async function get_ishell(
-  type: String = "Jvm",
-  spec: Spec = { function: "currentUsage" }
+  _type: String = "Jvm",
+  _spec: Spec = { function: "currentUsage" }
 ) {}
 
 export async function init_ishell(program: Command) {
@@ -20,7 +20,7 @@ async function cmd_interactive(program: Command) {
   program
     .command("repl")
     .description("lsh interactive shell")
-    .action(async (type: String, action: String, spec: Spec) => {
+    .action(async (_type: String, _action: String, _spec: Spec) => {
       // Check if raw mode is supported before rendering
       if (process.stdin.isTTY && process.stdin.setRawMode !== undefined) {
         render(<Terminal/>);

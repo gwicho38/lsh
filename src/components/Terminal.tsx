@@ -10,7 +10,7 @@ import { ShellExecutor } from "../lib/shell-executor.js";
 export const Terminal = () => {
   const [input, setInput] = useState("");
   const [lines, setLines] = useState([]);
-  const [mode, setMode] = useState("auto"); // auto, js, shell
+  const [_mode, _setMode] = useState("auto"); // auto, js, shell
   const [workingDir, setWorkingDir] = useState(process.cwd());
   const [shellExecutor] = useState(() => new ShellExecutor());
   const { exit } = useApp();
@@ -125,7 +125,7 @@ export const Terminal = () => {
         if (result.stderr) output += (output ? "\n" : "") + `stderr: ${result.stderr}`;
         
         return output || "(no output)";
-      } catch (fallbackError) {
+      } catch (_fallbackError) {
         return `Shell Error: ${error.message}`;
       }
     }
@@ -178,7 +178,7 @@ export const Terminal = () => {
   }, []);
 
   // Only use input if raw mode is supported
-  const [isInteractive, setIsInteractive] = useState(false);
+  const [_isInteractive, setIsInteractive] = useState(false);
   
   useEffect(() => {
     // Check if raw mode is supported

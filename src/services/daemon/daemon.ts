@@ -1,6 +1,6 @@
 import { Command } from 'commander';
 import DaemonClient from '../../lib/daemon-client.js';
-import DatabasePersistence from '../../lib/database-persistence.js';
+import _DatabasePersistence from '../../lib/database-persistence.js';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -187,7 +187,7 @@ async function cmd_daemon(program: Command) {
           databaseSync: options.databaseSync !== false,
         };
 
-        const result = await client.createDatabaseCronJob(jobSpec);
+        const _result = await client.createDatabaseCronJob(jobSpec);
         
         console.log('✅ Job created successfully:');
         console.log(`  ID: ${jobSpec.id}`);
@@ -649,7 +649,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
     try {
       const { stdout } = await execAsync('pgrep -f "lshd.js"');
       daemonPids = stdout.trim().split('\n').filter(pid => pid.length > 0);
-    } catch (error) {
+    } catch (_error) {
       // No processes found
     }
 
@@ -658,7 +658,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
       try {
         const { stdout } = await execAsync('ps aux | grep lshd | grep -v grep');
         console.log(stdout.split('\n').filter(line => line.trim()).map(line => `  ${line}`).join('\n'));
-      } catch (error) {
+      } catch (_error) {
         console.log(`  PIDs: ${daemonPids.join(', ')}`);
       }
       console.log();
@@ -668,7 +668,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
         try {
           await execAsync('pkill -f "lshd.js"');
           console.log('✅ Daemon processes killed');
-        } catch (error) {
+        } catch (_error) {
           console.log('⚠️  Some processes may require manual cleanup');
         }
       } else {
@@ -681,7 +681,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
 
     // 2. Clean up socket files
     console.log('ℹ️  Cleaning up socket files...');
-    const socketPattern = '/tmp/lsh-*daemon*.sock';
+    const _socketPattern = '/tmp/lsh-*daemon*.sock';
 
     try {
       const { stdout } = await execAsync(`find /tmp -name "lsh-*daemon*.sock" 2>/dev/null || echo ""`);
@@ -704,7 +704,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
       } else {
         console.log('ℹ️  No socket files found');
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('ℹ️  No socket files found');
     }
 
@@ -732,7 +732,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
       } else {
         console.log('ℹ️  No PID files found');
       }
-    } catch (error) {
+    } catch (_error) {
       console.log('ℹ️  No PID files found');
     }
 
@@ -744,7 +744,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
     try {
       const { stdout } = await execAsync('pgrep -f "lshd.js"');
       remainingProcesses = stdout.trim().split('\n').filter(pid => pid.length > 0);
-    } catch (error) {
+    } catch (_error) {
       // No processes found (good)
     }
 
@@ -752,7 +752,7 @@ async function cleanupDaemon(force: boolean = false): Promise<void> {
     try {
       const { stdout } = await execAsync(`find /tmp -name "lsh-*daemon*.sock" 2>/dev/null || echo ""`);
       remainingSockets = stdout.trim().split('\n').filter(file => file.length > 0);
-    } catch (error) {
+    } catch (_error) {
       // No sockets found (good)
     }
 

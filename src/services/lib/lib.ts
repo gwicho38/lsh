@@ -24,8 +24,8 @@ export async function loadCommands() {
   return cmdMap;
 }
 
-async function makeCommand(commander: Command) {
-  const commands = await loadCommands();
+async function _makeCommand(commander: Command) {
+  const _commands = await loadCommands();
   commander.command("jug").action(() => {
     console.log("heat jug");
   });

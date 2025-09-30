@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, shell, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, _ipcMain } = require('electron');
 const path = require('path');
 const { spawn, exec } = require('child_process');
 const fs = require('fs');
@@ -265,7 +265,7 @@ function startPipelineService() {
   console.log('🚀 Starting Pipeline Service...');
 
   // Check if already running
-  exec('lsof -i :3034', (error, stdout, stderr) => {
+  exec('lsof -i :3034', (error, stdout, _stderr) => {
     if (stdout.trim()) {
       console.log('✅ Pipeline service already running');
       return;

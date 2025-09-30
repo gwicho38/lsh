@@ -242,7 +242,7 @@ export class ZshCompatibility {
   /**
    * Load ZSH completions
    */
-  private async loadZshCompletions(completionConfigs: string[]): Promise<void> {
+  private async loadZshCompletions(_completionConfigs: string[]): Promise<void> {
     // Common ZSH completion paths
     const completionPaths = [
       path.join(os.homedir(), '.zsh/completions'),
@@ -393,7 +393,7 @@ export class ZshCompatibility {
                 description: 'File',
               });
             }
-          } catch (error) {
+          } catch (_error) {
             // Ignore directory read errors
           }
           break;
@@ -411,7 +411,7 @@ export class ZshCompatibility {
                 });
               }
             }
-          } catch (error) {
+          } catch (_error) {
             // Ignore directory read errors
           }
           break;
@@ -431,7 +431,7 @@ export class ZshCompatibility {
                   });
                 }
               }
-            } catch (error) {
+            } catch (_error) {
               // Ignore directory read errors
             }
           }
@@ -506,11 +506,11 @@ export class ZshCompatibility {
           stdio: ['pipe', 'pipe', 'pipe'],
         });
 
-        let stdout = '';
+        let _stdout = '';
         let stderr = '';
 
         child.stdout?.on('data', (data) => {
-          stdout += data.toString();
+          _stdout += data.toString();
         });
 
         child.stderr?.on('data', (data) => {
@@ -600,11 +600,11 @@ export class ZshCompatibility {
           stdio: ['pipe', 'pipe', 'pipe'],
         });
 
-        let stdout = '';
+        let _stdout = '';
         let stderr = '';
 
         child.stdout?.on('data', (data) => {
-          stdout += data.toString();
+          _stdout += data.toString();
         });
 
         child.stderr?.on('data', (data) => {
@@ -657,7 +657,7 @@ export class ZshCompatibility {
         version: versionMatch ? versionMatch[1] : 'unknown',
         path: '/bin/zsh', // This could be enhanced to find actual path
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         available: false,
       };

@@ -6,7 +6,7 @@
 
 import fs from 'fs/promises';
 import readline from 'readline';
-import { createReadStream } from 'fs';
+import { createReadStream as _createReadStream } from 'fs';
 
 export interface LogFileExtractorOptions {
   /** Regular expression pattern to match log lines */

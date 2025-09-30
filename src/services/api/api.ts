@@ -48,7 +48,7 @@ const getPkgId = async () => {
   return pkgId;
 }
 
-const writeContent = async (path) => {
+const _writeContent = async (path) => {
   console.log("writeContent");
   const pkgId = await getPkgId();
   const metadataPath = getMetadataPath(path);
@@ -62,7 +62,7 @@ const writeContent = async (path) => {
   }], () => console.log("Success"));
 }
 
-const deleteContent = async (path) => {
+const _deleteContent = async (path) => {
   const pkgId = await getPkgId();
   const metadataPath = getMetadataPath(path);
   return makePOSTRequest('Pkg', 'deleteContent', [pkgId, metadataPath, true], () => console.log("deleted!"));

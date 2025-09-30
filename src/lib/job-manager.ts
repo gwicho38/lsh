@@ -6,7 +6,7 @@
 import { spawn, exec, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
-import * as path from 'path';
+import * as _path from 'path';
 import { EventEmitter } from 'events';
 
 const execAsync = promisify(exec);
@@ -377,7 +377,7 @@ export class JobManager extends EventEmitter {
 
       this.emit('jobMonitoring', job, monitoring);
       return monitoring;
-    } catch (error) {
+    } catch (_error) {
       return null; // Process likely terminated
     }
   }
@@ -652,7 +652,7 @@ export class JobManager extends EventEmitter {
     try {
       const jobsData = Array.from(this.jobs.values()).map(job => {
         // Remove process reference and timer before serializing
-        const { process, timer, ...serializable } = job;
+        const { _process, _timer, ...serializable } = job;
         return serializable;
       });
 

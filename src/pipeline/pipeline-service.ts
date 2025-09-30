@@ -1,6 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import { Pool } from 'pg';
-import { JobTracker, PipelineJob, JobStatus, JobPriority } from './job-tracker.js';
+import { JobTracker, PipelineJob, JobStatus, JobPriority as _JobPriority } from './job-tracker.js';
 import { MCLIBridge } from './mcli-bridge.js';
 import { WorkflowEngine } from './workflow-engine.js';
 import { Server } from 'socket.io';
@@ -58,7 +58,7 @@ export class PipelineService {
       { script: 'log-cleanup', name: 'Log Cleanup', type: 'maintenance', owner: 'ops-team', schedule: '0 2 * * *' }
     ];
 
-    monitoringJobs.forEach((job, index) => {
+    monitoringJobs.forEach((job, _index) => {
       const logPath = `/Users/lefv/repos/lsh/logs/${job.script}.log`;
       let status = 'unknown';
       let lastRun = new Date(Date.now() - Math.random() * 86400000).toISOString();
@@ -71,7 +71,7 @@ export class PipelineService {
           lastRun = stats.mtime.toISOString();
 
           // Check if job is currently running based on schedule
-          const now = new Date();
+          const _now = new Date();
           const schedulePattern = job.schedule;
           if (schedulePattern.includes('*/2')) {
             status = 'running';
@@ -84,7 +84,7 @@ export class PipelineService {
             progress = 100;
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // If can't read log, use defaults
       }
 
@@ -1132,7 +1132,7 @@ export class PipelineService {
         await this.pool.query('SELECT 1');
         console.log('✅ Database connected');
         this.isDemoMode = false;
-      } catch (dbError) {
+      } catch (_dbError) {
         console.warn('⚠️  Database not available - running in demo mode');
         console.log('   To enable full functionality, create a PostgreSQL database named "pipeline"');
         console.log('   and run: psql -d pipeline -f src/pipeline/schema.sql');

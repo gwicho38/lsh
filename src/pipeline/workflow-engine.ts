@@ -143,7 +143,7 @@ export class WorkflowEngine extends EventEmitter {
       definition.team
     ];
 
-    const result = await this.pool.query(query, values);
+    const _result = await this.pool.query(query, values);
 
     this.emit('workflow:created', {
       type: 'workflow:created',
@@ -411,7 +411,7 @@ export class WorkflowEngine extends EventEmitter {
     let targetExecution: WorkflowExecution | null = null;
     let targetNodeId: string | null = null;
 
-    for (const [execId, execution] of this.runningExecutions) {
+    for (const [_execId, execution] of this.runningExecutions) {
       for (const [nodeId, nodeState] of Object.entries(execution.nodeStates)) {
         if (nodeState.jobId === jobId) {
           targetExecution = execution;
@@ -558,7 +558,7 @@ export class WorkflowEngine extends EventEmitter {
     execution.errorMessage = errorMessage;
 
     // Cancel running nodes
-    for (const [nodeId, nodeState] of Object.entries(execution.nodeStates)) {
+    for (const [_nodeId, nodeState] of Object.entries(execution.nodeStates)) {
       if (nodeState.status === NodeStatus.RUNNING || nodeState.status === NodeStatus.WAITING) {
         nodeState.status = NodeStatus.CANCELLED;
 
@@ -596,7 +596,7 @@ export class WorkflowEngine extends EventEmitter {
     execution.durationMs = execution.completedAt.getTime() - execution.startedAt.getTime();
 
     // Cancel all running and waiting nodes
-    for (const [nodeId, nodeState] of Object.entries(execution.nodeStates)) {
+    for (const [_nodeId, nodeState] of Object.entries(execution.nodeStates)) {
       if (nodeState.status === NodeStatus.RUNNING || nodeState.status === NodeStatus.WAITING) {
         nodeState.status = NodeStatus.CANCELLED;
 

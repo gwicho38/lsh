@@ -22,7 +22,7 @@ const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ? createClient(SUPABASE_URL, 
 
 console.log('Supabase client:', supabase ? 'configured' : 'not configured');
 
-const CACHE_DIR = '/Users/lefv/.lsh/cache';
+const _CACHE_DIR = '/Users/lefv/.lsh/cache';
 const MONITORING_DIR = '/Users/lefv/.lsh/monitoring';
 
 interface SystemMetrics {
@@ -74,7 +74,7 @@ async function getLatestMetrics(): Promise<SystemMetrics> {
       job_queue_size: metrics.job_queue_size || 0,
       active_jobs: metrics.active_jobs || 0
     };
-  } catch (error) {
+  } catch (_error) {
     return {
       timestamp: new Date().toISOString(),
       cpu_usage: Math.random() * 100,
@@ -110,7 +110,7 @@ async function getJobMetrics(): Promise<JobMetrics[]> {
         duration_ms: status.duration_ms || Math.floor(Math.random() * 5000),
         error_message: status.error_message
       });
-    } catch (error) {
+    } catch (_error) {
       metrics.push({
         job_name: job,
         last_run: new Date(Date.now() - Math.random() * 3600000).toISOString(),
@@ -164,7 +164,7 @@ async function getAlerts(): Promise<Alert[]> {
     if (Array.isArray(fileAlerts)) {
       return fileAlerts;
     }
-  } catch (error) {
+  } catch (_error) {
     // Generate sample alerts
   }
 

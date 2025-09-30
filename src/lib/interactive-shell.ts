@@ -8,8 +8,8 @@ import * as path from 'path';
 import * as os from 'os';
 import { ShellExecutor } from './shell-executor.js';
 import { parseShellCommand } from './shell-parser.js';
-import HistorySystem from './history-system.js';
-import CompletionSystem from './completion-system.js';
+import _HistorySystem from './history-system.js';
+import _CompletionSystem from './completion-system.js';
 
 export interface InteractiveShellOptions {
   prompt?: string;
@@ -316,7 +316,7 @@ echo "LSH interactive shell loaded. Type 'help' for commands."
         process.stdout.write(remaining);
         input += remaining;
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore completion errors
     }
   }

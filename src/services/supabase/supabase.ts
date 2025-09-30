@@ -176,11 +176,11 @@ async function cmd_supabase(program: Command) {
     .command('sync')
     .description('Synchronize data with Supabase')
     .option('-f, --force', 'Force full synchronization')
-    .action(async (options) => {
+    .action(async (_options) => {
       try {
         console.log('Synchronizing data with Supabase...');
 
-        const configManager = new CloudConfigManager();
+        const _configManager = new CloudConfigManager();
         const persistence = new DatabasePersistence();
 
         // Test connection first

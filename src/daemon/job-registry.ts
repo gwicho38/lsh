@@ -565,7 +565,7 @@ export class JobRegistry extends EventEmitter {
 
     const recent = records.slice(0, 5);
     const successCount = recent.filter(r => r.status === 'completed').length;
-    const failureCount = recent.filter(r => r.status === 'failed').length;
+    const _failureCount = recent.filter(r => r.status === 'failed').length;
 
     const recentSuccessRate = successCount / recent.length;
     const overallStats = this.statistics.get(jobId);
@@ -597,7 +597,7 @@ export class JobRegistry extends EventEmitter {
           }
         }
       });
-    } catch (error) {
+    } catch (_error) {
       // Ignore resource monitoring errors
     }
   }
