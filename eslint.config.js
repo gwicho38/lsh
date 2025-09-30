@@ -13,6 +13,7 @@ export default [
         sourceType: 'module',
       },
       globals: {
+        // Node.js globals
         process: 'readonly',
         Buffer: 'readonly',
         console: 'readonly',
@@ -20,8 +21,45 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        setImmediate: 'readonly',
+        clearImmediate: 'readonly',
         __dirname: 'readonly',
         __filename: 'readonly',
+        global: 'readonly',
+
+        // Node.js 18+ globals
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
+        FormData: 'readonly',
+
+        // Web APIs / Universal
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+
+        // Browser globals (for Electron/React components)
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        prompt: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+
+        // Third-party library globals
+        bootstrap: 'readonly',
+        io: 'readonly',
+
+        // TypeScript globals
+        NodeJS: 'readonly',
       },
     },
     plugins: {
