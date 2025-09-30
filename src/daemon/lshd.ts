@@ -14,6 +14,7 @@ import { EventEmitter } from 'events';
 import JobManager, { JobSpec } from '../lib/job-manager.js';
 import { LSHApiServer, ApiConfig } from './api-server.js';
 import { validateCommand } from '../lib/command-validator.js';
+import { validateEnvironment, printValidationResults } from '../lib/env-validator.js';
 
 const execAsync = promisify(exec);
 
@@ -73,6 +74,26 @@ export class LSHJobDaemon extends EventEmitter {
   async start(): Promise<void> {
     if (this.isRunning) {
       throw new Error('Daemon is already running');
+    }
+
+    // Validate environment variables
+    this.log('INFO', 'Validating environment configuration');
+    const envValidation = validateEnvironment();
+
+    // Print validation results
+    if (envValidation.errors.length > 0 || envValidation.warnings.length > 0) {
+      printValidationResults(envValidation, false);
+    }
+
+    // Fail fast in production if validation fails
+    if (!envValidation.isValid && process.env.NODE_ENV === 'production') {
+      this.log('ERROR', 'Environment validation failed in production');
+      throw new Error('Invalid environment configuration. Check logs for details.');
+    }
+
+    // Log warnings even in development
+    if (envValidation.warnings.length > 0) {
+      envValidation.warnings.forEach(warn => this.log('WARN', warn));
     }
 
     // Check if daemon is already running
