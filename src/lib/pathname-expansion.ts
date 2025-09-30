@@ -135,7 +135,7 @@ export class PathnameExpander {
           regexStr += '.';
           break;
 
-        case '[':
+        case '[': {
           // Character class
           const closeIdx = this.findClosingBracket(pattern, i);
           if (closeIdx === -1) {
@@ -156,8 +156,9 @@ export class PathnameExpander {
             i = closeIdx;
           }
           break;
+        }
 
-        case '{':
+        case '{': {
           // Brace expansion - simplified implementation
           const braceEnd = this.findClosingBrace(pattern, i);
           if (braceEnd === -1) {
@@ -169,6 +170,7 @@ export class PathnameExpander {
             i = braceEnd;
           }
           break;
+        }
 
         case '\\':
           // Escape next character
@@ -235,7 +237,7 @@ export class PathnameExpander {
   }
 
   private escapeRegex(str: string): string {
-    return str.replace(/[.+^$()|\[\]{}\\]/g, '\\$&');
+    return str.replace(/[.+^$()|[\]{}\\]/g, '\\$&');
   }
 
   // Utility method for expanding multiple patterns

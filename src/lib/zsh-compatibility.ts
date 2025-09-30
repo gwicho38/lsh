@@ -416,7 +416,7 @@ export class ZshCompatibility {
           }
           break;
 
-        case 'commands':
+        case 'commands': {
           // Generate command completions
           const pathDirs = (context.env.PATH || '').split(':');
           for (const dir of pathDirs) {
@@ -436,6 +436,7 @@ export class ZshCompatibility {
             }
           }
           break;
+        }
 
         case 'options':
           // Add specific option
