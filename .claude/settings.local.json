@@ -152,7 +152,10 @@
       "Bash(~/repos/update-both.sh --version)",
       "Bash(npm:*)",
       "Bash(test -f ~/.pypirc)",
-      "Bash(env)"
+      "Bash(env)",
+      "Bash(source:*)",
+      "Bash(twine upload:*)",
+      "Bash(pip index versions:*)"
     ],
     "deny": [],
     "ask": []
