@@ -107,6 +107,67 @@ async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: st
 }
 
 /**
+ * Check GitHub Actions CI status for a specific version tag
+ */
+async function checkCIStatus(version: string): Promise<{ passing: boolean; url?: string }> {
+  return new Promise((resolve) => {
+    const options = {
+      hostname: 'api.github.com',
+      port: 443,
+      path: `/repos/gwicho38/lsh/actions/runs?per_page=5`,
+      method: 'GET',
+      headers: {
+        'User-Agent': 'lsh-cli',
+        'Accept': 'application/vnd.github.v3+json',
+      },
+    };
+
+    https.get(options, (res) => {
+      let data = '';
+
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        try {
+          if (res.statusCode === 200) {
+            const ghData = JSON.parse(data);
+            const runs = ghData.workflow_runs || [];
+
+            // Find the most recent workflow run for main branch
+            const mainRuns = runs.filter((run: any) =>
+              run.head_branch === 'main' && run.status === 'completed'
+            );
+
+            if (mainRuns.length > 0) {
+              const latestRun = mainRuns[0];
+              const passing = latestRun.conclusion === 'success';
+              resolve({
+                passing,
+                url: latestRun.html_url,
+              });
+            } else {
+              // No completed runs found, assume passing
+              resolve({ passing: true });
+            }
+          } else {
+            // If we can't check CI, don't block the update
+            resolve({ passing: true });
+          }
+        } catch (error) {
+          // On error, don't block the update
+          resolve({ passing: true });
+        }
+      });
+    }).on('error', () => {
+      // On network error, don't block the update
+      resolve({ passing: true });
+    });
+  });
+}
+
+/**
  * Update command - check for and install updates from npm
  */
 selfCommand
@@ -114,6 +175,7 @@ selfCommand
   .description('Check for and install LSH updates from npm')
   .option('--check', 'Only check for updates, don\'t install')
   .option('-y, --yes', 'Skip confirmation prompt')
+  .option('--skip-ci-check', 'Skip CI status check and install anyway')
   .action(async (options) => {
     try {
       const currentVersion = getCurrentVersion();
@@ -178,6 +240,24 @@ selfCommand
         if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
           console.log(chalk.yellow('Update cancelled'));
           return;
+        }
+      }
+
+      // Check CI status before installing (unless skipped)
+      if (!options.skipCiCheck) {
+        console.log(chalk.cyan('🔍 Checking CI status...'));
+        const ciStatus = await checkCIStatus(latestVersion);
+
+        if (!ciStatus.passing) {
+          console.log(chalk.red('✗ CI build is failing for the latest version'));
+          if (ciStatus.url) {
+            console.log(chalk.yellow(`  View CI status: ${ciStatus.url}`));
+          }
+          console.log(chalk.yellow('⚠ Update blocked to prevent installing a broken version'));
+          console.log(chalk.dim('  Use --skip-ci-check to install anyway (not recommended)'));
+          return;
+        } else {
+          console.log(chalk.green('✓ CI build is passing'));
         }
       }
 
