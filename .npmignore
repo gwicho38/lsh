@@ -1,0 +1,67 @@
+# Source files (only publish dist/)
+src/
+__tests__/
+*.test.ts
+*.test.js
+
+# Development files
+.git/
+.github/
+.vscode/
+*.log
+npm-debug.log*
+
+# Test and coverage
+coverage/
+.nyc_output/
+test/
+tests/
+
+# Documentation (except essential)
+docs/
+*.md
+!README.md
+!LICENSE
+
+# Build artifacts
+*.tsbuildinfo
+tsconfig.json
+tsconfig.*.json
+
+# Configuration
+.eslintrc*
+.eslintignore
+eslint.config.js
+.prettierrc*
+.editorconfig
+jest.config.*
+babel.config.*
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+.envrc
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Development scripts
+scripts/
+test-*.js
+demo-*.js
+examples/
+
+# Docker and resources
+resources/
+docker-compose*.yml
+Dockerfile*
+
+# Misc
+.cache/
+.temp/
+tmp/

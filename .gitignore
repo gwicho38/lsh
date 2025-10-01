@@ -102,6 +102,30 @@ web_modules/
 .env.production.local
 .env.local
 
+# Docker environment files (contain secrets)
+resources/docker/**/.env
+resources/docker/**/*.env
+!resources/docker/**/.env.example
+
+# Secret keys and credentials
+*.key
+*.pem
+*.p12
+*.pfx
+*_rsa
+*_rsa.pub
+*.cer
+*.crt
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Database and API keys
+**/secrets/
+**/credentials/
+**/.credentials
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
