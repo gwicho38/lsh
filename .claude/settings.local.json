@@ -144,7 +144,15 @@
       "Bash(column:*)",
       "Bash(npm ls:*)",
       "Bash(git checkout:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Read(///**)",
+      "Bash(do npx eslint \"$f\")",
+      "Bash(do echo \"=== $f ===\")",
+      "Bash(./scripts/build-and-publish.sh:*)",
+      "Bash(~/repos/update-both.sh --version)",
+      "Bash(npm:*)",
+      "Bash(test -f ~/.pypirc)",
+      "Bash(env)"
     ],
     "deny": [],
     "ask": []
