@@ -1,5 +1,5 @@
 {
-  "name": "@gwicho38/lsh",
+  "name": "gwicho38-lsh",
   "version": "0.3.1",
   "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
   "main": "dist/app.js",
