@@ -6,7 +6,6 @@
  */
 
 import CronJobManager from '../src/lib/cron-job-manager.js';
-import DaemonClient from '../src/lib/daemon-client.js';
 
 async function demonstrateDaemonIntegration() {
   console.log('🚀 LSH Daemon Integration Demo\n');

@@ -9,10 +9,8 @@ import {
   ShellHistoryEntry,
   ShellJob,
   ShellConfiguration,
-  _ShellSession,
   ShellAlias,
   ShellFunction,
-  _ShellCompletion,
 } from './database-schema.js';
 
 export class DatabasePersistence {

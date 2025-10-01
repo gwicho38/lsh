@@ -6,9 +6,7 @@
  */
 
 import ScriptRunner from './src/lib/script-runner.js';
-import { parseShellCommand } from './src/lib/shell-parser.js';
 import * as fs from 'fs';
-import * as path from 'path';
 
 async function main() {
   const args = process.argv.slice(2);
