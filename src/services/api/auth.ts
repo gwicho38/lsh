@@ -1,4 +1,3 @@
-/* eslint-disable import/prefer-default-export */
 import crypto from "crypto";
 import "dotenv/config";
 

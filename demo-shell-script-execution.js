@@ -277,8 +277,8 @@ done
 # String manipulation
 MESSAGE="Hello from LSH!"
 echo "Original: $MESSAGE"
-echo "Length: ${#MESSAGE}"
-echo "Uppercase: ${MESSAGE^^}"
+echo "Length: \${#MESSAGE}"
+echo "Uppercase: \${MESSAGE^^}"
 
 echo "Script completed successfully!"
 `;
@@ -356,7 +356,7 @@ echo "Script completed successfully!"
   // Cleanup
   try {
     fs.unlinkSync('/tmp/lsh_test.txt');
-  } catch (e) {
+  } catch (_e) {
     // File might not exist
   }
   

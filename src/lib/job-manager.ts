@@ -652,7 +652,7 @@ export class JobManager extends EventEmitter {
     try {
       const jobsData = Array.from(this.jobs.values()).map(job => {
         // Remove process reference and timer before serializing
-        const { _process, _timer, ...serializable } = job;
+        const { process: _process, timer: _timer, ...serializable } = job;
         return serializable;
       });
 

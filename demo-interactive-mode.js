@@ -4,7 +4,6 @@
  * Demo script showcasing LSH interactive mode
  */
 
-import InteractiveShell from './src/lib/interactive-shell.js';
 import { ShellExecutor } from './src/lib/shell-executor.js';
 import { parseShellCommand } from './src/lib/shell-parser.js';
 

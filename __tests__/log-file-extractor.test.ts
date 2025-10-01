@@ -2,7 +2,7 @@
  * Tests for Log File Extractor utility
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { extractRelevantLogs, LogFileExtractorOptions } from '../src/services/log-file-extractor.js';
 import fs from 'fs/promises';
 import path from 'path';

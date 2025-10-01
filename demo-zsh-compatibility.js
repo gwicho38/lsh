@@ -203,7 +203,7 @@ echo "ZSH configuration loaded"
   try {
     fs.unlinkSync(zshrcPath);
     fs.rmSync('/tmp/test-dir', { recursive: true, force: true });
-  } catch (e) {
+  } catch (_e) {
     // Ignore cleanup errors
   }
   

@@ -11,7 +11,7 @@ export class TestClass {
   }
 
   /**
-   * Expand recursive patterns: **/*.txt
+   * Expand recursive glob patterns
    */
   private async expandRecursivePattern(): Promise<void> {
     console.log("test");

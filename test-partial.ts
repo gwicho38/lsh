@@ -3,9 +3,6 @@
  * Provides ZSH-compatible extended globbing patterns
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-
 export interface GlobQualifier {
   type: 'size' | 'time' | 'type' | 'perm' | 'user' | 'group';
   operator: '=' | '+' | '-' | '>';
@@ -153,9 +150,42 @@ export class ExtendedGlobber {
     const negatedPattern = pattern.substring(1); // Remove ^
     const allFiles = await this.getAllFiles(options.cwd || this.cwd, options);
     const negatedFiles = await this.expandRegularPattern(negatedPattern, options);
-    
+
     return allFiles.filter(file => !negatedFiles.includes(file));
   }
 
   /**
+   * Expand recursive patterns
+   */
+  private async expandRecursivePattern(_pattern: string, _options: ExtendedGlobOptions): Promise<string[]> {
+    return [];
+  }
+
+  /**
+   * Expand regular patterns
+   */
+  private async expandRegularPattern(_pattern: string, _options: ExtendedGlobOptions): Promise<string[]> {
+    return [];
+  }
+
+  /**
+   * Get all files in directory
+   */
+  private async getAllFiles(_dir: string, _options: ExtendedGlobOptions): Promise<string[]> {
+    return [];
+  }
+
+  /**
+   * Parse qualifiers from string
+   */
+  private parseQualifiers(_qualifierStr: string): GlobQualifier[] {
+    return [];
+  }
+
+  /**
+   * Filter files by qualifiers
+   */
+  private filterByQualifiers(files: string[], _qualifiers: GlobQualifier[]): string[] {
+    return files;
+  }
 }
