@@ -63,7 +63,7 @@ export class PromptSystem {
     result = result.replace(/%h/g, ctx.jobCount.toString());      // Number of jobs
     result = result.replace(/%j/g, ctx.jobCount.toString());      // Number of jobs
     result = result.replace(/%L/g, ctx.exitCode.toString());     // Exit code of last command
-    result = result.replace(/%?/g, ctx.exitCode.toString());    // Exit code of last command
+    result = result.replace(/%\?/g, ctx.exitCode.toString());    // Exit code of last command
     result = result.replace(/%#/g, ctx.user === 'root' ? '#' : '$'); // Prompt character
     result = result.replace(/%\$/g, ctx.user === 'root' ? '#' : '$'); // Prompt character
     result = result.replace(/%%/g, '%');                          // Literal %
