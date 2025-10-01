@@ -1,5 +1,5 @@
 {
-  "name": "lsh",
+  "name": "@c3-lefv-1/lsh",
   "version": "0.3.0",
   "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
   "main": "dist/app.js",

@@ -63,7 +63,7 @@ async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: st
     const options = {
       hostname: 'registry.npmjs.org',
       port: 443,
-      path: '/lsh',
+      path: '/@c3-lefv-1/lsh',
       method: 'GET',
       headers: {
         'User-Agent': 'lsh-cli',
@@ -185,7 +185,7 @@ selfCommand
       console.log(chalk.cyan(`📦 Installing lsh ${latestVersion}...`));
 
       const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-      const updateProcess = spawn(npmCmd, ['install', '-g', 'lsh@latest'], {
+      const updateProcess = spawn(npmCmd, ['install', '-g', '@c3-lefv-1/lsh@latest'], {
         stdio: 'inherit',
       });
 
@@ -195,7 +195,7 @@ selfCommand
           console.log(chalk.yellow('ℹ Restart your terminal or run \'hash -r\' to use the new version'));
         } else {
           console.log(chalk.red('✗ Update failed'));
-          console.log(chalk.yellow('ℹ Try running with sudo: sudo npm install -g lsh@latest'));
+          console.log(chalk.yellow('ℹ Try running with sudo: sudo npm install -g @c3-lefv-1/lsh@latest'));
         }
       });
     } catch (error) {
