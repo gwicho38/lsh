@@ -92,4 +92,10 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
+  {
+    files: ['src/commands/self.ts'],
+    rules: {
+      'no-console': 'off', // CLI commands need console output
+    },
+  },
 ];

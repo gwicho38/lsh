@@ -1,10 +1,18 @@
 {
   "name": "lsh",
   "version": "0.3.0",
-  "description": "extensible cli client",
-  "main": "src/app.js",
+  "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
+  "main": "dist/app.js",
   "bin": {
     "lsh": "./dist/cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lefv/lsh.git"
+  },
+  "homepage": "https://github.com/lefv/lsh#readme",
+  "bugs": {
+    "url": "https://github.com/lefv/lsh/issues"
   },
   "scripts": {
     "build": "tsc",
@@ -29,11 +37,38 @@
   },
   "keywords": [
     "cli",
-    "client"
+    "shell",
+    "terminal",
+    "job-manager",
+    "cron",
+    "daemon",
+    "zsh",
+    "bash",
+    "posix",
+    "database-persistence",
+    "task-scheduler",
+    "command-line",
+    "automation",
+    "devops",
+    "cicd"
   ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "type": "module",
-  "author": "lefv",
-  "license": "ISC",
+  "author": {
+    "name": "Luis Fernandez de la Vara",
+    "email": "luis@lefv.io"
+  },
+  "license": "MIT",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE",
+    ".env.example",
+    "package.json"
+  ],
   "dependencies": {
     "@deck.gl/core": "^8.9.33",
     "@inkjs/ui": "^1.0.0",

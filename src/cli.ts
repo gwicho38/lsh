@@ -9,6 +9,7 @@ import { Command } from 'commander';
 import InteractiveShell from './lib/interactive-shell.js';
 import ScriptRunner from './lib/script-runner.js';
 import { parseShellCommand } from './lib/shell-parser.js';
+import selfCommand from './commands/self.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -95,6 +96,9 @@ program
       process.exit(1);
     }
   });
+
+// Self-management commands
+program.addCommand(selfCommand);
 
 // Help subcommand
 program
