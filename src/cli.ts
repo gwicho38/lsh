@@ -112,12 +112,17 @@ program
  * Start interactive shell
  */
 async function startInteractiveShell(options: any): Promise<void> {
-  const shell = new InteractiveShell({
-    rcFile: options.rc,
+  const shellOptions: any = {
     verbose: options.verbose,
     debug: options.debug,
-  });
+  };
 
+  // Only set rcFile if explicitly provided
+  if (options.rc) {
+    shellOptions.rcFile = options.rc;
+  }
+
+  const shell = new InteractiveShell(shellOptions);
   await shell.start();
 }
 
@@ -439,8 +444,3 @@ function showDetailedHelp(): void {
 
 // Parse command line arguments
 program.parse(process.argv);
-
-// If no command provided, start interactive shell
-if (process.argv.length === 2) {
-  startInteractiveShell({}).catch(console.error);
-}
