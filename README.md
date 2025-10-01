@@ -51,13 +51,6 @@
 npm install -g gwicho38-lsh
 ```
 
-**Install from Homebrew:**
-
-```bash
-brew tap gwicho38/lsh
-brew install lsh
-```
-
 **Verify installation:**
 
 ```bash

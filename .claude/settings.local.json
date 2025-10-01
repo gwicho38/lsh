@@ -163,7 +163,15 @@
       "Bash(/opt/homebrew/bin/lsh)",
       "Bash(/opt/homebrew/bin/lsh --help)",
       "Bash(/opt/homebrew/bin/lsh self version)",
-      "Read(//opt/homebrew/lib/node_modules/gwicho38-lsh/**)"
+      "Read(//opt/homebrew/lib/node_modules/gwicho38-lsh/**)",
+      "Bash(shasum:*)",
+      "Bash(brew tap-new:*)",
+      "Bash(brew info:*)",
+      "Bash(brew reinstall:*)",
+      "Bash(brew uninstall:*)",
+      "Read(//opt/homebrew/Library/Taps/gwicho38/homebrew-lsh/**)",
+      "Bash(brew untap:*)",
+      "Bash(brew tap:*)"
     ],
     "deny": [],
     "ask": []
