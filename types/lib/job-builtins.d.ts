@@ -108,7 +108,7 @@ export declare class JobBuiltins {
      * job-stats - Show job statistics
      * Usage: job-stats
      */
-    jobStats(args: string[]): Promise<{
+    jobStats(_args: string[]): Promise<{
         stdout: string;
         stderr: string;
         exitCode: number;

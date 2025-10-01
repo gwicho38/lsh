@@ -3,9 +3,8 @@
  * Executes parsed AST nodes following POSIX semantics
  */
 import { ASTNode, FunctionDefinition } from './shell-parser.js';
-import { CompletionFunction } from './completion-system.js';
+import CompletionSystem, { CompletionFunction } from './completion-system.js';
 import HistorySystem from './history-system.js';
-import CompletionSystem from './completion-system.js';
 import AssociativeArrayManager from './associative-arrays.js';
 import ZshOptionsManager from './zsh-options.js';
 import PromptSystem from './prompt-system.js';
