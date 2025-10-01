@@ -45,24 +45,27 @@
 
 ### Quick Start
 
-**Install from npm (Recommended):**
+**Install from npm:**
 
 ```bash
-npm install -g lsh
+npm install -g gwicho38-lsh
 ```
 
-**Or use the install script:**
+**Install from Homebrew:**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/lefv/lsh/main/scripts/install.sh | bash
+brew tap gwicho38/lsh
+brew install lsh
 ```
 
 **Verify installation:**
 
 ```bash
 lsh --version
-lsh --help
+lsh self version
 ```
+
+For detailed installation options, see [INSTALL.md](INSTALL.md).
 
 ### From Source
 
