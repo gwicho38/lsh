@@ -9,6 +9,10 @@ import { spawn } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const selfCommand = new Command('self');
 selfCommand.description('Manage and update the LSH application');

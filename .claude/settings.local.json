@@ -155,7 +155,15 @@
       "Bash(env)",
       "Bash(source:*)",
       "Bash(twine upload:*)",
-      "Bash(pip index versions:*)"
+      "Bash(pip index versions:*)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//opt/homebrew/lib/node_modules/gwicho38-lsh/dist/**)",
+      "Bash(/opt/homebrew/bin/lsh --version)",
+      "Bash(/opt/homebrew/bin/lsh self --help)",
+      "Bash(/opt/homebrew/bin/lsh)",
+      "Bash(/opt/homebrew/bin/lsh --help)",
+      "Bash(/opt/homebrew/bin/lsh self version)",
+      "Read(//opt/homebrew/lib/node_modules/gwicho38-lsh/**)"
     ],
     "deny": [],
     "ask": []
