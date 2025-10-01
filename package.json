@@ -1,5 +1,5 @@
 {
-  "name": "@c3-lefv-1/lsh",
+  "name": "@gwicho38/lsh",
   "version": "0.3.1",
   "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
   "main": "dist/app.js",
@@ -8,11 +8,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/lefv/lsh.git"
+    "url": "https://github.com/gwicho38/lsh.git"
   },
-  "homepage": "https://github.com/lefv/lsh#readme",
+  "homepage": "https://github.com/gwicho38/lsh#readme",
   "bugs": {
-    "url": "https://github.com/lefv/lsh/issues"
+    "url": "https://github.com/gwicho38/lsh/issues"
   },
   "scripts": {
     "build": "tsc",
@@ -58,7 +58,7 @@
   },
   "type": "module",
   "author": {
-    "name": "Luis Fernandez de la Vara",
+    "name": "gwicho38",
     "email": "luis@lefv.io"
   },
   "license": "MIT",

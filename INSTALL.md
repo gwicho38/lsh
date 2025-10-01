@@ -59,7 +59,7 @@ For development or to use the latest features:
 
 ```bash
 # Clone the repository
-git clone https://github.com/lefv/lsh.git
+git clone https://github.com/gwicho38/lsh.git
 cd lsh
 
 # Install dependencies
@@ -354,8 +354,8 @@ rm -rf ~/.config/lsh
 ## Additional Resources
 
 - **Documentation**: [README.md](README.md)
-- **GitHub**: https://github.com/lefv/lsh
-- **Issues**: https://github.com/lefv/lsh/issues
+- **GitHub**: https://github.com/gwicho38/lsh
+- **Issues**: https://github.com/gwicho38/lsh/issues
 - **Environment Configuration**: [.env.example](.env.example)
 
 ## Getting Help
@@ -363,8 +363,8 @@ rm -rf ~/.config/lsh
 If you encounter issues:
 
 1. Check the [troubleshooting section](#troubleshooting)
-2. Review [existing issues](https://github.com/lefv/lsh/issues)
-3. Create a [new issue](https://github.com/lefv/lsh/issues/new) with:
+2. Review [existing issues](https://github.com/gwicho38/lsh/issues)
+3. Create a [new issue](https://github.com/gwicho38/lsh/issues/new) with:
    - Your OS and version
    - Node.js and npm versions
    - Full error message
