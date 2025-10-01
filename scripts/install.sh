@@ -201,7 +201,7 @@ show_next_steps() {
     echo ""
     echo "Configuration:"
     echo "  • Copy .env.example to .env and configure"
-    echo "  • Review documentation at: https://github.com/lefv/lsh"
+    echo "  • Review documentation at: https://github.com/gwicho38/lsh"
     echo ""
     echo "Update lsh:"
     echo "  • Run: lsh self update"
