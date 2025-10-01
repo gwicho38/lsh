@@ -38,16 +38,37 @@
 ## Installation
 
 ### Prerequisites
-- Node.js 18+
-- npm or yarn
-- PostgreSQL (optional, for persistence)
+- Node.js 18.0.0 or higher
+- npm 8.0.0 or higher
+- PostgreSQL (optional, for persistence features)
 - Redis (optional, for caching)
+
+### Quick Start
+
+**Install from npm (Recommended):**
+
+```bash
+npm install -g lsh
+```
+
+**Or use the install script:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lefv/lsh/main/scripts/install.sh | bash
+```
+
+**Verify installation:**
+
+```bash
+lsh --version
+lsh --help
+```
 
 ### From Source
 
 ```bash
 # Clone the repository
-git clone https://github.com/gwicho38/lsh.git
+git clone https://github.com/lefv/lsh.git
 cd lsh
 
 # Install dependencies
