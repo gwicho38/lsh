@@ -14,13 +14,28 @@ import { registerApiCommands } from './commands/api.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Get version from package.json
+function getVersion(): string {
+  try {
+    const packageJsonPath = path.join(__dirname, '../package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    return packageJson.version || '0.5.1';
+  } catch {
+    return '0.5.1';
+  }
+}
 
 const program = new Command();
 
 program
   .name('lsh')
   .description('LSH - A modern shell with ZSH features and superior job management')
-  .version('1.0.0');
+  .version(getVersion());
 
 // Interactive mode (default)
 program
