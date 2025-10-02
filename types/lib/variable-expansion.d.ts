@@ -44,6 +44,9 @@ export declare class VariableExpander {
     private handlePrefixRemoval;
     private removeSuffix;
     private removePrefix;
+    private handleStringLength;
+    private handleSubstring;
+    private handleCaseConversion;
     private patternToRegex;
     private processCommandSubstitution;
     private processSubstitutionWithRegex;
