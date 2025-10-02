@@ -171,7 +171,10 @@
       "Bash(brew uninstall:*)",
       "Read(//opt/homebrew/Library/Taps/gwicho38/homebrew-lsh/**)",
       "Bash(brew untap:*)",
-      "Bash(brew tap:*)"
+      "Bash(brew tap:*)",
+      "Bash(wc:*)",
+      "Bash(gh issue reopen:*)",
+      "Bash(sort:*)"
     ],
     "deny": [],
     "ask": []

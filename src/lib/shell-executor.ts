@@ -104,7 +104,9 @@ export class ShellExecutor {
 
   constructor(initialContext?: Partial<ShellContext>) {
     this.context = {
-      env: { ...process.env },
+      env: Object.fromEntries(
+        Object.entries(process.env).filter(([_, v]) => v !== undefined)
+      ) as Record<string, string>,
       cwd: process.cwd(),
       variables: {},
       lastExitCode: 0,

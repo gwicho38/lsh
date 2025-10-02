@@ -9,7 +9,7 @@ import vm from 'vm';
 export const REPL = () => {
   const { exit } = useApp();
   const [input, setInput] = useState('');
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState<string[]>([]);
 
   useInput((input, key) => {
     if (key.escape) {
