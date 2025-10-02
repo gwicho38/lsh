@@ -37,60 +37,24 @@ import ZshOptionsManager from './zsh-options.js';
 import PromptSystem from './prompt-system.js';
 import FloatingPointArithmetic from './floating-point-arithmetic.js';
 import ZshCompatibility from './zsh-compatibility.js';
+import {
+  ExecutionResult,
+  Job,
+  JobControl,
+  ShellOptions,
+  ShellContext,
+} from './shell-types.js';
 
 const execAsync = promisify(exec);
 
-export interface ExecutionResult {
-  stdout: string;
-  stderr: string;
-  exitCode: number;
-  success: boolean;
-}
-
-export interface Job {
-  id: number;
-  pid: number;
-  command: string;
-  status: 'running' | 'stopped' | 'done';
-  startTime: number;
-}
-
-export interface JobControl {
-  jobs: Map<number, Job>;
-  nextJobId: number;
-  lastBackgroundPid: number;
-}
-
-export interface ShellOptions {
-  errexit: boolean;    // set -e: exit on error
-  nounset: boolean;    // set -u: error on unset variables
-  xtrace: boolean;     // set -x: print commands before execution
-  verbose: boolean;    // set -v: print shell input lines
-  noglob: boolean;     // set -f: disable pathname expansion
-  monitor: boolean;    // set -m: enable job control
-  noclobber: boolean;  // set -C: don't overwrite files with >
-  allexport: boolean;  // set -a: export all variables
-}
-
-export interface ShellContext {
-  env: Record<string, string>;
-  cwd: string;
-  variables: Record<string, string>;
-  lastExitCode: number;
-  lastReturnCode: number;
-  positionalParams: string[];
-  ifs: string;
-  functions: Record<string, FunctionDefinition>;
-  jobControl: JobControl;
-  options: ShellOptions;
-  history: HistorySystem;
-  completion: CompletionSystem;
-  arrays: AssociativeArrayManager;
-  zshOptions: ZshOptionsManager;
-  prompt: PromptSystem;
-  floatingPoint: FloatingPointArithmetic;
-  zshCompatibility: ZshCompatibility;
-}
+// Re-export types for backward compatibility
+export {
+  ExecutionResult,
+  Job,
+  JobControl,
+  ShellOptions,
+  ShellContext,
+};
 
 export class ShellExecutor {
   private context: ShellContext;
