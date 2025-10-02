@@ -10,6 +10,8 @@ import InteractiveShell from './lib/interactive-shell.js';
 import ScriptRunner from './lib/script-runner.js';
 import { parseShellCommand } from './lib/shell-parser.js';
 import selfCommand from './commands/self.js';
+import { registerApiCommands } from './commands/api.js';
+import { init_daemon } from './services/daemon/daemon.js';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -107,6 +109,18 @@ program
   .action(() => {
     showDetailedHelp();
   });
+
+// Register async command modules
+(async () => {
+  // Daemon management commands
+  await init_daemon(program);
+
+  // API server commands
+  registerApiCommands(program);
+
+  // Parse command line arguments after all commands are registered
+  program.parse(process.argv);
+})();
 
 /**
  * Start interactive shell
@@ -441,6 +455,3 @@ function showDetailedHelp(): void {
   console.log('  ✅ Script Execution');
   console.log('  ✅ Command Line Interface');
 }
-
-// Parse command line arguments
-program.parse(process.argv);
