@@ -2,61 +2,10 @@
  * POSIX Shell Command Executor
  * Executes parsed AST nodes following POSIX semantics
  */
-import { ASTNode, FunctionDefinition } from './shell-parser.js';
-import CompletionSystem, { CompletionFunction } from './completion-system.js';
-import HistorySystem from './history-system.js';
-import AssociativeArrayManager from './associative-arrays.js';
-import ZshOptionsManager from './zsh-options.js';
-import PromptSystem from './prompt-system.js';
-import FloatingPointArithmetic from './floating-point-arithmetic.js';
-import ZshCompatibility from './zsh-compatibility.js';
-export interface ExecutionResult {
-    stdout: string;
-    stderr: string;
-    exitCode: number;
-    success: boolean;
-}
-export interface Job {
-    id: number;
-    pid: number;
-    command: string;
-    status: 'running' | 'stopped' | 'done';
-    startTime: number;
-}
-export interface JobControl {
-    jobs: Map<number, Job>;
-    nextJobId: number;
-    lastBackgroundPid: number;
-}
-export interface ShellOptions {
-    errexit: boolean;
-    nounset: boolean;
-    xtrace: boolean;
-    verbose: boolean;
-    noglob: boolean;
-    monitor: boolean;
-    noclobber: boolean;
-    allexport: boolean;
-}
-export interface ShellContext {
-    env: Record<string, string>;
-    cwd: string;
-    variables: Record<string, string>;
-    lastExitCode: number;
-    lastReturnCode: number;
-    positionalParams: string[];
-    ifs: string;
-    functions: Record<string, FunctionDefinition>;
-    jobControl: JobControl;
-    options: ShellOptions;
-    history: HistorySystem;
-    completion: CompletionSystem;
-    arrays: AssociativeArrayManager;
-    zshOptions: ZshOptionsManager;
-    prompt: PromptSystem;
-    floatingPoint: FloatingPointArithmetic;
-    zshCompatibility: ZshCompatibility;
-}
+import { ASTNode } from './shell-parser.js';
+import { CompletionFunction } from './completion-system.js';
+import { ExecutionResult, Job, JobControl, ShellOptions, ShellContext } from './shell-types.js';
+export { ExecutionResult, Job, JobControl, ShellOptions, ShellContext, };
 export declare class ShellExecutor {
     private context;
     private expander;
