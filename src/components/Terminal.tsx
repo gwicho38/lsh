@@ -9,7 +9,7 @@ import { ShellExecutor } from "../lib/shell-executor.js";
 
 export const Terminal = () => {
   const [input, setInput] = useState("");
-  const [lines, setLines] = useState([]);
+  const [lines, setLines] = useState<string[]>([]);
   const [_mode, _setMode] = useState("auto"); // auto, js, shell
   const [workingDir, setWorkingDir] = useState(process.cwd());
   const [shellExecutor] = useState(() => new ShellExecutor());

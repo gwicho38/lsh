@@ -22,7 +22,12 @@ export class ScriptRunner {
   constructor(options?: ScriptExecutionOptions) {
     this.executor = new ShellExecutor({
       cwd: options?.cwd || process.cwd(),
-      env: { ...process.env, ...options?.env },
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(([_, v]) => v !== undefined)
+        ),
+        ...options?.env
+      } as Record<string, string>,
     });
   }
 

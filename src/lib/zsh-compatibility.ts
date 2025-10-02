@@ -79,7 +79,14 @@ export class ZshCompatibility {
     plugins: Array<string>;
   } {
     const lines = content.split('\n');
-    const config = {
+    const config: {
+      aliases: Array<{ name: string; value: string }>;
+      functions: Array<{ name: string; body: string }>;
+      exports: Array<{ name: string; value: string }>;
+      setopts: Array<{ option: string; enabled: boolean }>;
+      completions: Array<string>;
+      plugins: Array<string>;
+    } = {
       aliases: [],
       functions: [],
       exports: [],

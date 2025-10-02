@@ -3,7 +3,9 @@
     "target": "ES2022", // Specify ECMAScript target version
     "outDir": "./dist", // Redirect output structure to the directory
     "rootDir": "./src", // Specify the root directory of input files
-    "strict": false, // Enable all strict type-checking options
+    "strict": false, // Enable all strict type-checking options (incrementally enabling below)
+    // Incremental strict mode enablement (Issue #69)
+    "strictNullChecks": true,
     "sourceMap": false,
     "module": "ES2022",
     "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
