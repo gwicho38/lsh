@@ -349,8 +349,8 @@ export class ZshCompatibility {
     type: 'files' | 'directories' | 'commands' | 'options' | 'custom';
     pattern: string;
   }> {
-    const patterns = [];
-    
+    const patterns: Array<{ type: 'files' | 'directories' | 'commands' | 'options' | 'custom'; pattern: string }> = [];
+
     // Look for common completion patterns
     const filePatterns = content.match(/compadd.*-f/g);
     if (filePatterns) {
@@ -385,7 +385,7 @@ export class ZshCompatibility {
     context: any,
     patterns: Array<{ type: string; pattern: string }>
   ): Promise<Array<{ word: string; description?: string; type?: 'file' | 'directory' | 'command' | 'variable' | 'function' | 'option' }>> {
-    const completions = [];
+    const completions: Array<{ word: string; description?: string; type?: 'file' | 'directory' | 'command' | 'variable' | 'function' | 'option' }> = [];
 
     for (const pattern of patterns) {
       switch (pattern.type) {

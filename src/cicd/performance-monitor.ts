@@ -187,7 +187,7 @@ export class PerformanceMonitor {
   getHealthStatus(): { status: string; details: { uptime: number; issues: string[]; metrics: Record<string, string | number> } } {
     const metrics = this.getMetrics();
     let status = 'healthy';
-    const issues = [];
+    const issues: string[] = [];
 
     if (metrics.cpu.usage > this.alertThresholds.cpuUsage) {
       status = 'degraded';
