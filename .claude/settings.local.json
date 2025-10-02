@@ -174,7 +174,8 @@
       "Bash(brew tap:*)",
       "Bash(wc:*)",
       "Bash(gh issue reopen:*)",
-      "Bash(sort:*)"
+      "Bash(sort:*)",
+      "Bash(hash -r)"
     ],
     "deny": [],
     "ask": []
