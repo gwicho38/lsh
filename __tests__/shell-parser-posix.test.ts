@@ -6,7 +6,6 @@
 
 import {
   parseShellCommand,
-  TokenType,
   SimpleCommand,
   Pipeline,
   CommandList,
