@@ -2725,7 +2725,7 @@ export class ShellExecutor {
             success: false,
           };
         }
-      } catch (error) {
+      } catch (_error) {
         return {
           stdout: '',
           stderr: `hash: ${name}: not found\n`,

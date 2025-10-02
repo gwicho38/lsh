@@ -113,7 +113,7 @@ async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: st
 /**
  * Check GitHub Actions CI status for a specific version tag
  */
-async function checkCIStatus(version: string): Promise<{ passing: boolean; url?: string }> {
+async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?: string }> {
   return new Promise((resolve) => {
     const options = {
       hostname: 'api.github.com',
@@ -159,7 +159,7 @@ async function checkCIStatus(version: string): Promise<{ passing: boolean; url?:
             // If we can't check CI, don't block the update
             resolve({ passing: true });
           }
-        } catch (error) {
+        } catch (_error) {
           // On error, don't block the update
           resolve({ passing: true });
         }
