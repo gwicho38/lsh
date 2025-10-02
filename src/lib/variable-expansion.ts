@@ -99,7 +99,7 @@ export class VariableExpander {
     }
 
     // Case conversion: ${VAR^}, ${VAR,}, ${VAR^^}, ${VAR,,}
-    if (paramExpr.match(/\^+$|\,+$/)) {
+    if (paramExpr.match(/\^+$|,+$/)) {
       return this.handleCaseConversion(paramExpr);
     }
 
