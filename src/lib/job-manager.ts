@@ -128,7 +128,12 @@ export class JobManager extends EventEmitter {
       status: 'created',
       priority: spec.priority || 0,
       createdAt: new Date(),
-      env: { ...process.env, ...spec.env },
+      env: {
+        ...Object.fromEntries(
+          Object.entries(process.env).filter(([_, v]) => v !== undefined)
+        ),
+        ...spec.env
+      } as Record<string, string>,
       cwd: spec.cwd || process.cwd(),
       user: spec.user || process.env.USER || 'unknown',
       tags: spec.tags || [],

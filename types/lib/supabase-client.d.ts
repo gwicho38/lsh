@@ -24,7 +24,7 @@ export declare class SupabaseClient {
      */
     getConnectionInfo(): {
         url: string;
-        databaseUrl: string;
+        databaseUrl: string | undefined;
         isConnected: boolean;
     };
 }
