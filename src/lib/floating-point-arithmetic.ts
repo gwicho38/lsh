@@ -80,7 +80,7 @@ export class FloatingPointArithmetic {
     this.addMathFunction({ name: 'asin', func: Math.asin, arity: 1 });
     this.addMathFunction({ name: 'acos', func: Math.acos, arity: 1 });
     this.addMathFunction({ name: 'atan', func: Math.atan, arity: 1 });
-    this.addMathFunction({ name: 'atan2', func: Math.atan2, arity: 2 });
+    this.addMathFunction({ name: 'atan2', func: (x: number, y?: number) => Math.atan2(y ?? 0, x), arity: 2 });
 
     // Hyperbolic functions
     this.addMathFunction({ name: 'sinh', func: Math.sinh, arity: 1 });
@@ -95,7 +95,7 @@ export class FloatingPointArithmetic {
     this.addMathFunction({ name: 'log', func: Math.log, arity: 1 });
     this.addMathFunction({ name: 'log10', func: Math.log10, arity: 1 });
     this.addMathFunction({ name: 'log2', func: Math.log2, arity: 1 });
-    this.addMathFunction({ name: 'pow', func: Math.pow, arity: 2 });
+    this.addMathFunction({ name: 'pow', func: (x: number, y?: number) => Math.pow(x, y ?? 0), arity: 2 });
 
     // Power and root functions
     this.addMathFunction({ name: 'sqrt', func: Math.sqrt, arity: 1 });
@@ -120,11 +120,11 @@ export class FloatingPointArithmetic {
     this.addMathFunction({ name: 'e', func: () => Math.E, arity: 1 });
 
     // Additional utility functions
-    this.addMathFunction({ name: 'min', func: Math.min, arity: 2 });
-    this.addMathFunction({ name: 'max', func: Math.max, arity: 2 });
+    this.addMathFunction({ name: 'min', func: (x: number, y?: number) => Math.min(x, y ?? x), arity: 2 });
+    this.addMathFunction({ name: 'max', func: (x: number, y?: number) => Math.max(x, y ?? x), arity: 2 });
     this.addMathFunction({ name: 'clz32', func: Math.clz32, arity: 1 });
     this.addMathFunction({ name: 'fround', func: Math.fround, arity: 1 });
-    this.addMathFunction({ name: 'imul', func: Math.imul, arity: 2 });
+    this.addMathFunction({ name: 'imul', func: (x: number, y?: number) => Math.imul(x, y ?? 0), arity: 2 });
   }
 
   /**

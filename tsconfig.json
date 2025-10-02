@@ -6,6 +6,7 @@
     "strict": false, // Enable all strict type-checking options (incrementally enabling below)
     // Incremental strict mode enablement (Issue #69)
     "strictNullChecks": true,
+    "strictFunctionTypes": true,
     "sourceMap": false,
     "module": "ES2022",
     "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
