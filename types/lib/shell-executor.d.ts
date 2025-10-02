@@ -157,4 +157,24 @@ export declare class ShellExecutor {
     private builtin_uninstall;
     private builtin_zsh_migrate;
     private builtin_zsh_source;
+    /**
+     * readonly - Make variables read-only
+     * Usage: readonly [name[=value]]...
+     */
+    private builtin_readonly;
+    /**
+     * type - Display command type
+     * Usage: type name...
+     */
+    private builtin_type;
+    /**
+     * hash - Remember command locations
+     * Usage: hash [-lr] [name...]
+     */
+    private builtin_hash;
+    /**
+     * kill - Send signal to process
+     * Usage: kill [-s sigspec | -sigspec] pid...
+     */
+    private builtin_kill;
 }
