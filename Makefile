@@ -85,6 +85,16 @@ help: ## Show this help message
 	@echo "  $(GREEN)daemon-stop$(RESET)          Stop the daemon service"
 	@echo "  $(GREEN)daemon-restart$(RESET)       Restart the daemon service"
 	@echo ""
+	@echo "$(CYAN)ML Dashboard:$(RESET)"
+	@echo "  $(GREEN)dashboard$(RESET)            Start ML dashboard (LSH + MCLI)"
+	@echo "  $(GREEN)dashboard-services$(RESET)   Start backend services only"
+	@echo "  $(GREEN)dashboard-ui$(RESET)         Launch ML dashboard UI"
+	@echo "  $(GREEN)dashboard-status$(RESET)     Check dashboard services status"
+	@echo "  $(GREEN)dashboard-stop$(RESET)       Stop all dashboard services"
+	@echo "  $(GREEN)dashboard-restart$(RESET)    Restart all dashboard services"
+	@echo "  $(GREEN)dashboard-logs$(RESET)       View dashboard service logs"
+	@echo "  $(GREEN)dashboard-info$(RESET)       Show dashboard URLs and info"
+	@echo ""
 	@echo "$(CYAN)Maintenance Targets:$(RESET)"
 	@echo "  $(GREEN)clean$(RESET)                Clean all build artifacts"
 	@echo "  $(GREEN)clean-all$(RESET)            Clean everything including node_modules"
@@ -449,6 +459,159 @@ daemon-debug: ## Debug daemon issues
 	@echo "  $(YELLOW)make daemon-cleanup$(RESET)  - Clean up all daemon files"
 	@echo "  $(YELLOW)make daemon-reset$(RESET)    - Complete daemon reset"
 	@echo "  $(YELLOW)make daemon-logs$(RESET)     - View full daemon logs"
+
+# =============================================================================
+# ML DASHBOARD TARGETS
+# =============================================================================
+
+.PHONY: dashboard
+dashboard: ## Start ML dashboard (LSH + MCLI integration)
+	@echo "$(CYAN)╔════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║     ML Dashboard Quick Start          ║$(RESET)"
+	@echo "$(CYAN)╚════════════════════════════════════════╝$(RESET)"
+	@echo ""
+	@./start-ml-dashboard.sh
+
+.PHONY: dashboard-services
+dashboard-services: ## Start dashboard backend services only (no UI)
+	@echo "$(CYAN)Starting dashboard backend services...$(RESET)"
+	@echo "$(YELLOW)[1/3] Starting LSH Daemon...$(RESET)"
+	@lsh daemon status >/dev/null 2>&1 || lsh daemon start
+	@echo "$(GREEN)✅ LSH Daemon running$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)[2/3] Starting Pipeline Service...$(RESET)"
+	@if ! lsof -i :3034 >/dev/null 2>&1; then \
+		$(MAKE) compile; \
+		nohup $(NODE) dist/pipeline/pipeline-service.js > /tmp/lsh-pipeline.log 2>&1 & \
+		echo $$! > /tmp/lsh-pipeline.pid; \
+		sleep 3; \
+		if curl -s http://localhost:3034/api/health >/dev/null 2>&1; then \
+			echo "$(GREEN)✅ Pipeline Service started (PID: $$(cat /tmp/lsh-pipeline.pid))$(RESET)"; \
+		else \
+			echo "$(RED)❌ Pipeline Service failed to start$(RESET)"; \
+			exit 1; \
+		fi \
+	else \
+		echo "$(GREEN)✅ Pipeline Service already running$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)[3/3] Starting LSH API Server...$(RESET)"
+	@if ! lsof -i :3030 >/dev/null 2>&1; then \
+		export LSH_API_ENABLED=true LSH_API_PORT=3030; \
+		lsh api start --port 3030 > /tmp/lsh-api.log 2>&1 & \
+		sleep 2; \
+		if lsof -i :3030 >/dev/null 2>&1; then \
+			echo "$(GREEN)✅ API Server started$(RESET)"; \
+		else \
+			echo "$(YELLOW)⚠️  API Server may have failed$(RESET)"; \
+		fi \
+	else \
+		echo "$(GREEN)✅ API Server already running$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(GREEN)✅ All backend services running!$(RESET)"
+	@echo ""
+	@echo "$(CYAN)Service URLs:$(RESET)"
+	@echo "  Pipeline: $(BLUE)http://localhost:3034/api/health$(RESET)"
+	@echo "  API:      $(BLUE)http://localhost:3030/api/status$(RESET)"
+
+.PHONY: dashboard-ui
+dashboard-ui: ## Launch ML dashboard UI (requires services running)
+	@echo "$(CYAN)Launching ML Dashboard UI...$(RESET)"
+	@if ! command -v mcli >/dev/null 2>&1; then \
+		echo "$(RED)❌ MCLI not found$(RESET)"; \
+		echo "$(YELLOW)Install: cd ~/repos/mcli && uv sync --extra dashboard$(RESET)"; \
+		exit 1; \
+	fi
+	@cd ~/repos/mcli && mcli workflow dashboard launch
+
+.PHONY: dashboard-status
+dashboard-status: ## Check dashboard services status
+	@echo "$(CYAN)Dashboard Services Status:$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)1. LSH Daemon:$(RESET)"
+	@if lsh daemon status >/dev/null 2>&1; then \
+		lsh daemon status; \
+	else \
+		echo "$(RED)❌ Not running$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)2. Pipeline Service (port 3034):$(RESET)"
+	@if lsof -i :3034 >/dev/null 2>&1; then \
+		echo "$(GREEN)✅ Running$(RESET)"; \
+		curl -s http://localhost:3034/api/health 2>/dev/null || echo "$(YELLOW)⚠️  Service not responding$(RESET)"; \
+	else \
+		echo "$(RED)❌ Not running$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)3. LSH API Server (port 3030):$(RESET)"
+	@if lsof -i :3030 >/dev/null 2>&1; then \
+		echo "$(GREEN)✅ Running$(RESET)"; \
+		curl -s http://localhost:3030/api/status 2>/dev/null || echo "$(YELLOW)⚠️  Service not responding$(RESET)"; \
+	else \
+		echo "$(RED)❌ Not running$(RESET)"; \
+	fi
+	@echo ""
+	@echo "$(YELLOW)4. ML Dashboard (port 8501):$(RESET)"
+	@if lsof -i :8501 >/dev/null 2>&1; then \
+		echo "$(GREEN)✅ Running$(RESET)"; \
+	else \
+		echo "$(RED)❌ Not running$(RESET)"; \
+	fi
+
+.PHONY: dashboard-stop
+dashboard-stop: ## Stop all dashboard services
+	@echo "$(CYAN)Stopping dashboard services...$(RESET)"
+	@echo "$(YELLOW)Stopping Pipeline Service...$(RESET)"
+	@pkill -f "pipeline-service.js" 2>/dev/null && echo "$(GREEN)✅ Stopped$(RESET)" || echo "$(YELLOW)Not running$(RESET)"
+	@echo "$(YELLOW)Stopping API Server...$(RESET)"
+	@pkill -f "lsh api" 2>/dev/null && echo "$(GREEN)✅ Stopped$(RESET)" || echo "$(YELLOW)Not running$(RESET)"
+	@echo "$(YELLOW)Stopping ML Dashboard...$(RESET)"
+	@pkill -f "streamlit run" 2>/dev/null && echo "$(GREEN)✅ Stopped$(RESET)" || echo "$(YELLOW)Not running$(RESET)"
+	@echo "$(GREEN)Dashboard services stopped$(RESET)"
+
+.PHONY: dashboard-restart
+dashboard-restart: dashboard-stop dashboard ## Restart all dashboard services
+	@echo "$(GREEN)Dashboard restarted$(RESET)"
+
+.PHONY: dashboard-logs
+dashboard-logs: ## View dashboard service logs
+	@echo "$(CYAN)Dashboard Service Logs:$(RESET)"
+	@echo ""
+	@echo "$(YELLOW)=== Pipeline Service ===$(RESET)"
+	@tail -20 /tmp/lsh-pipeline.log 2>/dev/null || echo "No logs found"
+	@echo ""
+	@echo "$(YELLOW)=== API Server ===$(RESET)"
+	@tail -20 /tmp/lsh-api.log 2>/dev/null || echo "No logs found"
+
+.PHONY: dashboard-info
+dashboard-info: ## Show dashboard information and URLs
+	@echo "$(CYAN)╔════════════════════════════════════════╗$(RESET)"
+	@echo "$(CYAN)║      ML Dashboard Information          ║$(RESET)"
+	@echo "$(CYAN)╚════════════════════════════════════════╝$(RESET)"
+	@echo ""
+	@echo "$(GREEN)📊 Dashboard URLs:$(RESET)"
+	@echo ""
+	@echo "  $(CYAN)LSH Pipeline Dashboard:$(RESET)"
+	@echo "    Hub:      $(BLUE)http://localhost:3034/hub$(RESET)"
+	@echo "    Pipeline: $(BLUE)http://localhost:3034/dashboard/$(RESET)"
+	@echo "    ML View:  $(BLUE)http://localhost:3034/ml/dashboard$(RESET)"
+	@echo ""
+	@echo "  $(CYAN)MCLI ML Dashboard:$(RESET)"
+	@echo "    Streamlit: $(BLUE)http://localhost:8501$(RESET)"
+	@echo ""
+	@echo "  $(CYAN)LSH API:$(RESET)"
+	@echo "    Status: $(BLUE)http://localhost:3030/api/status$(RESET)"
+	@echo "    Jobs:   $(BLUE)http://localhost:3030/api/jobs$(RESET)"
+	@echo ""
+	@echo "$(GREEN)🚀 Quick Start:$(RESET)"
+	@echo "  $(YELLOW)make dashboard$(RESET)         - Start everything"
+	@echo "  $(YELLOW)make dashboard-status$(RESET)  - Check services"
+	@echo "  $(YELLOW)make dashboard-stop$(RESET)    - Stop all services"
+	@echo ""
+	@echo "$(GREEN)📖 Documentation:$(RESET)"
+	@echo "  Quick Start:  $(BLUE)DASHBOARD-QUICKSTART.md$(RESET)"
+	@echo "  Full Guide:   $(BLUE)docs/ML-DASHBOARD-STARTUP.md$(RESET)"
 
 # =============================================================================
 # MAINTENANCE TARGETS
