@@ -9,6 +9,7 @@ export declare enum TokenType {
     AND_IF = "AND_IF",// &&
     OR_IF = "OR_IF",// ||
     SEMICOLON = "SEMICOLON",// ;
+    DSEMI = "DSEMI",// ;;
     AMPERSAND = "AMPERSAND",// &
     GREAT = "GREAT",// >
     DGREAT = "DGREAT",// >>
@@ -93,10 +94,12 @@ export interface CommandList extends ASTNode {
 export interface Subshell extends ASTNode {
     type: 'Subshell';
     command: ASTNode;
+    redirections: Redirection[];
 }
 export interface CommandGroup extends ASTNode {
     type: 'CommandGroup';
     command: ASTNode;
+    redirections: Redirection[];
 }
 export interface Redirection {
     type: 'input' | 'output' | 'append' | 'heredoc';
