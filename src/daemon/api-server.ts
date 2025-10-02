@@ -438,4 +438,8 @@ export class LSHApiServer extends EventEmitter {
   getPort(): number {
     return this.config.port;
   }
+
+  getApp(): express.Application {
+    return this.app;
+  }
 }
