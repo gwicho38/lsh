@@ -119,6 +119,40 @@ describe('Job Manager', () => {
       const jobs = jobManager.listJobs({ namePattern: /Test/ });
       expect(jobs.length).toBeGreaterThanOrEqual(1);
     });
+
+    it('should filter jobs by user', async () => {
+      await jobManager.createJob({ command: 'echo test', user: 'testuser' });
+      await jobManager.createJob({ command: 'echo test2', user: 'otheruser' });
+      const jobs = jobManager.listJobs({ user: 'testuser' });
+      expect(jobs.length).toBeGreaterThanOrEqual(1);
+      jobs.forEach(job => {
+        expect(job.user).toBe('testuser');
+      });
+    });
+
+    it('should filter jobs by createdAfter date', async () => {
+      const beforeDate = new Date();
+      await new Promise(resolve => setTimeout(resolve, 10));
+      await jobManager.createJob({ command: 'echo test' });
+
+      const jobs = jobManager.listJobs({ createdAfter: beforeDate });
+      expect(jobs.length).toBeGreaterThanOrEqual(1);
+      jobs.forEach(job => {
+        expect(job.createdAt.getTime()).toBeGreaterThanOrEqual(beforeDate.getTime());
+      });
+    });
+
+    it('should filter jobs by createdBefore date', async () => {
+      await jobManager.createJob({ command: 'echo test' });
+      await new Promise(resolve => setTimeout(resolve, 10));
+      const afterDate = new Date();
+
+      const jobs = jobManager.listJobs({ createdBefore: afterDate });
+      expect(jobs.length).toBeGreaterThanOrEqual(1);
+      jobs.forEach(job => {
+        expect(job.createdAt.getTime()).toBeLessThanOrEqual(afterDate.getTime());
+      });
+    });
   });
 
   describe('Job Retrieval', () => {
@@ -200,6 +234,21 @@ describe('Job Manager', () => {
       await expect(
         jobManager.updateJob('non-existent-id', { name: 'Test' })
       ).rejects.toThrow();
+    });
+  });
+
+  describe('Job Execution', () => {
+    it('should create and immediately start a job with runJob', async () => {
+      const job = await jobManager.runJob({
+        command: 'echo "run test"',
+        name: 'RunJob Test',
+      });
+
+      expect(job).toBeDefined();
+      expect(job.id).toBeTruthy();
+      expect(job.name).toBe('RunJob Test');
+      // Job should be in a post-creation status
+      expect(['queued', 'running', 'completed', 'failed']).toContain(job.status);
     });
   });
 
