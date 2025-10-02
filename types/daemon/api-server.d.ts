@@ -1,6 +1,7 @@
 /**
  * LSH API Server - RESTful API for daemon control and job management
  */
+import express from 'express';
 import { EventEmitter } from 'events';
 import type { LSHJobDaemon } from './lshd.js';
 export interface ApiConfig {
@@ -29,4 +30,5 @@ export declare class LSHApiServer extends EventEmitter {
     stop(): Promise<void>;
     getApiKey(): string;
     getPort(): number;
+    getApp(): express.Application;
 }
