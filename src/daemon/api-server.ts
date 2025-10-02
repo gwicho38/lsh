@@ -231,7 +231,7 @@ export class LSHApiServer extends EventEmitter {
         return res.status(400).json({ error: 'Jobs must be an array' });
       }
 
-      const results = [];
+      const results: Array<{ success: boolean; job?: any; error?: string; jobSpec?: any }> = [];
       for (const jobSpec of jobs) {
         try {
           const job = await this.daemon.addJob(jobSpec);

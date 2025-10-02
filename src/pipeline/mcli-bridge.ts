@@ -196,7 +196,9 @@ export class MCLIBridge extends EventEmitter {
 
     if (!pipelineJobId && payload.metadata?.pipeline_job_id) {
       pipelineJobId = payload.metadata.pipeline_job_id;
-      this.jobMapping.set(job_id, pipelineJobId);
+      if (pipelineJobId) {
+        this.jobMapping.set(job_id, pipelineJobId);
+      }
     }
 
     if (!pipelineJobId) {

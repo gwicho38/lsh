@@ -86,7 +86,8 @@ export class DaemonClient extends EventEmitter {
         fs.accessSync(this.socketPath, fs.constants.R_OK | fs.constants.W_OK);
       } catch (_err) {
         const stats = fs.statSync(this.socketPath);
-        const owner = stats.uid === process.getuid() ? 'you' : 'another user';
+        const currentUid = process.getuid?.();
+        const owner = currentUid !== undefined && stats.uid === currentUid ? 'you' : 'another user';
         reject(new Error(`Permission denied to access socket at ${this.socketPath}. Socket is owned by ${owner}. You may need to start your own daemon with: lsh daemon start`));
         return;
       }

@@ -1206,7 +1206,7 @@ function isMainModule(): boolean {
     return importMeta.url === `file://${process.argv[1]}`;
   } catch {
     // Fallback: check if this file is being run directly
-    return process.argv[1] && process.argv[1].endsWith('pipeline-service.js');
+    return Boolean(process.argv[1] && process.argv[1].endsWith('pipeline-service.js'));
   }
 }
 

@@ -70,7 +70,7 @@ export class DataRetentionService {
   }
 
   async runCleanup() {
-    const results = [];
+    const results: Array<{ table: string; status: string; deletedRecords?: number; cutoffDate?: string; error?: string }> = [];
 
     for (const policy of this.policies) {
       try {
@@ -230,7 +230,7 @@ export class DataRetentionService {
     }
 
     const tables = ['pipeline_events', 'build_metrics', 'audit_logs'];
-    const results = [];
+    const results: Array<{ table: string; status: string; recordsArchived?: number; error?: string }> = [];
 
     for (const tableName of tables) {
       try {
@@ -303,7 +303,15 @@ export class DataRetentionService {
   }
 
   async getRetentionStats() {
-    const stats = [];
+    const stats: Array<{
+      table: string;
+      retentionDays: number;
+      totalRecords: number;
+      oldestRecord: any;
+      newestRecord: any;
+      tableSize: any;
+      estimatedDeletions: number
+    }> = [];
 
     for (const policy of this.policies) {
       const countQuery = `
