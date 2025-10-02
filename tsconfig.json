@@ -3,10 +3,15 @@
     "target": "ES2022", // Specify ECMAScript target version
     "outDir": "./dist", // Redirect output structure to the directory
     "rootDir": "./src", // Specify the root directory of input files
-    "strict": false, // Enable all strict type-checking options (incrementally enabling below)
-    // Incremental strict mode enablement (Issue #69)
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
+    "strict": false, // Most strict flags enabled individually (see Issue #69)
+    // Strict mode flags (Issue #69)
+    "strictNullChecks": true,           // ✓ Phase 1: 51 → 0 errors
+    "strictFunctionTypes": true,        // ✓ Phase 2: 5 → 0 errors
+    "strictBindCallApply": true,        // ✓ Phase 3: 0 errors
+    "strictPropertyInitialization": true, // ✓ Phase 3: 0 errors
+    "noImplicitThis": true,             // ✓ Phase 3: 0 errors
+    "alwaysStrict": true,               // ✓ Phase 3: 0 errors
+    // "noImplicitAny": true,           // TODO: ~150+ errors - future work
     "sourceMap": false,
     "module": "ES2022",
     "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
