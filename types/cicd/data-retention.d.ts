@@ -8,17 +8,42 @@ export declare class DataRetentionService {
     private cronJobs;
     constructor(pool: Pool, redis: Redis);
     private setupCronJobs;
-    runCleanup(): Promise<never[]>;
+    runCleanup(): Promise<{
+        table: string;
+        status: string;
+        deletedRecords?: number;
+        cutoffDate?: string;
+        error?: string;
+    }[]>;
     private cleanupTable;
     private archiveTableData;
     private saveToS3;
     private saveToLocal;
     cleanupRedis(): Promise<void>;
-    runArchive(): Promise<never[] | undefined>;
+    runArchive(): Promise<{
+        table: string;
+        status: string;
+        recordsArchived?: number;
+        error?: string;
+    }[] | undefined>;
     private logCleanupResults;
-    getRetentionStats(): Promise<never[]>;
+    getRetentionStats(): Promise<{
+        table: string;
+        retentionDays: number;
+        totalRecords: number;
+        oldestRecord: any;
+        newestRecord: any;
+        tableSize: any;
+        estimatedDeletions: number;
+    }[]>;
     private estimateDeletions;
-    triggerCleanup(tableName?: string): Promise<never[] | {
+    triggerCleanup(tableName?: string): Promise<{
+        table: string;
+        status: string;
+        deletedRecords?: number;
+        cutoffDate?: string;
+        error?: string;
+    }[] | {
         table: string;
         status: string;
         deletedRecords: any;

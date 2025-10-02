@@ -13,7 +13,7 @@ declare global {
 }
 
 export const generateSessionToken = function() {
-  const USER = JSON.parse(process.env.USER);
+  const USER = JSON.parse(process.env.USER || '{}');
   return USER; // const basicUser: string = TestIdp.createTestUsersForGroup('GenAiSearch.Role.User')[0];
   // const basicUserToken: string = SessionToken.generate(this.basicUser).signedToken;
   // return basicUserToken;
