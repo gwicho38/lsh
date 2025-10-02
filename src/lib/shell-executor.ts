@@ -398,6 +398,14 @@ export class ShellExecutor {
         return this.builtin_alias(args);
       case 'unalias':
         return this.builtin_unalias(args);
+      case 'readonly':
+        return this.builtin_readonly(args);
+      case 'type':
+        return this.builtin_type(args);
+      case 'hash':
+        return this.builtin_hash(args);
+      case 'kill':
+        return this.builtin_kill(args);
       case 'source':
         return this.builtin_source(args);
       case 'install':
@@ -2527,5 +2535,308 @@ export class ShellExecutor {
       exitCode: result.success ? 0 : 1,
       success: result.success,
     };
+  }
+
+  /**
+   * readonly - Make variables read-only
+   * Usage: readonly [name[=value]]...
+   */
+  private async builtin_readonly(args: string[]): Promise<ExecutionResult> {
+    // Initialize readonly set if not exists
+    if (!(this.context as any).readonlyVariables) {
+      (this.context as any).readonlyVariables = new Set<string>();
+    }
+    const readonlyVars = (this.context as any).readonlyVariables as Set<string>;
+
+    if (args.length === 0) {
+      // List all readonly variables
+      let output = '';
+      for (const name of readonlyVars) {
+        const value = this.context.variables[name] ?? this.context.env[name] ?? '';
+        output += `readonly ${name}=${value}\n`;
+      }
+      return { stdout: output, stderr: '', exitCode: 0, success: true };
+    }
+
+    // Make variables readonly
+    for (const arg of args) {
+      if (arg.includes('=')) {
+        const [name, value] = arg.split('=', 2);
+        if (readonlyVars.has(name)) {
+          return {
+            stdout: '',
+            stderr: `readonly: ${name}: readonly variable\n`,
+            exitCode: 1,
+            success: false,
+          };
+        }
+        this.context.variables[name] = value;
+        readonlyVars.add(name);
+      } else {
+        if (readonlyVars.has(arg)) {
+          return {
+            stdout: '',
+            stderr: `readonly: ${arg}: readonly variable\n`,
+            exitCode: 1,
+            success: false,
+          };
+        }
+        readonlyVars.add(arg);
+      }
+    }
+
+    return { stdout: '', stderr: '', exitCode: 0, success: true };
+  }
+
+  /**
+   * type - Display command type
+   * Usage: type name...
+   */
+  private async builtin_type(args: string[]): Promise<ExecutionResult> {
+    if (args.length === 0) {
+      return {
+        stdout: '',
+        stderr: 'type: usage: type name [name ...]\n',
+        exitCode: 1,
+        success: false,
+      };
+    }
+
+    let output = '';
+    let hasError = false;
+
+    for (const name of args) {
+      // Check if it's a built-in
+      const builtinResult = await this.executeBuiltin(name, []);
+      if (builtinResult !== null) {
+        output += `${name} is a shell builtin\n`;
+        continue;
+      }
+
+      // Check if it's a function
+      if (this.context.functions[name]) {
+        output += `${name} is a function\n`;
+        continue;
+      }
+
+      // Check if it's an alias
+      const aliasKey = `alias_${name}`;
+      if (this.context.variables[aliasKey]) {
+        const aliasValue = this.context.variables[aliasKey];
+        output += `${name} is aliased to \`${aliasValue}'\n`;
+        continue;
+      }
+
+      // Check if it's an external command
+      try {
+        const which = await import('child_process');
+        const result = await new Promise<string>((resolve) => {
+          which.exec(`which ${name}`, (error, stdout) => {
+            resolve(error ? '' : stdout.trim());
+          });
+        });
+
+        if (result) {
+          output += `${name} is ${result}\n`;
+        } else {
+          output += `${name}: not found\n`;
+          hasError = true;
+        }
+      } catch {
+        output += `${name}: not found\n`;
+        hasError = true;
+      }
+    }
+
+    return {
+      stdout: output,
+      stderr: '',
+      exitCode: hasError ? 1 : 0,
+      success: !hasError,
+    };
+  }
+
+  /**
+   * hash - Remember command locations
+   * Usage: hash [-lr] [name...]
+   */
+  private async builtin_hash(args: string[]): Promise<ExecutionResult> {
+    // Initialize command hash table if not exists
+    if (!(this.context as any).commandHash) {
+      (this.context as any).commandHash = new Map<string, string>();
+    }
+    const commandHash = (this.context as any).commandHash as Map<string, string>;
+
+    // Parse options
+    let listAll = false;
+    let remove = false;
+    const names: string[] = [];
+
+    for (const arg of args) {
+      if (arg === '-l') {
+        listAll = true;
+      } else if (arg === '-r') {
+        remove = true;
+      } else if (!arg.startsWith('-')) {
+        names.push(arg);
+      }
+    }
+
+    // Remove all entries
+    if (remove && names.length === 0) {
+      commandHash.clear();
+      return { stdout: '', stderr: '', exitCode: 0, success: true };
+    }
+
+    // Remove specific entries
+    if (remove && names.length > 0) {
+      for (const name of names) {
+        commandHash.delete(name);
+      }
+      return { stdout: '', stderr: '', exitCode: 0, success: true };
+    }
+
+    // List all commands
+    if (listAll || names.length === 0) {
+      let output = '';
+      for (const [name, path] of commandHash.entries()) {
+        output += `${name}\t${path}\n`;
+      }
+      return { stdout: output, stderr: '', exitCode: 0, success: true };
+    }
+
+    // Hash specific commands
+    for (const name of names) {
+      try {
+        const which = await import('child_process');
+        const result = await new Promise<string>((resolve) => {
+          which.exec(`which ${name}`, (error, stdout) => {
+            resolve(error ? '' : stdout.trim());
+          });
+        });
+
+        if (result) {
+          commandHash.set(name, result);
+        } else {
+          return {
+            stdout: '',
+            stderr: `hash: ${name}: not found\n`,
+            exitCode: 1,
+            success: false,
+          };
+        }
+      } catch (error) {
+        return {
+          stdout: '',
+          stderr: `hash: ${name}: not found\n`,
+          exitCode: 1,
+          success: false,
+        };
+      }
+    }
+
+    return { stdout: '', stderr: '', exitCode: 0, success: true };
+  }
+
+  /**
+   * kill - Send signal to process
+   * Usage: kill [-s sigspec | -sigspec] pid...
+   */
+  private async builtin_kill(args: string[]): Promise<ExecutionResult> {
+    if (args.length === 0) {
+      return {
+        stdout: '',
+        stderr: 'kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ...\n',
+        exitCode: 1,
+        success: false,
+      };
+    }
+
+    let signal = 'SIGTERM';
+    const pids: number[] = [];
+
+    for (let i = 0; i < args.length; i++) {
+      const arg = args[i];
+
+      if (arg === '-s') {
+        // -s SIGNAL
+        if (i + 1 < args.length) {
+          signal = args[++i];
+        }
+      } else if (arg === '-l') {
+        // List signals
+        return {
+          stdout: 'HUP INT QUIT ILL TRAP ABRT BUS FPE KILL USR1 SEGV USR2 PIPE ALRM TERM\n',
+          stderr: '',
+          exitCode: 0,
+          success: true,
+        };
+      } else if (arg.startsWith('-') && arg.length > 1) {
+        // -SIGNAL format
+        signal = arg.substring(1);
+        if (signal.match(/^\d+$/)) {
+          // Numeric signal, convert to name (simplified)
+          const sigNum = parseInt(signal);
+          if (sigNum === 9) signal = 'SIGKILL';
+          else if (sigNum === 15) signal = 'SIGTERM';
+          else signal = `SIG${sigNum}`;
+        } else if (!signal.startsWith('SIG')) {
+          signal = `SIG${signal}`;
+        }
+      } else {
+        // PID or job spec
+        if (arg.startsWith('%')) {
+          // Job spec - look up in job control
+          const jobId = arg.substring(1);
+          const job = this.context.jobControl.jobs.get(parseInt(jobId));
+          if (job && job.pid) {
+            pids.push(job.pid);
+          } else {
+            return {
+              stdout: '',
+              stderr: `kill: ${arg}: no such job\n`,
+              exitCode: 1,
+              success: false,
+            };
+          }
+        } else {
+          const pid = parseInt(arg);
+          if (isNaN(pid)) {
+            return {
+              stdout: '',
+              stderr: `kill: ${arg}: arguments must be process or job IDs\n`,
+              exitCode: 1,
+              success: false,
+            };
+          }
+          pids.push(pid);
+        }
+      }
+    }
+
+    if (pids.length === 0) {
+      return {
+        stdout: '',
+        stderr: 'kill: usage: kill [-s sigspec | -n signum | -sigspec] pid | jobspec ...\n',
+        exitCode: 1,
+        success: false,
+      };
+    }
+
+    // Send signal to all PIDs
+    for (const pid of pids) {
+      try {
+        process.kill(pid, signal);
+      } catch (error) {
+        return {
+          stdout: '',
+          stderr: `kill: (${pid}) - ${error.message}\n`,
+          exitCode: 1,
+          success: false,
+        };
+      }
+    }
+
+    return { stdout: '', stderr: '', exitCode: 0, success: true };
   }
 }
