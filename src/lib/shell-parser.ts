@@ -13,6 +13,7 @@ export enum TokenType {
   AND_IF = 'AND_IF',       // &&
   OR_IF = 'OR_IF',         // ||
   SEMICOLON = 'SEMICOLON', // ;
+  DSEMI = 'DSEMI',         // ;;
   AMPERSAND = 'AMPERSAND', // &
   
   // Redirection
@@ -316,6 +317,7 @@ export class ShellLexer {
         tokens.push(this.createToken(TokenType.DGREAT, '>>'));
       } else if (char === '<' && nextChar === '<') {
         this.advance();
+        this.advance();
         if (this.peek() === '-') {
           this.advance();
           tokens.push(this.createToken(TokenType.DLESSDASH, '<<-'));
@@ -347,8 +349,15 @@ export class ShellLexer {
         this.advance();
         tokens.push(this.createToken(TokenType.AMPERSAND, '&'));
       } else if (char === ';') {
-        this.advance();
-        tokens.push(this.createToken(TokenType.SEMICOLON, ';'));
+        const nextChar = this.peek(1);
+        if (nextChar === ';') {
+          this.advance();
+          this.advance();
+          tokens.push(this.createToken(TokenType.DSEMI, ';;'));
+        } else {
+          this.advance();
+          tokens.push(this.createToken(TokenType.SEMICOLON, ';'));
+        }
       } else if (char === '>') {
         this.advance();
         tokens.push(this.createToken(TokenType.GREAT, '>'));
@@ -460,11 +469,13 @@ export interface CommandList extends ASTNode {
 export interface Subshell extends ASTNode {
   type: 'Subshell';
   command: ASTNode;
+  redirections: Redirection[];
 }
 
 export interface CommandGroup extends ASTNode {
   type: 'CommandGroup';
   command: ASTNode;
+  redirections: Redirection[];
 }
 
 export interface Redirection {
@@ -776,17 +787,27 @@ export class ShellParser {
     if (this.peek().type === TokenType.IN) {
       this.advance();
       
-      // Read word list
-      while (this.peek().type === TokenType.WORD || this.peek().type === TokenType.SINGLE_QUOTE || this.peek().type === TokenType.DOUBLE_QUOTE || this.peek().type === TokenType.ANSI_C_QUOTE || this.peek().type === TokenType.LOCALE_QUOTE) {
+      // Read word list (including numbers which are treated as words in for loops)
+      while (this.peek().type === TokenType.WORD || this.peek().type === TokenType.NUMBER || this.peek().type === TokenType.SINGLE_QUOTE || this.peek().type === TokenType.DOUBLE_QUOTE || this.peek().type === TokenType.ANSI_C_QUOTE || this.peek().type === TokenType.LOCALE_QUOTE) {
         words.push(this.advance().value);
       }
     }
-    
-    // Skip newlines
+
+    // Skip newlines and optional semicolon
     while (this.peek().type === TokenType.NEWLINE) {
       this.advance();
     }
-    
+
+    // Optional semicolon before DO
+    if (this.peek().type === TokenType.SEMICOLON) {
+      this.advance();
+    }
+
+    // Skip newlines after semicolon
+    while (this.peek().type === TokenType.NEWLINE) {
+      this.advance();
+    }
+
     this.expect(TokenType.DO);
     
     // Skip newlines
@@ -891,13 +912,21 @@ export class ShellParser {
       }
       
       items.push({ patterns, command });
-      
-      // Skip newlines and potential ;;
+
+      // Skip newlines
       while (this.peek().type === TokenType.NEWLINE) {
         this.advance();
       }
-      
-      // Skip ;; if present (would need to add to lexer)
+
+      // Skip ;; if present
+      if (this.peek().type === TokenType.DSEMI) {
+        this.advance();
+      }
+
+      // Skip newlines after ;;
+      while (this.peek().type === TokenType.NEWLINE) {
+        this.advance();
+      }
     }
     
     this.expect(TokenType.ESAC);
@@ -1069,9 +1098,16 @@ export class ShellParser {
 
     this.expect(TokenType.RPAREN);
 
+    // Parse redirections after subshell
+    const redirections: Redirection[] = [];
+    while (this.isRedirection(this.peek().type)) {
+      redirections.push(this.parseRedirection());
+    }
+
     return {
       type: 'Subshell',
       command,
+      redirections,
     } as Subshell;
   }
 
@@ -1092,9 +1128,16 @@ export class ShellParser {
 
     this.expect(TokenType.RBRACE);
 
+    // Parse redirections after command group
+    const redirections: Redirection[] = [];
+    while (this.isRedirection(this.peek().type)) {
+      redirections.push(this.parseRedirection());
+    }
+
     return {
       type: 'CommandGroup',
       command,
+      redirections,
     } as CommandGroup;
   }
 
@@ -1103,41 +1146,13 @@ export class ShellParser {
     while (this.peek().type === TokenType.NEWLINE) {
       this.advance();
     }
-    
+
     if (this.peek().type === TokenType.EOF) {
       return { type: 'SimpleCommand', name: '', args: [], redirections: [] } as SimpleCommand;
     }
-    
-    // Check for control structures first
-    const token = this.peek();
-    switch (token.type) {
-      case TokenType.IF:
-        return this.parseIfStatement();
-      case TokenType.FOR:
-        return this.parseForStatement();
-      case TokenType.WHILE:
-        return this.parseWhileStatement();
-      case TokenType.CASE:
-        return this.parseCaseStatement();
-      case TokenType.FUNCTION:
-        return this.parseFunctionDefinition();
-      case TokenType.LPAREN:
-        return this.parseSubshell();
-      case TokenType.LBRACE:
-        return this.parseCommandGroup();
-      default:
-        // Check if this might be a function definition (name followed by ())
-        if (token.type === TokenType.WORD) {
-          const nextToken = this.peek(1);
-          if (nextToken.type === TokenType.LPAREN) {
-            const afterParen = this.peek(2);
-            if (afterParen.type === TokenType.RPAREN) {
-              return this.parseFunctionDefinition();
-            }
-          }
-        }
-        return this.parseCommandList();
-    }
+
+    // Always use parseCommandList to handle all commands and operators
+    return this.parseCommandList();
   }
 }
 

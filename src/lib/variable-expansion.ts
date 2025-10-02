@@ -87,7 +87,22 @@ export class VariableExpander {
 
   private async expandParameter(paramExpr: string): Promise<string> {
     // Handle different parameter expansion forms
-    
+
+    // String length: ${#VAR}
+    if (paramExpr.startsWith('#')) {
+      return this.handleStringLength(paramExpr.substring(1));
+    }
+
+    // Substring extraction: ${VAR:offset:length}
+    if (paramExpr.match(/^[^:]+:-?\d+/)) {
+      return this.handleSubstring(paramExpr);
+    }
+
+    // Case conversion: ${VAR^}, ${VAR,}, ${VAR^^}, ${VAR,,}
+    if (paramExpr.match(/\^+$|\,+$/)) {
+      return this.handleCaseConversion(paramExpr);
+    }
+
     // Check for parameter expansion operators
     if (paramExpr.includes(':-')) {
       return this.handleDefaultValue(paramExpr, ':-');
@@ -254,13 +269,83 @@ export class VariableExpander {
     return value;
   }
 
+  private handleStringLength(param: string): string {
+    const value = this.getParameterValue(param);
+    return value.length.toString();
+  }
+
+  private handleSubstring(paramExpr: string): string {
+    // Parse ${VAR:offset:length} or ${VAR:offset}
+    const match = paramExpr.match(/^([^:]+):(-?\d+)(?::(\d+))?$/);
+    if (!match) {
+      // Invalid format, return empty
+      return '';
+    }
+
+    const [, param, offsetStr, lengthStr] = match;
+    const value = this.getParameterValue(param);
+    let offset = parseInt(offsetStr, 10);
+
+    // Handle negative offset (from end of string)
+    if (offset < 0) {
+      offset = value.length + offset;
+      if (offset < 0) offset = 0;
+    }
+
+    if (lengthStr) {
+      const length = parseInt(lengthStr, 10);
+      return value.substring(offset, offset + length);
+    } else {
+      return value.substring(offset);
+    }
+  }
+
+  private handleCaseConversion(paramExpr: string): string {
+    // Handle ${VAR^}, ${VAR,}, ${VAR^^}, ${VAR,,}
+    let operator = '';
+    let param = paramExpr;
+
+    if (paramExpr.endsWith('^^')) {
+      operator = '^^';
+      param = paramExpr.slice(0, -2);
+    } else if (paramExpr.endsWith('^')) {
+      operator = '^';
+      param = paramExpr.slice(0, -1);
+    } else if (paramExpr.endsWith(',,')) {
+      operator = ',,';
+      param = paramExpr.slice(0, -2);
+    } else if (paramExpr.endsWith(',')) {
+      operator = ',';
+      param = paramExpr.slice(0, -1);
+    }
+
+    const value = this.getParameterValue(param);
+
+    switch (operator) {
+      case '^':
+        // Uppercase first character
+        return value.charAt(0).toUpperCase() + value.slice(1);
+      case '^^':
+        // Uppercase all characters
+        return value.toUpperCase();
+      case ',':
+        // Lowercase first character
+        return value.charAt(0).toLowerCase() + value.slice(1);
+      case ',,':
+        // Lowercase all characters
+        return value.toLowerCase();
+      default:
+        return value;
+    }
+  }
+
   private patternToRegex(pattern: string): RegExp {
     // Convert shell pattern to regex
     const regex = pattern
       .replace(/\*/g, '.*')       // * matches any string
       .replace(/\?/g, '.')        // ? matches any single character
       .replace(/\[([^\]]+)\]/g, '[$1]'); // [abc] character class
-    
+
     return new RegExp(`^${regex}$`);
   }
 
