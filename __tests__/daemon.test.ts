@@ -78,7 +78,7 @@ describe('LSH Job Daemon', () => {
     });
 
     describe('addJob', () => {
-      it('should add a new job', () => {
+      it('should add a new job', async () => {
         const jobSpec = {
           name: 'test-job',
           command: 'echo test',
@@ -86,7 +86,7 @@ describe('LSH Job Daemon', () => {
           description: 'Test job'
         };
 
-        const job = daemon.addJob(jobSpec);
+        const job = await daemon.addJob(jobSpec);
 
         expect(job).toMatchObject({
           id: expect.stringMatching(/^job_\d+_[a-z0-9]+$/),
@@ -113,8 +113,8 @@ describe('LSH Job Daemon', () => {
     });
 
     describe('updateJob', () => {
-      it('should update an existing job', () => {
-        const job = daemon.addJob({
+      it('should update an existing job', async () => {
+        const job = await daemon.addJob({
           name: 'original',
           command: 'echo original',
           type: 'shell'
@@ -136,8 +136,8 @@ describe('LSH Job Daemon', () => {
     });
 
     describe('removeJob', () => {
-      it('should remove a job', () => {
-        const job = daemon.addJob({
+      it('should remove a job', async () => {
+        const job = await daemon.addJob({
           name: 'to-remove',
           command: 'echo remove',
           type: 'shell'
@@ -153,8 +153,8 @@ describe('LSH Job Daemon', () => {
         expect(result).toBe(false);
       });
 
-      it('should not remove running job without force', () => {
-        const job = daemon.addJob({
+      it('should not remove running job without force', async () => {
+        const job = await daemon.addJob({
           name: 'running-job',
           command: 'sleep 10',
           type: 'shell'
@@ -167,8 +167,8 @@ describe('LSH Job Daemon', () => {
         expect(result).toBe(false);
       });
 
-      it('should force remove running job', () => {
-        const job = daemon.addJob({
+      it('should force remove running job', async () => {
+        const job = await daemon.addJob({
           name: 'running-job',
           command: 'sleep 10',
           type: 'shell'
@@ -182,8 +182,8 @@ describe('LSH Job Daemon', () => {
     });
 
     describe('getJob', () => {
-      it('should return job details', () => {
-        const job = daemon.addJob({
+      it('should return job details', async () => {
+        const job = await daemon.addJob({
           name: 'test-job',
           command: 'echo test',
           type: 'shell'
@@ -200,9 +200,9 @@ describe('LSH Job Daemon', () => {
     });
 
     describe('getAllJobs', () => {
-      it('should return all jobs', () => {
-        daemon.addJob({ name: 'job1', command: 'echo 1', type: 'shell' });
-        daemon.addJob({ name: 'job2', command: 'echo 2', type: 'shell' });
+      it('should return all jobs', async () => {
+        await daemon.addJob({ name: 'job1', command: 'echo 1', type: 'shell' });
+        await daemon.addJob({ name: 'job2', command: 'echo 2', type: 'shell' });
 
         const jobs = daemon.getAllJobs();
         expect(jobs).toHaveLength(2);
@@ -231,7 +231,7 @@ describe('LSH Job Daemon', () => {
         callback(null, 'test output', '');
       });
 
-      const job = daemon.addJob({
+      const job = await daemon.addJob({
         name: 'test-job',
         command: 'echo test',
         type: 'shell'
@@ -250,7 +250,7 @@ describe('LSH Job Daemon', () => {
         callback(new Error('Command failed'), '', 'error output');
       });
 
-      const job = daemon.addJob({
+      const job = await daemon.addJob({
         name: 'failing-job',
         command: 'exit 1',
         type: 'shell'
@@ -263,8 +263,8 @@ describe('LSH Job Daemon', () => {
       expect(updatedJob?.stderr).toBe('error output');
     });
 
-    it('should pause and resume jobs', () => {
-      const job = daemon.addJob({
+    it('should pause and resume jobs', async () => {
+      const job = await daemon.addJob({
         name: 'pausable',
         command: 'echo test',
         type: 'shell'
@@ -289,8 +289,8 @@ describe('LSH Job Daemon', () => {
       await daemon.stop();
     });
 
-    it('should calculate next run time for cron jobs', () => {
-      const job = daemon.addJob({
+    it('should calculate next run time for cron jobs', async () => {
+      const job = await daemon.addJob({
         name: 'cron-job',
         command: 'echo cron',
         type: 'shell',
@@ -311,7 +311,7 @@ describe('LSH Job Daemon', () => {
       const now = new Date();
       const nextMinute = new Date(now.getTime() + 60000);
 
-      const job = daemon.addJob({
+      const job = await daemon.addJob({
         name: 'scheduled-job',
         command: 'echo scheduled',
         type: 'shell',
@@ -332,8 +332,8 @@ describe('LSH Job Daemon', () => {
   });
 
   describe('Job Serialization', () => {
-    it('should sanitize jobs for serialization', () => {
-      const job = daemon.addJob({
+    it('should sanitize jobs for serialization', async () => {
+      const job = await daemon.addJob({
         name: 'test-job',
         command: 'echo test',
         type: 'shell'
@@ -397,7 +397,7 @@ describe('LSH Job Daemon', () => {
 
   describe('Error Handling', () => {
     it('should handle job execution timeout', async () => {
-      const job = daemon.addJob({
+      const job = await daemon.addJob({
         name: 'timeout-job',
         command: 'sleep 60',
         type: 'shell',
