@@ -17,13 +17,14 @@ export default {
     ],
 
     // Coverage threshold - Set realistic baseline to prevent regression
-    // Current baseline: 1.45% statements, 2.36% branches, 1.43% functions, 1.53% lines
+    // Current baseline (2025-10-02): 11.73% lines, 11.47% statements, 12.39% branches, 9.71% functions
+    // Target (Issue #68): 70% coverage
     coverageThreshold: {
         global: {
-            branches: 2,
-            functions: 1,
-            lines: 1,
-            statements: 1
+            statements: 11,
+            branches: 12,
+            functions: 9,
+            lines: 11
         }
     },
 
