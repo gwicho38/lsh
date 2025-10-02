@@ -14,21 +14,20 @@ describe('LSH API Server', () => {
   beforeEach(() => {
     // Create mock daemon
     mockDaemon = {
-      getAllJobs: jest.fn(),
+      listJobs: jest.fn(),
       getJob: jest.fn(),
       addJob: jest.fn(),
-      updateJob: jest.fn(),
       removeJob: jest.fn(),
-      runJob: jest.fn(),
-      pauseJob: jest.fn(),
-      resumeJob: jest.fn(),
+      startJob: jest.fn(),
+      stopJob: jest.fn(),
+      triggerJob: jest.fn(),
       getStatus: jest.fn(),
       on: jest.fn(),
       emit: jest.fn(),
     } as any;
 
     // Initialize API server
-    apiServer = new LSHApiServer(mockDaemon, 0); // Use port 0 for random port
+    apiServer = new LSHApiServer(mockDaemon, { port: 0 }); // Use port 0 for random port
     server = apiServer.getApp();
   });
 
@@ -53,7 +52,7 @@ describe('LSH API Server', () => {
   describe('Authentication', () => {
     beforeEach(() => {
       process.env.LSH_API_KEY = 'test-api-key';
-      apiServer = new LSHApiServer(mockDaemon, 0);
+      apiServer = new LSHApiServer(mockDaemon, { port: 0 });
       server = apiServer.getApp();
     });
 
@@ -77,7 +76,7 @@ describe('LSH API Server', () => {
     });
 
     it('should accept requests with valid API key', async () => {
-      mockDaemon.getAllJobs.mockReturnValue([]);
+      mockDaemon.listJobs.mockReturnValue([]);
 
       await request(server)
         .get('/api/jobs')
@@ -99,7 +98,7 @@ describe('LSH API Server', () => {
           { id: '1', name: 'job1', status: 'pending' },
           { id: '2', name: 'job2', status: 'running' }
         ];
-        mockDaemon.getAllJobs.mockReturnValue(mockJobs);
+        mockDaemon.listJobs.mockReturnValue(mockJobs);
 
         const response = await request(server)
           .get('/api/jobs')
@@ -114,7 +113,7 @@ describe('LSH API Server', () => {
           { id: '2', name: 'job2', status: 'running' },
           { id: '3', name: 'job3', status: 'completed' }
         ];
-        mockDaemon.getAllJobs.mockReturnValue(allJobs);
+        mockDaemon.listJobs.mockReturnValue(allJobs);
 
         const response = await request(server)
           .get('/api/jobs?status=running')
@@ -187,7 +186,7 @@ describe('LSH API Server', () => {
       it('should trigger job execution', async () => {
         const mockJob = { id: '1', name: 'test-job', status: 'pending' };
         mockDaemon.getJob.mockReturnValue(mockJob);
-        mockDaemon.runJob.mockResolvedValue({ success: true });
+        mockDaemon.triggerJob.mockResolvedValue({ success: true });
 
         const response = await request(server)
           .post('/api/jobs/1/trigger')
@@ -202,7 +201,7 @@ describe('LSH API Server', () => {
 
       it('should handle job execution errors', async () => {
         mockDaemon.getJob.mockReturnValue({ id: '1' });
-        mockDaemon.runJob.mockRejectedValue(new Error('Execution failed'));
+        mockDaemon.triggerJob.mockRejectedValue(new Error('Execution failed'));
 
         await request(server)
           .post('/api/jobs/1/trigger')
@@ -247,7 +246,7 @@ describe('LSH API Server', () => {
       };
 
       mockDaemon.getStatus.mockReturnValue(mockStatus);
-      mockDaemon.getAllJobs.mockReturnValue(new Array(5));
+      mockDaemon.listJobs.mockReturnValue(new Array(5));
 
       const response = await request(server)
         .get('/api/status')
@@ -304,7 +303,7 @@ describe('LSH API Server', () => {
 
   describe('Error Handling', () => {
     it('should handle internal server errors gracefully', async () => {
-      mockDaemon.getAllJobs.mockImplementation(() => {
+      mockDaemon.listJobs.mockImplementation(() => {
         throw new Error('Database error');
       });
 

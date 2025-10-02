@@ -97,7 +97,7 @@ describe('LSH Job Daemon', () => {
         });
       });
 
-      it('should add job with schedule', () => {
+      it('should add job with schedule', async () => {
         const jobSpec = {
           name: 'scheduled-job',
           command: 'echo scheduled',
@@ -105,7 +105,7 @@ describe('LSH Job Daemon', () => {
           schedule: { cron: '0 0 * * *' }
         };
 
-        const job = daemon.addJob(jobSpec);
+        const job = await daemon.addJob(jobSpec);
 
         expect(job.schedule).toEqual({ cron: '0 0 * * *' });
         expect(job.nextRun).toBeDefined();

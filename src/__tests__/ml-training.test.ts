@@ -236,7 +236,7 @@ describe('ML Training Schema', () => {
 
       expect(prediction.residual).toBeCloseTo(499.50, 2);
       expect(prediction.confidence_score).toBeGreaterThan(0.8);
-      expect(Math.abs(prediction.actual_value! - prediction.predicted_value)).toBeCloseTo(499.50, 2);
+      expect(Math.abs(prediction.actual_value! - prediction.predicted_value!)).toBeCloseTo(499.50, 2);
     });
 
     it('should calculate error metrics', () => {
