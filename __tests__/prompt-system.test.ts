@@ -3,7 +3,7 @@
  * Tests for ZSH-style prompt expansion and formatting
  */
 
-import { PromptSystem, PromptContext } from '../src/lib/prompt-system';
+import { PromptSystem } from '../src/lib/prompt-system';
 
 describe('PromptSystem', () => {
   let promptSystem: PromptSystem;

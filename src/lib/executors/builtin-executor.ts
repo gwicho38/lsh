@@ -3,8 +3,8 @@
  * Handles execution of all POSIX and extended builtin commands
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+// import * as fs from 'fs';  // TODO: Uncomment when implementing file-based builtins
+// import * as path from 'path';  // TODO: Uncomment when implementing path operations
 import { ExecutionResult, ShellContext } from '../shell-executor';
 import { VariableExpander } from '../variable-expansion';
 import { PathnameExpander } from '../pathname-expansion';
@@ -48,8 +48,8 @@ export class BuiltinExecutor {
   }
 
   // ========== BUILTIN IMPLEMENTATIONS ==========
-  
-  private async builtin_cd(args: string[]): Promise<ExecutionResult> {
+
+  private async builtin_cd(_args: string[]): Promise<ExecutionResult> {
     // TODO: Move full implementation from shell-executor.ts
     return { stdout: '', stderr: 'cd: stub', exitCode: 1, success: false };
   }
