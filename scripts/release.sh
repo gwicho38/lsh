@@ -42,6 +42,8 @@ echo ""
 
 # Step 4: Build
 echo -e "${YELLOW}[4/8] Building project...${NC}"
+# Clean any root-owned build artifacts first
+sudo rm -rf dist types lsh 2>/dev/null || true
 npm run build
 echo -e "${GREEN}✓ Build successful${NC}"
 echo ""
