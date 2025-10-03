@@ -85,6 +85,10 @@ export declare class InteractiveShell {
      */
     private showHelp;
     /**
+     * Show command history
+     */
+    private showHistory;
+    /**
      * Setup completion system
      */
     private setupCompletion;
