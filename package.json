@@ -1,6 +1,6 @@
 {
   "name": "gwicho38-lsh",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
   "main": "dist/app.js",
   "bin": {
