@@ -224,7 +224,12 @@ else
 endif
 
 .PHONY: install-system
-install-system: build-binary ## Install LSH binary to system PATH
+install-system: ## Install LSH binary to system PATH (includes clean + compile + binary)
+	@echo "$(CYAN)Removing any root-owned build artifacts...$(RESET)"
+	@sudo rm -rf dist types lsh 2>/dev/null || true
+	@rm -rf dist types lsh *.tsbuildinfo 2>/dev/null || true
+	@find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
+	@$(MAKE) build
 	@echo "$(CYAN)Installing LSH binary to system...$(RESET)"
 	@if [ ! -f "$(BINARY_OUTPUT)" ]; then \
 		echo "$(RED)❌ Binary not found. Run 'make build-binary' first$(RESET)"; \
@@ -232,6 +237,8 @@ install-system: build-binary ## Install LSH binary to system PATH
 	fi
 	@echo "Creating LSH system directory..."
 	sudo mkdir -p /usr/local/lib/lsh
+	@echo "Removing old dist files..."
+	sudo rm -rf /usr/local/lib/lsh/dist
 	@echo "Copying LSH files..."
 	sudo cp -r dist /usr/local/lib/lsh/
 	sudo cp -r node_modules /usr/local/lib/lsh/
@@ -279,7 +286,12 @@ reinstall-system: uninstall-system install-system ## Reinstall LSH binary to sys
 # =============================================================================
 
 .PHONY: install-full
-install-full: compile build-binary ## Install LSH binary and daemon service
+install-full: ## Install LSH binary and daemon service (includes clean + compile + binary)
+	@echo "$(CYAN)Removing any root-owned build artifacts...$(RESET)"
+	@sudo rm -rf dist types lsh 2>/dev/null || true
+	@rm -rf dist types lsh *.tsbuildinfo 2>/dev/null || true
+	@find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
+	@$(MAKE) compile build-binary
 	@echo "$(CYAN)Installing LSH binary to system...$(RESET)"
 	@if [ ! -f "$(BINARY_OUTPUT)" ]; then \
 		echo "$(RED)❌ Binary not found$(RESET)"; \
@@ -287,6 +299,8 @@ install-full: compile build-binary ## Install LSH binary and daemon service
 	fi
 	@echo "Creating LSH system directory..."
 	sudo mkdir -p /usr/local/lib/lsh
+	@echo "Removing old dist files..."
+	sudo rm -rf /usr/local/lib/lsh/dist
 	@echo "Copying LSH files..."
 	sudo cp -r dist /usr/local/lib/lsh/
 	sudo cp -r node_modules /usr/local/lib/lsh/

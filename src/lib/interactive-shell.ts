@@ -66,7 +66,21 @@ export class InteractiveShell {
    */
   public stop(): void {
     this.isRunning = false;
-    console.log('\nGoodbye!');
+
+    // Restore terminal to normal mode
+    if (process.stdin.isTTY && process.stdin.setRawMode) {
+      process.stdin.setRawMode(false);
+      process.stdin.pause();
+      process.stdin.removeAllListeners('data');
+    }
+
+    // Write newline and goodbye message
+    process.stdout.write('\nGoodbye!\n');
+
+    // Give terminal time to restore before exiting
+    setImmediate(() => {
+      process.exit(0);
+    });
   }
 
   /**
@@ -257,8 +271,9 @@ echo "LSH interactive shell loaded. Type 'help' for commands."
             resolve('');
             break;
             
-          case '\u0004': // Ctrl+D
+          case '\u0004': // Ctrl+D (EOF)
             process.stdin.removeListener('data', onData);
+            console.log(''); // Add newline
             resolve(null);
             break;
             
@@ -397,7 +412,12 @@ echo "LSH interactive shell loaded. Type 'help' for commands."
         console.clear();
         return;
       }
-      
+
+      if (command.trim() === 'history') {
+        this.showHistory();
+        return;
+      }
+
       // Parse and execute command
       const ast = parseShellCommand(command);
       const result = await this.executor.execute(ast);
@@ -432,11 +452,38 @@ echo "LSH interactive shell loaded. Type 'help' for commands."
     console.log('LSH Interactive Shell Help');
     console.log('==========================');
     console.log('');
-    console.log('Special Commands:');
+    console.log('Shell Commands:');
     console.log('  help     - Show this help');
     console.log('  exit     - Exit the shell');
     console.log('  clear    - Clear the screen');
     console.log('  history  - Show command history');
+    console.log('');
+    console.log('CLI Commands (exit shell first):');
+    console.log('  lsh repl                 - JavaScript REPL (Node.js interactive)');
+    console.log('  lsh self update          - Update LSH to latest version');
+    console.log('  lsh self version         - Show version information');
+    console.log('  lsh self info            - Show installation info');
+    console.log('');
+    console.log('  lsh daemon start         - Start LSH daemon');
+    console.log('  lsh daemon stop          - Stop LSH daemon');
+    console.log('  lsh daemon status        - Check daemon status');
+    console.log('  lsh daemon restart       - Restart daemon');
+    console.log('');
+    console.log('  lsh daemon job list      - List all jobs');
+    console.log('  lsh daemon job create    - Create new job');
+    console.log('  lsh daemon job trigger   - Run job immediately');
+    console.log('  lsh daemon job delete    - Delete a job');
+    console.log('');
+    console.log('  lsh cron reports         - View cron job reports');
+    console.log('  lsh cron list            - List all cron jobs');
+    console.log('');
+    console.log('  lsh api start            - Start API server');
+    console.log('  lsh api stop             - Stop API server');
+    console.log('  lsh api key              - Generate API key');
+    console.log('  lsh api test             - Test API connection');
+    console.log('');
+    console.log('  lsh config --init        - Initialize config file');
+    console.log('  lsh config --show        - Show current config');
     console.log('');
     console.log('Key Bindings:');
     console.log('  Tab      - Command completion');
@@ -450,6 +497,33 @@ echo "LSH interactive shell loaded. Type 'help' for commands."
     console.log('  - Advanced job management');
     console.log('  - Command history and completion');
     console.log('  - Configuration via ~/.lshrc');
+    console.log('');
+    console.log('For complete documentation: lsh --help');
+    console.log('');
+  }
+
+  /**
+   * Show command history
+   */
+  private showHistory(): void {
+    const history = this.executor.getHistoryEntries();
+
+    if (history.length === 0) {
+      console.log('No command history');
+      return;
+    }
+
+    console.log('Command History:');
+    console.log('================');
+
+    history.forEach((entry, index) => {
+      const timestamp = new Date(entry.timestamp).toLocaleString();
+      const exitCode = entry.exitCode !== undefined ? ` [${entry.exitCode}]` : '';
+      console.log(`${index + 1}  ${entry.command}${exitCode}`);
+      if (this.options.verbose) {
+        console.log(`    ${timestamp}`);
+      }
+    });
     console.log('');
   }
 
