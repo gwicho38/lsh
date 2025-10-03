@@ -14,9 +14,9 @@ if [[ "$SCRIPT_DIR" == "/usr/local/bin" ]]; then
         exit 1
     fi
     cd "$LSH_DIR"
-    exec node dist/app.js "$@"
+    exec node dist/cli.js "$@"
 else
     # Running from source directory
     cd "$SCRIPT_DIR"
-    exec node dist/app.js "$@"
+    exec node dist/cli.js "$@"
 fi

@@ -12,6 +12,10 @@ import { parseShellCommand } from './lib/shell-parser.js';
 import selfCommand from './commands/self.js';
 import { registerApiCommands } from './commands/api.js';
 import { init_daemon } from './services/daemon/daemon.js';
+import { init_ishell } from './services/shell/shell.js';
+import { init_lib } from './services/lib/lib.js';
+import { init_supabase } from './services/supabase/supabase.js';
+import { init_cron } from './services/cron/cron.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -37,9 +41,9 @@ program
   .description('LSH - A modern shell with ZSH features and superior job management')
   .version(getVersion());
 
-// Interactive mode (default)
+// Options for main command
 program
-  .option('-i, --interactive', 'Start interactive shell (default)')
+  .option('-i, --interactive', 'Start interactive shell')
   .option('-c, --command <command>', 'Execute command string')
   .option('-s, --script <file>', 'Execute script file')
   .option('--rc <file>', 'Use custom rc file')
@@ -56,9 +60,12 @@ program
       } else if (options.script) {
         // Execute script file
         await executeScript(options.script, options);
-      } else {
-        // Start interactive shell
+      } else if (options.interactive) {
+        // Start interactive shell only if -i or --interactive is specified
         await startInteractiveShell(options);
+      } else {
+        // No arguments - show help
+        program.help();
       }
     } catch (error) {
       console.error(`Error: ${error.message}`);
@@ -127,8 +134,20 @@ program
 
 // Register async command modules
 (async () => {
+  // REPL interactive shell
+  await init_ishell(program);
+
+  // Library commands
+  await init_lib(program);
+
+  // Supabase commands
+  await init_supabase(program);
+
   // Daemon management commands
   await init_daemon(program);
+
+  // Cron commands
+  await init_cron(program);
 
   // API server commands
   registerApiCommands(program);
@@ -433,13 +452,14 @@ function showDetailedHelp(): void {
   console.log('====================================');
   console.log('');
   console.log('Usage:');
-  console.log('  lsh                    Start interactive shell');
+  console.log('  lsh                    Show help (default)');
+  console.log('  lsh -i                 Start interactive shell');
   console.log('  lsh -c "command"       Execute command string');
   console.log('  lsh -s script.sh       Execute script file');
   console.log('  lsh script.sh          Execute script file');
   console.log('');
   console.log('Options:');
-  console.log('  -i, --interactive      Start interactive shell (default)');
+  console.log('  -i, --interactive      Start interactive shell');
   console.log('  -c, --command <cmd>    Execute command string');
   console.log('  -s, --script <file>    Execute script file');
   console.log('  --rc <file>            Use custom rc file');
@@ -449,6 +469,9 @@ function showDetailedHelp(): void {
   console.log('  -V, --version          Show version');
   console.log('');
   console.log('Subcommands:');
+  console.log('  repl                    JavaScript REPL interactive shell');
+  console.log('  lib                     Library commands');
+  console.log('  supabase                Supabase database management');
   console.log('  script <file>           Execute shell script');
   console.log('  config                  Manage configuration');
   console.log('  zsh                     ZSH compatibility commands');
@@ -456,13 +479,16 @@ function showDetailedHelp(): void {
   console.log('  daemon                  Daemon management');
   console.log('  daemon job              Job management');
   console.log('  daemon db               Database integration');
+  console.log('  cron                    Cron job management');
   console.log('  api                     API server management');
   console.log('  help                    Show detailed help');
   console.log('');
   console.log('Examples:');
   console.log('');
   console.log('  Shell Usage:');
-  console.log('    lsh                                  # Start interactive shell');
+  console.log('    lsh                                  # Show this help');
+  console.log('    lsh -i                               # Start interactive shell');
+  console.log('    lsh repl                            # Start JavaScript REPL');
   console.log('    lsh -c "echo hello && pwd"          # Execute command');
   console.log('    lsh my-script.sh arg1 arg2          # Execute script');
   console.log('');

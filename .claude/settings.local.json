@@ -175,7 +175,8 @@
       "Bash(wc:*)",
       "Bash(gh issue reopen:*)",
       "Bash(sort:*)",
-      "Bash(hash -r)"
+      "Bash(hash -r)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []
