@@ -70,15 +70,27 @@ read -p "Push to GitHub? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     git push origin main
-    git push origin "v${NEW_VERSION}"
-    echo -e "${GREEN}✓ Pushed to GitHub${NC}"
+
+    # Try to push tag, but don't fail if restricted
+    if git push origin "v${NEW_VERSION}" 2>/dev/null; then
+        echo -e "${GREEN}✓ Pushed tag to GitHub${NC}"
+    else
+        echo -e "${YELLOW}⚠ Tag push blocked by GitHub rules${NC}"
+        echo -e "${YELLOW}Creating release via gh CLI instead...${NC}"
+
+        # Create release using gh CLI if available
+        if command -v gh &> /dev/null; then
+            gh release create "v${NEW_VERSION}" \
+                --title "Release v${NEW_VERSION}" \
+                --notes "See [CHANGELOG.md](https://github.com/gwicho38/lsh/blob/main/CHANGELOG.md)" \
+                --latest 2>/dev/null && echo -e "${GREEN}✓ Created GitHub release${NC}" || true
+        fi
+    fi
+
     echo ""
-    echo -e "${CYAN}GitHub Actions will now:${NC}"
-    echo -e "  1. Run CI tests"
-    echo -e "  2. Publish to npm (if CI passes)"
-    echo -e "  3. Create GitHub release"
-    echo ""
-    echo -e "${CYAN}Monitor progress: https://github.com/gwicho38/lsh/actions${NC}"
+    echo -e "${CYAN}Next steps:${NC}"
+    echo -e "  1. GitHub Actions: https://github.com/gwicho38/lsh/actions${NC}"
+    echo -e "  2. Publish to npm: npm publish${NC}"
 else
     echo -e "${YELLOW}Skipped push to GitHub${NC}"
     echo -e "${YELLOW}To push manually:${NC}"
