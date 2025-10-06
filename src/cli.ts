@@ -11,6 +11,7 @@ import ScriptRunner from './lib/script-runner.js';
 import { parseShellCommand } from './lib/shell-parser.js';
 import selfCommand from './commands/self.js';
 import { registerApiCommands } from './commands/api.js';
+import { registerZshImportCommands } from './commands/zsh-import.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_ishell } from './services/shell/shell.js';
 import { init_lib } from './services/lib/lib.js';
@@ -151,6 +152,9 @@ program
 
   // API server commands
   registerApiCommands(program);
+
+  // ZSH import commands
+  registerZshImportCommands(program);
 
   // Parse command line arguments after all commands are registered
   program.parse(process.argv);
@@ -475,6 +479,7 @@ function showDetailedHelp(): void {
   console.log('  script <file>           Execute shell script');
   console.log('  config                  Manage configuration');
   console.log('  zsh                     ZSH compatibility commands');
+  console.log('  zsh-import              Import ZSH configs (aliases, functions, exports)');
   console.log('  self                    Self-management (update, version)');
   console.log('  daemon                  Daemon management');
   console.log('  daemon job              Job management');

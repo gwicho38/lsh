@@ -1,0 +1,79 @@
+# LSH Configuration File
+# This file is sourced when LSH starts in interactive mode
+# Location: ~/.lshrc
+
+# ============================================================================
+# ZSH IMPORT CONFIGURATION
+# ============================================================================
+
+# Auto-import ZSH configurations on startup
+# Uncomment the line below to enable automatic import from ~/.zshrc
+# zsh-source
+
+# Or use selective import with options:
+# zsh-source --no-functions          # Import aliases and exports only
+# zsh-source --rename-conflicts      # Rename conflicts with _zsh suffix
+# zsh-source --exclude 'test_*'      # Exclude items matching pattern
+
+# For more control, use the zsh-import command:
+# lsh zsh-import all                 # Import everything
+# lsh zsh-import aliases             # Import only aliases
+# lsh zsh-import exports             # Import only environment variables
+# lsh zsh-import functions           # Import only functions
+# lsh zsh-import setup-auto-import   # Configure auto-import
+
+# ============================================================================
+# ALIASES
+# ============================================================================
+
+# Common aliases
+# alias ll='ls -la'
+# alias la='ls -A'
+# alias l='ls -CF'
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+# Set your preferred editor
+# export EDITOR=vim
+
+# Add to PATH
+# export PATH="$HOME/bin:$PATH"
+
+# ============================================================================
+# LSH OPTIONS
+# ============================================================================
+
+# Prompt customization
+# export LSH_PROMPT='%n@%m:%~$ '
+# export LSH_RPROMPT='%T'
+
+# History settings
+# export LSH_HISTORY_SIZE=10000
+# export LSH_HISTORY_FILE=~/.lsh_history
+
+# ============================================================================
+# FUNCTIONS
+# ============================================================================
+
+# Define custom functions here
+# myfunc() {
+#   echo "Hello from LSH!"
+# }
+
+# ============================================================================
+# ZSH COMPATIBILITY
+# ============================================================================
+
+# Enable ZSH compatibility features
+# setopt AUTO_CD              # cd by typing directory name
+# setopt EXTENDED_GLOB        # Enable extended globbing
+# setopt NOMATCH              # Error if glob doesn't match
+
+# ============================================================================
+# STARTUP COMMANDS
+# ============================================================================
+
+# Run commands on shell startup
+# echo "Welcome to LSH!"
