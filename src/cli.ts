@@ -12,6 +12,7 @@ import { parseShellCommand } from './lib/shell-parser.js';
 import selfCommand from './commands/self.js';
 import { registerApiCommands } from './commands/api.js';
 import { registerZshImportCommands } from './commands/zsh-import.js';
+import { registerThemeCommands } from './commands/theme.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_ishell } from './services/shell/shell.js';
 import { init_lib } from './services/lib/lib.js';
@@ -155,6 +156,9 @@ program
 
   // ZSH import commands
   registerZshImportCommands(program);
+
+  // Theme commands
+  registerThemeCommands(program);
 
   // Parse command line arguments after all commands are registered
   program.parse(process.argv);
@@ -480,6 +484,7 @@ function showDetailedHelp(): void {
   console.log('  config                  Manage configuration');
   console.log('  zsh                     ZSH compatibility commands');
   console.log('  zsh-import              Import ZSH configs (aliases, functions, exports)');
+  console.log('  theme                   Manage themes (import Oh-My-Zsh themes)');
   console.log('  self                    Self-management (update, version)');
   console.log('  daemon                  Daemon management');
   console.log('  daemon job              Job management');
