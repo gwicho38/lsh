@@ -157,15 +157,15 @@ export EDITOR=vim
     });
   });
 
-  describe('shouldInclude', () => {
+  describe('shouldImport', () => {
     it('should match simple patterns', () => {
       importManager = new ZshImportManager(executor, {
         includePatterns: ['git*', 'ls*'],
       });
 
-      expect(importManager['shouldInclude']('gitlog', 'alias')).toBe(true);
-      expect(importManager['shouldInclude']('lsa', 'alias')).toBe(true);
-      expect(importManager['shouldInclude']('ll', 'alias')).toBe(false);
+      expect(importManager['shouldImport']('gitlog')).toBe(true);
+      expect(importManager['shouldImport']('lsa')).toBe(true);
+      expect(importManager['shouldImport']('ll')).toBe(false);
     });
 
     it('should match with wildcards', () => {
@@ -173,9 +173,9 @@ export EDITOR=vim
         includePatterns: ['*test*'],
       });
 
-      expect(importManager['shouldInclude']('mytest', 'alias')).toBe(true);
-      expect(importManager['shouldInclude']('testfunc', 'alias')).toBe(true);
-      expect(importManager['shouldInclude']('no_match', 'alias')).toBe(false);
+      expect(importManager['shouldImport']('mytest')).toBe(true);
+      expect(importManager['shouldImport']('testfunc')).toBe(true);
+      expect(importManager['shouldImport']('no_match')).toBe(false);
     });
 
     it('should respect exclude patterns', () => {
@@ -184,16 +184,16 @@ export EDITOR=vim
         excludePatterns: ['_*', 'temp*'],
       });
 
-      expect(importManager['shouldInclude']('normal', 'alias')).toBe(true);
-      expect(importManager['shouldInclude']('_private', 'alias')).toBe(false);
-      expect(importManager['shouldInclude']('tempfile', 'alias')).toBe(false);
+      expect(importManager['shouldImport']('normal')).toBe(true);
+      expect(importManager['shouldImport']('_private')).toBe(false);
+      expect(importManager['shouldImport']('tempfile')).toBe(false);
     });
 
     it('should include all when no patterns specified', () => {
       importManager = new ZshImportManager(executor);
 
-      expect(importManager['shouldInclude']('anything', 'alias')).toBe(true);
-      expect(importManager['shouldInclude']('_private', 'function')).toBe(true);
+      expect(importManager['shouldImport']('anything')).toBe(true);
+      expect(importManager['shouldImport']('_private')).toBe(true);
     });
   });
 
@@ -396,30 +396,30 @@ alias good='ls'
     });
   });
 
-  describe('pattern matching', () => {
+  describe('matchPattern', () => {
     it('should match * wildcard', () => {
       importManager = new ZshImportManager(executor);
 
-      expect(importManager['matchesPattern']('anything', '*')).toBe(true);
-      expect(importManager['matchesPattern']('git_log', 'git*')).toBe(true);
-      expect(importManager['matchesPattern']('mygit', '*git')).toBe(true);
-      expect(importManager['matchesPattern']('mygitlog', '*git*')).toBe(true);
+      expect(importManager['matchPattern']('anything', '*')).toBe(true);
+      expect(importManager['matchPattern']('git_log', 'git*')).toBe(true);
+      expect(importManager['matchPattern']('mygit', '*git')).toBe(true);
+      expect(importManager['matchPattern']('mygitlog', '*git*')).toBe(true);
     });
 
     it('should match ? wildcard', () => {
       importManager = new ZshImportManager(executor);
 
-      expect(importManager['matchesPattern']('a', '?')).toBe(true);
-      expect(importManager['matchesPattern']('ab', '?')).toBe(false);
-      expect(importManager['matchesPattern']('git1', 'git?')).toBe(true);
-      expect(importManager['matchesPattern']('git12', 'git?')).toBe(false);
+      expect(importManager['matchPattern']('a', '?')).toBe(true);
+      expect(importManager['matchPattern']('ab', '?')).toBe(false);
+      expect(importManager['matchPattern']('git1', 'git?')).toBe(true);
+      expect(importManager['matchPattern']('git12', 'git?')).toBe(false);
     });
 
     it('should match exact strings', () => {
       importManager = new ZshImportManager(executor);
 
-      expect(importManager['matchesPattern']('exact', 'exact')).toBe(true);
-      expect(importManager['matchesPattern']('exact', 'other')).toBe(false);
+      expect(importManager['matchPattern']('exact', 'exact')).toBe(true);
+      expect(importManager['matchPattern']('exact', 'other')).toBe(false);
     });
   });
 
@@ -456,6 +456,452 @@ alias test='echo test'
 
       // Should not throw
       await expect(importManager.importZshConfig(testZshrcPath)).resolves.toBeDefined();
+    });
+  });
+
+  describe('importSetopts', () => {
+    it('should import setopt commands', async () => {
+      const zshrcContent = `
+setopt AUTO_CD
+setopt HIST_IGNORE_DUPS
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      expect(result.success).toBe(true);
+      expect(result.stats.total).toBeGreaterThan(0);
+    });
+
+    it('should handle multiple setopts on one line', async () => {
+      const zshrcContent = `
+setopt AUTO_CD HIST_IGNORE_DUPS SHARE_HISTORY
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.setopts).toHaveLength(3);
+      expect(config.setopts[0].option).toBe('AUTO_CD');
+      expect(config.setopts[1].option).toBe('HIST_IGNORE_DUPS');
+      expect(config.setopts[2].option).toBe('SHARE_HISTORY');
+    });
+
+    it('should handle unsetopt commands', async () => {
+      const zshrcContent = `
+unsetopt BEEP
+unsetopt NOMATCH
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.setopts).toHaveLength(2);
+      expect(config.setopts[0]).toEqual({ option: 'BEEP', enabled: false, line: 2 });
+      expect(config.setopts[1]).toEqual({ option: 'NOMATCH', enabled: false, line: 3 });
+    });
+  });
+
+  describe('importPlugins', () => {
+    it('should parse Oh-My-Zsh plugins', async () => {
+      const zshrcContent = `
+plugins=(git docker kubectl)
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.plugins).toHaveLength(3);
+      expect(config.plugins[0].name).toBe('git');
+      expect(config.plugins[1].name).toBe('docker');
+      expect(config.plugins[2].name).toBe('kubectl');
+    });
+
+    it('should parse plugin with single word syntax', async () => {
+      const zshrcContent = `
+plugin=git
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.plugins).toHaveLength(1);
+      expect(config.plugins[0].name).toBe('git');
+    });
+  });
+
+  describe('completion parsing', () => {
+    it('should parse autoload commands', async () => {
+      const zshrcContent = `
+autoload -Uz compinit
+compinit
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.completions).toHaveLength(2);
+      expect(config.completions[0].config).toContain('autoload');
+      expect(config.completions[1].config).toContain('compinit');
+    });
+  });
+
+  describe('getLastImportStats', () => {
+    it('should return statistics from last import', async () => {
+      const zshrcContent = `
+alias ll='ls -la'
+alias gs='git status'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      await importManager.importZshConfig(testZshrcPath);
+
+      const stats = importManager.getLastImportStats();
+
+      expect(stats).toBeDefined();
+      expect(stats.total).toBe(2);
+    });
+  });
+
+  describe('actual execution verification', () => {
+    it('should actually set aliases in executor', async () => {
+      const zshrcContent = `
+alias mytest='echo test'
+alias mygrep='grep -i'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      await importManager.importZshConfig(testZshrcPath);
+
+      // Verify aliases are set
+      const context = (executor as any).context;
+      expect(context.variables['alias_mytest']).toBeDefined();
+      expect(context.variables['alias_mygrep']).toBeDefined();
+    });
+
+    it('should actually set exports in executor', async () => {
+      const zshrcContent = `
+export TEST_VAR=test_value
+export ANOTHER_VAR=another_value
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      await importManager.importZshConfig(testZshrcPath);
+
+      // Verify exports are set
+      const context = (executor as any).context;
+      expect(context.variables['TEST_VAR']).toBe('test_value');
+      expect(context.variables['ANOTHER_VAR']).toBe('another_value');
+    });
+  });
+
+  describe('conflict scenarios', () => {
+    it('should detect alias conflicts', async () => {
+      // Set up existing alias
+      const context = (executor as any).context;
+      context.variables['alias_ll'] = 'ls -l';
+
+      const zshrcContent = `
+alias ll='ls -la'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor, {
+        conflictResolution: 'skip',
+      });
+
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      expect(result.stats.conflicts).toBeGreaterThan(0);
+    });
+
+    it('should rename on conflict when strategy is rename', async () => {
+      // Set up existing alias
+      const context = (executor as any).context;
+      context.variables['alias_ll'] = 'ls -l';
+
+      const zshrcContent = `
+alias ll='ls -la'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor, {
+        conflictResolution: 'rename',
+      });
+
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      // Should create ll_zsh instead
+      expect(context.variables['alias_ll_zsh']).toBeDefined();
+    });
+
+    it('should overwrite on conflict when strategy is overwrite', async () => {
+      // Set up existing alias
+      const context = (executor as any).context;
+      context.variables['alias_ll'] = 'ls -l';
+
+      const zshrcContent = `
+alias ll='ls -la'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor, {
+        conflictResolution: 'overwrite',
+      });
+
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle aliases with special characters', async () => {
+      const zshrcContent = `
+alias ls='ls --color=auto'
+alias grep='grep --color=auto'
+alias ll='ls -la'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      expect(result.success).toBe(true);
+      expect(result.stats.total).toBe(3);
+    });
+
+    it('should handle aliases with dollar signs', async () => {
+      const zshrcContent = `
+alias path='echo $PATH'
+alias home='cd $HOME'
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.aliases).toHaveLength(2);
+      expect(config.aliases[0].value).toContain('$PATH');
+      expect(config.aliases[1].value).toContain('$HOME');
+    });
+
+    it('should handle aliases with quotes', async () => {
+      const zshrcContent = `
+alias say='echo "hello world"'
+alias greet="echo 'hi there'"
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.aliases).toHaveLength(2);
+    });
+
+    it('should handle exports with complex values', async () => {
+      const zshrcContent = `
+export PATH="$PATH:/usr/local/bin"
+export EDITOR="vim -n"
+export PS1='\\u@\\h:\\w\\$ '
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.exports).toHaveLength(3);
+      expect(config.exports[0].value).toContain('$PATH');
+    });
+
+    it('should handle functions with here-docs', async () => {
+      const zshrcContent = `
+function myhelp() {
+  cat <<EOF
+This is help text
+Line 2
+EOF
+}
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.functions).toHaveLength(1);
+      expect(config.functions[0].body).toContain('EOF');
+    });
+
+    it('should handle functions with case statements', async () => {
+      const zshrcContent = `
+function mycase() {
+  case $1 in
+    start)
+      echo "starting"
+      ;;
+    stop)
+      echo "stopping"
+      ;;
+  esac
+}
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.functions).toHaveLength(1);
+      expect(config.functions[0].body).toContain('case');
+      expect(config.functions[0].body).toContain('esac');
+    });
+
+    it('should handle functions with subshells', async () => {
+      const zshrcContent = `
+function mysub() {
+  (
+    cd /tmp
+    echo "in subshell"
+  )
+}
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](zshrcContent);
+
+      expect(config.functions).toHaveLength(1);
+    });
+
+    it('should handle very long files', async () => {
+      let longContent = '# Long file\n';
+      for (let i = 0; i < 1000; i++) {
+        longContent += `alias test${i}='echo ${i}'\n`;
+      }
+      fs.writeFileSync(testZshrcPath, longContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const config = importManager['parseZshrc'](longContent);
+
+      expect(config.aliases.length).toBe(1000);
+    });
+
+    it('should handle corrupted zshrc gracefully', async () => {
+      const corruptedContent = `
+alias good='ls'
+function broken {
+  echo "no closing brace"
+alias also_good='pwd'
+`;
+      fs.writeFileSync(testZshrcPath, corruptedContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      // Should still import valid parts
+      expect(result.stats.succeeded).toBeGreaterThan(0);
+    });
+  });
+
+  describe('integration tests', () => {
+    it('should complete full workflow: parse → import → verify', async () => {
+      const zshrcContent = `
+# My ZSH Config
+export EDITOR=vim
+export PATH="$PATH:/usr/local/bin"
+
+alias ll='ls -la'
+alias gs='git status'
+alias gp='git pull'
+
+function mkcd() {
+  mkdir -p "$1"
+  cd "$1"
+}
+
+setopt AUTO_CD
+setopt HIST_IGNORE_DUPS
+
+plugins=(git docker)
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+
+      // Step 1: Import
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      // Step 2: Verify success
+      expect(result.success).toBe(true);
+      expect(result.stats.total).toBeGreaterThan(0);
+
+      // Step 3: Verify aliases imported
+      const context = (executor as any).context;
+      expect(context.variables['alias_ll']).toBeDefined();
+      expect(context.variables['alias_gs']).toBeDefined();
+      expect(context.variables['alias_gp']).toBeDefined();
+
+      // Step 4: Verify exports imported
+      expect(context.variables['EDITOR']).toBe('vim');
+      expect(context.variables['PATH']).toContain('/usr/local/bin');
+
+      // Step 5: Verify diagnostics logged
+      expect(result.diagnostics.length).toBeGreaterThan(0);
+      const successCount = result.diagnostics.filter(d => d.status === 'success').length;
+      expect(successCount).toBeGreaterThan(0);
+    });
+
+    it('should handle mixed success and failure imports', async () => {
+      const zshrcContent = `
+alias good1='ls'
+alias bad='invalid $(syntax'
+alias good2='pwd'
+export GOOD_VAR=value
+function goodfunc() { echo "ok"; }
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor);
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      expect(result.success).toBe(true);
+      expect(result.stats.succeeded).toBeGreaterThan(0);
+      expect(result.stats.failed).toBeGreaterThan(0);
+      expect(result.stats.total).toBe(result.stats.succeeded + result.stats.failed + result.stats.skipped);
+    });
+
+    it('should respect selective import options', async () => {
+      const zshrcContent = `
+alias ll='ls -la'
+export EDITOR=vim
+function myfunc() { echo "test"; }
+setopt AUTO_CD
+`;
+      fs.writeFileSync(testZshrcPath, zshrcContent, 'utf8');
+
+      importManager = new ZshImportManager(executor, {
+        includeAliases: true,
+        includeExports: false,
+        includeFunctions: false,
+        includeOptions: false,
+      });
+
+      const result = await importManager.importZshConfig(testZshrcPath);
+
+      // Should only import alias
+      expect(result.stats.total).toBe(1);
+
+      const context = (executor as any).context;
+      expect(context.variables['alias_ll']).toBeDefined();
+      expect(context.variables['EDITOR']).toBeUndefined();
     });
   });
 });

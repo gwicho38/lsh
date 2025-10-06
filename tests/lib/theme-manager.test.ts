@@ -518,4 +518,395 @@ PROMPT='$ ❯ ✓ ✗ → ← '
       expect(theme.prompts.left).toContain('✓');
     });
   });
+
+  describe('git format extraction', () => {
+    it('should parse ZSH_THEME_GIT_PROMPT_PREFIX', () => {
+      const themeContent = `
+ZSH_THEME_GIT_PROMPT_PREFIX="git:("
+ZSH_THEME_GIT_PROMPT_SUFFIX=")"
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.gitFormats).toBeDefined();
+      expect(theme.gitFormats?.branch).toContain('git:(');
+      expect(theme.gitFormats?.branch).toContain(')');
+    });
+
+    it('should parse ZSH_THEME_GIT_PROMPT_DIRTY', () => {
+      const themeContent = `
+ZSH_THEME_GIT_PROMPT_DIRTY="*"
+ZSH_THEME_GIT_PROMPT_CLEAN="✓"
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.gitFormats).toBeDefined();
+      expect(theme.gitFormats?.unstaged).toBe('*');
+    });
+
+    it('should parse ZSH_THEME_GIT_PROMPT_UNTRACKED', () => {
+      const themeContent = `
+ZSH_THEME_GIT_PROMPT_UNTRACKED="?"
+ZSH_THEME_GIT_PROMPT_ADDED="+"
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.gitFormats).toBeDefined();
+      expect(theme.gitFormats?.staged).toBe('+');
+    });
+  });
+
+  describe('256-color mapping', () => {
+    it('should map 256-color code to ANSI', () => {
+      const result = themeManager['mapColorToChalk']('196');
+      expect(result).toBeTruthy();
+    });
+
+    it('should handle various 256-color codes', () => {
+      const codes = ['1', '21', '46', '196', '226', '255'];
+      for (const code of codes) {
+        const result = themeManager['mapColorToChalk'](code);
+        expect(result).toBeTruthy();
+      }
+    });
+
+    it('should fall back to white for invalid codes', () => {
+      const result = themeManager['mapColorToChalk']('999');
+      expect(result).toBeTruthy();
+    });
+  });
+
+  describe('right prompt (RPROMPT)', () => {
+    it('should parse and apply RPROMPT', () => {
+      const theme: ParsedTheme = {
+        name: 'test',
+        colors: new Map(),
+        prompts: {
+          left: '$ ',
+          right: '%T',
+        },
+        variables: new Map(),
+        hooks: [],
+        dependencies: [],
+      };
+
+      const commands = themeManager.applyTheme(theme);
+
+      expect(commands).toContain('LSH_RPROMPT');
+      expect(commands).toContain('%T');
+    });
+
+    it('should convert RPROMPT escapes', () => {
+      const themeContent = `
+PROMPT='$ '
+RPROMPT='[%T]'
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.prompts.right).toContain('%T');
+    });
+  });
+
+  describe('variable substitution in prompts', () => {
+    it('should substitute color variables in prompts', () => {
+      const colors = new Map<string, string>([
+        ['RED', '31'],
+        ['GREEN', '32'],
+        ['BLUE', '34'],
+      ]);
+
+      const prompt = '${RED}error${GREEN}ok${BLUE}info';
+      const result = themeManager['convertPromptToLsh'](prompt, colors);
+
+      expect(result).not.toContain('${RED}');
+      expect(result).not.toContain('${GREEN}');
+      expect(result).not.toContain('${BLUE}');
+    });
+
+    it('should handle nested color variables', () => {
+      const colors = new Map<string, string>([
+        ['PRIMARY', 'red'],
+        ['SECONDARY', 'blue'],
+      ]);
+
+      const prompt = '${PRIMARY}text1${SECONDARY}text2';
+      const result = themeManager['convertPromptToLsh'](prompt, colors);
+
+      expect(result).toBeTruthy();
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    it('should preserve literal $ when not a variable', () => {
+      const colors = new Map<string, string>();
+      const prompt = '$HOME is at ~';
+      const result = themeManager['convertPromptToLsh'](prompt, colors);
+
+      expect(result).toContain('$HOME');
+    });
+  });
+
+  describe('custom theme loading', () => {
+    it('should list custom themes from ~/.lsh/themes/', () => {
+      const customThemesPath = path.join(tempDir, '.lsh', 'themes');
+      fs.mkdirSync(customThemesPath, { recursive: true });
+
+      // Create custom theme files
+      fs.writeFileSync(path.join(customThemesPath, 'mytheme.lsh-theme'), '{}', 'utf8');
+      fs.writeFileSync(path.join(customThemesPath, 'another.lsh-theme'), '{}', 'utf8');
+
+      themeManager['customThemesPath'] = customThemesPath;
+
+      const themes = themeManager.listThemes();
+
+      expect(themes.custom).toContain('mytheme');
+      expect(themes.custom).toContain('another');
+    });
+
+    it('should handle missing custom themes directory', () => {
+      themeManager['customThemesPath'] = '/nonexistent/path';
+
+      const themes = themeManager.listThemes();
+
+      expect(themes.custom).toEqual([]);
+    });
+  });
+
+  describe('Oh-My-Zsh directory scanning', () => {
+    it('should list themes from Oh-My-Zsh directory', () => {
+      const ohmyzshPath = path.join(tempDir, '.oh-my-zsh', 'themes');
+      fs.mkdirSync(ohmyzshPath, { recursive: true });
+
+      fs.writeFileSync(path.join(ohmyzshPath, 'theme1.zsh-theme'), 'PROMPT="$ "', 'utf8');
+      fs.writeFileSync(path.join(ohmyzshPath, 'theme2.zsh-theme'), 'PROMPT="$ "', 'utf8');
+
+      themeManager['themesPath'] = ohmyzshPath;
+
+      const themes = themeManager.listThemes();
+
+      expect(themes.ohmyzsh).toContain('theme1');
+      expect(themes.ohmyzsh).toContain('theme2');
+    });
+
+    it('should handle missing Oh-My-Zsh directory', () => {
+      themeManager['themesPath'] = '/nonexistent/path';
+
+      const themes = themeManager.listThemes();
+
+      expect(themes.ohmyzsh).toEqual([]);
+    });
+  });
+
+  describe('theme dependencies and hooks', () => {
+    it('should track git dependency when git prompts are used', () => {
+      const themeContent = `
+PROMPT='$(git_branch) $ '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.dependencies).toContain('git');
+    });
+
+    it('should track virtualenv dependency when used', () => {
+      const themeContent = `
+PROMPT='$(virtualenv_prompt_info) $ '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.dependencies).toContain('virtualenv');
+    });
+  });
+
+  describe('continuation and select prompts', () => {
+    it('should parse PS2 (continuation prompt)', () => {
+      const themeContent = `
+PROMPT='$ '
+PS2='> '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.prompts.continuation).toBeTruthy();
+    });
+
+    it('should parse PS3 (select prompt)', () => {
+      const themeContent = `
+PROMPT='$ '
+PS3='#? '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.prompts.select).toBeTruthy();
+    });
+  });
+
+  describe('saveAsLshTheme functionality', () => {
+    it('should create .lsh-theme file in custom directory', () => {
+      const theme: ParsedTheme = {
+        name: 'mytest',
+        colors: new Map([['RED', '31']]),
+        prompts: {
+          left: '$ ',
+          right: '%T',
+        },
+        gitFormats: {
+          branch: '(git)',
+          unstaged: '*',
+          staged: '+',
+        },
+        variables: new Map([['VAR', 'value']]),
+        hooks: [],
+        dependencies: ['git'],
+      };
+
+      const customThemesPath = path.join(tempDir, 'themes');
+      fs.mkdirSync(customThemesPath, { recursive: true });
+      themeManager['customThemesPath'] = customThemesPath;
+
+      themeManager['saveAsLshTheme'](theme);
+
+      const savedPath = path.join(customThemesPath, 'mytest.lsh-theme');
+      expect(fs.existsSync(savedPath)).toBe(true);
+
+      const savedContent = JSON.parse(fs.readFileSync(savedPath, 'utf8'));
+      expect(savedContent.name).toBe('mytest');
+      expect(savedContent.prompts.left).toBe('$ ');
+      expect(savedContent.prompts.right).toBe('%T');
+    });
+
+    it('should save all theme properties', () => {
+      const theme: ParsedTheme = {
+        name: 'complete',
+        colors: new Map([
+          ['RED', '31'],
+          ['GREEN', '32'],
+        ]),
+        prompts: {
+          left: '${RED}$ ',
+          right: '%T',
+          continuation: '> ',
+          select: '#? ',
+        },
+        gitFormats: {
+          branch: '(branch)',
+          unstaged: '*',
+          staged: '+',
+          action: 'action',
+        },
+        variables: new Map([
+          ['VAR1', 'value1'],
+          ['VAR2', 'value2'],
+        ]),
+        hooks: ['precmd', 'preexec'],
+        dependencies: ['git', 'virtualenv'],
+      };
+
+      const customThemesPath = path.join(tempDir, 'themes');
+      fs.mkdirSync(customThemesPath, { recursive: true });
+      themeManager['customThemesPath'] = customThemesPath;
+
+      themeManager['saveAsLshTheme'](theme);
+
+      const savedPath = path.join(customThemesPath, 'complete.lsh-theme');
+      const savedContent = JSON.parse(fs.readFileSync(savedPath, 'utf8'));
+
+      expect(savedContent.dependencies).toEqual(['git', 'virtualenv']);
+      expect(savedContent.hooks).toEqual(['precmd', 'preexec']);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('should handle themes with no git formats', () => {
+      const themeContent = `
+PROMPT='simple $ '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      const commands = themeManager.applyTheme(theme);
+      expect(commands).toBeTruthy();
+    });
+
+    it('should handle very long prompt strings', () => {
+      const longPrompt = 'x'.repeat(500);
+      const themeContent = `
+PROMPT='${longPrompt}$ '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.prompts.left.length).toBeGreaterThan(400);
+    });
+
+    it('should handle Unicode characters in prompts', () => {
+      const themeContent = `
+PROMPT='→ ❯ ✓ ✗ 🚀 $ '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      expect(theme.prompts.left).toContain('→');
+      expect(theme.prompts.left).toContain('❯');
+      expect(theme.prompts.left).toContain('🚀');
+    });
+
+    it('should handle empty color maps', () => {
+      const colors = new Map<string, string>();
+      const result = themeManager['convertPromptToLsh']('test $ ', colors);
+
+      expect(result).toBeTruthy();
+    });
+
+    it('should handle malformed color definitions', () => {
+      const themeContent = `
+BADCOLOR=notacolor
+PROMPT='$ '
+`;
+      const theme = themeManager['parseZshTheme']('test', themeContent);
+
+      // Should not crash
+      expect(theme.prompts.left).toBeTruthy();
+    });
+  });
+
+  describe('integration', () => {
+    it('should complete full workflow: import → save → apply', async () => {
+      // Step 1: Create and parse a theme
+      const ohmyzshPath = path.join(tempDir, '.oh-my-zsh', 'themes');
+      fs.mkdirSync(ohmyzshPath, { recursive: true });
+
+      const themeContent = `
+# Test Theme
+RED="%{%F{red}%}"
+GREEN="%{%F{green}%}"
+
+PROMPT='\${RED}%n@%m \${GREEN}%~ $ '
+RPROMPT='%T'
+
+ZSH_THEME_GIT_PROMPT_PREFIX="("
+ZSH_THEME_GIT_PROMPT_SUFFIX=")"
+ZSH_THEME_GIT_PROMPT_DIRTY="*"
+ZSH_THEME_GIT_PROMPT_CLEAN="✓"
+`;
+      const themePath = path.join(ohmyzshPath, 'testtheme.zsh-theme');
+      fs.writeFileSync(themePath, themeContent, 'utf8');
+
+      process.env.HOME = tempDir;
+      const manager = new ThemeManager();
+
+      // Step 2: Import
+      const theme = await manager.importOhMyZshTheme('testtheme');
+
+      expect(theme.name).toBe('testtheme');
+      expect(theme.colors.size).toBeGreaterThan(0);
+      expect(theme.prompts.left).toBeTruthy();
+      expect(theme.prompts.right).toBeTruthy();
+      expect(theme.gitFormats).toBeDefined();
+
+      // Step 3: Apply
+      const commands = manager.applyTheme(theme);
+
+      expect(commands).toContain('export LSH_PROMPT');
+      expect(commands).toContain('export LSH_RPROMPT');
+
+      // Step 4: Verify saved
+      const customThemesPath = path.join(tempDir, '.lsh', 'themes');
+      const savedPath = path.join(customThemesPath, 'testtheme.lsh-theme');
+      expect(fs.existsSync(savedPath)).toBe(true);
+    });
+  });
 });
