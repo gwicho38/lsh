@@ -3,6 +3,7 @@
  * Provides compatibility with ZSH configurations and completions
  */
 import { ShellExecutor } from './shell-executor.js';
+import { ZshImportOptions } from './zsh-import-manager.js';
 export interface ZshCompatibilityOptions {
     sourceZshrc: boolean;
     zshrcPath?: string;
@@ -10,15 +11,24 @@ export interface ZshCompatibilityOptions {
     zshCompletionsPath?: string;
     installPackages: boolean;
     packageManager?: 'npm' | 'yarn' | 'pnpm' | 'brew' | 'apt' | 'yum';
+    importOptions?: ZshImportOptions;
 }
 export declare class ZshCompatibility {
     private executor;
     private options;
+    private importManager;
     constructor(executor: ShellExecutor, options?: Partial<ZshCompatibilityOptions>);
     /**
-     * Source ZSH configuration files
+     * Source ZSH configuration files (enhanced version)
      */
     sourceZshConfig(): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    /**
+     * Source ZSH configuration files (legacy method for backward compatibility)
+     */
+    sourceZshConfigLegacy(): Promise<{
         success: boolean;
         message: string;
     }>;

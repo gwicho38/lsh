@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { ShellExecutor } from './shell-executor.js';
 import { parseShellCommand } from './shell-parser.js';
+import { ZshImportManager, ZshImportOptions } from './zsh-import-manager.js';
 
 export interface ZshCompatibilityOptions {
   sourceZshrc: boolean;
@@ -16,11 +17,13 @@ export interface ZshCompatibilityOptions {
   zshCompletionsPath?: string;
   installPackages: boolean;
   packageManager?: 'npm' | 'yarn' | 'pnpm' | 'brew' | 'apt' | 'yum';
+  importOptions?: ZshImportOptions;
 }
 
 export class ZshCompatibility {
   private executor: ShellExecutor;
   private options: ZshCompatibilityOptions;
+  private importManager: ZshImportManager;
 
   constructor(executor: ShellExecutor, options: Partial<ZshCompatibilityOptions> = {}) {
     this.executor = executor;
@@ -33,12 +36,26 @@ export class ZshCompatibility {
       packageManager: 'npm',
       ...options,
     };
+
+    // Initialize import manager with options
+    this.importManager = new ZshImportManager(executor, this.options.importOptions);
   }
 
   /**
-   * Source ZSH configuration files
+   * Source ZSH configuration files (enhanced version)
    */
   public async sourceZshConfig(): Promise<{ success: boolean; message: string }> {
+    const result = await this.importManager.importZshConfig(this.options.zshrcPath);
+    return {
+      success: result.success,
+      message: result.message,
+    };
+  }
+
+  /**
+   * Source ZSH configuration files (legacy method for backward compatibility)
+   */
+  public async sourceZshConfigLegacy(): Promise<{ success: boolean; message: string }> {
     try {
       // Check if .zshrc exists
       if (!fs.existsSync(this.options.zshrcPath!)) {
