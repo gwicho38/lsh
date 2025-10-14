@@ -25,7 +25,7 @@ export declare class LshrcManager {
     /**
      * Source .lshrc commands
      */
-    source(executor?: any): Promise<string[]>;
+    source(_executor?: any): Promise<string[]>;
     /**
      * Enable auto-import in existing .lshrc
      */

@@ -32,7 +32,7 @@
  * ```
  */
 
-import { Command, Option } from 'commander';
+import { Command } from 'commander';
 import DaemonClient from './daemon-client.js';
 import CronJobManager from './cron-job-manager.js';
 import { createLogger, Logger } from './logger.js';

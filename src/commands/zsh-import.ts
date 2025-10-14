@@ -159,7 +159,7 @@ export function registerZshImportCommands(program: Command): void {
       }
 
       // Generate auto-import configuration
-      let importCommand = 'zsh-source';
+      const importCommand = 'zsh-source';
       const options_list: string[] = [];
 
       if (options.aliasesOnly) {

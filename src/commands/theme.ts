@@ -124,7 +124,7 @@ export function registerThemeCommands(program: Command): void {
         console.log('');
 
         process.exit(0);
-      } catch (error: any) {
+      } catch (_error: any) {
         console.error(chalk.red(`✗ Theme not found: ${name}`));
         console.log(chalk.dim('\nAvailable themes:'));
         console.log(chalk.dim('  lsh theme list'));
