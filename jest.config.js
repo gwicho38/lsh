@@ -49,13 +49,17 @@ export default {
     ],
 
     // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-    transformIgnorePatterns: ['<rootDir>/node_modules/'],
+    // Transform ES modules from node_modules like chalk
+    transformIgnorePatterns: [
+        'node_modules/(?!(chalk|chalk-template|ansi-styles|supports-color|has-flag|#ansi-styles|#supports-color)/)'
+    ],
 
     // Whether to use watchman for file crawling
     watchman: false,
 
     // Use standard ts-jest preset
-    preset: 'ts-jest',
+    preset: 'ts-jest/presets/default-esm',
+    extensionsToTreatAsEsm: ['.ts'],
 
     // Transform configuration
     transform: {
@@ -64,7 +68,8 @@ export default {
                 module: 'ES2022',
                 target: 'ES2022',
                 moduleResolution: 'node'
-            }
+            },
+            useESM: true
         }],
     },
 
