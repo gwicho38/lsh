@@ -45,79 +45,79 @@ RESET := \033[0m
 
 .PHONY: help
 help: ## Show this help message
-	@echo "$(CYAN)LSH Build System$(RESET)"
-	@echo "$(YELLOW)Usage: make [target]$(RESET)"
-	@echo ""
-	@echo "$(CYAN)Setup Targets:$(RESET)"
-	@echo "  $(GREEN)install$(RESET)              Install Node.js dependencies"
-	@echo "  $(GREEN)setup$(RESET)                Complete setup (install dependencies)"
-	@echo ""
-	@echo "$(CYAN)System Installation:$(RESET)"
-	@echo "  $(GREEN)install-system$(RESET)       Install LSH binary to system PATH"
-	@echo "  $(GREEN)uninstall-system$(RESET)     Remove LSH binary from system PATH"
-	@echo "  $(GREEN)reinstall-system$(RESET)     Reinstall LSH binary to system PATH"
-	@echo ""
-	@echo "$(CYAN)Complete Installation:$(RESET)"
-	@echo "  $(GREEN)install-full$(RESET)         Install LSH binary + daemon service"
-	@echo "  $(GREEN)uninstall-full$(RESET)       Complete uninstall (binary + daemon)"
-	@echo ""
-	@echo "$(CYAN)Build Targets:$(RESET)"
-	@echo "  $(GREEN)compile$(RESET)              Compile TypeScript to JavaScript"
-	@echo "  $(GREEN)compile-watch$(RESET)        Compile TypeScript in watch mode"
-	@echo "  $(GREEN)build$(RESET)                Full build (clean + compile + binary)"
-	@echo "  $(GREEN)build-binary$(RESET)         Build executable binary"
-	@echo "  $(GREEN)quick-build$(RESET)          Quick build (compile only)"
-	@echo ""
-	@echo "$(CYAN)Development Targets:$(RESET)"
-	@echo "  $(GREEN)start$(RESET)                Start the application"
-	@echo "  $(GREEN)dev$(RESET)                  Start in development mode (compile + start)"
-	@echo "  $(GREEN)watch$(RESET)                Watch for changes and recompile"
-	@echo ""
-	@echo "$(CYAN)Testing Targets:$(RESET)"
-	@echo "  $(GREEN)test$(RESET)                 Run all tests"
-	@echo "  $(GREEN)test-watch$(RESET)           Run tests in watch mode"
-	@echo "  $(GREEN)test-coverage$(RESET)        Run tests with coverage report"
-	@echo ""
-	@echo "$(CYAN)Service Management:$(RESET)"
-	@echo "  $(GREEN)install-daemon$(RESET)       Install LSHD as system service"
-	@echo "  $(GREEN)daemon-status$(RESET)        Check daemon status"
-	@echo "  $(GREEN)daemon-start$(RESET)         Start the daemon service"
-	@echo "  $(GREEN)daemon-stop$(RESET)          Stop the daemon service"
-	@echo "  $(GREEN)daemon-restart$(RESET)       Restart the daemon service"
-	@echo ""
-	@echo "$(CYAN)ML Dashboard:$(RESET)"
-	@echo "  $(GREEN)dashboard$(RESET)            Start ML dashboard (LSH + MCLI)"
-	@echo "  $(GREEN)dashboard-services$(RESET)   Start backend services only"
-	@echo "  $(GREEN)dashboard-ui$(RESET)         Launch ML dashboard UI"
-	@echo "  $(GREEN)dashboard-status$(RESET)     Check dashboard services status"
-	@echo "  $(GREEN)dashboard-stop$(RESET)       Stop all dashboard services"
-	@echo "  $(GREEN)dashboard-restart$(RESET)    Restart all dashboard services"
-	@echo "  $(GREEN)dashboard-logs$(RESET)       View dashboard service logs"
-	@echo "  $(GREEN)dashboard-info$(RESET)       Show dashboard URLs and info"
-	@echo ""
-	@echo "$(CYAN)Maintenance Targets:$(RESET)"
-	@echo "  $(GREEN)clean$(RESET)                Clean all build artifacts"
-	@echo "  $(GREEN)clean-all$(RESET)            Clean everything including node_modules"
-	@echo "  $(GREEN)lint$(RESET)                 Run linter (if configured)"
-	@echo "  $(GREEN)format$(RESET)               Format code (if configured)"
-	@echo ""
-	@echo "$(CYAN)Utility Targets:$(RESET)"
-	@echo "  $(GREEN)check-deps$(RESET)           Check for outdated dependencies"
-	@echo "  $(GREEN)audit$(RESET)                Run security audit"
-	@echo "  $(GREEN)info$(RESET)                 Show project information"
+	@echo -e "$(CYAN)LSH Build System$(RESET)"
+	@echo -e "$(YELLOW)Usage: make [target]$(RESET)"
+	@echo -e ""
+	@echo -e "$(CYAN)Setup Targets:$(RESET)"
+	@echo -e "  $(GREEN)install$(RESET)              Install Node.js dependencies"
+	@echo -e "  $(GREEN)setup$(RESET)                Complete setup (install dependencies)"
+	@echo -e ""
+	@echo -e "$(CYAN)System Installation:$(RESET)"
+	@echo -e "  $(GREEN)install-system$(RESET)       Install LSH binary to system PATH"
+	@echo -e "  $(GREEN)uninstall-system$(RESET)     Remove LSH binary from system PATH"
+	@echo -e "  $(GREEN)reinstall-system$(RESET)     Reinstall LSH binary to system PATH"
+	@echo -e ""
+	@echo -e "$(CYAN)Complete Installation:$(RESET)"
+	@echo -e "  $(GREEN)install-full$(RESET)         Install LSH binary + daemon service"
+	@echo -e "  $(GREEN)uninstall-full$(RESET)       Complete uninstall (binary + daemon)"
+	@echo -e ""
+	@echo -e "$(CYAN)Build Targets:$(RESET)"
+	@echo -e "  $(GREEN)compile$(RESET)              Compile TypeScript to JavaScript"
+	@echo -e "  $(GREEN)compile-watch$(RESET)        Compile TypeScript in watch mode"
+	@echo -e "  $(GREEN)build$(RESET)                Full build (clean + compile + binary)"
+	@echo -e "  $(GREEN)build-binary$(RESET)         Build executable binary"
+	@echo -e "  $(GREEN)quick-build$(RESET)          Quick build (compile only)"
+	@echo -e ""
+	@echo -e "$(CYAN)Development Targets:$(RESET)"
+	@echo -e "  $(GREEN)start$(RESET)                Start the application"
+	@echo -e "  $(GREEN)dev$(RESET)                  Start in development mode (compile + start)"
+	@echo -e "  $(GREEN)watch$(RESET)                Watch for changes and recompile"
+	@echo -e ""
+	@echo -e "$(CYAN)Testing Targets:$(RESET)"
+	@echo -e "  $(GREEN)test$(RESET)                 Run all tests"
+	@echo -e "  $(GREEN)test-watch$(RESET)           Run tests in watch mode"
+	@echo -e "  $(GREEN)test-coverage$(RESET)        Run tests with coverage report"
+	@echo -e ""
+	@echo -e "$(CYAN)Service Management:$(RESET)"
+	@echo -e "  $(GREEN)install-daemon$(RESET)       Install LSHD as system service"
+	@echo -e "  $(GREEN)daemon-status$(RESET)        Check daemon status"
+	@echo -e "  $(GREEN)daemon-start$(RESET)         Start the daemon service"
+	@echo -e "  $(GREEN)daemon-stop$(RESET)          Stop the daemon service"
+	@echo -e "  $(GREEN)daemon-restart$(RESET)       Restart the daemon service"
+	@echo -e ""
+	@echo -e "$(CYAN)ML Dashboard:$(RESET)"
+	@echo -e "  $(GREEN)dashboard$(RESET)            Start ML dashboard (LSH + MCLI)"
+	@echo -e "  $(GREEN)dashboard-services$(RESET)   Start backend services only"
+	@echo -e "  $(GREEN)dashboard-ui$(RESET)         Launch ML dashboard UI"
+	@echo -e "  $(GREEN)dashboard-status$(RESET)     Check dashboard services status"
+	@echo -e "  $(GREEN)dashboard-stop$(RESET)       Stop all dashboard services"
+	@echo -e "  $(GREEN)dashboard-restart$(RESET)    Restart all dashboard services"
+	@echo -e "  $(GREEN)dashboard-logs$(RESET)       View dashboard service logs"
+	@echo -e "  $(GREEN)dashboard-info$(RESET)       Show dashboard URLs and info"
+	@echo -e ""
+	@echo -e "$(CYAN)Maintenance Targets:$(RESET)"
+	@echo -e "  $(GREEN)clean$(RESET)                Clean all build artifacts"
+	@echo -e "  $(GREEN)clean-all$(RESET)            Clean everything including node_modules"
+	@echo -e "  $(GREEN)lint$(RESET)                 Run linter (if configured)"
+	@echo -e "  $(GREEN)format$(RESET)               Format code (if configured)"
+	@echo -e ""
+	@echo -e "$(CYAN)Utility Targets:$(RESET)"
+	@echo -e "  $(GREEN)check-deps$(RESET)           Check for outdated dependencies"
+	@echo -e "  $(GREEN)audit$(RESET)                Run security audit"
+	@echo -e "  $(GREEN)info$(RESET)                 Show project information"
 
 .PHONY: info
 info: ## Show project information
-	@echo "$(CYAN)Project Information:$(RESET)"
-	@echo "Project: $(PROJECT_NAME)"
-	@echo "Version: $(VERSION)"
-	@echo "Node.js: $$($(NODE) --version 2>/dev/null || echo 'Not installed')"
-	@echo "npm: $$($(NPM) --version 2>/dev/null || echo 'Not installed')"
-	@echo "TypeScript: $$($(TSC) --version 2>/dev/null || echo 'Not installed')"
-	@echo "Build outputs:"
-	@echo "  - Main JS: $(MAIN_OUTPUT)"
-	@echo "  - Binary: $(BINARY_OUTPUT)"
-	@echo "  - Types: $(TYPES_DIR)"
+	@echo -e "$(CYAN)Project Information:$(RESET)"
+	@echo -e "Project: $(PROJECT_NAME)"
+	@echo -e "Version: $(VERSION)"
+	@echo -e "Node.js: $$($(NODE) --version 2>/dev/null || echo 'Not installed')"
+	@echo -e "npm: $$($(NPM) --version 2>/dev/null || echo 'Not installed')"
+	@echo -e "TypeScript: $$($(TSC) --version 2>/dev/null || echo 'Not installed')"
+	@echo -e "Build outputs:"
+	@echo -e "  - Main JS: $(MAIN_OUTPUT)"
+	@echo -e "  - Binary: $(BINARY_OUTPUT)"
+	@echo -e "  - Types: $(TYPES_DIR)"
 
 # =============================================================================
 # SETUP TARGETS
@@ -125,13 +125,13 @@ info: ## Show project information
 
 .PHONY: install
 install: ## Install Node.js dependencies
-	@echo "$(CYAN)Installing dependencies...$(RESET)"
+	@echo -e "$(CYAN)Installing dependencies...$(RESET)"
 	$(NPM) install
-	@echo "$(GREEN)Dependencies installed ✅$(RESET)"
+	@echo -e "$(GREEN)Dependencies installed ✅$(RESET)"
 
 .PHONY: setup
 setup: install ## Complete setup (install dependencies)
-	@echo "$(GREEN)Setup completed ✅$(RESET)"
+	@echo -e "$(GREEN)Setup completed ✅$(RESET)"
 
 # =============================================================================
 # BUILD TARGETS
@@ -145,18 +145,18 @@ $(TYPES_DIR):
 
 .PHONY: compile
 compile: $(DIST_DIR) $(TYPES_DIR) ## Compile TypeScript to JavaScript
-	@echo "$(CYAN)Compiling TypeScript...$(RESET)"
+	@echo -e "$(CYAN)Compiling TypeScript...$(RESET)"
 	$(TSC) -b
-	@echo "$(GREEN)TypeScript compilation completed ✅$(RESET)"
+	@echo -e "$(GREEN)TypeScript compilation completed ✅$(RESET)"
 
 .PHONY: compile-watch
 compile-watch: ## Compile TypeScript in watch mode
-	@echo "$(CYAN)Starting TypeScript compiler in watch mode...$(RESET)"
+	@echo -e "$(CYAN)Starting TypeScript compiler in watch mode...$(RESET)"
 	$(TSC) --watch
 
 .PHONY: build-binary
 build-binary: compile ## Build executable binary
-	@echo "$(CYAN)Building executable binary...$(RESET)"
+	@echo -e "$(CYAN)Building executable binary...$(RESET)"
 	$(NEXE)
 	@if [ -f "$(BINARY_OUTPUT)" ]; then \
 		echo "$(GREEN)Binary built successfully: $(BINARY_OUTPUT) ✅$(RESET)"; \
@@ -168,11 +168,11 @@ build-binary: compile ## Build executable binary
 
 .PHONY: quick-build
 quick-build: compile ## Quick build (compile only)
-	@echo "$(GREEN)Quick build completed ✅$(RESET)"
+	@echo -e "$(GREEN)Quick build completed ✅$(RESET)"
 
 .PHONY: build
 build: clean compile build-binary ## Full build (clean + compile + binary)
-	@echo "$(GREEN)Full build completed ✅$(RESET)"
+	@echo -e "$(GREEN)Full build completed ✅$(RESET)"
 
 # =============================================================================
 # DEVELOPMENT TARGETS
@@ -180,7 +180,7 @@ build: clean compile build-binary ## Full build (clean + compile + binary)
 
 .PHONY: start
 start: $(MAIN_OUTPUT) ## Start the application
-	@echo "$(CYAN)Starting application...$(RESET)"
+	@echo -e "$(CYAN)Starting application...$(RESET)"
 	$(NODE) $(MAIN_OUTPUT)
 
 .PHONY: dev
@@ -195,20 +195,20 @@ watch: compile-watch ## Watch for changes and recompile (alias for compile-watch
 
 .PHONY: test
 test: ## Run all tests
-	@echo "$(CYAN)Running tests...$(RESET)"
+	@echo -e "$(CYAN)Running tests...$(RESET)"
 	$(JEST)
-	@echo "$(GREEN)Tests completed ✅$(RESET)"
+	@echo -e "$(GREEN)Tests completed ✅$(RESET)"
 
 .PHONY: test-watch
 test-watch: ## Run tests in watch mode
-	@echo "$(CYAN)Running tests in watch mode...$(RESET)"
+	@echo -e "$(CYAN)Running tests in watch mode...$(RESET)"
 	$(JEST) --watch
 
 .PHONY: test-coverage
 test-coverage: ## Run tests with coverage report
-	@echo "$(CYAN)Running tests with coverage...$(RESET)"
+	@echo -e "$(CYAN)Running tests with coverage...$(RESET)"
 	$(JEST) --coverage
-	@echo "$(GREEN)Coverage report generated ✅$(RESET)"
+	@echo -e "$(GREEN)Coverage report generated ✅$(RESET)"
 
 # =============================================================================
 # SYSTEM INSTALLATION TARGETS
@@ -225,30 +225,30 @@ endif
 
 .PHONY: install-system
 install-system: ## Install LSH binary to system PATH (includes clean + compile + binary)
-	@echo "$(CYAN)Removing any root-owned build artifacts...$(RESET)"
+	@echo -e "$(CYAN)Removing any root-owned build artifacts...$(RESET)"
 	@sudo rm -rf dist types lsh 2>/dev/null || true
 	@rm -rf dist types lsh *.tsbuildinfo 2>/dev/null || true
 	@find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
 	@$(MAKE) build
-	@echo "$(CYAN)Installing LSH binary to system...$(RESET)"
+	@echo -e "$(CYAN)Installing LSH binary to system...$(RESET)"
 	@if [ ! -f "$(BINARY_OUTPUT)" ]; then \
 		echo "$(RED)❌ Binary not found. Run 'make build-binary' first$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "Creating LSH system directory..."
+	@echo -e "Creating LSH system directory..."
 	sudo mkdir -p /usr/local/lib/lsh
-	@echo "Removing old dist files..."
+	@echo -e "Removing old dist files..."
 	sudo rm -rf /usr/local/lib/lsh/dist
-	@echo "Copying LSH files..."
+	@echo -e "Copying LSH files..."
 	sudo cp -r dist /usr/local/lib/lsh/
 	sudo cp -r node_modules /usr/local/lib/lsh/
 	sudo cp package.json /usr/local/lib/lsh/
-	@echo "Installing wrapper script to $(SYS_BIN_DIR)/$(PROJECT_NAME)"
+	@echo -e "Installing wrapper script to $(SYS_BIN_DIR)/$(PROJECT_NAME)"
 	sudo cp "$(BINARY_OUTPUT)" "$(SYS_BIN_DIR)/$(PROJECT_NAME)"
 	sudo chmod +x "$(SYS_BIN_DIR)/$(PROJECT_NAME)"
-	@echo "$(GREEN)LSH installed to $(SYS_BIN_DIR)/$(PROJECT_NAME) ✅$(RESET)"
-	@echo ""
-	@echo "$(CYAN)Verification:$(RESET)"
+	@echo -e "$(GREEN)LSH installed to $(SYS_BIN_DIR)/$(PROJECT_NAME) ✅$(RESET)"
+	@echo -e ""
+	@echo -e "$(CYAN)Verification:$(RESET)"
 	@if command -v $(PROJECT_NAME) >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ LSH is available in PATH$(RESET)"; \
 		echo "Try: $(YELLOW)$(PROJECT_NAME) --help$(RESET)"; \
@@ -258,7 +258,7 @@ install-system: ## Install LSH binary to system PATH (includes clean + compile +
 
 .PHONY: uninstall-system
 uninstall-system: ## Remove LSH binary from system PATH
-	@echo "$(CYAN)Uninstalling LSH binary from system...$(RESET)"
+	@echo -e "$(CYAN)Uninstalling LSH binary from system...$(RESET)"
 	@if [ -f "$(SYS_BIN_DIR)/$(PROJECT_NAME)" ]; then \
 		sudo rm -f "$(SYS_BIN_DIR)/$(PROJECT_NAME)"; \
 		echo "$(GREEN)LSH binary removed from $(SYS_BIN_DIR)/$(PROJECT_NAME) ✅$(RESET)"; \
@@ -279,7 +279,7 @@ uninstall-system: ## Remove LSH binary from system PATH
 
 .PHONY: reinstall-system
 reinstall-system: uninstall-system install-system ## Reinstall LSH binary to system PATH
-	@echo "$(GREEN)LSH reinstallation completed ✅$(RESET)"
+	@echo -e "$(GREEN)LSH reinstallation completed ✅$(RESET)"
 
 # =============================================================================
 # COMPLETE INSTALLATION TARGETS
@@ -287,37 +287,37 @@ reinstall-system: uninstall-system install-system ## Reinstall LSH binary to sys
 
 .PHONY: install-full
 install-full: ## Install LSH binary and daemon service (includes clean + compile + binary)
-	@echo "$(CYAN)Removing any root-owned build artifacts...$(RESET)"
+	@echo -e "$(CYAN)Removing any root-owned build artifacts...$(RESET)"
 	@sudo rm -rf dist types lsh 2>/dev/null || true
 	@rm -rf dist types lsh *.tsbuildinfo 2>/dev/null || true
 	@find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
 	@$(MAKE) compile build-binary
-	@echo "$(CYAN)Installing LSH binary to system...$(RESET)"
+	@echo -e "$(CYAN)Installing LSH binary to system...$(RESET)"
 	@if [ ! -f "$(BINARY_OUTPUT)" ]; then \
 		echo "$(RED)❌ Binary not found$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "Creating LSH system directory..."
+	@echo -e "Creating LSH system directory..."
 	sudo mkdir -p /usr/local/lib/lsh
-	@echo "Removing old dist files..."
+	@echo -e "Removing old dist files..."
 	sudo rm -rf /usr/local/lib/lsh/dist
-	@echo "Copying LSH files..."
+	@echo -e "Copying LSH files..."
 	sudo cp -r dist /usr/local/lib/lsh/
 	sudo cp -r node_modules /usr/local/lib/lsh/
 	sudo cp package.json /usr/local/lib/lsh/
-	@echo "Installing wrapper script to $(SYS_BIN_DIR)/$(PROJECT_NAME)"
+	@echo -e "Installing wrapper script to $(SYS_BIN_DIR)/$(PROJECT_NAME)"
 	sudo cp "$(BINARY_OUTPUT)" "$(SYS_BIN_DIR)/$(PROJECT_NAME)"
 	sudo chmod +x "$(SYS_BIN_DIR)/$(PROJECT_NAME)"
-	@echo "$(GREEN)LSH installed to $(SYS_BIN_DIR)/$(PROJECT_NAME) ✅$(RESET)"
-	@echo ""
-	@echo "$(CYAN)Verification:$(RESET)"
+	@echo -e "$(GREEN)LSH installed to $(SYS_BIN_DIR)/$(PROJECT_NAME) ✅$(RESET)"
+	@echo -e ""
+	@echo -e "$(CYAN)Verification:$(RESET)"
 	@if command -v $(PROJECT_NAME) >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ LSH is available in PATH$(RESET)"; \
 		echo "Try: $(YELLOW)$(PROJECT_NAME) --help$(RESET)"; \
 	else \
 		echo "$(YELLOW)⚠️  LSH may not be in PATH. Try: $(SYS_BIN_DIR)/$(PROJECT_NAME)$(RESET)"; \
 	fi
-	@echo "$(CYAN)Installing LSHD...$(RESET)"
+	@echo -e "$(CYAN)Installing LSHD...$(RESET)"
 	@if [ ! -f "$(DAEMON_SCRIPT)" ]; then \
 		echo "$(RED)❌ Daemon installation script not found: $(DAEMON_SCRIPT)$(RESET)"; \
 		exit 1; \
@@ -327,18 +327,18 @@ install-full: ## Install LSH binary and daemon service (includes clean + compile
 		exit 1; \
 	fi
 	sudo bash $(DAEMON_SCRIPT)
-	@echo "$(GREEN)Daemon installation completed ✅$(RESET)"
-	@echo "$(GREEN)LSH complete installation completed ✅$(RESET)"
+	@echo -e "$(GREEN)Daemon installation completed ✅$(RESET)"
+	@echo -e "$(GREEN)LSH complete installation completed ✅$(RESET)"
 
 .PHONY: uninstall-full
 uninstall-full: ## Complete uninstall (binary + daemon)
-	@echo "$(CYAN)Uninstalling LSH completely...$(RESET)"
+	@echo -e "$(CYAN)Uninstalling LSH completely...$(RESET)"
 	@if [ ! -f "$(UNINSTALL_SCRIPT)" ]; then \
 		echo "$(RED)❌ Uninstall script not found: $(UNINSTALL_SCRIPT)$(RESET)"; \
 		exit 1; \
 	fi
 	sudo bash $(UNINSTALL_SCRIPT)
-	@echo "$(GREEN)Complete uninstall completed ✅$(RESET)"
+	@echo -e "$(GREEN)Complete uninstall completed ✅$(RESET)"
 
 # =============================================================================
 # SERVICE MANAGEMENT TARGETS
@@ -346,7 +346,7 @@ uninstall-full: ## Complete uninstall (binary + daemon)
 
 .PHONY: install-daemon
 install-daemon: build ## Install LSHD as system service
-	@echo "$(CYAN)Installing LSHD...$(RESET)"
+	@echo -e "$(CYAN)Installing LSHD...$(RESET)"
 	@if [ ! -f "$(DAEMON_SCRIPT)" ]; then \
 		echo "$(RED)❌ Daemon installation script not found: $(DAEMON_SCRIPT)$(RESET)"; \
 		exit 1; \
@@ -356,11 +356,11 @@ install-daemon: build ## Install LSHD as system service
 		exit 1; \
 	fi
 	sudo bash $(DAEMON_SCRIPT)
-	@echo "$(GREEN)Daemon installation completed ✅$(RESET)"
+	@echo -e "$(GREEN)Daemon installation completed ✅$(RESET)"
 
 .PHONY: daemon-status
 daemon-status: ## Check daemon status
-	@echo "$(CYAN)Checking daemon status...$(RESET)"
+	@echo -e "$(CYAN)Checking daemon status...$(RESET)"
 	@if command -v lshd >/dev/null 2>&1; then \
 		lshd status; \
 	else \
@@ -369,7 +369,7 @@ daemon-status: ## Check daemon status
 
 .PHONY: daemon-start
 daemon-start: ## Start the daemon service
-	@echo "$(CYAN)Starting daemon...$(RESET)"
+	@echo -e "$(CYAN)Starting daemon...$(RESET)"
 	@if command -v lshd >/dev/null 2>&1; then \
 		lshd start; \
 		echo "$(GREEN)Daemon started ✅$(RESET)"; \
@@ -379,7 +379,7 @@ daemon-start: ## Start the daemon service
 
 .PHONY: daemon-stop
 daemon-stop: ## Stop the daemon service
-	@echo "$(CYAN)Stopping daemon...$(RESET)"
+	@echo -e "$(CYAN)Stopping daemon...$(RESET)"
 	@if command -v lshd >/dev/null 2>&1; then \
 		lshd stop; \
 		echo "$(GREEN)Daemon stopped ✅$(RESET)"; \
@@ -389,7 +389,7 @@ daemon-stop: ## Stop the daemon service
 
 .PHONY: daemon-restart
 daemon-restart: ## Restart the daemon service
-	@echo "$(CYAN)Restarting daemon...$(RESET)"
+	@echo -e "$(CYAN)Restarting daemon...$(RESET)"
 	@if command -v lshd >/dev/null 2>&1; then \
 		lshd restart; \
 		echo "$(GREEN)Daemon restarted ✅$(RESET)"; \
@@ -399,15 +399,15 @@ daemon-restart: ## Restart the daemon service
 
 .PHONY: daemon-cleanup
 daemon-cleanup: ## Clean up all daemon processes and files
-	@echo "$(CYAN)Cleaning up LSH daemon...$(RESET)"
-	@echo "$(YELLOW)Killing all daemon processes...$(RESET)"
+	@echo -e "$(CYAN)Cleaning up LSH daemon...$(RESET)"
+	@echo -e "$(YELLOW)Killing all daemon processes...$(RESET)"
 	@sudo pkill -f "lshd.js" 2>/dev/null || echo "No daemon processes found"
 	@sleep 2
-	@echo "$(YELLOW)Removing socket files...$(RESET)"
+	@echo -e "$(YELLOW)Removing socket files...$(RESET)"
 	@sudo rm -f /tmp/lsh-*daemon*.sock 2>/dev/null || true
-	@echo "$(YELLOW)Removing PID files...$(RESET)"
+	@echo -e "$(YELLOW)Removing PID files...$(RESET)"
 	@sudo rm -f /tmp/lsh-*daemon*.pid 2>/dev/null || true
-	@echo "$(YELLOW)Verifying cleanup...$(RESET)"
+	@echo -e "$(YELLOW)Verifying cleanup...$(RESET)"
 	@if pgrep -f "lshd.js" >/dev/null 2>&1; then \
 		echo "$(RED)⚠️  Some daemon processes may still be running$(RESET)"; \
 		echo "$(YELLOW)Attempting force kill...$(RESET)"; \
@@ -418,20 +418,20 @@ daemon-cleanup: ## Clean up all daemon processes and files
 		echo "$(RED)⚠️  Some daemon files may still exist$(RESET)"; \
 		sudo rm -f /tmp/lsh-*daemon*.sock /tmp/lsh-*daemon*.pid 2>/dev/null || true; \
 	fi
-	@echo "$(GREEN)Daemon cleanup completed ✅$(RESET)"
-	@echo ""
-	@echo "$(CYAN)Next steps:$(RESET)"
-	@echo "  $(YELLOW)Start daemon: sudo lsh daemon start$(RESET)"
-	@echo "  $(YELLOW)Check status: sudo lsh daemon status$(RESET)"
+	@echo -e "$(GREEN)Daemon cleanup completed ✅$(RESET)"
+	@echo -e ""
+	@echo -e "$(CYAN)Next steps:$(RESET)"
+	@echo -e "  $(YELLOW)Start daemon: sudo lsh daemon start$(RESET)"
+	@echo -e "  $(YELLOW)Check status: sudo lsh daemon status$(RESET)"
 
 .PHONY: daemon-reset
 daemon-reset: daemon-cleanup ## Complete daemon reset (cleanup + restart)
-	@echo "$(CYAN)Resetting daemon...$(RESET)"
+	@echo -e "$(CYAN)Resetting daemon...$(RESET)"
 	@sleep 2
-	@echo "$(YELLOW)Starting fresh daemon...$(RESET)"
+	@echo -e "$(YELLOW)Starting fresh daemon...$(RESET)"
 	@sudo lsh daemon start || echo "$(RED)Failed to start daemon - check logs$(RESET)"
 	@sleep 3
-	@echo "$(YELLOW)Checking daemon status...$(RESET)"
+	@echo -e "$(YELLOW)Checking daemon status...$(RESET)"
 	@if sudo lsh daemon status >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ Daemon successfully reset and running!$(RESET)"; \
 		sudo lsh daemon status; \
@@ -442,8 +442,8 @@ daemon-reset: daemon-cleanup ## Complete daemon reset (cleanup + restart)
 
 .PHONY: daemon-logs
 daemon-logs: ## Show daemon logs
-	@echo "$(CYAN)LSH Daemon Logs:$(RESET)"
-	@echo ""
+	@echo -e "$(CYAN)LSH Daemon Logs:$(RESET)"
+	@echo -e ""
 	@for log in $$(ls /tmp/lsh-*daemon*.log 2>/dev/null); do \
 		echo "$(YELLOW)=== $$log ===$(RESET)"; \
 		tail -20 "$$log" 2>/dev/null || echo "Cannot read $$log"; \
@@ -452,27 +452,27 @@ daemon-logs: ## Show daemon logs
 
 .PHONY: daemon-debug
 daemon-debug: ## Debug daemon issues
-	@echo "$(CYAN)LSH Daemon Debug Information:$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)1. Running processes:$(RESET)"
+	@echo -e "$(CYAN)LSH Daemon Debug Information:$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)1. Running processes:$(RESET)"
 	@ps aux | grep lshd | grep -v grep || echo "No daemon processes found"
-	@echo ""
-	@echo "$(YELLOW)2. Socket files:$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)2. Socket files:$(RESET)"
 	@ls -la /tmp/lsh-*daemon*.sock 2>/dev/null || echo "No socket files found"
-	@echo ""
-	@echo "$(YELLOW)3. PID files:$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)3. PID files:$(RESET)"
 	@ls -la /tmp/lsh-*daemon*.pid 2>/dev/null || echo "No PID files found"
-	@echo ""
-	@echo "$(YELLOW)4. Recent logs:$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)4. Recent logs:$(RESET)"
 	@for log in $$(ls /tmp/lsh-*daemon*.log 2>/dev/null | head -3); do \
 		echo "$(CYAN)--- Last 5 lines of $$log ---$(RESET)"; \
 		tail -5 "$$log" 2>/dev/null || echo "Cannot read $$log"; \
 		echo ""; \
 	done
-	@echo "$(CYAN)Debug commands:$(RESET)"
-	@echo "  $(YELLOW)make daemon-cleanup$(RESET)  - Clean up all daemon files"
-	@echo "  $(YELLOW)make daemon-reset$(RESET)    - Complete daemon reset"
-	@echo "  $(YELLOW)make daemon-logs$(RESET)     - View full daemon logs"
+	@echo -e "$(CYAN)Debug commands:$(RESET)"
+	@echo -e "  $(YELLOW)make daemon-cleanup$(RESET)  - Clean up all daemon files"
+	@echo -e "  $(YELLOW)make daemon-reset$(RESET)    - Complete daemon reset"
+	@echo -e "  $(YELLOW)make daemon-logs$(RESET)     - View full daemon logs"
 
 # =============================================================================
 # ML DASHBOARD TARGETS
@@ -480,20 +480,20 @@ daemon-debug: ## Debug daemon issues
 
 .PHONY: dashboard
 dashboard: ## Start ML dashboard (LSH + MCLI integration)
-	@echo "$(CYAN)╔════════════════════════════════════════╗$(RESET)"
-	@echo "$(CYAN)║     ML Dashboard Quick Start          ║$(RESET)"
-	@echo "$(CYAN)╚════════════════════════════════════════╝$(RESET)"
-	@echo ""
+	@echo -e "$(CYAN)╔════════════════════════════════════════╗$(RESET)"
+	@echo -e "$(CYAN)║     ML Dashboard Quick Start          ║$(RESET)"
+	@echo -e "$(CYAN)╚════════════════════════════════════════╝$(RESET)"
+	@echo -e ""
 	@./start-ml-dashboard.sh
 
 .PHONY: dashboard-services
 dashboard-services: ## Start dashboard backend services only (no UI)
-	@echo "$(CYAN)Starting dashboard backend services...$(RESET)"
-	@echo "$(YELLOW)[1/3] Starting LSH Daemon...$(RESET)"
+	@echo -e "$(CYAN)Starting dashboard backend services...$(RESET)"
+	@echo -e "$(YELLOW)[1/3] Starting LSH Daemon...$(RESET)"
 	@lsh daemon status >/dev/null 2>&1 || lsh daemon start
-	@echo "$(GREEN)✅ LSH Daemon running$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)[2/3] Starting Pipeline Service...$(RESET)"
+	@echo -e "$(GREEN)✅ LSH Daemon running$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)[2/3] Starting Pipeline Service...$(RESET)"
 	@if ! lsof -i :3034 >/dev/null 2>&1; then \
 		$(MAKE) compile; \
 		nohup $(NODE) dist/pipeline/pipeline-service.js > /tmp/lsh-pipeline.log 2>&1 & \
@@ -508,8 +508,8 @@ dashboard-services: ## Start dashboard backend services only (no UI)
 	else \
 		echo "$(GREEN)✅ Pipeline Service already running$(RESET)"; \
 	fi
-	@echo ""
-	@echo "$(YELLOW)[3/3] Starting LSH API Server...$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)[3/3] Starting LSH API Server...$(RESET)"
 	@if ! lsof -i :3030 >/dev/null 2>&1; then \
 		export LSH_API_ENABLED=true LSH_API_PORT=3030; \
 		lsh api start --port 3030 > /tmp/lsh-api.log 2>&1 & \
@@ -522,16 +522,16 @@ dashboard-services: ## Start dashboard backend services only (no UI)
 	else \
 		echo "$(GREEN)✅ API Server already running$(RESET)"; \
 	fi
-	@echo ""
-	@echo "$(GREEN)✅ All backend services running!$(RESET)"
-	@echo ""
-	@echo "$(CYAN)Service URLs:$(RESET)"
-	@echo "  Pipeline: $(BLUE)http://localhost:3034/api/health$(RESET)"
-	@echo "  API:      $(BLUE)http://localhost:3030/api/status$(RESET)"
+	@echo -e ""
+	@echo -e "$(GREEN)✅ All backend services running!$(RESET)"
+	@echo -e ""
+	@echo -e "$(CYAN)Service URLs:$(RESET)"
+	@echo -e "  Pipeline: $(BLUE)http://localhost:3034/api/health$(RESET)"
+	@echo -e "  API:      $(BLUE)http://localhost:3030/api/status$(RESET)"
 
 .PHONY: dashboard-ui
 dashboard-ui: ## Launch ML dashboard UI (requires services running)
-	@echo "$(CYAN)Launching ML Dashboard UI...$(RESET)"
+	@echo -e "$(CYAN)Launching ML Dashboard UI...$(RESET)"
 	@if ! command -v mcli >/dev/null 2>&1; then \
 		echo "$(RED)❌ MCLI not found$(RESET)"; \
 		echo "$(YELLOW)Install: cd ~/repos/mcli && uv sync --extra dashboard$(RESET)"; \
@@ -541,32 +541,32 @@ dashboard-ui: ## Launch ML dashboard UI (requires services running)
 
 .PHONY: dashboard-status
 dashboard-status: ## Check dashboard services status
-	@echo "$(CYAN)Dashboard Services Status:$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)1. LSH Daemon:$(RESET)"
+	@echo -e "$(CYAN)Dashboard Services Status:$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)1. LSH Daemon:$(RESET)"
 	@if lsh daemon status >/dev/null 2>&1; then \
 		lsh daemon status; \
 	else \
 		echo "$(RED)❌ Not running$(RESET)"; \
 	fi
-	@echo ""
-	@echo "$(YELLOW)2. Pipeline Service (port 3034):$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)2. Pipeline Service (port 3034):$(RESET)"
 	@if lsof -i :3034 >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ Running$(RESET)"; \
 		curl -s http://localhost:3034/api/health 2>/dev/null || echo "$(YELLOW)⚠️  Service not responding$(RESET)"; \
 	else \
 		echo "$(RED)❌ Not running$(RESET)"; \
 	fi
-	@echo ""
-	@echo "$(YELLOW)3. LSH API Server (port 3030):$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)3. LSH API Server (port 3030):$(RESET)"
 	@if lsof -i :3030 >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ Running$(RESET)"; \
 		curl -s http://localhost:3030/api/status 2>/dev/null || echo "$(YELLOW)⚠️  Service not responding$(RESET)"; \
 	else \
 		echo "$(RED)❌ Not running$(RESET)"; \
 	fi
-	@echo ""
-	@echo "$(YELLOW)4. ML Dashboard (port 8501):$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)4. ML Dashboard (port 8501):$(RESET)"
 	@if lsof -i :8501 >/dev/null 2>&1; then \
 		echo "$(GREEN)✅ Running$(RESET)"; \
 	else \
@@ -575,57 +575,57 @@ dashboard-status: ## Check dashboard services status
 
 .PHONY: dashboard-stop
 dashboard-stop: ## Stop all dashboard services
-	@echo "$(CYAN)Stopping dashboard services...$(RESET)"
-	@echo "$(YELLOW)Stopping Pipeline Service...$(RESET)"
+	@echo -e "$(CYAN)Stopping dashboard services...$(RESET)"
+	@echo -e "$(YELLOW)Stopping Pipeline Service...$(RESET)"
 	@pkill -f "pipeline-service.js" 2>/dev/null && echo "$(GREEN)✅ Stopped$(RESET)" || echo "$(YELLOW)Not running$(RESET)"
-	@echo "$(YELLOW)Stopping API Server...$(RESET)"
+	@echo -e "$(YELLOW)Stopping API Server...$(RESET)"
 	@pkill -f "lsh api" 2>/dev/null && echo "$(GREEN)✅ Stopped$(RESET)" || echo "$(YELLOW)Not running$(RESET)"
-	@echo "$(YELLOW)Stopping ML Dashboard...$(RESET)"
+	@echo -e "$(YELLOW)Stopping ML Dashboard...$(RESET)"
 	@pkill -f "streamlit run" 2>/dev/null && echo "$(GREEN)✅ Stopped$(RESET)" || echo "$(YELLOW)Not running$(RESET)"
-	@echo "$(GREEN)Dashboard services stopped$(RESET)"
+	@echo -e "$(GREEN)Dashboard services stopped$(RESET)"
 
 .PHONY: dashboard-restart
 dashboard-restart: dashboard-stop dashboard ## Restart all dashboard services
-	@echo "$(GREEN)Dashboard restarted$(RESET)"
+	@echo -e "$(GREEN)Dashboard restarted$(RESET)"
 
 .PHONY: dashboard-logs
 dashboard-logs: ## View dashboard service logs
-	@echo "$(CYAN)Dashboard Service Logs:$(RESET)"
-	@echo ""
-	@echo "$(YELLOW)=== Pipeline Service ===$(RESET)"
+	@echo -e "$(CYAN)Dashboard Service Logs:$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)=== Pipeline Service ===$(RESET)"
 	@tail -20 /tmp/lsh-pipeline.log 2>/dev/null || echo "No logs found"
-	@echo ""
-	@echo "$(YELLOW)=== API Server ===$(RESET)"
+	@echo -e ""
+	@echo -e "$(YELLOW)=== API Server ===$(RESET)"
 	@tail -20 /tmp/lsh-api.log 2>/dev/null || echo "No logs found"
 
 .PHONY: dashboard-info
 dashboard-info: ## Show dashboard information and URLs
-	@echo "$(CYAN)╔════════════════════════════════════════╗$(RESET)"
-	@echo "$(CYAN)║      ML Dashboard Information          ║$(RESET)"
-	@echo "$(CYAN)╚════════════════════════════════════════╝$(RESET)"
-	@echo ""
-	@echo "$(GREEN)📊 Dashboard URLs:$(RESET)"
-	@echo ""
-	@echo "  $(CYAN)LSH Pipeline Dashboard:$(RESET)"
-	@echo "    Hub:      $(BLUE)http://localhost:3034/hub$(RESET)"
-	@echo "    Pipeline: $(BLUE)http://localhost:3034/dashboard/$(RESET)"
-	@echo "    ML View:  $(BLUE)http://localhost:3034/ml/dashboard$(RESET)"
-	@echo ""
-	@echo "  $(CYAN)MCLI ML Dashboard:$(RESET)"
-	@echo "    Streamlit: $(BLUE)http://localhost:8501$(RESET)"
-	@echo ""
-	@echo "  $(CYAN)LSH API:$(RESET)"
-	@echo "    Status: $(BLUE)http://localhost:3030/api/status$(RESET)"
-	@echo "    Jobs:   $(BLUE)http://localhost:3030/api/jobs$(RESET)"
-	@echo ""
-	@echo "$(GREEN)🚀 Quick Start:$(RESET)"
-	@echo "  $(YELLOW)make dashboard$(RESET)         - Start everything"
-	@echo "  $(YELLOW)make dashboard-status$(RESET)  - Check services"
-	@echo "  $(YELLOW)make dashboard-stop$(RESET)    - Stop all services"
-	@echo ""
-	@echo "$(GREEN)📖 Documentation:$(RESET)"
-	@echo "  Quick Start:  $(BLUE)DASHBOARD-QUICKSTART.md$(RESET)"
-	@echo "  Full Guide:   $(BLUE)docs/ML-DASHBOARD-STARTUP.md$(RESET)"
+	@echo -e "$(CYAN)╔════════════════════════════════════════╗$(RESET)"
+	@echo -e "$(CYAN)║      ML Dashboard Information          ║$(RESET)"
+	@echo -e "$(CYAN)╚════════════════════════════════════════╝$(RESET)"
+	@echo -e ""
+	@echo -e "$(GREEN)📊 Dashboard URLs:$(RESET)"
+	@echo -e ""
+	@echo -e "  $(CYAN)LSH Pipeline Dashboard:$(RESET)"
+	@echo -e "    Hub:      $(BLUE)http://localhost:3034/hub$(RESET)"
+	@echo -e "    Pipeline: $(BLUE)http://localhost:3034/dashboard/$(RESET)"
+	@echo -e "    ML View:  $(BLUE)http://localhost:3034/ml/dashboard$(RESET)"
+	@echo -e ""
+	@echo -e "  $(CYAN)MCLI ML Dashboard:$(RESET)"
+	@echo -e "    Streamlit: $(BLUE)http://localhost:8501$(RESET)"
+	@echo -e ""
+	@echo -e "  $(CYAN)LSH API:$(RESET)"
+	@echo -e "    Status: $(BLUE)http://localhost:3030/api/status$(RESET)"
+	@echo -e "    Jobs:   $(BLUE)http://localhost:3030/api/jobs$(RESET)"
+	@echo -e ""
+	@echo -e "$(GREEN)🚀 Quick Start:$(RESET)"
+	@echo -e "  $(YELLOW)make dashboard$(RESET)         - Start everything"
+	@echo -e "  $(YELLOW)make dashboard-status$(RESET)  - Check services"
+	@echo -e "  $(YELLOW)make dashboard-stop$(RESET)    - Stop all services"
+	@echo -e ""
+	@echo -e "$(GREEN)📖 Documentation:$(RESET)"
+	@echo -e "  Quick Start:  $(BLUE)DASHBOARD-QUICKSTART.md$(RESET)"
+	@echo -e "  Full Guide:   $(BLUE)docs/ML-DASHBOARD-STARTUP.md$(RESET)"
 
 # =============================================================================
 # MAINTENANCE TARGETS
@@ -633,7 +633,7 @@ dashboard-info: ## Show dashboard information and URLs
 
 .PHONY: clean
 clean: ## Clean all build artifacts
-	@echo "$(CYAN)Cleaning build artifacts...$(RESET)"
+	@echo -e "$(CYAN)Cleaning build artifacts...$(RESET)"
 	rm -rf $(DIST_DIR)
 	rm -rf dist-binary
 	rm -rf $(BUILD_DIR)
@@ -642,18 +642,18 @@ clean: ## Clean all build artifacts
 	rm -f $(BINARY_OUTPUT)
 	rm -f tsconfig.tsbuildinfo
 	find . -name "*.tsbuildinfo" -delete 2>/dev/null || true
-	@echo "$(GREEN)Clean completed ✅$(RESET)"
+	@echo -e "$(GREEN)Clean completed ✅$(RESET)"
 
 .PHONY: clean-all
 clean-all: clean ## Clean everything including node_modules
-	@echo "$(CYAN)Cleaning everything...$(RESET)"
+	@echo -e "$(CYAN)Cleaning everything...$(RESET)"
 	rm -rf $(NODE_MODULES)
 	rm -f package-lock.json
-	@echo "$(GREEN)Deep clean completed ✅$(RESET)"
+	@echo -e "$(GREEN)Deep clean completed ✅$(RESET)"
 
 .PHONY: lint
 lint: ## Run linter (if configured)
-	@echo "$(CYAN)Running linter...$(RESET)"
+	@echo -e "$(CYAN)Running linter...$(RESET)"
 	@if $(NPM) run lint >/dev/null 2>&1; then \
 		$(NPM) run lint; \
 		echo "$(GREEN)Linting completed ✅$(RESET)"; \
@@ -663,7 +663,7 @@ lint: ## Run linter (if configured)
 
 .PHONY: format
 format: ## Format code (if configured)
-	@echo "$(CYAN)Formatting code...$(RESET)"
+	@echo -e "$(CYAN)Formatting code...$(RESET)"
 	@if $(NPM) run format >/dev/null 2>&1; then \
 		$(NPM) run format; \
 		echo "$(GREEN)Code formatting completed ✅$(RESET)"; \
@@ -677,14 +677,14 @@ format: ## Format code (if configured)
 
 .PHONY: check-deps
 check-deps: ## Check for outdated dependencies
-	@echo "$(CYAN)Checking for outdated dependencies...$(RESET)"
+	@echo -e "$(CYAN)Checking for outdated dependencies...$(RESET)"
 	$(NPM) outdated || true
 
 .PHONY: audit
 audit: ## Run security audit
-	@echo "$(CYAN)Running security audit...$(RESET)"
+	@echo -e "$(CYAN)Running security audit...$(RESET)"
 	$(NPM) audit
-	@echo "$(GREEN)Security audit completed ✅$(RESET)"
+	@echo -e "$(GREEN)Security audit completed ✅$(RESET)"
 
 # =============================================================================
 # VALIDATION TARGETS
@@ -692,11 +692,11 @@ audit: ## Run security audit
 
 .PHONY: validate
 validate: compile test ## Validate the project (compile + test)
-	@echo "$(GREEN)Project validation completed ✅$(RESET)"
+	@echo -e "$(GREEN)Project validation completed ✅$(RESET)"
 
 .PHONY: pre-commit
 pre-commit: clean compile test ## Pre-commit validation
-	@echo "$(GREEN)Pre-commit validation completed ✅$(RESET)"
+	@echo -e "$(GREEN)Pre-commit validation completed ✅$(RESET)"
 
 # =============================================================================
 # DEFAULT TARGET

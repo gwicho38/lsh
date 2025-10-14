@@ -1,7 +1,10 @@
 /**
  * Cron Job Manager with Supabase Integration
  * Manages scheduled jobs with database persistence and monitoring
+ *
+ * REFACTORED: Now extends BaseJobManager for unified job management interface
  */
+import { BaseJobManager, BaseJobSpec } from './base-job-manager.js';
 import { CronJobSpec } from './daemon-client.js';
 export interface CronJobTemplate {
     id: string;
@@ -32,10 +35,11 @@ export interface JobExecutionReport {
         count: number;
     }>;
 }
-export declare class CronJobManager {
+export declare class CronJobManager extends BaseJobManager {
     private daemonClient;
     private databasePersistence;
     private templates;
+    private userId?;
     constructor(userId?: string);
     /**
      * Load predefined job templates
@@ -66,9 +70,10 @@ export declare class CronJobManager {
      */
     getTemplate(templateId: string): CronJobTemplate | undefined;
     /**
-     * List all jobs
+     * List all jobs - overrides BaseJobManager to use daemon client
+     * Returns jobs from daemon rather than storage layer
      */
-    listJobs(filter?: any): Promise<any[]>;
+    listJobs(filter?: any): Promise<BaseJobSpec[]>;
     /**
      * Get job execution report
      */
@@ -78,21 +83,24 @@ export declare class CronJobManager {
      */
     getAllJobReports(): Promise<JobExecutionReport[]>;
     /**
-     * Start a job
+     * Start a job - implements BaseJobManager abstract method
+     * Delegates to daemon client and updates status
      */
-    startJob(jobId: string): Promise<any>;
+    startJob(jobId: string): Promise<BaseJobSpec>;
     /**
-     * Stop a job
+     * Stop a job - implements BaseJobManager abstract method
+     * Delegates to daemon client and updates status
      */
-    stopJob(jobId: string, signal?: string): Promise<any>;
+    stopJob(jobId: string, signal?: string): Promise<BaseJobSpec>;
     /**
-     * Remove a job
+     * Remove a job - overrides BaseJobManager to use daemon client
      */
     removeJob(jobId: string, force?: boolean): Promise<boolean>;
     /**
-     * Get job information
+     * Get job information - overrides BaseJobManager to use daemon client
+     * Returns job from daemon rather than storage layer
      */
-    getJob(jobId: string): Promise<any>;
+    getJob(jobId: string): Promise<BaseJobSpec | null>;
     /**
      * Get daemon status
      */

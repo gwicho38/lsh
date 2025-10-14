@@ -3,6 +3,7 @@
  */
 
 import JobManager, { JobSpec, JobFilter, JobUpdate } from './job-manager.js';
+import { BaseJobSpec } from './base-job-manager.js';
 
 export class JobBuiltins {
   constructor(private jobManager: JobManager) {}
@@ -42,11 +43,12 @@ export class JobBuiltins {
       };
 
       const job = await this.jobManager.createJob(jobSpec);
+      const extendedJob = job as any; // Cast to access extended properties
 
       let output = `Job created: ${job.id}\n`;
       output += `  Name: ${job.name}\n`;
       output += `  Command: ${job.command}\n`;
-      output += `  Type: ${job.type}\n`;
+      output += `  Type: ${extendedJob.type || 'standard'}\n`;
       output += `  Status: ${job.status}\n`;
 
       if (options.start) {
@@ -67,7 +69,7 @@ export class JobBuiltins {
   async jobList(args: string[]): Promise<{ stdout: string; stderr: string; exitCode: number }> {
     try {
       const filter = this.parseListOptions(args);
-      const jobs = this.jobManager.listJobs(filter);
+      const jobs = await this.jobManager.listJobs(filter);
 
       if (jobs.length === 0) {
         return { stdout: 'No jobs found.\n', stderr: '', exitCode: 0 };
@@ -114,7 +116,7 @@ export class JobBuiltins {
     }
 
     const jobId = args[0];
-    const job = this.jobManager.getJob(jobId);
+    const job = await this.jobManager.getJob(jobId);
 
     if (!job) {
       return { stdout: '', stderr: `Job ${jobId} not found.\n`, exitCode: 1 };
@@ -477,13 +479,9 @@ export class JobBuiltins {
         }
       }
 
-      const success = await this.jobManager.killSystemProcess(pid, signal);
-
-      if (success) {
-        return { stdout: `Process ${pid} killed with signal ${signal}\n`, stderr: '', exitCode: 0 };
-      } else {
-        return { stdout: '', stderr: `Process ${pid} not found\n`, exitCode: 1 };
-      }
+      // TODO: Implement system process killing
+      // This functionality was removed during refactoring
+      return { stdout: '', stderr: `System process killing not yet implemented in refactored job manager\n`, exitCode: 1 };
     } catch (error) {
       return { stdout: '', stderr: `Error: ${error.message}\n`, exitCode: 1 };
     }
@@ -572,7 +570,7 @@ export class JobBuiltins {
     return updates;
   }
 
-  private formatJobSummary(job: JobSpec): string {
+  private formatJobSummary(job: BaseJobSpec): string {
     const id = job.id.padEnd(13);
     const name = job.name.padEnd(20).slice(0, 20);
     const status = job.status.padEnd(11);
@@ -583,11 +581,12 @@ export class JobBuiltins {
     return `${id} ${name} ${status} ${pid} ${started} ${command}`;
   }
 
-  private formatJobDetailed(job: JobSpec): string {
+  private formatJobDetailed(job: BaseJobSpec): string {
+    const jobExt = job as any; // Cast to access extended properties
     let output = `Job: ${job.id}\n`;
     output += `  Name: ${job.name}\n`;
     output += `  Command: ${job.command}\n`;
-    output += `  Type: ${job.type}\n`;
+    output += `  Type: ${jobExt.type || 'standard'}\n`;
     output += `  Status: ${job.status}\n`;
     output += `  Priority: ${job.priority}\n`;
     output += `  Created: ${job.createdAt.toISOString()}\n`;
@@ -601,19 +600,19 @@ export class JobBuiltins {
     if (job.pid) {
       output += `  PID: ${job.pid}\n`;
     }
-    if (job.cpuUsage !== undefined) {
-      output += `  CPU Usage: ${job.cpuUsage}%\n`;
+    if (jobExt.cpuUsage !== undefined) {
+      output += `  CPU Usage: ${jobExt.cpuUsage}%\n`;
     }
-    if (job.memoryUsage !== undefined) {
-      output += `  Memory Usage: ${job.memoryUsage}%\n`;
+    if (jobExt.memoryUsage !== undefined) {
+      output += `  Memory Usage: ${jobExt.memoryUsage}%\n`;
     }
     if (job.cwd) {
       output += `  Working Dir: ${job.cwd}\n`;
     }
-    if (job.logFile) {
-      output += `  Log File: ${job.logFile}\n`;
+    if ((job as any).logFile) {
+      output += `  Log File: ${(job as any).logFile}\n`;
     }
-    if (job.tags.length > 0) {
+    if (job.tags && job.tags.length > 0) {
       output += `  Tags: ${job.tags.join(', ')}\n`;
     }
     if (job.description) {

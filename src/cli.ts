@@ -18,6 +18,7 @@ import { init_ishell } from './services/shell/shell.js';
 import { init_lib } from './services/lib/lib.js';
 import { init_supabase } from './services/supabase/supabase.js';
 import { init_cron } from './services/cron/cron.js';
+import { init_secrets } from './services/secrets/secrets.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -150,6 +151,9 @@ program
 
   // Cron commands
   await init_cron(program);
+
+  // Secrets management commands
+  await init_secrets(program);
 
   // API server commands
   registerApiCommands(program);

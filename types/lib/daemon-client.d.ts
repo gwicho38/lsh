@@ -43,6 +43,7 @@ export declare class DaemonClient extends EventEmitter {
     private databasePersistence?;
     private userId?;
     private sessionId;
+    private logger;
     constructor(socketPath?: string, userId?: string);
     /**
      * Connect to the daemon

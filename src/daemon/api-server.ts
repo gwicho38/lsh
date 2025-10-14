@@ -2,79 +2,94 @@
  * LSH API Server - RESTful API for daemon control and job management
  */
 
-import express, { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
 import jwt from 'jsonwebtoken';
-import { EventEmitter } from 'events';
 import crypto from 'crypto';
 import type { LSHJobDaemon } from './lshd.js';
 import type { JobSpec as _JobSpec } from '../lib/job-manager.js';
+import { handleApiOperation } from '../lib/api-error-handler.js';
+import { BaseAPIServer, BaseAPIServerConfig } from '../lib/base-api-server.js';
 
-export interface ApiConfig {
-  port: number;
+export interface ApiConfig extends BaseAPIServerConfig {
   apiKey?: string;
   jwtSecret?: string;
-  corsOrigins?: string[];
   enableWebhooks?: boolean;
   webhookEndpoints?: string[];
 }
 
-export class LSHApiServer extends EventEmitter {
-  private app: express.Application;
+export class LSHApiServer extends BaseAPIServer {
   private daemon: LSHJobDaemon;
-  private config: ApiConfig;
-  private server: any;
+  private apiConfig: ApiConfig;
   private clients = new Set<Response>(); // SSE clients
 
   constructor(daemon: LSHJobDaemon, config: Partial<ApiConfig> = {}) {
-    super();
+    const baseConfig: Partial<BaseAPIServerConfig> = {
+      port: config.port || 3030,
+      corsOrigins: config.corsOrigins || ['http://localhost:*'],
+      jsonLimit: config.jsonLimit || '10mb',
+      enableHelmet: config.enableHelmet !== false,
+      enableRequestLogging: config.enableRequestLogging !== false,
+    };
+
+    super(baseConfig, 'LSHApiServer');
+
     this.daemon = daemon;
-    this.config = {
-      port: 3030,
-      apiKey: process.env.LSH_API_KEY || crypto.randomBytes(32).toString('hex'),
-      jwtSecret: process.env.LSH_JWT_SECRET || crypto.randomBytes(32).toString('hex'),
-      corsOrigins: ['http://localhost:*'],
-      enableWebhooks: false,
-      webhookEndpoints: [],
+    this.apiConfig = {
+      ...this.config,
+      apiKey: config.apiKey || process.env.LSH_API_KEY || crypto.randomBytes(32).toString('hex'),
+      jwtSecret: config.jwtSecret || process.env.LSH_JWT_SECRET || crypto.randomBytes(32).toString('hex'),
+      enableWebhooks: config.enableWebhooks || false,
+      webhookEndpoints: config.webhookEndpoints || [],
       ...config
     };
 
-    this.app = express();
-    this.setupMiddleware();
-    this.setupRoutes();
     this.setupEventHandlers();
   }
 
-  private setupMiddleware() {
-    // Security middleware
-    this.app.use(helmet({
-      crossOriginEmbedderPolicy: false,
-    }));
+  /**
+   * Override CORS configuration to support wildcard patterns
+   */
+  protected configureCORS(): ReturnType<typeof cors> {
+    const origins = this.config.corsOrigins;
 
-    // CORS
-    this.app.use(cors({
-      origin: (origin, callback) => {
-        if (!origin || this.config.corsOrigins?.some(pattern => {
-          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
-          return regex.test(origin);
-        })) {
-          callback(null, true);
-        } else {
-          callback(new Error('Not allowed by CORS'));
+    if (origins === '*' || !origins) {
+      return cors();
+    }
+
+    if (Array.isArray(origins)) {
+      return cors({
+        origin: (origin, callback) => {
+          if (!origin || origins.some(pattern => {
+            const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+            return regex.test(origin);
+          })) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
         }
-      }
-    }));
+      });
+    }
 
-    // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
-    this.app.use(express.urlencoded({ extended: true }));
+    return cors({ origin: origins });
+  }
 
-    // Request logging
-    this.app.use((req, res, next) => {
-      console.log(`[API] ${new Date().toISOString()} ${req.method} ${req.path}`);
-      next();
-    });
+  /**
+   * Helper method to handle API operations with automatic error handling and webhooks
+   */
+  private async handleOperation<T>(
+    res: Response,
+    operation: () => Promise<T>,
+    successStatus: number = 200,
+    webhookEvent?: string
+  ): Promise<void> {
+    await handleApiOperation(
+      res,
+      operation,
+      { successStatus, webhookEvent },
+      this.apiConfig.enableWebhooks ? this.triggerWebhook.bind(this) : undefined
+    );
   }
 
   private authenticateRequest(req: Request, res: Response, next: NextFunction) {
@@ -82,7 +97,7 @@ export class LSHApiServer extends EventEmitter {
     const authHeader = req.headers['authorization'];
 
     // Check API key
-    if (apiKey && apiKey === this.config.apiKey) {
+    if (apiKey && apiKey === this.apiConfig.apiKey) {
       return next();
     }
 
@@ -90,7 +105,7 @@ export class LSHApiServer extends EventEmitter {
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       try {
-        jwt.verify(token, this.config.jwtSecret!);
+        jwt.verify(token, this.apiConfig.jwtSecret!);
         return next();
       } catch (_err) {
         return res.status(401).json({ error: 'Invalid token' });
@@ -100,7 +115,7 @@ export class LSHApiServer extends EventEmitter {
     return res.status(401).json({ error: 'Authentication required' });
   }
 
-  private setupRoutes() {
+  protected setupRoutes(): void {
     // Health check (no auth)
     this.app.get('/health', (req, res) => {
       res.json({ status: 'healthy', timestamp: new Date().toISOString() });
@@ -109,10 +124,10 @@ export class LSHApiServer extends EventEmitter {
     // Generate JWT token
     this.app.post('/api/auth', (req, res) => {
       const { apiKey } = req.body;
-      if (apiKey === this.config.apiKey) {
+      if (apiKey === this.apiConfig.apiKey) {
         const token = jwt.sign(
           { type: 'api-access', created: Date.now() },
-          this.config.jwtSecret!,
+          this.apiConfig.jwtSecret!,
           { expiresIn: '24h' }
         );
         res.json({ token });
@@ -126,40 +141,33 @@ export class LSHApiServer extends EventEmitter {
 
     // Daemon status
     this.app.get('/api/status', async (req, res) => {
-      try {
-        const status = await this.daemon.getStatus();
-        res.json(status);
-      } catch (error: any) {
-        res.status(500).json({ error: error.message });
-      }
+      await this.handleOperation(
+        res,
+        async () => this.daemon.getStatus()
+      );
     });
 
     // Job management
-    this.app.get('/api/jobs', (req, res) => {
-      try {
-        const { filter, limit } = req.query;
-        const jobs = this.daemon.listJobs(
-          filter ? JSON.parse(filter as string) : undefined,
-          limit ? parseInt(limit as string) : undefined
-        );
-        res.json(jobs);
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+    this.app.get('/api/jobs', async (req, res) => {
+      await this.handleOperation(
+        res,
+        async () => {
+          const { filter, limit } = req.query;
+          return this.daemon.listJobs(
+            filter ? JSON.parse(filter as string) : undefined,
+            limit ? parseInt(limit as string) : undefined
+          );
+        }
+      );
     });
 
     this.app.post('/api/jobs', async (req, res) => {
-      try {
-        const job = await this.daemon.addJob(req.body);
-        res.status(201).json(job);
-
-        // Trigger webhook if enabled
-        if (this.config.enableWebhooks) {
-          this.triggerWebhook('job.created', job);
-        }
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+      await this.handleOperation(
+        res,
+        async () => this.daemon.addJob(req.body),
+        201,
+        'job.created'
+      );
     });
 
     this.app.get('/api/jobs/:id', (req, res) => {
@@ -171,57 +179,47 @@ export class LSHApiServer extends EventEmitter {
     });
 
     this.app.post('/api/jobs/:id/start', async (req, res) => {
-      try {
-        const job = await this.daemon.startJob(req.params.id);
-        res.json(job);
-
-        if (this.config.enableWebhooks) {
-          this.triggerWebhook('job.started', job);
-        }
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+      await this.handleOperation(
+        res,
+        async () => this.daemon.startJob(req.params.id),
+        200,
+        'job.started'
+      );
     });
 
     this.app.post('/api/jobs/:id/stop', async (req, res) => {
-      try {
-        const { signal } = req.body;
-        const job = await this.daemon.stopJob(req.params.id, signal);
-        res.json(job);
-
-        if (this.config.enableWebhooks) {
-          this.triggerWebhook('job.stopped', job);
-        }
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+      await this.handleOperation(
+        res,
+        async () => {
+          const { signal } = req.body;
+          return this.daemon.stopJob(req.params.id, signal);
+        },
+        200,
+        'job.stopped'
+      );
     });
 
     this.app.post('/api/jobs/:id/trigger', async (req, res) => {
-      try {
-        const result = await this.daemon.triggerJob(req.params.id);
-        res.json(result);
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+      await this.handleOperation(
+        res,
+        async () => this.daemon.triggerJob(req.params.id)
+      );
     });
 
     this.app.delete('/api/jobs/:id', async (req, res) => {
-      try {
-        const force = req.query.force === 'true';
-        const success = await this.daemon.removeJob(req.params.id, force);
-        if (success) {
-          res.status(204).send();
-
-          if (this.config.enableWebhooks) {
-            this.triggerWebhook('job.removed', { id: req.params.id });
+      await this.handleOperation(
+        res,
+        async () => {
+          const force = req.query.force === 'true';
+          const success = await this.daemon.removeJob(req.params.id, force);
+          if (!success) {
+            throw new Error('Failed to remove job');
           }
-        } else {
-          res.status(400).json({ error: 'Failed to remove job' });
-        }
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+          return { id: req.params.id };
+        },
+        204,
+        'job.removed'
+      );
     });
 
     // Bulk operations
@@ -274,8 +272,8 @@ export class LSHApiServer extends EventEmitter {
     // Webhook management
     this.app.get('/api/webhooks', (req, res) => {
       res.json({
-        enabled: this.config.enableWebhooks,
-        endpoints: this.config.webhookEndpoints
+        enabled: this.apiConfig.enableWebhooks,
+        endpoints: this.apiConfig.webhookEndpoints
       });
     });
 
@@ -285,16 +283,16 @@ export class LSHApiServer extends EventEmitter {
         return res.status(400).json({ error: 'Endpoint URL required' });
       }
 
-      if (!this.config.webhookEndpoints?.includes(endpoint)) {
-        this.config.webhookEndpoints?.push(endpoint);
+      if (!this.apiConfig.webhookEndpoints?.includes(endpoint)) {
+        this.apiConfig.webhookEndpoints?.push(endpoint);
       }
 
-      res.json({ success: true, endpoints: this.config.webhookEndpoints });
+      res.json({ success: true, endpoints: this.apiConfig.webhookEndpoints });
     });
 
     // Data export endpoints for integration
-    this.app.get('/api/export/jobs', (req, res) => {
-      const jobs = this.daemon.listJobs();
+    this.app.get('/api/export/jobs', async (req, res) => {
+      const jobs = await this.daemon.listJobs();
       const format = req.query.format || 'json';
 
       if (format === 'csv') {
@@ -310,26 +308,27 @@ export class LSHApiServer extends EventEmitter {
 
     // Supabase integration endpoint
     this.app.post('/api/supabase/sync', async (req, res) => {
-      try {
-        // This endpoint can be called by Supabase jobs to sync data
-        const { table, operation, data } = req.body;
+      await this.handleOperation(
+        res,
+        async () => {
+          // This endpoint can be called by Supabase jobs to sync data
+          const { table, operation, data } = req.body;
 
-        // Emit event for mcli listener
-        this.emit('supabase:sync', { table, operation, data });
+          // Emit event for mcli listener
+          this.emit('supabase:sync', { table, operation, data });
 
-        // Broadcast to SSE clients
-        this.broadcastToClients({
-          type: 'supabase:sync',
-          table,
-          operation,
-          data,
-          timestamp: Date.now()
-        });
+          // Broadcast to SSE clients
+          this.broadcastToClients({
+            type: 'supabase:sync',
+            table,
+            operation,
+            data,
+            timestamp: Date.now()
+          });
 
-        res.json({ success: true, message: 'Data synced' });
-      } catch (error: any) {
-        res.status(400).json({ error: error.message });
-      }
+          return { success: true, message: 'Data synced' };
+        }
+      );
     });
   }
 
@@ -345,7 +344,7 @@ export class LSHApiServer extends EventEmitter {
           timestamp: Date.now()
         });
 
-        if (this.config.enableWebhooks) {
+        if (this.apiConfig.enableWebhooks) {
           this.triggerWebhook(event, data);
         }
       });
@@ -360,7 +359,7 @@ export class LSHApiServer extends EventEmitter {
   }
 
   private async triggerWebhook(event: string, data: any) {
-    if (!this.config.webhookEndpoints?.length) return;
+    if (!this.apiConfig.webhookEndpoints?.length) return;
 
     const payload = {
       event,
@@ -369,7 +368,7 @@ export class LSHApiServer extends EventEmitter {
       source: 'lsh-daemon'
     };
 
-    for (const endpoint of this.config.webhookEndpoints) {
+    for (const endpoint of this.apiConfig.webhookEndpoints) {
       try {
         await fetch(endpoint, {
           method: 'POST',
@@ -380,7 +379,7 @@ export class LSHApiServer extends EventEmitter {
           body: JSON.stringify(payload)
         });
       } catch (error) {
-        console.error(`Webhook failed for ${endpoint}:`, error);
+        this.logger.error(`Webhook failed for ${endpoint}`, error as Error);
       }
     }
   }
@@ -404,42 +403,24 @@ export class LSHApiServer extends EventEmitter {
     return csv.join('\n');
   }
 
-  async start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.server = this.app.listen(this.config.port, () => {
-        console.log(`LSH API Server running on port ${this.config.port}`);
-        console.log(`API Key: ${this.config.apiKey}`);
-        resolve();
-      }).on('error', reject);
-    });
+  /**
+   * Override onStop to cleanup SSE connections
+   */
+  protected onStop(): void {
+    // Close all SSE connections
+    this.clients.forEach(client => client.end());
+    this.clients.clear();
   }
 
-  async stop(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.server) {
-        // Close all SSE connections
-        this.clients.forEach(client => client.end());
-        this.clients.clear();
-
-        this.server.close(() => {
-          console.log('API Server stopped');
-          resolve();
-        });
-      } else {
-        resolve();
-      }
-    });
+  /**
+   * Override start to log API key
+   */
+  public async start(): Promise<void> {
+    await super.start();
+    this.logger.info(`API Key: ${this.apiConfig.apiKey}`);
   }
 
   getApiKey(): string {
-    return this.config.apiKey!;
-  }
-
-  getPort(): number {
-    return this.config.port;
-  }
-
-  getApp(): express.Application {
-    return this.app;
+    return this.apiConfig.apiKey!;
   }
 }

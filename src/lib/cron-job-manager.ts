@@ -1,8 +1,15 @@
 /**
  * Cron Job Manager with Supabase Integration
  * Manages scheduled jobs with database persistence and monitoring
+ *
+ * REFACTORED: Now extends BaseJobManager for unified job management interface
  */
 
+import {
+  BaseJobManager,
+  BaseJobSpec,
+} from './base-job-manager.js';
+import DatabaseJobStorage from './job-storage-database.js';
 import DaemonClient, { CronJobSpec } from './daemon-client.js';
 import DatabasePersistence from './database-persistence.js';
 
@@ -34,12 +41,15 @@ export interface JobExecutionReport {
   commonErrors: Array<{ error: string; count: number }>;
 }
 
-export class CronJobManager {
+export class CronJobManager extends BaseJobManager {
   private daemonClient: DaemonClient;
   private databasePersistence: DatabasePersistence;
   private templates: Map<string, CronJobTemplate> = new Map();
+  private userId?: string;
 
   constructor(userId?: string) {
+    super(new DatabaseJobStorage(userId), 'CronJobManager');
+    this.userId = userId;
     this.daemonClient = new DaemonClient(undefined, userId);
     this.databasePersistence = new DatabasePersistence(userId);
     this.loadTemplates();
@@ -181,10 +191,13 @@ export class CronJobManager {
   }
 
   /**
-   * List all jobs
+   * List all jobs - overrides BaseJobManager to use daemon client
+   * Returns jobs from daemon rather than storage layer
    */
-  public async listJobs(filter?: any): Promise<any[]> {
-    return await this.daemonClient.listJobs(filter);
+  async listJobs(filter?: any): Promise<BaseJobSpec[]> {
+    const daemonJobs = await this.daemonClient.listJobs(filter);
+    // Daemon jobs are compatible with BaseJobSpec structure
+    return daemonJobs as BaseJobSpec[];
   }
 
   /**
@@ -272,31 +285,64 @@ export class CronJobManager {
   }
 
   /**
-   * Start a job
+   * Start a job - implements BaseJobManager abstract method
+   * Delegates to daemon client and updates status
    */
-  public async startJob(jobId: string): Promise<any> {
-    return await this.daemonClient.startJob(jobId);
+  async startJob(jobId: string): Promise<BaseJobSpec> {
+    // Delegate to daemon
+    const daemonResult = await this.daemonClient.startJob(jobId);
+
+    // Update job status in our storage
+    const job = await this.updateJobStatus(jobId, 'running', {
+      startedAt: new Date(),
+      pid: daemonResult.pid,
+    });
+
+    return job;
   }
 
   /**
-   * Stop a job
+   * Stop a job - implements BaseJobManager abstract method
+   * Delegates to daemon client and updates status
    */
-  public async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<any> {
-    return await this.daemonClient.stopJob(jobId, signal);
+  async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<BaseJobSpec> {
+    // Delegate to daemon
+    await this.daemonClient.stopJob(jobId, signal);
+
+    // Update job status in our storage
+    const job = await this.updateJobStatus(jobId, 'stopped', {
+      completedAt: new Date(),
+    });
+
+    return job;
   }
 
   /**
-   * Remove a job
+   * Remove a job - overrides BaseJobManager to use daemon client
    */
-  public async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
-    return await this.daemonClient.removeJob(jobId, force);
+  async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
+    const result = await this.daemonClient.removeJob(jobId, force);
+
+    // Also remove from our storage if it exists
+    try {
+      await this.storage.delete(jobId);
+      this.jobs.delete(jobId);
+    } catch (error) {
+      // Job may not exist in storage, that's okay
+      this.logger.debug(`Job ${jobId} not found in storage during removal`);
+    }
+
+    return result;
   }
 
   /**
-   * Get job information
+   * Get job information - overrides BaseJobManager to use daemon client
+   * Returns job from daemon rather than storage layer
    */
-  public async getJob(jobId: string): Promise<any> {
-    return await this.daemonClient.getJob(jobId);
+  async getJob(jobId: string): Promise<BaseJobSpec | null> {
+    const daemonJob = await this.daemonClient.getJob(jobId);
+    // Daemon job is compatible with BaseJobSpec structure
+    return daemonJob ? (daemonJob as BaseJobSpec) : null;
   }
 
   /**
