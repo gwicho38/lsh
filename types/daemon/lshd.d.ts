@@ -28,6 +28,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     private ipcServer?;
     private lastRunTimes;
     private apiServer?;
+    private logger;
     constructor(config?: Partial<DaemonConfig>);
     /**
      * Start the daemon
@@ -69,7 +70,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * Get job information
      */
-    getJob(jobId: string): JobSpec | undefined;
+    getJob(jobId: string): Promise<JobSpec | undefined>;
     /**
      * Sanitize job objects for safe JSON serialization
      */
@@ -77,7 +78,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * List all jobs
      */
-    listJobs(filter?: any, limit?: number): JobSpec[];
+    listJobs(filter?: any, limit?: number): Promise<JobSpec[]>;
     /**
      * Remove a job
      */

@@ -1,13 +1,17 @@
 /**
  * Job Registry - Comprehensive job execution history and analytics
  * Tracks all job runs with detailed pass/failure history, output logs, and performance metrics
+ *
+ * REFACTORED: Now extends BaseJobManager for unified interface
+ * Note: This is a read-only tracker - startJob/stopJob only record events
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { exec } from 'child_process';
-import { EventEmitter } from 'events';
+import { BaseJobManager, BaseJobSpec } from '../lib/base-job-manager.js';
+import MemoryJobStorage from '../lib/job-storage-memory.js';
 import { JobSpec } from '../lib/job-manager.js';
 
 export interface JobExecutionRecord {
@@ -99,14 +103,14 @@ export interface JobRegistryConfig {
   indexingEnabled: boolean;
 }
 
-export class JobRegistry extends EventEmitter {
+export class JobRegistry extends BaseJobManager {
   private config: JobRegistryConfig;
   private records = new Map<string, JobExecutionRecord[]>(); // jobId -> execution records
   private index = new Map<string, Set<string>>(); // tag -> jobIds
   private statistics = new Map<string, JobStatistics>(); // jobId -> stats
 
   constructor(config?: Partial<JobRegistryConfig>) {
-    super();
+    super(new MemoryJobStorage(), 'JobRegistry');
 
     this.config = {
       registryFile: '/tmp/lsh-job-registry.json',
@@ -137,16 +141,16 @@ export class JobRegistry extends EventEmitter {
       stdout: '',
       stderr: '',
       outputSize: 0,
-      environment: { ...job.env },
+      environment: { ...(job.env || {}) },
       workingDirectory: job.cwd || process.cwd(),
       user: job.user || process.env.USER || 'unknown',
       hostname: os.hostname(),
-      tags: [...job.tags],
-      priority: job.priority,
-      scheduled: job.type === 'scheduled',
+      tags: [...(job.tags || [])],
+      priority: job.priority || 5,
+      scheduled: (job as any).type === 'scheduled',
       retryCount: 0,
       pid: job.pid,
-      ppid: job.ppid
+      ppid: (job as any).ppid
     };
 
     // Store output logs in separate files for large outputs
@@ -222,18 +226,24 @@ export class JobRegistry extends EventEmitter {
   }
 
   /**
-   * Get execution history for a job
+   * Get execution history for a job - overrides BaseJobManager
+   * Returns JobExecutionRecord[] which is compatible with BaseJobExecution[]
    */
-  getJobHistory(jobId: string, limit?: number): JobExecutionRecord[] {
+  async getJobHistory(jobId: string, limit: number = 50): Promise<JobExecutionRecord[]> {
     const records = this.records.get(jobId) || [];
     return limit ? records.slice(0, limit) : records;
   }
 
   /**
-   * Get job statistics
+   * Get job statistics - overrides BaseJobManager
+   * Returns JobStatistics which is compatible with BaseJobStatistics
    */
-  getJobStatistics(jobId: string): JobStatistics | undefined {
-    return this.statistics.get(jobId);
+  async getJobStatistics(jobId: string): Promise<JobStatistics> {
+    const stats = this.statistics.get(jobId);
+    if (!stats) {
+      throw new Error(`No statistics found for job ${jobId}`);
+    }
+    return stats;
   }
 
   /**
@@ -327,17 +337,17 @@ export class JobRegistry extends EventEmitter {
   /**
    * Generate execution report
    */
-  generateReport(options: {
+  async generateReport(options: {
     jobId?: string;
     timeRange?: { from: Date; to: Date };
     format?: 'json' | 'text' | 'csv';
-  } = {}): string {
+  } = {}): Promise<string> {
     const { jobId, timeRange, format = 'text' } = options;
 
     let records: JobExecutionRecord[] = [];
 
     if (jobId) {
-      records = this.getJobHistory(jobId);
+      records = await this.getJobHistory(jobId);
     } else {
       for (const jobRecords of this.records.values()) {
         records.push(...jobRecords);
@@ -364,9 +374,9 @@ export class JobRegistry extends EventEmitter {
   }
 
   /**
-   * Clean old records
+   * Clean old records - overrides BaseJobManager
    */
-  cleanup(): number {
+  async cleanup(): Promise<void> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - this.config.metricsRetentionDays);
 
@@ -399,7 +409,10 @@ export class JobRegistry extends EventEmitter {
     }
 
     this.saveRegistry();
-    return removedCount;
+    this.logger.info(`Cleaned up ${removedCount} old records`);
+
+    // Call base cleanup
+    await super.cleanup();
   }
 
   /**
@@ -694,7 +707,7 @@ export class JobRegistry extends EventEmitter {
         }
       }
     } catch (error) {
-      console.error('Failed to load job registry:', error);
+      this.logger.error('Failed to load job registry', error as Error);
     }
   }
 
@@ -708,8 +721,43 @@ export class JobRegistry extends EventEmitter {
 
       fs.writeFileSync(this.config.registryFile, JSON.stringify(data, null, 2));
     } catch (error) {
-      console.error('Failed to save job registry:', error);
+      this.logger.error('Failed to save job registry', error as Error);
     }
+  }
+
+  /**
+   * Start job - implements BaseJobManager abstract method
+   * JobRegistry is read-only, so this records the start event
+   */
+  async startJob(jobId: string): Promise<BaseJobSpec> {
+    const job = await this.getJob(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found in registry`);
+    }
+
+    // Record execution start
+    this.recordJobStart(job as JobSpec);
+
+    // Update job status
+    return await this.updateJobStatus(jobId, 'running', {
+      startedAt: new Date(),
+    });
+  }
+
+  /**
+   * Stop job - implements BaseJobManager abstract method
+   * JobRegistry is read-only, so this records the stop event
+   */
+  async stopJob(jobId: string, signal?: string): Promise<BaseJobSpec> {
+    const job = await this.getJob(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found in registry`);
+    }
+
+    // Update job status
+    return await this.updateJobStatus(jobId, 'stopped', {
+      completedAt: new Date(),
+    });
   }
 }
 

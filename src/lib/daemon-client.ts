@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as _path from 'path';
 import { EventEmitter } from 'events';
 import DatabasePersistence from './database-persistence.js';
+import { createLogger } from './logger.js';
 
 export interface DaemonMessage {
   command: string;
@@ -52,6 +53,7 @@ export class DaemonClient extends EventEmitter {
   private databasePersistence?: DatabasePersistence;
   private userId?: string;
   private sessionId: string;
+  private logger = createLogger('DaemonClient');
 
   constructor(socketPath?: string, userId?: string) {
     super();
@@ -109,7 +111,7 @@ export class DaemonClient extends EventEmitter {
 
           // Prevent buffer from growing too large
           if (buffer.length > MAX_BUFFER_SIZE) {
-            console.error('Daemon response too large, truncating buffer');
+            this.logger.error('Daemon response too large, truncating buffer');
             buffer = buffer.substring(buffer.length - MAX_BUFFER_SIZE / 2);
           }
 
@@ -158,8 +160,7 @@ export class DaemonClient extends EventEmitter {
                       buffer = buffer.substring(i + 1); // Remove processed part
                       break;
                     } catch (parseError) {
-                      console.error('Invalid JSON in daemon response:', parseError);
-                      console.error('JSON content:', jsonStr.substring(0, 200) + '...');
+                      this.logger.error('Invalid JSON in daemon response', parseError as Error, { jsonContent: jsonStr.substring(0, 200) });
                       buffer = buffer.substring(i + 1); // Skip this invalid JSON
                       break;
                     }
@@ -173,7 +174,7 @@ export class DaemonClient extends EventEmitter {
               }
 
             } catch (parseError) {
-              console.error('JSON parsing error:', parseError);
+              this.logger.error('JSON parsing error', parseError as Error);
               // Try to find the start of the next JSON object
               const nextStart = buffer.indexOf('{', 1);
               if (nextStart > 0) {
@@ -185,7 +186,7 @@ export class DaemonClient extends EventEmitter {
             }
           }
         } catch (error) {
-          console.error('Failed to process daemon response:', error);
+          this.logger.error('Failed to process daemon response', error as Error);
           buffer = ''; // Reset buffer on error
         }
       });
@@ -370,9 +371,9 @@ export class DaemonClient extends EventEmitter {
           output: result.output,
           error: result.error
         });
-      } catch (error) {
+      } catch (error: any) {
         // Don't fail the trigger if database save fails
-        console.warn('❌ Failed to save job execution to database:', error.message);
+        this.logger.warn(`Failed to save job execution to database: ${error.message}`);
       }
     }
 
@@ -415,11 +416,11 @@ export class DaemonClient extends EventEmitter {
       } else if (result && typeof result === 'object' && Array.isArray(result.jobs)) {
         return result.jobs;
       } else {
-        console.warn('Unexpected job list format:', typeof result);
+        this.logger.warn('Unexpected job list format', { resultType: typeof result });
         return [];
       }
-    } catch (error) {
-      console.error('Failed to list jobs:', error.message);
+    } catch (error: any) {
+      this.logger.error('Failed to list jobs', error);
       // Return empty array instead of throwing to prevent crashes
       return [];
     }
@@ -483,7 +484,7 @@ export class DaemonClient extends EventEmitter {
         started_at: new Date().toISOString(),
       });
     } catch (error) {
-      console.error('Failed to sync job to database:', error);
+      this.logger.error('Failed to sync job to database', error as Error);
     }
   }
 

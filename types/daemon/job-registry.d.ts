@@ -1,8 +1,11 @@
 /**
  * Job Registry - Comprehensive job execution history and analytics
  * Tracks all job runs with detailed pass/failure history, output logs, and performance metrics
+ *
+ * REFACTORED: Now extends BaseJobManager for unified interface
+ * Note: This is a read-only tracker - startJob/stopJob only record events
  */
-import { EventEmitter } from 'events';
+import { BaseJobManager, BaseJobSpec } from '../lib/base-job-manager.js';
 import { JobSpec } from '../lib/job-manager.js';
 export interface JobExecutionRecord {
     executionId: string;
@@ -72,7 +75,7 @@ export interface JobRegistryConfig {
     outputLogDir: string;
     indexingEnabled: boolean;
 }
-export declare class JobRegistry extends EventEmitter {
+export declare class JobRegistry extends BaseJobManager {
     private config;
     private records;
     private index;
@@ -91,13 +94,15 @@ export declare class JobRegistry extends EventEmitter {
      */
     recordJobCompletion(executionId: string, status: JobExecutionRecord['status'], exitCode?: number, signal?: string, error?: Error): void;
     /**
-     * Get execution history for a job
+     * Get execution history for a job - overrides BaseJobManager
+     * Returns JobExecutionRecord[] which is compatible with BaseJobExecution[]
      */
-    getJobHistory(jobId: string, limit?: number): JobExecutionRecord[];
+    getJobHistory(jobId: string, limit?: number): Promise<JobExecutionRecord[]>;
     /**
-     * Get job statistics
+     * Get job statistics - overrides BaseJobManager
+     * Returns JobStatistics which is compatible with BaseJobStatistics
      */
-    getJobStatistics(jobId: string): JobStatistics | undefined;
+    getJobStatistics(jobId: string): Promise<JobStatistics>;
     /**
      * Get all job statistics
      */
@@ -132,11 +137,11 @@ export declare class JobRegistry extends EventEmitter {
             to: Date;
         };
         format?: 'json' | 'text' | 'csv';
-    }): string;
+    }): Promise<string>;
     /**
-     * Clean old records
+     * Clean old records - overrides BaseJobManager
      */
-    cleanup(): number;
+    cleanup(): Promise<void>;
     /**
      * Export registry data
      */
@@ -154,5 +159,15 @@ export declare class JobRegistry extends EventEmitter {
     private ensureLogDirectory;
     private loadRegistry;
     private saveRegistry;
+    /**
+     * Start job - implements BaseJobManager abstract method
+     * JobRegistry is read-only, so this records the start event
+     */
+    startJob(jobId: string): Promise<BaseJobSpec>;
+    /**
+     * Stop job - implements BaseJobManager abstract method
+     * JobRegistry is read-only, so this records the stop event
+     */
+    stopJob(jobId: string, signal?: string): Promise<BaseJobSpec>;
 }
 export default JobRegistry;

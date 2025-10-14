@@ -1,77 +1,39 @@
 /**
- * Comprehensive Job Management System for LSH Shell
+ * Job Management System for LSH Shell
  * Supports CRUD operations on shell jobs and system processes
+ *
+ * REFACTORED: Now extends BaseJobManager to eliminate duplication
  */
 
 import { spawn, exec, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
-import * as _path from 'path';
-import { EventEmitter } from 'events';
+import {
+  BaseJobManager,
+  BaseJobSpec,
+  BaseJobFilter,
+} from './base-job-manager.js';
+import MemoryJobStorage from './job-storage-memory.js';
 
 const execAsync = promisify(exec);
 
-export interface JobSpec {
-  id: string;
-  name: string;
-  command: string;
-  args?: string[];
+/**
+ * Extended job specification with JobManager-specific fields
+ */
+export interface JobSpec extends BaseJobSpec {
   type: 'shell' | 'system' | 'scheduled' | 'service';
-  status: 'created' | 'running' | 'stopped' | 'completed' | 'failed' | 'killed';
-  priority: number; // -20 to 19 (like nice values)
-
-  // Process information
-  pid?: number;
   ppid?: number;
-
-  // Timing
-  createdAt: Date;
-  startedAt?: Date;
-  completedAt?: Date;
-
-  // Resource usage
   cpuUsage?: number;
   memoryUsage?: number;
-
-  // Configuration
-  env?: Record<string, string>;
-  cwd?: string;
-  user?: string;
-
-  // Limits
   maxMemory?: number;
   maxCpu?: number;
-  timeout?: number;
-
-  // Scheduling (for scheduled jobs)
-  schedule?: {
-    cron?: string;
-    interval?: number; // milliseconds
-    nextRun?: Date;
-  };
-
-  // Output handling
-  stdout?: string;
-  stderr?: string;
   logFile?: string;
-
-  // Metadata
-  tags: string[];
-  description?: string;
-
-  // Internal
   process?: ChildProcess;
   timer?: NodeJS.Timeout;
 }
 
-export interface JobFilter {
-  status?: string[];
+export interface JobFilter extends BaseJobFilter {
   type?: string[];
-  tags?: string[];
-  user?: string;
-  namePattern?: RegExp;
-  createdAfter?: Date;
-  createdBefore?: Date;
 }
 
 export interface JobUpdate {
@@ -97,85 +59,36 @@ export interface SystemProcess {
   status: string;
 }
 
-export class JobManager extends EventEmitter {
-  private jobs = new Map<string, JobSpec>();
+export class JobManager extends BaseJobManager {
   private nextJobId = 1;
   private persistenceFile: string;
   private schedulerInterval?: NodeJS.Timeout;
 
   constructor(persistenceFile = '/tmp/lsh-jobs.json') {
-    super();
+    super(new MemoryJobStorage(), 'JobManager');
     this.persistenceFile = persistenceFile;
     this.loadPersistedJobs();
     this.startScheduler();
     this.setupCleanupHandlers();
   }
 
-  // ================================
-  // CREATE Operations
-  // ================================
-
   /**
-   * Create a new job
+   * Start a job (execute it as a process)
    */
-  async createJob(spec: Partial<JobSpec>): Promise<JobSpec> {
-    const job: JobSpec = {
-      id: spec.id || `job_${this.nextJobId++}`,
-      name: spec.name || `Job ${this.nextJobId - 1}`,
-      command: spec.command || '',
-      args: spec.args || [],
-      type: spec.type || 'shell',
-      status: 'created',
-      priority: spec.priority || 0,
-      createdAt: new Date(),
-      env: {
-        ...Object.fromEntries(
-          Object.entries(process.env).filter(([_, v]) => v !== undefined)
-        ),
-        ...spec.env
-      } as Record<string, string>,
-      cwd: spec.cwd || process.cwd(),
-      user: spec.user || process.env.USER || 'unknown',
-      tags: spec.tags || [],
-      description: spec.description,
-      maxMemory: spec.maxMemory,
-      maxCpu: spec.maxCpu,
-      timeout: spec.timeout,
-      schedule: spec.schedule,
-      logFile: spec.logFile,
-    };
-
-    // Validate job specification
-    if (!job.command) {
-      throw new Error('Job command is required');
-    }
-
-    this.jobs.set(job.id, job);
-    this.emit('jobCreated', job);
-    await this.persistJobs();
-
-    return job;
-  }
-
-  /**
-   * Start a job (execute it)
-   */
-  async startJob(jobId: string): Promise<JobSpec> {
-    const job = this.jobs.get(jobId);
-    if (!job) {
+  async startJob(jobId: string): Promise<BaseJobSpec> {
+    const baseJob = await this.getJob(jobId);
+    if (!baseJob) {
       throw new Error(`Job ${jobId} not found`);
     }
+
+    const job = baseJob as JobSpec;
 
     if (job.status === 'running') {
       throw new Error(`Job ${jobId} is already running`);
     }
 
-    job.status = 'running';
-    job.startedAt = new Date();
-    job.stdout = '';
-    job.stderr = '';
-
     try {
+      // Spawn the process
       if (job.type === 'shell') {
         job.process = spawn('sh', ['-c', job.command], {
           cwd: job.cwd,
@@ -212,12 +125,11 @@ export class JobManager extends EventEmitter {
 
       // Handle completion
       job.process.on('exit', (code, signal) => {
-        job.completedAt = new Date();
-        if (code === 0) {
-          job.status = 'completed';
-        } else {
-          job.status = signal === 'SIGKILL' ? 'killed' : 'failed';
-        }
+        const status = code === 0 ? 'completed' : (signal === 'SIGKILL' ? 'killed' : 'failed');
+        this.updateJobStatus(job.id, status, {
+          completedAt: new Date(),
+          exitCode: code || undefined,
+        });
         this.emit('jobCompleted', job, code, signal);
         this.persistJobs();
       });
@@ -225,18 +137,24 @@ export class JobManager extends EventEmitter {
       // Set timeout if specified
       if (job.timeout) {
         job.timer = setTimeout(() => {
-          this.killJob(job.id, 'SIGKILL');
+          this.stopJob(job.id, 'SIGKILL');
         }, job.timeout);
       }
 
-      this.emit('jobStarted', job);
-      await this.persistJobs();
+      // Update status to running
+      const updatedJob = await this.updateJobStatus(job.id, 'running', {
+        startedAt: new Date(),
+        pid: job.pid,
+      });
 
-      return job;
-    } catch (error) {
-      job.status = 'failed';
-      job.stderr = error.message;
-      job.completedAt = new Date();
+      await this.persistJobs();
+      return updatedJob;
+
+    } catch (error: any) {
+      await this.updateJobStatus(job.id, 'failed', {
+        completedAt: new Date(),
+        stderr: error.message,
+      });
       this.emit('jobFailed', job, error);
       await this.persistJobs();
       throw error;
@@ -244,118 +162,110 @@ export class JobManager extends EventEmitter {
   }
 
   /**
+   * Stop a running job
+   */
+  async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<BaseJobSpec> {
+    const baseJob = await this.getJob(jobId);
+    if (!baseJob) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+
+    const job = baseJob as JobSpec;
+
+    if (job.status !== 'running') {
+      throw new Error(`Job ${jobId} is not running`);
+    }
+
+    if (!job.process || !job.pid) {
+      throw new Error(`Job ${jobId} has no associated process`);
+    }
+
+    // Clear timeout if exists
+    if (job.timer) {
+      clearTimeout(job.timer);
+      job.timer = undefined;
+    }
+
+    // Kill the process
+    try {
+      job.process.kill(signal as NodeJS.Signals);
+    } catch (error: any) {
+      this.logger.error(`Failed to kill job ${jobId}`, error);
+    }
+
+    // Update status
+    const updatedJob = await this.updateJobStatus(jobId, 'stopped', {
+      completedAt: new Date(),
+    });
+
+    await this.persistJobs();
+    return updatedJob;
+  }
+
+  /**
    * Create and immediately start a job
    */
-  async runJob(spec: Partial<JobSpec>): Promise<JobSpec> {
+  async runJob(spec: Partial<JobSpec>): Promise<BaseJobSpec> {
     const job = await this.createJob(spec);
     return await this.startJob(job.id);
   }
 
-  // ================================
-  // READ Operations
-  // ================================
-
   /**
-   * Get a specific job
+   * Pause a job (stop it but keep for later resumption)
    */
-  getJob(jobId: string): JobSpec | undefined {
-    return this.jobs.get(jobId);
+  async pauseJob(jobId: string): Promise<BaseJobSpec> {
+    const job = await this.stopJob(jobId, 'SIGSTOP');
+    return await this.updateJobStatus(jobId, 'paused');
   }
 
   /**
-   * List all jobs with optional filtering
+   * Resume a paused job
    */
-  listJobs(filter?: JobFilter): JobSpec[] {
-    let jobs = Array.from(this.jobs.values());
-
-    if (filter) {
-      if (filter.status) {
-        jobs = jobs.filter(job => filter.status!.includes(job.status));
-      }
-      if (filter.type) {
-        jobs = jobs.filter(job => filter.type!.includes(job.type));
-      }
-      if (filter.tags && filter.tags.length > 0) {
-        jobs = jobs.filter(job =>
-          filter.tags!.some(tag => job.tags.includes(tag))
-        );
-      }
-      if (filter.user) {
-        jobs = jobs.filter(job => job.user === filter.user);
-      }
-      if (filter.namePattern) {
-        jobs = jobs.filter(job => filter.namePattern!.test(job.name));
-      }
-      if (filter.createdAfter) {
-        jobs = jobs.filter(job => job.createdAt >= filter.createdAfter!);
-      }
-      if (filter.createdBefore) {
-        jobs = jobs.filter(job => job.createdAt <= filter.createdBefore!);
-      }
+  async resumeJob(jobId: string): Promise<BaseJobSpec> {
+    const baseJob = await this.getJob(jobId);
+    if (!baseJob) {
+      throw new Error(`Job ${jobId} not found`);
     }
 
-    return jobs.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  }
+    const job = baseJob as JobSpec;
 
-  /**
-   * Get job statistics
-   */
-  getJobStats(): any {
-    const jobs = Array.from(this.jobs.values());
-    const stats = {
-      total: jobs.length,
-      byStatus: {} as Record<string, number>,
-      byType: {} as Record<string, number>,
-      running: jobs.filter(j => j.status === 'running').length,
-      completed: jobs.filter(j => j.status === 'completed').length,
-      failed: jobs.filter(j => j.status === 'failed').length,
-    };
+    if (job.status !== 'paused') {
+      throw new Error(`Job ${jobId} is not paused`);
+    }
 
-    jobs.forEach(job => {
-      stats.byStatus[job.status] = (stats.byStatus[job.status] || 0) + 1;
-      stats.byType[job.type] = (stats.byType[job.type] || 0) + 1;
-    });
+    if (!job.process || !job.pid) {
+      throw new Error(`Job ${jobId} has no associated process`);
+    }
 
-    return stats;
-  }
-
-  /**
-   * Get system processes
-   */
-  async getSystemProcesses(): Promise<SystemProcess[]> {
+    // Send SIGCONT to resume
     try {
-      const { stdout } = await execAsync('ps -eo pid,ppid,user,pcpu,pmem,lstart,comm,args');
-      const lines = stdout.split('\n').slice(1); // Skip header
-
-      return lines
-        .filter(line => line.trim())
-        .map(line => {
-          const parts = line.trim().split(/\s+/);
-          return {
-            pid: parseInt(parts[0]),
-            ppid: parseInt(parts[1]),
-            user: parts[2],
-            cpu: parseFloat(parts[3]),
-            memory: parseFloat(parts[4]),
-            startTime: new Date(parts.slice(5, 9).join(' ')),
-            name: parts[9],
-            command: parts.slice(10).join(' ') || parts[9],
-            status: 'running'
-          };
-        });
+      job.process.kill('SIGCONT');
+      return await this.updateJobStatus(jobId, 'running');
     } catch (error) {
-      console.error('Failed to get system processes:', error);
-      return [];
+      throw new Error(`Failed to resume job ${jobId}: ${error}`);
     }
+  }
+
+  /**
+   * Kill a job forcefully
+   */
+  async killJob(jobId: string, signal: string = 'SIGKILL'): Promise<BaseJobSpec> {
+    return await this.stopJob(jobId, signal);
   }
 
   /**
    * Monitor a job's resource usage
    */
   async monitorJob(jobId: string): Promise<any> {
-    const job = this.jobs.get(jobId);
-    if (!job || !job.pid) {
-      throw new Error(`Job ${jobId} not found or not running`);
+    const baseJob = await this.getJob(jobId);
+    if (!baseJob) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+
+    const job = baseJob as JobSpec;
+
+    if (!job.pid) {
+      throw new Error(`Job ${jobId} is not running`);
     }
 
     try {
@@ -387,332 +297,189 @@ export class JobManager extends EventEmitter {
     }
   }
 
-  // ================================
-  // UPDATE Operations
-  // ================================
-
   /**
-   * Update job properties
+   * Get system processes
    */
-  async updateJob(jobId: string, updates: JobUpdate): Promise<JobSpec> {
-    const job = this.jobs.get(jobId);
-    if (!job) {
-      throw new Error(`Job ${jobId} not found`);
-    }
-
-    // Apply updates
-    if (updates.name !== undefined) job.name = updates.name;
-    if (updates.priority !== undefined) {
-      job.priority = Math.max(-20, Math.min(19, updates.priority));
-
-      // Apply priority to running process
-      if (job.pid && job.status === 'running') {
-        try {
-          await execAsync(`renice ${job.priority} ${job.pid}`);
-        } catch (error) {
-          console.warn(`Failed to renice process ${job.pid}:`, error.message);
-        }
-      }
-    }
-    if (updates.maxMemory !== undefined) job.maxMemory = updates.maxMemory;
-    if (updates.maxCpu !== undefined) job.maxCpu = updates.maxCpu;
-    if (updates.timeout !== undefined) job.timeout = updates.timeout;
-    if (updates.tags !== undefined) job.tags = updates.tags;
-    if (updates.description !== undefined) job.description = updates.description;
-    if (updates.schedule !== undefined) job.schedule = updates.schedule;
-
-    this.emit('jobUpdated', job);
-    await this.persistJobs();
-
-    return job;
-  }
-
-  /**
-   * Pause a running job
-   */
-  async pauseJob(jobId: string): Promise<JobSpec> {
-    const job = this.jobs.get(jobId);
-    if (!job) {
-      throw new Error(`Job ${jobId} not found`);
-    }
-
-    if (job.status !== 'running' || !job.pid) {
-      throw new Error(`Job ${jobId} is not running`);
-    }
-
+  async getSystemProcesses(): Promise<SystemProcess[]> {
     try {
-      process.kill(job.pid, 'SIGSTOP');
-      job.status = 'stopped';
-      this.emit('jobPaused', job);
-      await this.persistJobs();
-      return job;
+      const { stdout } = await execAsync('ps -eo pid,ppid,user,pcpu,pmem,lstart,comm,args');
+      const lines = stdout.split('\n').slice(1); // Skip header
+
+      return lines
+        .filter(line => line.trim())
+        .map(line => {
+          const parts = line.trim().split(/\s+/);
+          return {
+            pid: parseInt(parts[0]),
+            ppid: parseInt(parts[1]),
+            user: parts[2],
+            cpu: parseFloat(parts[3]),
+            memory: parseFloat(parts[4]),
+            startTime: new Date(parts.slice(5, 9).join(' ')),
+            name: parts[9],
+            command: parts.slice(10).join(' ') || parts[9],
+            status: 'running'
+          };
+        });
     } catch (error) {
-      throw new Error(`Failed to pause job ${jobId}: ${error.message}`);
+      this.logger.error('Failed to get system processes', error as Error);
+      return [];
     }
   }
 
   /**
-   * Resume a paused job
+   * Get job statistics
    */
-  async resumeJob(jobId: string): Promise<JobSpec> {
-    const job = this.jobs.get(jobId);
-    if (!job) {
-      throw new Error(`Job ${jobId} not found`);
-    }
+  getJobStats(): any {
+    const jobs = Array.from(this.jobs.values()) as JobSpec[];
+    const stats = {
+      total: jobs.length,
+      byStatus: {} as Record<string, number>,
+      byType: {} as Record<string, number>,
+      running: jobs.filter(j => j.status === 'running').length,
+      completed: jobs.filter(j => j.status === 'completed').length,
+      failed: jobs.filter(j => j.status === 'failed').length,
+    };
 
-    if (job.status !== 'stopped' || !job.pid) {
-      throw new Error(`Job ${jobId} is not paused`);
-    }
+    jobs.forEach(job => {
+      stats.byStatus[job.status] = (stats.byStatus[job.status] || 0) + 1;
+      stats.byType[job.type] = (stats.byType[job.type] || 0) + 1;
+    });
 
-    try {
-      process.kill(job.pid, 'SIGCONT');
-      job.status = 'running';
-      this.emit('jobResumed', job);
-      await this.persistJobs();
-      return job;
-    } catch (error) {
-      throw new Error(`Failed to resume job ${jobId}: ${error.message}`);
-    }
-  }
-
-  // ================================
-  // DELETE Operations
-  // ================================
-
-  /**
-   * Kill a running job
-   */
-  async killJob(jobId: string, signal: string = 'SIGTERM'): Promise<JobSpec> {
-    const job = this.jobs.get(jobId);
-    if (!job) {
-      throw new Error(`Job ${jobId} not found`);
-    }
-
-    if (job.timer) {
-      clearTimeout(job.timer);
-      job.timer = undefined;
-    }
-
-    if (job.pid && (job.status === 'running' || job.status === 'stopped')) {
-      try {
-        process.kill(job.pid, signal);
-        job.status = 'killed';
-        job.completedAt = new Date();
-        this.emit('jobKilled', job, signal);
-        await this.persistJobs();
-      } catch (error) {
-        if (error.code !== 'ESRCH') { // Process not found is OK
-          throw new Error(`Failed to kill job ${jobId}: ${error.message}`);
-        }
-      }
-    }
-
-    return job;
+    return stats;
   }
 
   /**
-   * Remove a job from the job list
-   */
-  async removeJob(jobId: string, force = false): Promise<boolean> {
-    const job = this.jobs.get(jobId);
-    if (!job) {
-      return false;
-    }
-
-    if (!force && (job.status === 'running' || job.status === 'stopped')) {
-      throw new Error(`Job ${jobId} is still running. Use force=true to kill and remove.`);
-    }
-
-    if (force && (job.status === 'running' || job.status === 'stopped')) {
-      await this.killJob(jobId, 'SIGKILL');
-    }
-
-    this.jobs.delete(jobId);
-    this.emit('jobRemoved', job);
-    await this.persistJobs();
-
-    return true;
-  }
-
-  /**
-   * Clean up completed/failed jobs
+   * Clean up old jobs
    */
   async cleanupJobs(olderThanHours = 24): Promise<number> {
     const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000);
-    const toRemove: string[] = [];
+    const jobs = await this.listJobs();
+    let cleaned = 0;
 
-    for (const [id, job] of this.jobs) {
-      if ((job.status === 'completed' || job.status === 'failed' || job.status === 'killed') &&
-          job.completedAt && job.completedAt < cutoff) {
-        toRemove.push(id);
-      }
-    }
-
-    for (const id of toRemove) {
-      await this.removeJob(id);
-    }
-
-    return toRemove.length;
-  }
-
-  /**
-   * Kill system process by PID
-   */
-  async killSystemProcess(pid: number, signal = 'SIGTERM'): Promise<boolean> {
-    try {
-      process.kill(pid, signal);
-      this.emit('systemProcessKilled', pid, signal);
-      return true;
-    } catch (error) {
-      if (error.code === 'ESRCH') {
-        return false; // Process not found
-      }
-      throw new Error(`Failed to kill process ${pid}: ${error.message}`);
-    }
-  }
-
-  // ================================
-  // Scheduling and Persistence
-  // ================================
-
-  private startScheduler(): void {
-    this.schedulerInterval = setInterval(() => {
-      this.checkScheduledJobs();
-    }, 60000); // Check every minute
-  }
-
-  private async checkScheduledJobs(): Promise<void> {
-    const now = new Date();
-
-    for (const job of this.jobs.values()) {
-      if (job.type === 'scheduled' && job.schedule && job.status === 'created') {
-        let shouldRun = false;
-
-        if (job.schedule.nextRun && now >= job.schedule.nextRun) {
-          shouldRun = true;
-        } else if (job.schedule.interval) {
-          const lastRun = job.startedAt || job.createdAt;
-          if (now.getTime() - lastRun.getTime() >= job.schedule.interval) {
-            shouldRun = true;
-          }
-        }
-
-        if (shouldRun) {
-          try {
-            await this.startJob(job.id);
-
-            // Schedule next run
-            if (job.schedule.interval) {
-              job.schedule.nextRun = new Date(now.getTime() + job.schedule.interval);
-            }
-          } catch (error) {
-            console.error(`Failed to start scheduled job ${job.id}:`, error);
-          }
+    for (const job of jobs) {
+      if (job.status === 'completed' || job.status === 'failed') {
+        if (job.completedAt && job.completedAt < cutoff) {
+          await this.removeJob(job.id, true);
+          cleaned++;
         }
       }
     }
+
+    this.logger.info(`Cleaned up ${cleaned} old jobs`);
+    return cleaned;
   }
+
+  // ================================
+  // PRIVATE: Persistence & Scheduling
+  // ================================
 
   private async loadPersistedJobs(): Promise<void> {
     try {
       if (fs.existsSync(this.persistenceFile)) {
-        const data = await fs.promises.readFile(this.persistenceFile, 'utf8');
-        
-        // Skip if file is empty or only whitespace
-        if (!data.trim()) {
-          return;
-        }
-        
-        const jobsData = JSON.parse(data);
+        const data = fs.readFileSync(this.persistenceFile, 'utf8');
+        const persistedJobs = JSON.parse(data) as JobSpec[];
 
-        for (const jobData of jobsData) {
-          // Restore dates
-          jobData.createdAt = new Date(jobData.createdAt);
-          if (jobData.startedAt) jobData.startedAt = new Date(jobData.startedAt);
-          if (jobData.completedAt) jobData.completedAt = new Date(jobData.completedAt);
-          if (jobData.schedule?.nextRun) {
-            jobData.schedule.nextRun = new Date(jobData.schedule.nextRun);
+        for (const job of persistedJobs) {
+          // Convert date strings back to Date objects
+          job.createdAt = new Date(job.createdAt);
+          if (job.startedAt) job.startedAt = new Date(job.startedAt);
+          if (job.completedAt) job.completedAt = new Date(job.completedAt);
+
+          // Don't restore running processes - mark them as stopped
+          if (job.status === 'running') {
+            job.status = 'stopped';
           }
 
-          this.jobs.set(jobData.id, jobData);
-          if (jobData.id.startsWith('job_')) {
-            const jobNum = parseInt(jobData.id.split('_')[1]);
-            if (jobNum >= this.nextJobId) {
-              this.nextJobId = jobNum + 1;
-            }
-          }
+          await this.storage.save(job);
+          this.jobs.set(job.id, job);
         }
+
+        this.logger.info(`Loaded ${persistedJobs.length} persisted jobs`);
       }
     } catch (error) {
-      // Only log if it's not a JSON parsing error on empty file
-      if (error instanceof SyntaxError && error.message.includes('Unexpected end of JSON input')) {
-        // File is empty or corrupted, silently ignore
-        return;
-      }
-      console.error('Failed to load persisted jobs:', error);
+      this.logger.error('Failed to load persisted jobs', error as Error);
     }
   }
 
   private async persistJobs(): Promise<void> {
     try {
-      const jobsData = Array.from(this.jobs.values()).map(job => {
-        // Remove process reference and timer before serializing
-        const { process: _process, timer: _timer, ...serializable } = job;
+      const jobs = Array.from(this.jobs.values()).map(job => {
+        const { process, timer, ...serializable } = job as JobSpec;
         return serializable;
       });
 
-      await fs.promises.writeFile(
-        this.persistenceFile,
-        JSON.stringify(jobsData, null, 2)
-      );
+      fs.writeFileSync(this.persistenceFile, JSON.stringify(jobs, null, 2));
     } catch (error) {
-      console.error('Failed to persist jobs:', error);
+      this.logger.error('Failed to persist jobs', error as Error);
+    }
+  }
+
+  private startScheduler(): void {
+    // Check for scheduled jobs every minute
+    this.schedulerInterval = setInterval(() => {
+      this.checkScheduledJobs();
+    }, 60000);
+
+    // Run immediately on startup
+    this.checkScheduledJobs();
+  }
+
+  private async checkScheduledJobs(): Promise<void> {
+    const jobs = await this.listJobs({ status: 'created' });
+    const now = new Date();
+
+    for (const job of jobs as JobSpec[]) {
+      if (job.schedule?.nextRun && job.schedule.nextRun <= now) {
+        this.logger.info(`Starting scheduled job: ${job.id}`);
+        try {
+          await this.startJob(job.id);
+
+          // Calculate next run time
+          if (job.schedule.interval) {
+            job.schedule.nextRun = new Date(now.getTime() + job.schedule.interval);
+            await this.updateJob(job.id, { schedule: job.schedule });
+          }
+        } catch (error) {
+          this.logger.error(`Failed to start scheduled job ${job.id}`, error as Error);
+        }
+      }
     }
   }
 
   private setupCleanupHandlers(): void {
-    const cleanup = () => {
+    const cleanup = async () => {
+      this.logger.info('JobManager shutting down...');
       if (this.schedulerInterval) {
         clearInterval(this.schedulerInterval);
       }
-      // Kill all running jobs
-      for (const job of this.jobs.values()) {
-        if (job.status === 'running' && job.pid) {
-          try {
-            process.kill(job.pid, 'SIGTERM');
-          } catch (_) {
-            // Ignore errors when killing jobs during cleanup
-          }
+
+      // Stop all running jobs
+      const jobs = await this.listJobs({ status: 'running' });
+      for (const job of jobs) {
+        try {
+          await this.stopJob(job.id);
+        } catch (error) {
+          this.logger.error(`Failed to stop job ${job.id}`, error as Error);
         }
       }
+
+      await this.persistJobs();
+      await this.cleanup();
     };
 
-    process.on('SIGINT', cleanup);
     process.on('SIGTERM', cleanup);
-    process.on('exit', cleanup);
+    process.on('SIGINT', cleanup);
   }
 
   /**
-   * Shutdown the job manager
+   * Override cleanup to include scheduler
    */
-  async shutdown(): Promise<void> {
+  async cleanup(): Promise<void> {
     if (this.schedulerInterval) {
       clearInterval(this.schedulerInterval);
     }
-
-    // Gracefully stop all running jobs
-    const runningJobs = this.listJobs({ status: ['running', 'stopped'] });
-
-    for (const job of runningJobs) {
-      try {
-        await this.killJob(job.id, 'SIGTERM');
-      } catch (error) {
-        console.warn(`Failed to stop job ${job.id}:`, error.message);
-      }
-    }
-
-    await this.persistJobs();
-    this.emit('shutdown');
+    await super.cleanup();
   }
 }
 

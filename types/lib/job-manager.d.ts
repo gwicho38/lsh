@@ -1,51 +1,27 @@
 /**
- * Comprehensive Job Management System for LSH Shell
+ * Job Management System for LSH Shell
  * Supports CRUD operations on shell jobs and system processes
+ *
+ * REFACTORED: Now extends BaseJobManager to eliminate duplication
  */
 import { ChildProcess } from 'child_process';
-import { EventEmitter } from 'events';
-export interface JobSpec {
-    id: string;
-    name: string;
-    command: string;
-    args?: string[];
+import { BaseJobManager, BaseJobSpec, BaseJobFilter } from './base-job-manager.js';
+/**
+ * Extended job specification with JobManager-specific fields
+ */
+export interface JobSpec extends BaseJobSpec {
     type: 'shell' | 'system' | 'scheduled' | 'service';
-    status: 'created' | 'running' | 'stopped' | 'completed' | 'failed' | 'killed';
-    priority: number;
-    pid?: number;
     ppid?: number;
-    createdAt: Date;
-    startedAt?: Date;
-    completedAt?: Date;
     cpuUsage?: number;
     memoryUsage?: number;
-    env?: Record<string, string>;
-    cwd?: string;
-    user?: string;
     maxMemory?: number;
     maxCpu?: number;
-    timeout?: number;
-    schedule?: {
-        cron?: string;
-        interval?: number;
-        nextRun?: Date;
-    };
-    stdout?: string;
-    stderr?: string;
     logFile?: string;
-    tags: string[];
-    description?: string;
     process?: ChildProcess;
     timer?: NodeJS.Timeout;
 }
-export interface JobFilter {
-    status?: string[];
+export interface JobFilter extends BaseJobFilter {
     type?: string[];
-    tags?: string[];
-    user?: string;
-    namePattern?: RegExp;
-    createdAfter?: Date;
-    createdBefore?: Date;
 }
 export interface JobUpdate {
     name?: string;
@@ -68,80 +44,59 @@ export interface SystemProcess {
     startTime: Date;
     status: string;
 }
-export declare class JobManager extends EventEmitter {
-    private jobs;
+export declare class JobManager extends BaseJobManager {
     private nextJobId;
     private persistenceFile;
     private schedulerInterval?;
     constructor(persistenceFile?: string);
     /**
-     * Create a new job
+     * Start a job (execute it as a process)
      */
-    createJob(spec: Partial<JobSpec>): Promise<JobSpec>;
+    startJob(jobId: string): Promise<BaseJobSpec>;
     /**
-     * Start a job (execute it)
+     * Stop a running job
      */
-    startJob(jobId: string): Promise<JobSpec>;
+    stopJob(jobId: string, signal?: string): Promise<BaseJobSpec>;
     /**
      * Create and immediately start a job
      */
-    runJob(spec: Partial<JobSpec>): Promise<JobSpec>;
+    runJob(spec: Partial<JobSpec>): Promise<BaseJobSpec>;
     /**
-     * Get a specific job
+     * Pause a job (stop it but keep for later resumption)
      */
-    getJob(jobId: string): JobSpec | undefined;
+    pauseJob(jobId: string): Promise<BaseJobSpec>;
     /**
-     * List all jobs with optional filtering
+     * Resume a paused job
      */
-    listJobs(filter?: JobFilter): JobSpec[];
+    resumeJob(jobId: string): Promise<BaseJobSpec>;
     /**
-     * Get job statistics
+     * Kill a job forcefully
      */
-    getJobStats(): any;
-    /**
-     * Get system processes
-     */
-    getSystemProcesses(): Promise<SystemProcess[]>;
+    killJob(jobId: string, signal?: string): Promise<BaseJobSpec>;
     /**
      * Monitor a job's resource usage
      */
     monitorJob(jobId: string): Promise<any>;
     /**
-     * Update job properties
+     * Get system processes
      */
-    updateJob(jobId: string, updates: JobUpdate): Promise<JobSpec>;
+    getSystemProcesses(): Promise<SystemProcess[]>;
     /**
-     * Pause a running job
+     * Get job statistics
      */
-    pauseJob(jobId: string): Promise<JobSpec>;
+    getJobStats(): any;
     /**
-     * Resume a paused job
-     */
-    resumeJob(jobId: string): Promise<JobSpec>;
-    /**
-     * Kill a running job
-     */
-    killJob(jobId: string, signal?: string): Promise<JobSpec>;
-    /**
-     * Remove a job from the job list
-     */
-    removeJob(jobId: string, force?: boolean): Promise<boolean>;
-    /**
-     * Clean up completed/failed jobs
+     * Clean up old jobs
      */
     cleanupJobs(olderThanHours?: number): Promise<number>;
-    /**
-     * Kill system process by PID
-     */
-    killSystemProcess(pid: number, signal?: string): Promise<boolean>;
-    private startScheduler;
-    private checkScheduledJobs;
     private loadPersistedJobs;
     private persistJobs;
+    private startScheduler;
+    private checkScheduledJobs;
     private setupCleanupHandlers;
     /**
-     * Shutdown the job manager
+     * Override cleanup to include scheduler
      */
-    shutdown(): Promise<void>;
+    cleanup(): Promise<void>;
 }
 export default JobManager;
