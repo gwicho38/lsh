@@ -177,10 +177,8 @@
       "Bash(sort:*)",
       "Bash(hash -r)",
       "Bash(rm:*)",
-<<<<<<< HEAD
       "Bash(mkdir:*)",
-      "Bash(git mv:*)"
-=======
+      "Bash(git mv:*)",
       "Bash(npx dotenv-vault:*)",
       "Bash(if [ -d \"$dir\" ])",
       "Bash(if [ -f \"$dir/.env\" ])",
@@ -193,8 +191,7 @@
       "Bash(openssl rand:*)",
       "Bash(./scripts/push-all-secrets.sh:*)",
       "Bash(/home/lefvpc/repos/lsh/lsh secrets push:*)",
-      "Bash(git pull:*)"
->>>>>>> 48a571b (feat: Major refactoring and secrets management system)
+      "Bash(git rebase:*)"
     ],
     "deny": [],
     "ask": []
