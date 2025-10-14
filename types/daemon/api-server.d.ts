@@ -1,34 +1,41 @@
 /**
  * LSH API Server - RESTful API for daemon control and job management
  */
-import express from 'express';
-import { EventEmitter } from 'events';
+import cors from 'cors';
 import type { LSHJobDaemon } from './lshd.js';
-export interface ApiConfig {
-    port: number;
+import { BaseAPIServer, BaseAPIServerConfig } from '../lib/base-api-server.js';
+export interface ApiConfig extends BaseAPIServerConfig {
     apiKey?: string;
     jwtSecret?: string;
-    corsOrigins?: string[];
     enableWebhooks?: boolean;
     webhookEndpoints?: string[];
 }
-export declare class LSHApiServer extends EventEmitter {
-    private app;
+export declare class LSHApiServer extends BaseAPIServer {
     private daemon;
-    private config;
-    private server;
+    private apiConfig;
     private clients;
     constructor(daemon: LSHJobDaemon, config?: Partial<ApiConfig>);
-    private setupMiddleware;
+    /**
+     * Override CORS configuration to support wildcard patterns
+     */
+    protected configureCORS(): ReturnType<typeof cors>;
+    /**
+     * Helper method to handle API operations with automatic error handling and webhooks
+     */
+    private handleOperation;
     private authenticateRequest;
-    private setupRoutes;
+    protected setupRoutes(): void;
     private setupEventHandlers;
     private broadcastToClients;
     private triggerWebhook;
     private convertToCSV;
+    /**
+     * Override onStop to cleanup SSE connections
+     */
+    protected onStop(): void;
+    /**
+     * Override start to log API key
+     */
     start(): Promise<void>;
-    stop(): Promise<void>;
     getApiKey(): string;
-    getPort(): number;
-    getApp(): express.Application;
 }

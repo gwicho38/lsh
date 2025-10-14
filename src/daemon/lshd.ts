@@ -15,6 +15,7 @@ import JobManager, { JobSpec } from '../lib/job-manager.js';
 import { LSHApiServer, ApiConfig as _ApiConfig } from './api-server.js';
 import { validateCommand } from '../lib/command-validator.js';
 import { validateEnvironment, printValidationResults } from '../lib/env-validator.js';
+import { createLogger } from '../lib/logger.js';
 
 const execAsync = promisify(exec);
 
@@ -42,6 +43,7 @@ export class LSHJobDaemon extends EventEmitter {
   private ipcServer?: any; // Unix socket server for communication
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
   private apiServer?: LSHApiServer; // API server instance
+  private logger = createLogger('LSHJobDaemon');
 
   constructor(config?: Partial<DaemonConfig>) {
     super();
@@ -211,7 +213,8 @@ export class LSHJobDaemon extends EventEmitter {
    */
   async addJob(jobSpec: Partial<JobSpec>): Promise<JobSpec> {
     this.log('INFO', `Adding job: ${jobSpec.name || 'unnamed'}`);
-    return await this.jobManager.createJob(jobSpec);
+    const job = await this.jobManager.createJob(jobSpec);
+    return job as JobSpec;
   }
 
   /**
@@ -219,7 +222,8 @@ export class LSHJobDaemon extends EventEmitter {
    */
   async startJob(jobId: string): Promise<JobSpec> {
     this.log('INFO', `Starting job: ${jobId}`);
-    return await this.jobManager.startJob(jobId);
+    const job = await this.jobManager.startJob(jobId);
+    return job as JobSpec;
   }
 
   /**
@@ -230,7 +234,7 @@ export class LSHJobDaemon extends EventEmitter {
 
     try {
       // Get the job details
-      const job = this.jobManager.getJob(jobId);
+      const job = await this.jobManager.getJob(jobId);
       if (!job) {
         throw new Error(`Job ${jobId} not found`);
       }
@@ -282,14 +286,15 @@ export class LSHJobDaemon extends EventEmitter {
    */
   async stopJob(jobId: string, signal = 'SIGTERM'): Promise<JobSpec> {
     this.log('INFO', `Stopping job: ${jobId} with signal ${signal}`);
-    return await this.jobManager.killJob(jobId, signal);
+    const job = await this.jobManager.killJob(jobId, signal);
+    return job as JobSpec;
   }
 
   /**
    * Get job information
    */
-  getJob(jobId: string): JobSpec | undefined {
-    const job = this.jobManager.getJob(jobId);
+  async getJob(jobId: string): Promise<JobSpec | undefined> {
+    const job = await this.jobManager.getJob(jobId);
     return job ? this.sanitizeJobForSerialization(job) : undefined;
   }
 
@@ -355,9 +360,9 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * List all jobs
    */
-  listJobs(filter?: any, limit?: number): JobSpec[] {
+  async listJobs(filter?: any, limit?: number): Promise<JobSpec[]> {
     try {
-      const jobs = this.jobManager.listJobs(filter);
+      const jobs = await this.jobManager.listJobs(filter);
 
       // Sanitize jobs to remove circular references before serialization
       const sanitizedJobs = jobs.map(job => this.sanitizeJobForSerialization(job));
@@ -457,7 +462,7 @@ export class LSHJobDaemon extends EventEmitter {
     }
 
     // Check both created and completed jobs (for recurring schedules)
-    const jobs = this.jobManager.listJobs({ status: ['created', 'completed'] });
+    const jobs = await this.jobManager.listJobs({ status: ['created', 'completed'] });
     const now = new Date();
 
     for (const job of jobs) {
@@ -609,7 +614,7 @@ export class LSHJobDaemon extends EventEmitter {
    */
   private async resetRecurringJobStatus(jobId: string): Promise<void> {
     try {
-      const job = this.jobManager.getJob(jobId);
+      const job = await this.jobManager.getJob(jobId);
 
       if (job && job.schedule?.cron && job.status === 'completed') {
         // Reset status for next scheduled run
@@ -637,7 +642,7 @@ export class LSHJobDaemon extends EventEmitter {
   }
 
   private async stopAllJobs(): Promise<void> {
-    const runningJobs = this.jobManager.listJobs({ status: ['running', 'stopped'] });
+    const runningJobs = await this.jobManager.listJobs({ status: ['running', 'stopped'] });
 
     for (const job of runningJobs) {
       try {
@@ -780,9 +785,24 @@ export class LSHJobDaemon extends EventEmitter {
       this.logStream.write(logEntry);
     }
 
-    // Also output to console in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(logEntry.trim());
+    // Also output using logger
+    switch (level.toUpperCase()) {
+      case 'DEBUG':
+        this.logger.debug(message);
+        break;
+      case 'INFO':
+        this.logger.info(message);
+        break;
+      case 'WARN':
+      case 'WARNING':
+        this.logger.warn(message);
+        break;
+      case 'ERROR':
+      case 'FATAL':
+        this.logger.error(message);
+        break;
+      default:
+        this.logger.info(message);
     }
 
     this.emit('log', level, message);
@@ -828,6 +848,9 @@ export class LSHJobDaemon extends EventEmitter {
   }
 }
 
+// Module-level logger for CLI operations
+const cliLogger = createLogger('LSHDaemonCLI');
+
 // CLI interface for the daemon
 if (import.meta.url === `file://${process.argv[1]}`) {
   const command = process.argv[2];
@@ -840,14 +863,14 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       try {
         const jobCommand = subCommand;
         if (!jobCommand) {
-          console.error('❌ Usage: lshd job-add "command-to-run"');
+          cliLogger.error('Usage: lshd job-add "command-to-run"');
           process.exit(1);
         }
 
         const client = new (await import('../lib/daemon-client.js')).default();
 
         if (!client.isDaemonRunning()) {
-          console.error('❌ Daemon is not running. Start it with: lsh daemon start');
+          cliLogger.error('Daemon is not running. Start it with: lsh daemon start');
           process.exit(1);
         }
 
@@ -870,19 +893,16 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         };
 
         const result = await client.addJob(jobSpec);
-        console.log('✅ Job added successfully:');
-        console.log(`  ID: ${result.id}`);
-        console.log(`  Command: ${result.command}`);
-        console.log(`  Status: ${result.status}`);
+        cliLogger.info('Job added successfully', { id: result.id, command: result.command, status: result.status });
 
         // Start the job immediately
         await client.startJob(result.id);
-        console.log(`✅ Job ${result.id} started`);
+        cliLogger.info(`Job ${result.id} started`);
 
         client.disconnect();
         process.exit(0);
-      } catch (error) {
-        console.error('❌ Failed to add job:', error.message);
+      } catch (error: any) {
+        cliLogger.error('Failed to add job', error);
         process.exit(1);
       }
     })();
@@ -892,27 +912,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     switch (command) {
       case 'start':
-        daemon.start().catch(console.error);
+        daemon.start().catch((error) => cliLogger.error('Failed to start daemon', error));
         // Keep the process alive
         process.stdin.resume();
         break;
       case 'stop':
-        daemon.stop().catch(console.error);
+        daemon.stop().catch((error) => cliLogger.error('Failed to stop daemon', error));
         break;
       case 'restart':
-        daemon.restart().catch(console.error);
+        daemon.restart().catch((error) => cliLogger.error('Failed to restart daemon', error));
         // Keep the process alive
         process.stdin.resume();
         break;
       case 'status':
         daemon.getStatus().then(status => {
-          console.log(JSON.stringify(status, null, 2));
+          cliLogger.info(JSON.stringify(status, null, 2));
           process.exit(0);
-        }).catch(console.error);
+        }).catch((error) => cliLogger.error('Failed to get daemon status', error));
         break;
       default:
-        console.log('Usage: lshd {start|stop|restart|status|job-add}');
-        console.log('  lshd job-add "command" - Add and start a job');
+        cliLogger.info('Usage: lshd {start|stop|restart|status|job-add}');
+        cliLogger.info('  lshd job-add "command" - Add and start a job');
         process.exit(1);
     }
   }

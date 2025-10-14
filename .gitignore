@@ -171,3 +171,9 @@ data/**
 BetterTouchTool.app
 .DS_Store
 .envrc
+
+.env*
+.flaskenv*
+!.env.project
+!.env.vault.env.vault
+.lsh-credentials-BACKUP.txt
