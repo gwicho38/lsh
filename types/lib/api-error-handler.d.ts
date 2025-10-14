@@ -133,4 +133,4 @@ export declare function createApiHandler(webhookTrigger?: (event: string, data: 
  * app.use(errorMiddleware);
  * ```
  */
-export declare function errorMiddleware(error: Error, req: Request, res: Response, next: NextFunction): void;
+export declare function errorMiddleware(error: Error, req: Request, res: Response, _next: NextFunction): void;

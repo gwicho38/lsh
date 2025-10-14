@@ -2,7 +2,7 @@
  * Built-in commands for comprehensive job management
  */
 
-import JobManager, { JobSpec, JobFilter, JobUpdate } from './job-manager.js';
+import JobManager, { JobFilter, JobUpdate } from './job-manager.js';
 import { BaseJobSpec } from './base-job-manager.js';
 
 export class JobBuiltins {
@@ -462,7 +462,7 @@ export class JobBuiltins {
     }
 
     try {
-      let signal = 'SIGTERM';
+      let _signal = 'SIGTERM';
       const pidStr = args[args.length - 1];
       const pid = parseInt(pidStr);
 
@@ -472,9 +472,9 @@ export class JobBuiltins {
 
       for (let i = 0; i < args.length - 1; i++) {
         if (args[i] === '-9' || args[i] === '--kill') {
-          signal = 'SIGKILL';
+          _signal = 'SIGKILL';
         } else if (args[i] === '-s' && i + 1 < args.length - 1) {
-          signal = args[i + 1];
+          _signal = args[i + 1];
           i++;
         }
       }

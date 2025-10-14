@@ -216,7 +216,7 @@ export abstract class BaseJobManager extends EventEmitter {
    */
   async getJob(jobId: string): Promise<BaseJobSpec | null> {
     // Check memory cache first
-    let job = this.jobs.get(jobId);
+    const job = this.jobs.get(jobId);
     if (job) {
       return job;
     }

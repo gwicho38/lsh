@@ -4,7 +4,6 @@
  */
 
 import * as fs from 'fs';
-import * as path from 'path';
 import * as crypto from 'crypto';
 import DatabasePersistence from './database-persistence.js';
 import { createLogger } from './logger.js';

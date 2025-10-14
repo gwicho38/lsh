@@ -362,27 +362,27 @@ export class BuiltinCommands {
     return { stdout: '', stderr: '', exitCode: 0, success: true };
   }
 
-  private async builtin_source(args: string[]): Promise<ExecutionResult> {
+  private async builtin_source(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'source: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_alias(args: string[]): Promise<ExecutionResult> {
+  private async builtin_alias(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'alias: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_unalias(args: string[]): Promise<ExecutionResult> {
+  private async builtin_unalias(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'unalias: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_readonly(args: string[]): Promise<ExecutionResult> {
+  private async builtin_readonly(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'readonly: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_local(args: string[]): Promise<ExecutionResult> {
+  private async builtin_local(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'local: not yet implemented', exitCode: 1, success: false };
   }
@@ -402,7 +402,7 @@ export class BuiltinCommands {
     };
   }
 
-  private async builtin_setopt(args: string[]): Promise<ExecutionResult> {
+  private async builtin_setopt(_args: string[]): Promise<ExecutionResult> {
     // TODO: ZshOptionsManager doesn't have setOption method yet
     // for (const opt of args) {
     //   this.context.zshOptions.setOption(opt, true);
@@ -410,7 +410,7 @@ export class BuiltinCommands {
     return { stdout: '', stderr: 'setopt: not yet fully implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_unsetopt(args: string[]): Promise<ExecutionResult> {
+  private async builtin_unsetopt(_args: string[]): Promise<ExecutionResult> {
     // TODO: ZshOptionsManager doesn't have setOption method yet
     // for (const opt of args) {
     //   this.context.zshOptions.setOption(opt, false);
@@ -418,77 +418,77 @@ export class BuiltinCommands {
     return { stdout: '', stderr: 'unsetopt: not yet fully implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_read(args: string[]): Promise<ExecutionResult> {
+  private async builtin_read(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'read: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_getopts(args: string[]): Promise<ExecutionResult> {
+  private async builtin_getopts(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'getopts: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_printf(args: string[]): Promise<ExecutionResult> {
+  private async builtin_printf(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'printf: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_exec(args: string[]): Promise<ExecutionResult> {
+  private async builtin_exec(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'exec: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_eval(args: string[]): Promise<ExecutionResult> {
+  private async builtin_eval(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'eval: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_trap(args: string[]): Promise<ExecutionResult> {
+  private async builtin_trap(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'trap: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_hash(args: string[]): Promise<ExecutionResult> {
+  private async builtin_hash(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'hash: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_type(args: string[]): Promise<ExecutionResult> {
+  private async builtin_type(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'type: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_history(args: string[]): Promise<ExecutionResult> {
+  private async builtin_history(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'history: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_fc(args: string[]): Promise<ExecutionResult> {
+  private async builtin_fc(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'fc: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_r(args: string[]): Promise<ExecutionResult> {
+  private async builtin_r(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'r: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_install(args: string[]): Promise<ExecutionResult> {
+  private async builtin_install(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'install: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_uninstall(args: string[]): Promise<ExecutionResult> {
+  private async builtin_uninstall(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'uninstall: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_zsh_source(args: string[]): Promise<ExecutionResult> {
+  private async builtin_zsh_source(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'zsh-source: not yet implemented', exitCode: 1, success: false };
   }
 
-  private async builtin_zsh_migrate(args: string[]): Promise<ExecutionResult> {
+  private async builtin_zsh_migrate(_args: string[]): Promise<ExecutionResult> {
     // Placeholder - full implementation to be extracted
     return { stdout: '', stderr: 'zsh-migrate: not yet implemented', exitCode: 1, success: false };
   }

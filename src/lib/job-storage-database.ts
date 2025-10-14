@@ -38,13 +38,13 @@ export class DatabaseJobStorage implements JobStorage {
     await this.persistence.saveJob(dbJob as any);
   }
 
-  async get(jobId: string): Promise<BaseJobSpec | null> {
+  async get(_jobId: string): Promise<BaseJobSpec | null> {
     // This would require adding a method to DatabasePersistence
     // For now, return null and rely on list() filtering
     return null;
   }
 
-  async list(filter?: BaseJobFilter): Promise<BaseJobSpec[]> {
+  async list(_filter?: BaseJobFilter): Promise<BaseJobSpec[]> {
     // Get active jobs from database
     const dbJobs = await this.persistence.getActiveJobs();
 

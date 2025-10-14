@@ -214,7 +214,7 @@ export class JobManager extends BaseJobManager {
    * Pause a job (stop it but keep for later resumption)
    */
   async pauseJob(jobId: string): Promise<BaseJobSpec> {
-    const job = await this.stopJob(jobId, 'SIGSTOP');
+    await this.stopJob(jobId, 'SIGSTOP');
     return await this.updateJobStatus(jobId, 'paused');
   }
 
@@ -405,7 +405,7 @@ export class JobManager extends BaseJobManager {
   private async persistJobs(): Promise<void> {
     try {
       const jobs = Array.from(this.jobs.values()).map(job => {
-        const { process, timer, ...serializable } = job as JobSpec;
+        const { process: _process, timer: _timer, ...serializable } = job as JobSpec;
         return serializable;
       });
 

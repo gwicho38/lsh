@@ -168,6 +168,6 @@ export declare class JobRegistry extends BaseJobManager {
      * Stop job - implements BaseJobManager abstract method
      * JobRegistry is read-only, so this records the stop event
      */
-    stopJob(jobId: string, signal?: string): Promise<BaseJobSpec>;
+    stopJob(jobId: string, _signal?: string): Promise<BaseJobSpec>;
 }
 export default JobRegistry;

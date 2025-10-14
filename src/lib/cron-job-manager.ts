@@ -327,7 +327,7 @@ export class CronJobManager extends BaseJobManager {
     try {
       await this.storage.delete(jobId);
       this.jobs.delete(jobId);
-    } catch (error) {
+    } catch (_error) {
       // Job may not exist in storage, that's okay
       this.logger.debug(`Job ${jobId} not found in storage during removal`);
     }

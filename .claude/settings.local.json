@@ -191,7 +191,9 @@
       "Bash(openssl rand:*)",
       "Bash(./scripts/push-all-secrets.sh:*)",
       "Bash(/home/lefvpc/repos/lsh/lsh secrets push:*)",
-      "Bash(git rebase:*)"
+      "Bash(git rebase:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)"
     ],
     "deny": [],
     "ask": []

@@ -177,3 +177,6 @@ BetterTouchTool.app
 !.env.project
 !.env.vault.env.vault
 .lsh-credentials-BACKUP.txt
+
+# ML Model files
+lightweight_models/
