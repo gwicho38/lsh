@@ -97,7 +97,7 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
   /**
    * Source .lshrc commands
    */
-  public async source(executor?: any): Promise<string[]> {
+  public async source(_executor?: any): Promise<string[]> {
     if (!this.exists()) {
       return [];
     }

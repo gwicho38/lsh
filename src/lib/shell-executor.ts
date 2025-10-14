@@ -36,7 +36,6 @@ import ExtendedGlobber from './extended-globbing.js';
 import ZshOptionsManager from './zsh-options.js';
 import PromptSystem from './prompt-system.js';
 import FloatingPointArithmetic from './floating-point-arithmetic.js';
-import ZshCompatibility from './zsh-compatibility.js';
 import {
   ExecutionResult,
   Job,

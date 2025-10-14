@@ -702,7 +702,7 @@ export class ZshImportManager {
   /**
    * Resolve naming conflicts
    */
-  private async resolveConflict(type: string, name: string): Promise<'skip' | 'overwrite' | 'rename'> {
+  private async resolveConflict(_type: string, _name: string): Promise<'skip' | 'overwrite' | 'rename'> {
     switch (this.options.conflictResolution) {
       case 'skip':
         return 'skip';
