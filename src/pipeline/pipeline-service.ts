@@ -107,12 +107,13 @@ export class PipelineService {
   }
 
   constructor(config: PipelineServiceConfig = {}) {
+    const port = config.port || parseInt(process.env.PORT || '3034', 10);
     this.config = {
-      port: config.port || 3034,
+      port,
       databaseUrl: config.databaseUrl || process.env.DATABASE_URL || 'postgresql://localhost:5432/pipeline',
       mcliUrl: config.mcliUrl || process.env.MCLI_URL || 'http://localhost:8000',
       mcliApiKey: config.mcliApiKey || process.env.MCLI_API_KEY,
-      webhookBaseUrl: config.webhookBaseUrl || `http://localhost:${config.port || 3034}`
+      webhookBaseUrl: config.webhookBaseUrl || `http://localhost:${port}`
     };
 
     // Initialize database pool
