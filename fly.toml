@@ -1,0 +1,238 @@
+# fly.toml - LSH Daemon Configuration for fly.io
+#
+# LSH (Long-running Service Host) - Job Scheduler & API Service
+#
+# Usage:
+#   fly deploy -a mcli-lsh-daemon
+#
+# See README.md for complete deployment instructions
+
+app = "mcli-lsh-daemon"
+primary_region = "sjc"  # San Jose - change to your preferred region
+
+# Available regions:
+# sjc (San Jose), iad (Virginia), lhr (London), fra (Frankfurt),
+# nrt (Tokyo), syd (Sydney), gru (São Paulo), etc.
+
+# Build configuration
+[build]
+  dockerfile = "Dockerfile"
+
+# Environment variables (non-secret)
+[env]
+  NODE_ENV = "production"
+  PORT = "3030"
+  LOG_LEVEL = "info"
+
+# HTTP service configuration
+[http_service]
+  internal_port = 3030
+  force_https = true
+
+  # Keep daemon always running (critical for job scheduler)
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # Health check configuration
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+# TCP/HTTP service configuration
+[[services]]
+  protocol = "tcp"
+  internal_port = 3030
+
+  # HTTP ports
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  # Concurrency limits
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 1000
+    soft_limit = 500
+
+# Virtual machine configuration
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+  # For production, consider:
+  # memory_mb = 1024
+  # cpus = 2
+
+# Metrics endpoint (optional)
+[metrics]
+  port = 9091
+  path = "/metrics"
+
+# Persistent storage (optional - for SQLite database)
+# Uncomment if you need persistent storage
+# [[mounts]]
+#   source = "lsh_data"
+#   destination = "/data"
+#   initial_size = "1GB"
+
+# Secrets configuration
+# Set secrets using: fly secrets set KEY=value -a mcli-lsh-daemon
+#
+# Required secrets:
+# - SUPABASE_URL: Your Supabase project URL
+# - SUPABASE_KEY: Your Supabase service role key
+# - LSH_API_KEY: API authentication key (optional)
+#
+# Example:
+# fly secrets set SUPABASE_URL=https://xxx.supabase.co -a mcli-lsh-daemon
+# fly secrets set SUPABASE_KEY=your_service_role_key -a mcli-lsh-daemon
+# fly secrets set LSH_API_KEY=$(openssl rand -base64 32) -a mcli-lsh-daemon
+
+# Deploy configuration
+[deploy]
+  strategy = "rolling"
+
+# Experimental features
+[experimental]
+  auto_rollback = true
+
+# Restart policy
+# Note: Restart policy is handled by fly.io platform automatically
+# [restart]
+#   policy = "on-failure"
+#   max_retries = 3
+
+# =============================================================================
+# Deployment Commands
+# =============================================================================
+
+# Initial setup:
+#   1. Install fly CLI:  curl -L https://fly.io/install.sh | sh
+#   2. Login:           fly auth login
+#   3. Create app:      fly apps create mcli-lsh-daemon
+#   4. Set secrets:     fly secrets set SUPABASE_URL=xxx -a mcli-lsh-daemon
+#   5. Deploy:          fly deploy -a mcli-lsh-daemon
+
+# Subsequent deployments:
+#   fly deploy -a mcli-lsh-daemon
+
+# View logs:
+#   fly logs -a mcli-lsh-daemon
+
+# Check status:
+#   fly status -a mcli-lsh-daemon
+
+# SSH into machine:
+#   fly ssh console -a mcli-lsh-daemon
+
+# Scale vertically:
+#   fly scale memory 1024 -a mcli-lsh-daemon
+#   fly scale vm shared-cpu-2x -a mcli-lsh-daemon
+
+# Scale horizontally:
+#   fly scale count 2 -a mcli-lsh-daemon
+
+# View dashboard:
+#   fly dashboard -a mcli-lsh-daemon
+
+# =============================================================================
+# Environment Setup for mcli Dashboard
+# =============================================================================
+
+# After deploying, configure your mcli dashboard:
+#   export LSH_API_URL=https://mcli-lsh-daemon.fly.dev
+#   mcli lsh-status
+
+# For Streamlit Cloud, add to secrets:
+#   LSH_API_URL = "https://mcli-lsh-daemon.fly.dev"
+
+# =============================================================================
+# Cost Optimization
+# =============================================================================
+
+# Development (lower cost, can auto-stop):
+# [http_service]
+#   auto_stop_machines = true
+#   min_machines_running = 0
+# [[vm]]
+#   memory_mb = 256
+
+# Production (high availability):
+# [http_service]
+#   auto_stop_machines = false
+#   min_machines_running = 2
+# [[vm]]
+#   memory_mb = 1024
+#   cpus = 2
+
+# =============================================================================
+# Multi-region Deployment
+# =============================================================================
+
+# Deploy in multiple regions for low latency:
+#   fly scale count 1 --region sjc -a mcli-lsh-daemon
+#   fly scale count 1 --region iad -a mcli-lsh-daemon
+#   fly scale count 1 --region fra -a mcli-lsh-daemon
+
+# =============================================================================
+# Monitoring
+# =============================================================================
+
+# Monitor your deployment:
+# 1. Dashboard:      fly dashboard -a mcli-lsh-daemon
+# 2. Health check:   curl https://mcli-lsh-daemon.fly.dev/health
+# 3. Logs:          fly logs -a mcli-lsh-daemon --follow
+# 4. Metrics:        https://mcli-lsh-daemon.fly.dev/metrics
+
+# =============================================================================
+# Troubleshooting
+# =============================================================================
+
+# If deployment fails:
+# 1. Check build logs:     fly logs -a mcli-lsh-daemon
+# 2. Verify Dockerfile:    docker build -t lsh-daemon .
+# 3. Check secrets:        fly secrets list -a mcli-lsh-daemon
+# 4. SSH debug:           fly ssh console -a mcli-lsh-daemon
+
+# If health checks fail:
+# 1. Verify PORT=3030 in [env]
+# 2. Check /health endpoint exists in app
+# 3. Ensure app binds to 0.0.0.0, not localhost
+# 4. Review application logs
+
+# Common issues:
+# - "Unhealthy allocations" → Check health endpoint path
+# - "Connection refused" → Verify PORT and binding
+# - "Build failed" → Check Docker build locally first
+# - "Out of memory" → Increase memory_mb in [[vm]]
+
+# =============================================================================
+# Integration Testing
+# =============================================================================
+
+# After deployment, test the API:
+#   curl https://mcli-lsh-daemon.fly.dev/health
+#   curl https://mcli-lsh-daemon.fly.dev/api/status
+#   curl https://mcli-lsh-daemon.fly.dev/api/jobs
+
+# From mcli:
+#   mcli lsh-status --url https://mcli-lsh-daemon.fly.dev
+#   mcli lsh-jobs --url https://mcli-lsh-daemon.fly.dev
+
+# =============================================================================
+# Documentation
+# =============================================================================
+
+# LSH Documentation:      README.md
+# fly.io docs:           https://fly.io/docs
+# mcli integration:      https://github.com/gwicho38/mcli

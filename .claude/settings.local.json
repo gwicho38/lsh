@@ -176,7 +176,9 @@
       "Bash(gh issue reopen:*)",
       "Bash(sort:*)",
       "Bash(hash -r)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []
