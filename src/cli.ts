@@ -67,17 +67,36 @@ program
         // Start interactive shell only if -i or --interactive is specified
         await startInteractiveShell(options);
       } else {
-        // No arguments - show brief usage message
+        // No arguments - show commands without verbose options
         console.log('LSH - A modern shell with ZSH features and superior job management');
         console.log('');
         console.log('Usage: lsh [options] [command]');
         console.log('');
+        console.log('Commands:');
+        console.log('  repl                    JavaScript REPL interactive shell');
+        console.log('  script <file>           Execute shell script');
+        console.log('  config                  Manage configuration');
+        console.log('  zsh                     ZSH compatibility commands');
+        console.log('  help                    Show detailed help');
+        console.log('');
+        console.log('Self-Management:');
+        console.log('  self update             Update to latest version');
+        console.log('  self version            Show version information');
+        console.log('  self uninstall          Uninstall LSH from system');
+        console.log('  self theme              Manage themes');
+        console.log('  self zsh-import         Import ZSH configs');
+        console.log('');
+        console.log('Library Services:');
+        console.log('  lib api                 API server management');
+        console.log('  lib daemon              Daemon management');
+        console.log('  lib cron                Cron job management');
+        console.log('  lib secrets             Secrets management');
+        console.log('  lib supabase            Supabase database management');
+        console.log('');
         console.log('Quick Start:');
         console.log('  lsh -i                  Start interactive shell');
-        console.log('  lsh --help              Show detailed help');
-        console.log('  lsh self update         Update to latest version');
-        console.log('');
-        console.log('For full documentation, run: lsh help');
+        console.log('  lsh --help              Show all options');
+        console.log('  lsh help                Show detailed help with examples');
       }
     } catch (error) {
       console.error(`Error: ${error.message}`);
