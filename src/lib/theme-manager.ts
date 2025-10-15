@@ -171,7 +171,14 @@ export class ThemeManager {
         continue;
       }
 
-      // Parse git formats
+      // Parse PS3 (select)
+      const ps3Match = trimmed.match(/^PS3=["'](.+)["']$/);
+      if (ps3Match) {
+        theme.prompts.select = ps3Match[1];
+        continue;
+      }
+
+      // Parse git formats (custom formats)
       if (trimmed.includes('FMT_BRANCH')) {
         const fmtMatch = trimmed.match(/FMT_BRANCH=["'](.+)["']$/);
         if (fmtMatch) {
@@ -196,9 +203,44 @@ export class ThemeManager {
         }
       }
 
-      // Parse variables
+      // Parse Oh-My-Zsh git prompt variables
+      const gitPromptVars: { [key: string]: string } = {
+        'ZSH_THEME_GIT_PROMPT_PREFIX': 'prefix',
+        'ZSH_THEME_GIT_PROMPT_SUFFIX': 'suffix',
+        'ZSH_THEME_GIT_PROMPT_DIRTY': 'dirty',
+        'ZSH_THEME_GIT_PROMPT_CLEAN': 'clean',
+        'ZSH_THEME_GIT_PROMPT_UNTRACKED': 'untracked',
+      };
+
+      for (const [varName, formatKey] of Object.entries(gitPromptVars)) {
+        if (trimmed.startsWith(varName)) {
+          const match = trimmed.match(new RegExp(`${varName}=["'](.+?)["']$`));
+          if (match) {
+            if (!theme.gitFormats) theme.gitFormats = {};
+            // Construct branch format from prefix/suffix if we have them
+            if (formatKey === 'prefix' || formatKey === 'suffix') {
+              const prefix = formatKey === 'prefix' ? match[1] : (theme.gitFormats as any).prefix || '';
+              const suffix = formatKey === 'suffix' ? match[1] : (theme.gitFormats as any).suffix || '';
+              if (prefix || suffix) {
+                theme.gitFormats.branch = `${prefix}%b${suffix}`;
+              }
+              // Store the raw values too
+              (theme.gitFormats as any)[formatKey] = match[1];
+            } else {
+              (theme.gitFormats as any)[formatKey] = match[1];
+            }
+          }
+        }
+      }
+
+      // Parse variables (skip prompts, formats, and git theme variables)
       const varMatch = trimmed.match(/^([A-Z_][A-Z0-9_]*)=["']?(.+?)["']?$/);
-      if (varMatch && !trimmed.includes('PROMPT') && !trimmed.includes('FMT_')) {
+      if (varMatch &&
+          !trimmed.includes('PROMPT') &&
+          !trimmed.includes('FMT_') &&
+          !trimmed.startsWith('ZSH_THEME_GIT_PROMPT_') &&
+          !trimmed.startsWith('PS2') &&
+          !trimmed.startsWith('PS3')) {
         theme.variables.set(varMatch[1], varMatch[2]);
       }
 
@@ -421,9 +463,23 @@ export class ThemeManager {
         hooks: [],
         dependencies: ['git'],
       },
+      'simple': {
+        name: 'simple',
+        colors: new Map([['reset', '0']]),
+        prompts: {
+          left: '%~ $ ',
+        },
+        variables: new Map(),
+        hooks: [],
+        dependencies: [],
+      },
     };
 
-    return themes[name] || themes['default'];
+    if (!themes[name]) {
+      throw new Error(`Theme not found: ${name}`);
+    }
+
+    return themes[name];
   }
 
   /**
