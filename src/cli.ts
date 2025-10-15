@@ -140,20 +140,14 @@ program
   // REPL interactive shell
   await init_ishell(program);
 
-  // Library commands
-  await init_lib(program);
+  // Library commands (parent for supabase, daemon, cron, secrets)
+  const libCommand = await init_lib(program);
 
-  // Supabase commands
-  await init_supabase(program);
-
-  // Daemon management commands
-  await init_daemon(program);
-
-  // Cron commands
-  await init_cron(program);
-
-  // Secrets management commands
-  await init_secrets(program);
+  // Nest service commands under lib
+  await init_supabase(libCommand);
+  await init_daemon(libCommand);
+  await init_cron(libCommand);
+  await init_secrets(libCommand);
 
   // API server commands
   registerApiCommands(program);
@@ -482,20 +476,22 @@ function showDetailedHelp(): void {
   console.log('');
   console.log('Subcommands:');
   console.log('  repl                    JavaScript REPL interactive shell');
-  console.log('  lib                     Library commands');
-  console.log('  supabase                Supabase database management');
   console.log('  script <file>           Execute shell script');
   console.log('  config                  Manage configuration');
   console.log('  zsh                     ZSH compatibility commands');
   console.log('  zsh-import              Import ZSH configs (aliases, functions, exports)');
   console.log('  theme                   Manage themes (import Oh-My-Zsh themes)');
   console.log('  self                    Self-management (update, version)');
-  console.log('  daemon                  Daemon management');
-  console.log('  daemon job              Job management');
-  console.log('  daemon db               Database integration');
-  console.log('  cron                    Cron job management');
   console.log('  api                     API server management');
   console.log('  help                    Show detailed help');
+  console.log('');
+  console.log('Library Commands (lsh lib <command>):');
+  console.log('  lib supabase            Supabase database management');
+  console.log('  lib daemon              Daemon management');
+  console.log('  lib daemon job          Job management');
+  console.log('  lib daemon db           Database integration');
+  console.log('  lib cron                Cron job management');
+  console.log('  lib secrets             Secrets management');
   console.log('');
   console.log('Examples:');
   console.log('');
@@ -512,12 +508,17 @@ function showDetailedHelp(): void {
   console.log('    lsh self version                    # Show version');
   console.log('    lsh self update                     # Update to latest');
   console.log('');
-  console.log('  Daemon & Job Management:');
-  console.log('    lsh daemon start                    # Start daemon');
-  console.log('    lsh daemon status                   # Check daemon status');
-  console.log('    lsh daemon job list                 # List all jobs');
-  console.log('    lsh daemon job create               # Create new job');
-  console.log('    lsh daemon job trigger <id>         # Run job immediately');
+  console.log('  Library Services:');
+  console.log('    lsh lib daemon start                # Start daemon');
+  console.log('    lsh lib daemon status               # Check daemon status');
+  console.log('    lsh lib daemon job list             # List all jobs');
+  console.log('    lsh lib daemon job create           # Create new job');
+  console.log('    lsh lib daemon job trigger <id>     # Run job immediately');
+  console.log('    lsh lib cron list                   # List cron jobs');
+  console.log('    lsh lib secrets push                # Push secrets to cloud');
+  console.log('    lsh lib secrets pull                # Pull secrets from cloud');
+  console.log('    lsh lib secrets list                # List environments');
+  console.log('    lsh lib supabase status             # Check Supabase connection');
   console.log('');
   console.log('  API Server:');
   console.log('    lsh api start                       # Start daemon with API');
