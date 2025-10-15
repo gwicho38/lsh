@@ -67,8 +67,17 @@ program
         // Start interactive shell only if -i or --interactive is specified
         await startInteractiveShell(options);
       } else {
-        // No arguments - show help
-        program.help();
+        // No arguments - show brief usage message
+        console.log('LSH - A modern shell with ZSH features and superior job management');
+        console.log('');
+        console.log('Usage: lsh [options] [command]');
+        console.log('');
+        console.log('Quick Start:');
+        console.log('  lsh -i                  Start interactive shell');
+        console.log('  lsh --help              Show detailed help');
+        console.log('  lsh self update         Update to latest version');
+        console.log('');
+        console.log('For full documentation, run: lsh help');
       }
     } catch (error) {
       console.error(`Error: ${error.message}`);
