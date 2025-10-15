@@ -83,9 +83,9 @@ install_from_npm() {
     print_step "Installing lsh from npm..."
 
     if [ "$USE_SUDO" = "true" ]; then
-        sudo npm install -g lsh@latest
+        sudo npm install -g lsh-framework@latest
     else
-        npm install -g lsh@latest
+        npm install -g lsh-framework@latest
     fi
 
     if [ $? -eq 0 ]; then
