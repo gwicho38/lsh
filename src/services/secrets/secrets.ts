@@ -45,12 +45,20 @@ export async function init_secrets(program: Command) {
 
   // List environments
   secretsCmd
-    .command('list')
+    .command('list [environment]')
     .alias('ls')
-    .description('List all stored environments')
-    .action(async () => {
+    .description('List all stored environments or show secrets for specific environment')
+    .action(async (environment) => {
       try {
         const manager = new SecretsManager();
+
+        // If environment specified, show secrets for that environment
+        if (environment) {
+          await manager.show(environment);
+          return;
+        }
+
+        // Otherwise, list all environments
         const envs = await manager.listEnvironments();
 
         if (envs.length === 0) {
