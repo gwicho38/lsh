@@ -287,6 +287,30 @@ export class ThemeManager {
       }
     }
 
+    // Post-processing: Check prompts for dependencies
+    const allPrompts = [
+      theme.prompts.left,
+      theme.prompts.right,
+      theme.prompts.continuation,
+      theme.prompts.select
+    ].filter(Boolean).join(' ');
+
+    if (allPrompts.includes('git_branch') || allPrompts.includes('git_prompt_info') || allPrompts.includes('$(git ')) {
+      if (!theme.dependencies.includes('git')) {
+        theme.dependencies.push('git');
+      }
+    }
+    if (allPrompts.includes('virtualenv_prompt_info')) {
+      if (!theme.dependencies.includes('virtualenv')) {
+        theme.dependencies.push('virtualenv');
+      }
+    }
+    if (allPrompts.includes('vcs_info')) {
+      if (!theme.dependencies.includes('vcs_info')) {
+        theme.dependencies.push('vcs_info');
+      }
+    }
+
     return theme;
   }
 
@@ -391,20 +415,29 @@ export class ThemeManager {
    * Save theme in LSH format
    */
   private saveAsLshTheme(theme: ParsedTheme): void {
-    const lshThemePath = path.join(this.customThemesPath, `${theme.name}.lsh-theme`);
+    try {
+      const lshThemePath = path.join(this.customThemesPath, `${theme.name}.lsh-theme`);
 
-    const lshThemeContent = {
-      name: theme.name,
-      prompts: {
-        left: this.convertPromptToLsh(theme.prompts.left, theme.colors),
-        right: theme.prompts.right ? this.convertPromptToLsh(theme.prompts.right, theme.colors) : undefined,
-      },
-      colors: Object.fromEntries(theme.colors),
-      gitFormats: theme.gitFormats,
-      dependencies: theme.dependencies,
-    };
+      const lshThemeContent = {
+        name: theme.name,
+        prompts: {
+          left: theme.prompts.left,
+          right: theme.prompts.right,
+          continuation: theme.prompts.continuation,
+          select: theme.prompts.select,
+        },
+        colors: Object.fromEntries(theme.colors),
+        gitFormats: theme.gitFormats,
+        variables: Object.fromEntries(theme.variables),
+        hooks: theme.hooks,
+        dependencies: theme.dependencies,
+      };
 
-    fs.writeFileSync(lshThemePath, JSON.stringify(lshThemeContent, null, 2), 'utf8');
+      fs.writeFileSync(lshThemePath, JSON.stringify(lshThemeContent, null, 2), 'utf8');
+    } catch (error) {
+      // Gracefully handle save errors (e.g., permission issues, invalid paths)
+      console.error(`Failed to save theme ${theme.name}:`, error);
+    }
   }
 
   /**
