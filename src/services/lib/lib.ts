@@ -78,7 +78,9 @@ async function _makeCommand(commander: Command) {
 // }
 
 export async function init_lib(program: Command) {
-  const lib = program.command("lib");
+  const lib = program
+    .command("lib")
+    .description("LSH library and service commands");
 
   // Load and register dynamic commands
   const commands = await loadCommands();
