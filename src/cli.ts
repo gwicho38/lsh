@@ -140,7 +140,7 @@ program
   // REPL interactive shell
   await init_ishell(program);
 
-  // Library commands (parent for supabase, daemon, cron, secrets)
+  // Library commands (parent for service commands)
   const libCommand = await init_lib(program);
 
   // Nest service commands under lib
@@ -148,15 +148,11 @@ program
   await init_daemon(libCommand);
   await init_cron(libCommand);
   await init_secrets(libCommand);
+  registerApiCommands(libCommand);
 
-  // API server commands
-  registerApiCommands(program);
-
-  // ZSH import commands
-  registerZshImportCommands(program);
-
-  // Theme commands
-  registerThemeCommands(program);
+  // Self-management commands with nested utilities
+  registerZshImportCommands(selfCommand);
+  registerThemeCommands(selfCommand);
 
   // Parse command line arguments after all commands are registered
   program.parse(process.argv);
@@ -479,13 +475,17 @@ function showDetailedHelp(): void {
   console.log('  script <file>           Execute shell script');
   console.log('  config                  Manage configuration');
   console.log('  zsh                     ZSH compatibility commands');
-  console.log('  zsh-import              Import ZSH configs (aliases, functions, exports)');
-  console.log('  theme                   Manage themes (import Oh-My-Zsh themes)');
-  console.log('  self                    Self-management (update, version)');
-  console.log('  api                     API server management');
   console.log('  help                    Show detailed help');
   console.log('');
+  console.log('Self-Management (lsh self <command>):');
+  console.log('  self update             Update to latest version');
+  console.log('  self version            Show version information');
+  console.log('  self uninstall          Uninstall LSH from system');
+  console.log('  self theme              Manage themes (import Oh-My-Zsh themes)');
+  console.log('  self zsh-import         Import ZSH configs (aliases, functions, exports)');
+  console.log('');
   console.log('Library Commands (lsh lib <command>):');
+  console.log('  lib api                 API server management');
   console.log('  lib supabase            Supabase database management');
   console.log('  lib daemon              Daemon management');
   console.log('  lib daemon job          Job management');
@@ -508,23 +508,22 @@ function showDetailedHelp(): void {
   console.log('    lsh self version                    # Show version');
   console.log('    lsh self update                     # Update to latest');
   console.log('');
+  console.log('  Self-Management:');
+  console.log('    lsh self update                     # Update to latest version');
+  console.log('    lsh self version                    # Show version');
+  console.log('    lsh self theme list                 # List available themes');
+  console.log('    lsh self theme import robbyrussell  # Import Oh-My-Zsh theme');
+  console.log('    lsh self zsh-import aliases         # Import ZSH aliases');
+  console.log('');
   console.log('  Library Services:');
   console.log('    lsh lib daemon start                # Start daemon');
   console.log('    lsh lib daemon status               # Check daemon status');
   console.log('    lsh lib daemon job list             # List all jobs');
-  console.log('    lsh lib daemon job create           # Create new job');
-  console.log('    lsh lib daemon job trigger <id>     # Run job immediately');
   console.log('    lsh lib cron list                   # List cron jobs');
   console.log('    lsh lib secrets push                # Push secrets to cloud');
-  console.log('    lsh lib secrets pull                # Pull secrets from cloud');
   console.log('    lsh lib secrets list                # List environments');
-  console.log('    lsh lib supabase status             # Check Supabase connection');
-  console.log('');
-  console.log('  API Server:');
-  console.log('    lsh api start                       # Start daemon with API');
-  console.log('    lsh api key                         # Generate API key');
-  console.log('    lsh api test                        # Test API connection');
-  console.log('    lsh api example -l python           # Show Python client code');
+  console.log('    lsh lib api start                   # Start API server');
+  console.log('    lsh lib api key                     # Generate API key');
   console.log('');
   console.log('Features:');
   console.log('  ✅ POSIX Shell Compliance (85-95%)');
