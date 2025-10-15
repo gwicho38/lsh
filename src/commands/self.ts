@@ -67,7 +67,7 @@ async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: st
     const options = {
       hostname: 'registry.npmjs.org',
       port: 443,
-      path: '/gwicho38-lsh',
+      path: '/lsh-framework',
       method: 'GET',
       headers: {
         'User-Agent': 'lsh-cli',
@@ -269,7 +269,7 @@ selfCommand
       console.log(chalk.cyan(`📦 Installing lsh ${latestVersion}...`));
 
       const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-      const updateProcess = spawn(npmCmd, ['install', '-g', 'gwicho38-lsh@latest'], {
+      const updateProcess = spawn(npmCmd, ['install', '-g', 'lsh-framework@latest'], {
         stdio: 'inherit',
       });
 
@@ -279,7 +279,7 @@ selfCommand
           console.log(chalk.yellow('ℹ Restart your terminal or run \'hash -r\' to use the new version'));
         } else {
           console.log(chalk.red('✗ Update failed'));
-          console.log(chalk.yellow('ℹ Try running with sudo: sudo npm install -g gwicho38-lsh@latest'));
+          console.log(chalk.yellow('ℹ Try running with sudo: sudo npm install -g lsh-framework@latest'));
         }
       });
     } catch (error) {
@@ -352,6 +352,67 @@ selfCommand
     console.log();
 
     console.log(chalk.dim('For more info, visit: https://github.com/gwicho38/lsh'));
+  });
+
+/**
+ * Uninstall command - remove LSH from the system
+ */
+selfCommand
+  .command('uninstall')
+  .description('Uninstall LSH from your system')
+  .option('-y, --yes', 'Skip confirmation prompt')
+  .action(async (options) => {
+    try {
+      console.log(chalk.yellow('╔════════════════════════════════════╗'));
+      console.log(chalk.yellow('║      Uninstall LSH Framework       ║'));
+      console.log(chalk.yellow('╚════════════════════════════════════╝'));
+      console.log();
+
+      // Ask for confirmation unless --yes flag is used
+      if (!options.yes) {
+        const readline = await import('readline');
+        const rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        });
+
+        const answer = await new Promise<string>((resolve) => {
+          rl.question(chalk.yellow('Are you sure you want to uninstall LSH? (y/N) '), (ans) => {
+            rl.close();
+            resolve(ans);
+          });
+        });
+
+        if (answer.toLowerCase() !== 'y' && answer.toLowerCase() !== 'yes') {
+          console.log(chalk.yellow('Uninstall cancelled'));
+          return;
+        }
+      }
+
+      console.log(chalk.cyan('📦 Uninstalling lsh-framework...'));
+      console.log();
+
+      const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+      const uninstallProcess = spawn(npmCmd, ['uninstall', '-g', 'lsh-framework'], {
+        stdio: 'inherit',
+      });
+
+      uninstallProcess.on('close', (code) => {
+        if (code === 0) {
+          console.log();
+          console.log(chalk.green('✓ LSH has been uninstalled successfully'));
+          console.log();
+          console.log(chalk.dim('Thank you for using LSH!'));
+          console.log(chalk.dim('You can reinstall anytime with: npm install -g lsh-framework'));
+        } else {
+          console.log();
+          console.log(chalk.red('✗ Uninstall failed'));
+          console.log(chalk.yellow('ℹ Try running with sudo: sudo npm uninstall -g lsh-framework'));
+        }
+      });
+    } catch (error) {
+      console.error(chalk.red('✗ Error during uninstall:'), error);
+    }
   });
 
 export default selfCommand;

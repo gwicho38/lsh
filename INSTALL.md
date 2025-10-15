@@ -5,7 +5,7 @@ LSH can be installed via npm.
 ## npm
 
 ```bash
-npm install -g gwicho38-lsh
+npm install -g lsh-framework
 ```
 
 ## Verify Installation
@@ -20,13 +20,15 @@ lsh self version
 ```bash
 lsh self update
 # or
-npm update -g gwicho38-lsh
+npm update -g lsh-framework
 ```
 
 ## Uninstall
 
 ```bash
-npm uninstall -g gwicho38-lsh
+lsh self uninstall
+# or
+npm uninstall -g lsh-framework
 ```
 
 ## From Source (Development)
