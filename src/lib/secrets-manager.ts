@@ -66,17 +66,35 @@ export class SecretsManager {
    * Decrypt a value
    */
   private decrypt(text: string): string {
-    const parts = text.split(':');
-    const iv = Buffer.from(parts[0], 'hex');
-    const encryptedText = parts[1];
-    const key = Buffer.from(this.encryptionKey, 'hex');
+    try {
+      const parts = text.split(':');
+      if (parts.length !== 2) {
+        throw new Error('Invalid encrypted format');
+      }
 
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key.slice(0, 32), iv);
+      const iv = Buffer.from(parts[0], 'hex');
+      const encryptedText = parts[1];
+      const key = Buffer.from(this.encryptionKey, 'hex');
 
-    let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key.slice(0, 32), iv);
 
-    return decrypted;
+      let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return decrypted;
+    } catch (error: any) {
+      if (error.message.includes('bad decrypt') || error.message.includes('wrong final block length')) {
+        throw new Error(
+          'Decryption failed. This usually means:\n' +
+          '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
+          '  2. The key must match the one used during encryption\n' +
+          '  3. Generate a shared key with: lsh secrets key\n' +
+          '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
+          '\nOriginal error: ' + error.message
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -131,6 +149,14 @@ export class SecretsManager {
   async push(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
     if (!fs.existsSync(envFilePath)) {
       throw new Error(`File not found: ${envFilePath}`);
+    }
+
+    // Warn if using default key
+    if (!process.env.LSH_SECRETS_KEY) {
+      logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
+      logger.warn('   To share secrets across machines, generate a key with: lsh secrets key');
+      logger.warn('   Then add LSH_SECRETS_KEY=<key> to your .env on all machines');
+      console.log();
     }
 
     logger.info(`Pushing ${envFilePath} to Supabase (${environment})...`);
