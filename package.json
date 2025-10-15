@@ -1,6 +1,6 @@
 {
   "name": "lsh-framework",
-  "version": "0.5.13",
+  "version": "0.6.0",
   "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
   "main": "dist/app.js",
   "bin": {
