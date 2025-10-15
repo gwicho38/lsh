@@ -136,11 +136,23 @@ export class ThemeManager {
     const lines = content.split('\n');
 
     for (const line of lines) {
-      const trimmed = line.trim();
+      let trimmed = line.trim();
 
       // Skip comments and empty lines
       if (trimmed.startsWith('#') || trimmed === '') {
         continue;
+      }
+
+      // Strip inline comments (but preserve # inside quotes)
+      const inlineCommentMatch = trimmed.match(/^([^#]*?["'][^"']*["'])\s*#/);
+      if (inlineCommentMatch) {
+        trimmed = inlineCommentMatch[1].trim();
+      } else if (trimmed.includes('#')) {
+        // Simple inline comment without quotes
+        const parts = trimmed.split('#');
+        if (parts[0].includes('=')) {
+          trimmed = parts[0].trim();
+        }
       }
 
       // Parse color definitions
@@ -258,6 +270,11 @@ export class ThemeManager {
           theme.dependencies.push('vcs_info');
         }
       }
+      if (trimmed.includes('git_branch') || trimmed.includes('git_prompt_info') || trimmed.includes('$(git ')) {
+        if (!theme.dependencies.includes('git')) {
+          theme.dependencies.push('git');
+        }
+      }
       if (trimmed.includes('virtualenv_prompt_info')) {
         if (!theme.dependencies.includes('virtualenv')) {
           theme.dependencies.push('virtualenv');
@@ -362,6 +379,10 @@ export class ThemeManager {
       'cyan': '36',
       'white': '37',
       'reset': '0',
+      'bold': '1',
+      'dim': '2',
+      'italic': '3',
+      'underline': '4',
     };
     return codes[color] || '37';
   }
