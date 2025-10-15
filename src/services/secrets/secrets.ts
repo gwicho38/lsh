@@ -36,10 +36,11 @@ export async function init_secrets(program: Command) {
     .description('Pull .env from encrypted cloud storage')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name (dev/staging/prod)', 'dev')
+    .option('--force', 'Overwrite without creating backup')
     .action(async (options) => {
       try {
         const manager = new SecretsManager();
-        await manager.pull(options.file, options.env);
+        await manager.pull(options.file, options.env, options.force);
       } catch (error: any) {
         console.error('❌ Failed to pull secrets:', error.message);
         process.exit(1);

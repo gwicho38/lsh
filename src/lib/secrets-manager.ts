@@ -186,7 +186,7 @@ export class SecretsManager {
   /**
    * Pull .env from Supabase
    */
-  async pull(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
+  async pull(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     logger.info(`Pulling ${environment} secrets from Supabase...`);
 
     // Get latest secrets
@@ -205,8 +205,8 @@ export class SecretsManager {
     }
     const decrypted = this.decrypt(latestSecret.output);
 
-    // Backup existing .env if it exists
-    if (fs.existsSync(envFilePath)) {
+    // Backup existing .env if it exists (unless force is true)
+    if (fs.existsSync(envFilePath) && !force) {
       const backup = `${envFilePath}.backup.${Date.now()}`;
       fs.copyFileSync(envFilePath, backup);
       logger.info(`Backed up existing .env to ${backup}`);
