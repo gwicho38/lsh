@@ -362,7 +362,8 @@ export abstract class BaseJobManager extends EventEmitter {
   async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
     const job = await this.getJob(jobId);
     if (!job) {
-      throw new Error(`Job ${jobId} not found`);
+      // Return false instead of throwing when job doesn't exist
+      return false;
     }
 
     // Check if job is running
