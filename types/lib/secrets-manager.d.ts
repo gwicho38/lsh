@@ -41,7 +41,7 @@ export declare class SecretsManager {
     /**
      * Pull .env from Supabase
      */
-    pull(envFilePath?: string, environment?: string): Promise<void>;
+    pull(envFilePath?: string, environment?: string, force?: boolean): Promise<void>;
     /**
      * List all stored environments
      */
