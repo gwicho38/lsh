@@ -75,13 +75,13 @@ program
         console.log('LSH - Encrypted Secrets Manager with Automatic Rotation');
         console.log('');
         console.log('🔐 Secrets Management (Primary Features):');
-        console.log('  lib secrets sync        Check sync status & get recommendations');
-        console.log('  lib secrets push        Upload .env to encrypted cloud storage');
-        console.log('  lib secrets pull        Download .env from cloud storage');
-        console.log('  lib secrets list        List all stored environments');
-        console.log('  lib secrets show        View secrets (masked)');
-        console.log('  lib secrets key         Generate encryption key');
-        console.log('  lib secrets create      Create new .env file');
+        console.log('  secrets sync            Check sync status & get recommendations');
+        console.log('  secrets push            Upload .env to encrypted cloud storage');
+        console.log('  secrets pull            Download .env from cloud storage');
+        console.log('  secrets list            List all stored environments');
+        console.log('  secrets show            View secrets (masked)');
+        console.log('  secrets key             Generate encryption key');
+        console.log('  secrets create          Create new .env file');
         console.log('');
         console.log('🔄 Automation (Schedule secret rotation):');
         console.log('  lib cron add            Schedule automatic tasks');
@@ -89,14 +89,17 @@ program
         console.log('  lib daemon start        Start persistent daemon');
         console.log('');
         console.log('🚀 Quick Start:');
-        console.log('  lsh lib secrets key                   # Generate encryption key');
-        console.log('  lsh lib secrets push --env dev        # Push your secrets');
-        console.log('  lsh lib secrets pull --env dev        # Pull on another machine');
+        console.log('  lsh secrets key                   # Generate encryption key');
+        console.log('  lsh secrets push --env dev        # Push your secrets');
+        console.log('  lsh secrets pull --env dev        # Pull on another machine');
         console.log('');
         console.log('📚 More Commands:');
         console.log('  lib api                 API server management');
         console.log('  lib supabase            Supabase database management');
+        console.log('  lib daemon              Daemon management');
+        console.log('  lib cron                Cron job management');
         console.log('  self                    Self-management commands');
+        console.log('  self zsh                ZSH compatibility commands');
         console.log('  -i, --interactive       Start interactive shell');
         console.log('  --help                  Show all options');
         console.log('');
@@ -140,8 +143,11 @@ program
     }
   });
 
-// ZSH compatibility subcommand
-program
+// Self-management commands
+program.addCommand(selfCommand);
+
+// ZSH compatibility commands (under self)
+selfCommand
   .command('zsh')
   .description('ZSH compatibility commands')
   .option('--migrate', 'Migrate ZSH configuration to LSH')
@@ -155,9 +161,6 @@ program
       process.exit(1);
     }
   });
-
-// Self-management commands
-program.addCommand(selfCommand);
 
 // Help subcommand
 program
@@ -226,8 +229,10 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   await init_supabase(libCommand);
   await init_daemon(libCommand);
   await init_cron(libCommand);
-  await init_secrets(libCommand);
   registerApiCommands(libCommand);
+
+  // Secrets as top-level command
+  await init_secrets(program);
 
   // Self-management commands with nested utilities
   registerZshImportCommands(selfCommand);
@@ -618,10 +623,10 @@ function showDetailedHelp(): void {
   console.log('  -V, --version          Show version');
   console.log('');
   console.log('Subcommands:');
+  console.log('  secrets                 Secrets management (primary feature)');
   console.log('  repl                    JavaScript REPL interactive shell');
   console.log('  script <file>           Execute shell script');
   console.log('  config                  Manage configuration');
-  console.log('  zsh                     ZSH compatibility commands');
   console.log('  help                    Show detailed help');
   console.log('');
   console.log('Self-Management (lsh self <command>):');
@@ -629,6 +634,7 @@ function showDetailedHelp(): void {
   console.log('  self version            Show version information');
   console.log('  self uninstall          Uninstall LSH from system');
   console.log('  self theme              Manage themes (import Oh-My-Zsh themes)');
+  console.log('  self zsh                ZSH compatibility commands');
   console.log('  self zsh-import         Import ZSH configs (aliases, functions, exports)');
   console.log('');
   console.log('Library Commands (lsh lib <command>):');
@@ -638,7 +644,6 @@ function showDetailedHelp(): void {
   console.log('  lib daemon job          Job management');
   console.log('  lib daemon db           Database integration');
   console.log('  lib cron                Cron job management');
-  console.log('  lib secrets             Secrets management');
   console.log('');
   console.log('Examples:');
   console.log('');
@@ -662,13 +667,17 @@ function showDetailedHelp(): void {
   console.log('    lsh self theme import robbyrussell  # Import Oh-My-Zsh theme');
   console.log('    lsh self zsh-import aliases         # Import ZSH aliases');
   console.log('');
+  console.log('  Secrets Management:');
+  console.log('    lsh secrets sync                    # Check sync status');
+  console.log('    lsh secrets push                    # Push secrets to cloud');
+  console.log('    lsh secrets pull                    # Pull secrets from cloud');
+  console.log('    lsh secrets list                    # List environments');
+  console.log('');
   console.log('  Library Services:');
   console.log('    lsh lib daemon start                # Start daemon');
   console.log('    lsh lib daemon status               # Check daemon status');
   console.log('    lsh lib daemon job list             # List all jobs');
   console.log('    lsh lib cron list                   # List cron jobs');
-  console.log('    lsh lib secrets push                # Push secrets to cloud');
-  console.log('    lsh lib secrets list                # List environments');
   console.log('    lsh lib api start                   # Start API server');
   console.log('    lsh lib api key                     # Generate API key');
   console.log('');
