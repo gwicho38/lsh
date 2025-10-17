@@ -9,9 +9,19 @@
 
 import { jest } from '@jest/globals';
 
+// Declare mock variables (tests are skipped but need declarations for TypeScript)
+let mockHttpsGet: jest.Mock;
+let mockSpawn: jest.Mock;
+
 describe.skip('Self Command', () => {
   // Tests skipped - need proper integration test implementation
   // The self command functionality is tested manually during release process
+
+  beforeEach(() => {
+    // Initialize mocks (when tests are enabled)
+    mockHttpsGet = jest.fn();
+    mockSpawn = jest.fn();
+  });
 
   describe('Version Checking', () => {
     test('should fetch version from npm registry', async () => {
