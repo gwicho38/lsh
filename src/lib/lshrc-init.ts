@@ -21,7 +21,9 @@ export class LshrcManager {
   private lshrcPath: string;
 
   constructor(lshrcPath?: string) {
-    this.lshrcPath = lshrcPath || path.join(os.homedir(), '.lshrc');
+    // Use process.env.HOME if set (for testability), fallback to os.homedir()
+    const homeDir = process.env.HOME || os.homedir();
+    this.lshrcPath = lshrcPath || path.join(homeDir, '.lshrc');
   }
 
   /**
