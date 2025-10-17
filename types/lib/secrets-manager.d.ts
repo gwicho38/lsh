@@ -50,5 +50,23 @@ export declare class SecretsManager {
      * Show secrets (masked)
      */
     show(environment?: string): Promise<void>;
+    /**
+     * Get status of secrets for an environment
+     */
+    status(envFilePath?: string, environment?: string): Promise<{
+        localExists: boolean;
+        localKeys: number;
+        localModified?: Date;
+        cloudExists: boolean;
+        cloudKeys: number;
+        cloudModified?: Date;
+        keySet: boolean;
+        keyMatches?: boolean;
+        suggestions: string[];
+    }>;
+    /**
+     * Sync command - check status and suggest actions
+     */
+    sync(envFilePath?: string, environment?: string): Promise<void>;
 }
 export default SecretsManager;
