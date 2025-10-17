@@ -69,7 +69,8 @@ export function registerThemeCommands(program: Command): void {
       console.log(chalk.dim('  lsh theme apply <name>'));
       console.log('');
 
-      process.exit(0);
+      // Note: Removed process.exit(0) to allow proper Jest testing
+      // Commander will handle exit automatically
     });
 
   themeCommand
