@@ -48,7 +48,28 @@ export declare class JobManager extends BaseJobManager {
     private nextJobId;
     private persistenceFile;
     private schedulerInterval?;
+    private initPromise;
     constructor(persistenceFile?: string);
+    /**
+     * Wait for initialization to complete
+     */
+    ready(): Promise<void>;
+    /**
+     * Create a job and persist to filesystem
+     */
+    createJob(spec: Partial<JobSpec>): Promise<BaseJobSpec>;
+    /**
+     * Update a job and persist to filesystem
+     */
+    updateJob(jobId: string, updates: JobUpdate): Promise<BaseJobSpec>;
+    /**
+     * Remove a job and persist to filesystem
+     */
+    removeJob(jobId: string, force?: boolean): Promise<boolean>;
+    /**
+     * Update job status and persist to filesystem
+     */
+    protected updateJobStatus(jobId: string, status: BaseJobSpec['status'], additionalUpdates?: Partial<BaseJobSpec>): Promise<BaseJobSpec>;
     /**
      * Start a job (execute it as a process)
      */
