@@ -16,12 +16,18 @@ describe('Theme Commands', () => {
   let originalConsoleLog: typeof console.log;
   let originalConsoleError: typeof console.error;
   let consoleOutput: string[];
+  let processExitMock: jest.SpiedFunction<typeof process.exit>;
 
   beforeEach(() => {
     program = new Command();
     program.exitOverride(); // Prevent process.exit during tests
 
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lsh-theme-test-'));
+
+    // Mock process.exit to prevent worker crashes
+    processExitMock = jest.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+      throw new Error(`process.exit called with code ${code}`);
+    }) as any);
 
     // Mock console output
     consoleOutput = [];
@@ -40,6 +46,7 @@ describe('Theme Commands', () => {
   afterEach(() => {
     console.log = originalConsoleLog;
     console.error = originalConsoleError;
+    processExitMock.mockRestore();
 
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });

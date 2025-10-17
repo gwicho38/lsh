@@ -3,6 +3,7 @@
  * Tests for the new interactive shell functionality added in v0.5.2
  */
 
+import { jest } from '@jest/globals';
 import InteractiveShell from '../src/lib/interactive-shell.js';
 import { ShellExecutor } from '../src/lib/shell-executor.js';
 
@@ -351,7 +352,7 @@ describe.skip('InteractiveShell', () => {
   describe('Error Handling', () => {
     test('should handle command errors gracefully', async () => {
       const mockExecutor = {
-        execute: jest.fn().mockRejectedValue(new Error('Command failed')),
+        execute: (jest.fn() as any).mockRejectedValue(new Error('Command failed')),
         getPrompt: jest.fn().mockReturnValue('> '),
         addToHistory: jest.fn(),
       };
@@ -365,7 +366,7 @@ describe.skip('InteractiveShell', () => {
 
     test('should log errors to console', async () => {
       const mockExecutor = {
-        execute: jest.fn().mockRejectedValue(new Error('Test error')),
+        execute: (jest.fn() as any).mockRejectedValue(new Error('Test error')),
         getPrompt: jest.fn().mockReturnValue('> '),
         addToHistory: jest.fn(),
       };
