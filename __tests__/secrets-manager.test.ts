@@ -7,6 +7,7 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { SecretsManager } from '../src/lib/secrets-manager.js';
 import * as fs from 'fs';
+import * as path from 'path';
 import * as crypto from 'crypto';
 import { TestEnvironment, generateTestKey, parseEnvContent } from './helpers/secrets-test-helpers.js';
 import {
@@ -17,22 +18,46 @@ import {
   envMinimal,
 } from './fixtures/env-files.js';
 
-// Mock DatabasePersistence
+// Mock DatabasePersistence with shared storage across instances
+const sharedStorage = new Map<string, any>();
+
 jest.unstable_mockModule('../src/lib/database-persistence.js', () => {
   return {
     default: class MockDatabasePersistence {
-      private storage = new Map<string, any>();
+      private userId?: string;
+
+      constructor(userId?: string) {
+        this.userId = userId;
+      }
 
       async saveJob(job: any) {
-        this.storage.set(job.job_id, job);
+        // Add user_id to job if userId was provided
+        const jobWithUser = {
+          ...job,
+          user_id: this.userId || null
+        };
+        sharedStorage.set(job.job_id, jobWithUser);
       }
 
       async getActiveJobs() {
-        return Array.from(this.storage.values());
+        // For secrets (command='secrets_sync'), don't filter by user_id - they're shared by environment
+        // For other jobs, filter by user_id like the real implementation does
+        return Array.from(sharedStorage.values()).filter(job => {
+          // Secrets are environment-scoped, not user-scoped
+          if (job.command === 'secrets_sync') {
+            return true;
+          }
+          // Regular jobs are user-scoped
+          if (this.userId !== undefined) {
+            return job.user_id === this.userId;
+          } else {
+            return job.user_id === null;
+          }
+        });
       }
 
       reset() {
-        this.storage.clear();
+        sharedStorage.clear();
       }
     }
   };
@@ -45,6 +70,7 @@ describe('SecretsManager', () => {
   beforeEach(() => {
     testEnv = new TestEnvironment();
     testKey = generateTestKey();
+    sharedStorage.clear(); // Clear shared storage between tests
   });
 
   afterEach(() => {
@@ -314,7 +340,7 @@ describe('SecretsManager', () => {
       await manager.pull(pullFile, 'test');
 
       // Check for backup file
-      const backupFiles = fs.readdirSync(testEnv['tempFiles'][0] ? require('path').dirname(pullFile) : '/tmp')
+      const backupFiles = fs.readdirSync(testEnv['tempFiles'][0] ? path.dirname(pullFile) : '/tmp')
         .filter(f => f.includes('pull-backup') && f.includes('.backup.'));
 
       expect(backupFiles.length).toBeGreaterThan(0);
