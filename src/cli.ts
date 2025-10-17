@@ -42,7 +42,11 @@ const program = new Command();
 program
   .name('lsh')
   .description('LSH - Encrypted secrets manager with automatic rotation and team sync')
-  .version(getVersion());
+  .version(getVersion())
+  .showSuggestionAfterError(true)
+  .showHelpAfterError('(add --help for additional information)')
+  .allowUnknownOption(false)
+  .enablePositionalOptions();
 
 // Options for main command
 program
@@ -162,6 +166,53 @@ program
     showDetailedHelp();
   });
 
+/**
+ * Calculate string similarity (Levenshtein distance)
+ */
+function similarity(s1: string, s2: string): number {
+  const longer = s1.length > s2.length ? s1 : s2;
+  const shorter = s1.length > s2.length ? s2 : s1;
+
+  if (longer.length === 0) return 1.0;
+
+  const editDistance = levenshtein(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+function levenshtein(s1: string, s2: string): number {
+  const costs: number[] = [];
+  for (let i = 0; i <= s1.length; i++) {
+    let lastValue = i;
+    for (let j = 0; j <= s2.length; j++) {
+      if (i === 0) {
+        costs[j] = j;
+      } else if (j > 0) {
+        let newValue = costs[j - 1];
+        if (s1.charAt(i - 1) !== s2.charAt(j - 1)) {
+          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+        }
+        costs[j - 1] = lastValue;
+        lastValue = newValue;
+      }
+    }
+    if (i > 0) costs[s2.length] = lastValue;
+  }
+  return costs[s2.length];
+}
+
+/**
+ * Find similar commands for suggestions
+ */
+function findSimilarCommands(input: string, validCommands: string[]): string[] {
+  const similarities = validCommands
+    .map(cmd => ({ cmd, score: similarity(input, cmd) }))
+    .filter(item => item.score > 0.5) // Only suggest if similarity > 50%
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3); // Top 3 suggestions
+
+  return similarities.map(item => item.cmd);
+}
+
 // Register async command modules
 (async () => {
   // REPL interactive shell
@@ -180,6 +231,74 @@ program
   // Self-management commands with nested utilities
   registerZshImportCommands(selfCommand);
   registerThemeCommands(selfCommand);
+
+  // Pre-parse check for unknown commands
+  const args = process.argv.slice(2);
+  if (args.length > 0) {
+    const firstArg = args[0];
+    const validCommands = program.commands.map(cmd => cmd.name());
+    const validOptions = ['-i', '--interactive', '-c', '--command', '-s', '--script',
+                         '--rc', '--zsh-compat', '--source-zshrc', '--package-manager',
+                         '-v', '--verbose', '-d', '--debug', '-h', '--help', '-V', '--version'];
+
+    // Check if first argument looks like a command but isn't valid
+    if (!firstArg.startsWith('-') &&
+        !validCommands.includes(firstArg) &&
+        !validOptions.some(opt => args.includes(opt))) {
+
+      const suggestions = findSimilarCommands(firstArg, validCommands);
+      console.error(`error: unknown command '${firstArg}'`);
+
+      if (suggestions.length > 0) {
+        console.error(`\nDid you mean one of these?`);
+        suggestions.forEach(cmd => console.error(`    ${cmd}`));
+      }
+
+      console.error(`\nRun 'lsh --help' to see available commands.`);
+      process.exit(1);
+    }
+  }
+
+  // Configure custom error output for better suggestions
+  program.configureOutput({
+    writeErr: (str) => {
+      // Intercept error messages to add suggestions
+      if (str.includes('error: unknown command')) {
+        const match = str.match(/unknown command '([^']+)'/);
+        if (match) {
+          const unknownCommand = match[1];
+          const validCommands = program.commands.map(cmd => cmd.name());
+          const suggestions = findSimilarCommands(unknownCommand, validCommands);
+
+          process.stderr.write(str);
+          if (suggestions.length > 0) {
+            process.stderr.write(`\nDid you mean one of these?\n`);
+            suggestions.forEach(cmd => process.stderr.write(`    ${cmd}\n`));
+          }
+          process.stderr.write(`\nRun 'lsh --help' to see available commands.\n`);
+          return;
+        }
+      }
+      process.stderr.write(str);
+    }
+  });
+
+  // Add custom error handler for unknown commands
+  program.on('command:*', (operands) => {
+    const unknownCommand = operands[0];
+    const validCommands = program.commands.map(cmd => cmd.name());
+    const suggestions = findSimilarCommands(unknownCommand, validCommands);
+
+    console.error(`error: unknown command '${unknownCommand}'`);
+
+    if (suggestions.length > 0) {
+      console.error(`\nDid you mean one of these?`);
+      suggestions.forEach(cmd => console.error(`    ${cmd}`));
+    }
+
+    console.error(`\nRun 'lsh --help' to see available commands.`);
+    process.exit(1);
+  });
 
   // Parse command line arguments after all commands are registered
   program.parse(process.argv);
