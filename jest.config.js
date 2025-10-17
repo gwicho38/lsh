@@ -67,7 +67,8 @@ export default {
             tsconfig: {
                 module: 'ES2022',
                 target: 'ES2022',
-                moduleResolution: 'node'
+                moduleResolution: 'node',
+                rootDir: undefined  // Allow test files outside src/
             },
             useESM: true
         }],
