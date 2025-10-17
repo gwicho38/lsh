@@ -34,7 +34,11 @@
       "Bash(lsh lib secrets:*)",
       "Bash(node /Users/lefv/repos/lsh/dist/cli.js:*)",
       "Bash(npm run lint:*)",
-      "Bash(npm version:*)"
+      "Bash(npm version:*)",
+      "Bash(npm view:*)",
+      "Bash(git push:*)",
+      "Bash(npm audit:*)",
+      "Bash(npm ls:*)"
     ],
     "deny": [],
     "ask": []
