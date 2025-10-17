@@ -1,7 +1,7 @@
 {
   "name": "lsh-framework",
-  "version": "0.5.13",
-  "description": "A powerful, extensible shell with advanced job management, database persistence, and modern CLI features",
+  "version": "0.5.14",
+  "description": "Encrypted secrets manager with automatic rotation, team sync, and multi-environment support. Built on a powerful shell with daemon scheduling and CI/CD integration.",
   "main": "dist/app.js",
   "bin": {
     "lsh": "./dist/cli.js"
@@ -36,21 +36,25 @@
     "audit:security": "npm audit --audit-level moderate"
   },
   "keywords": [
-    "cli",
+    "secrets-manager",
+    "secrets",
+    "env-manager",
+    "dotenv",
+    "environment-variables",
+    "encryption",
+    "credential-management",
+    "team-sync",
+    "secrets-rotation",
+    "multi-environment",
+    "devops",
+    "security",
     "shell",
-    "terminal",
-    "job-manager",
+    "automation",
     "cron",
     "daemon",
-    "zsh",
-    "bash",
-    "posix",
-    "database-persistence",
-    "task-scheduler",
-    "command-line",
-    "automation",
-    "devops",
-    "cicd"
+    "job-scheduler",
+    "cicd",
+    "cli"
   ],
   "engines": {
     "node": ">=20.18.0",
