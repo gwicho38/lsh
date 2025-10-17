@@ -4,16 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LSH (Lightweight Shell) is an extensible CLI shell with advanced job management, CI/CD integration, and persistent daemon for reliable job execution. Built with TypeScript, it provides POSIX-compatible shell features with ZSH-compatible enhancements for automation and pipeline orchestration.
+LSH is an **encrypted secrets manager** with automatic rotation, team sync, and multi-environment support. Built on a powerful shell framework with daemon scheduling, it enables secure credential management across development teams.
 
-**Key Capabilities:**
-- POSIX/ZSH-compatible shell with extended features (globbing, parameter expansion, associative arrays)
+**Primary Feature: Secrets Management**
+- AES-256 encrypted storage of .env files in Supabase/PostgreSQL
+- Multi-environment support (dev/staging/production)
+- Team collaboration with shared encryption keys
+- Automatic secret rotation with scheduled jobs
+- Push/pull sync across all development machines
+- Masked viewing and audit capabilities
+
+**Bonus Features (Built-in Shell Framework):**
+- POSIX/ZSH-compatible shell with extended features
 - Persistent job daemon with cron-style scheduling
-- CI/CD webhook receiver (GitHub, GitLab, Jenkins) with build analytics
+- CI/CD webhook receiver (GitHub, GitLab, Jenkins)
 - RESTful API with JWT authentication
-- Supabase/PostgreSQL persistence for jobs, history, and configuration
-- Electron-based dashboard for monitoring and visualization
+- Electron-based dashboard for monitoring
 - Command validation and security controls
+
+**Positioning:** While LSH is a full-featured shell and automation platform, its primary focus is making secrets management simple, secure, and automated. The built-in daemon and scheduling features uniquely enable automatic secret rotation - something no other secrets manager has built-in.
 
 ## Build & Development Commands
 
@@ -64,9 +73,9 @@ lsh api start --port 3030                     # Start API server
 ### Daemon Operations
 ```bash
 # Start/stop daemon
-lsh daemon start
-lsh daemon status
-lsh daemon stop
+lsh lib daemon start
+lsh lib daemon status
+lsh lib daemon stop
 
 # API server (requires LSH_API_ENABLED=true)
 LSH_API_ENABLED=true LSH_API_PORT=3030 node dist/daemon/lshd.js start
@@ -74,6 +83,56 @@ LSH_API_ENABLED=true LSH_API_PORT=3030 node dist/daemon/lshd.js start
 # Check daemon logs
 cat /tmp/lsh-job-daemon-$USER.log
 ```
+
+## Secrets Management (Primary Feature)
+
+LSH's primary focus is encrypted secrets management. When working on features, always consider how they relate to or enhance the secrets workflow.
+
+### Quick Start with Secrets
+
+```bash
+# Generate encryption key
+lsh lib secrets key
+
+# Push secrets to cloud
+lsh lib secrets push --env dev
+
+# Pull on another machine
+lsh lib secrets pull --env dev
+
+# Schedule automatic rotation
+lsh lib cron add --name "rotate-keys" \
+  --schedule "0 0 1 * *" \
+  --command "./examples/secrets-rotation/rotate-api-keys.sh"
+```
+
+### Secrets Architecture
+
+- **`src/lib/secrets-manager.ts`** - Core secrets management, AES-256 encryption
+- **`src/services/secrets/secrets.ts`** - CLI commands for secrets operations
+- **`examples/secrets-rotation/`** - Example scripts for automated rotation
+
+### Key Implementation Details
+
+1. **Encryption**: Uses AES-256-CBC with user-provided or machine-derived keys
+2. **Storage**: Leverages existing `DatabasePersistence` layer (stores as jobs with command='secrets_sync')
+3. **Multi-environment**: Separate storage by environment name (dev/staging/prod)
+4. **Team Collaboration**: Shared `LSH_SECRETS_KEY` enables team sync
+5. **Automatic Rotation**: Combines cron scheduling + daemon + secrets push/pull
+
+### Integration Points
+
+When adding features, consider secrets integration:
+- Can this feature help with secret rotation?
+- Should this feature respect secret environment variables?
+- Could this feature expose secrets unintentionally?
+
+### Secrets Documentation
+
+- **[SECRETS_GUIDE.md](SECRETS_GUIDE.md)** - Complete user guide
+- **[SECRETS_QUICK_REFERENCE.md](SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
+- **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
+- **[examples/secrets-rotation/](examples/secrets-rotation/)** - Rotation examples and tutorials
 
 ## Architecture
 

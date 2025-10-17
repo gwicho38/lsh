@@ -41,7 +41,7 @@ const program = new Command();
 
 program
   .name('lsh')
-  .description('LSH - A modern shell with ZSH features and superior job management')
+  .description('LSH - Encrypted secrets manager with automatic rotation and team sync')
   .version(getVersion());
 
 // Options for main command
@@ -67,36 +67,35 @@ program
         // Start interactive shell only if -i or --interactive is specified
         await startInteractiveShell(options);
       } else {
-        // No arguments - show commands without verbose options
-        console.log('LSH - A modern shell with ZSH features and superior job management');
+        // No arguments - show secrets-focused help
+        console.log('LSH - Encrypted Secrets Manager with Automatic Rotation');
         console.log('');
-        console.log('Usage: lsh [options] [command]');
+        console.log('🔐 Secrets Management (Primary Features):');
+        console.log('  lib secrets push        Upload .env to encrypted cloud storage');
+        console.log('  lib secrets pull        Download .env from cloud storage');
+        console.log('  lib secrets list        List all stored environments');
+        console.log('  lib secrets show        View secrets (masked)');
+        console.log('  lib secrets key         Generate encryption key');
+        console.log('  lib secrets create      Create new .env file');
         console.log('');
-        console.log('Commands:');
-        console.log('  repl                    JavaScript REPL interactive shell');
-        console.log('  script <file>           Execute shell script');
-        console.log('  config                  Manage configuration');
-        console.log('  zsh                     ZSH compatibility commands');
-        console.log('  help                    Show detailed help');
+        console.log('🔄 Automation (Schedule secret rotation):');
+        console.log('  lib cron add            Schedule automatic tasks');
+        console.log('  lib cron list           List scheduled jobs');
+        console.log('  lib daemon start        Start persistent daemon');
         console.log('');
-        console.log('Self-Management:');
-        console.log('  self update             Update to latest version');
-        console.log('  self version            Show version information');
-        console.log('  self uninstall          Uninstall LSH from system');
-        console.log('  self theme              Manage themes');
-        console.log('  self zsh-import         Import ZSH configs');
+        console.log('🚀 Quick Start:');
+        console.log('  lsh lib secrets key                   # Generate encryption key');
+        console.log('  lsh lib secrets push --env dev        # Push your secrets');
+        console.log('  lsh lib secrets pull --env dev        # Pull on another machine');
         console.log('');
-        console.log('Library Services:');
+        console.log('📚 More Commands:');
         console.log('  lib api                 API server management');
-        console.log('  lib daemon              Daemon management');
-        console.log('  lib cron                Cron job management');
-        console.log('  lib secrets             Secrets management');
         console.log('  lib supabase            Supabase database management');
+        console.log('  self                    Self-management commands');
+        console.log('  -i, --interactive       Start interactive shell');
+        console.log('  --help                  Show all options');
         console.log('');
-        console.log('Quick Start:');
-        console.log('  lsh -i                  Start interactive shell');
-        console.log('  lsh --help              Show all options');
-        console.log('  lsh help                Show detailed help with examples');
+        console.log('📖 Documentation: https://github.com/gwicho38/lsh');
       }
     } catch (error) {
       console.error(`Error: ${error.message}`);
