@@ -167,6 +167,39 @@ API_KEY=
       }
     });
 
+  // Sync command - check status and suggest actions
+  secretsCmd
+    .command('sync')
+    .description('Check secrets sync status and show recommended actions')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-e, --env <name>', 'Environment name', 'dev')
+    .action(async (options) => {
+      try {
+        const manager = new SecretsManager();
+        await manager.sync(options.file, options.env);
+      } catch (error: any) {
+        console.error('❌ Failed to check sync status:', error.message);
+        process.exit(1);
+      }
+    });
+
+  // Status command - get detailed status info
+  secretsCmd
+    .command('status')
+    .description('Get detailed secrets status (JSON output)')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-e, --env <name>', 'Environment name', 'dev')
+    .action(async (options) => {
+      try {
+        const manager = new SecretsManager();
+        const status = await manager.status(options.file, options.env);
+        console.log(JSON.stringify(status, null, 2));
+      } catch (error: any) {
+        console.error('❌ Failed to get status:', error.message);
+        process.exit(1);
+      }
+    });
+
   // Delete .env file with confirmation
   secretsCmd
     .command('delete')

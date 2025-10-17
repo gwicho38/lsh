@@ -4,6 +4,7 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 import * as crypto from 'crypto';
 import DatabasePersistence from './database-persistence.js';
 import { createLogger } from './logger.js';
@@ -267,6 +268,158 @@ export class SecretsManager {
       console.log(`  ${key}=${masked}`);
     }
     console.log();
+  }
+
+  /**
+   * Get status of secrets for an environment
+   */
+  async status(envFilePath: string = '.env', environment: string = 'dev'): Promise<{
+    localExists: boolean;
+    localKeys: number;
+    localModified?: Date;
+    cloudExists: boolean;
+    cloudKeys: number;
+    cloudModified?: Date;
+    keySet: boolean;
+    keyMatches?: boolean;
+    suggestions: string[];
+  }> {
+    const status = {
+      localExists: false,
+      localKeys: 0,
+      localModified: undefined as Date | undefined,
+      cloudExists: false,
+      cloudKeys: 0,
+      cloudModified: undefined as Date | undefined,
+      keySet: !!process.env.LSH_SECRETS_KEY,
+      keyMatches: undefined as boolean | undefined,
+      suggestions: [] as string[],
+    };
+
+    // Check local file
+    if (fs.existsSync(envFilePath)) {
+      status.localExists = true;
+      const stat = fs.statSync(envFilePath);
+      status.localModified = stat.mtime;
+      const content = fs.readFileSync(envFilePath, 'utf8');
+      const env = this.parseEnvFile(content);
+      status.localKeys = Object.keys(env).length;
+    }
+
+    // Check cloud storage
+    try {
+      const jobs = await this.persistence.getActiveJobs();
+      const secretsJobs = jobs
+        .filter(j => j.command === 'secrets_sync' && j.job_id.includes(environment))
+        .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+
+      if (secretsJobs.length > 0) {
+        status.cloudExists = true;
+        const latestSecret = secretsJobs[0];
+        status.cloudModified = new Date(latestSecret.completed_at || latestSecret.started_at);
+
+        // Try to decrypt to check if key matches
+        if (latestSecret.output) {
+          try {
+            const decrypted = this.decrypt(latestSecret.output);
+            const env = this.parseEnvFile(decrypted);
+            status.cloudKeys = Object.keys(env).length;
+            status.keyMatches = true;
+          } catch (error: any) {
+            status.keyMatches = false;
+          }
+        }
+      }
+    } catch (error: any) {
+      // Cloud check failed, likely no connection
+    }
+
+    return status;
+  }
+
+  /**
+   * Sync command - check status and suggest actions
+   */
+  async sync(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
+    console.log(`\n🔍 Checking secrets status for environment: ${environment}\n`);
+
+    const status = await this.status(envFilePath, environment);
+
+    // Display status
+    console.log('📊 Status:');
+    console.log(`  Encryption key set: ${status.keySet ? '✅' : '❌'}`);
+    console.log(`  Local .env file: ${status.localExists ? `✅ (${status.localKeys} keys)` : '❌'}`);
+    console.log(`  Cloud storage: ${status.cloudExists ? `✅ (${status.cloudKeys} keys)` : '❌'}`);
+
+    if (status.cloudExists && status.keyMatches !== undefined) {
+      console.log(`  Key matches cloud: ${status.keyMatches ? '✅' : '❌'}`);
+    }
+
+    console.log();
+
+    // Generate suggestions
+    const suggestions: string[] = [];
+
+    if (!status.keySet) {
+      suggestions.push('⚠️  No encryption key set!');
+      suggestions.push('   Generate a key: lsh lib secrets key');
+      suggestions.push('   Add it to .env: LSH_SECRETS_KEY=<your-key>');
+      suggestions.push('   Load it: export $(cat .env | xargs)');
+    }
+
+    if (status.cloudExists && status.keyMatches === false) {
+      suggestions.push('⚠️  Encryption key does not match cloud storage!');
+      suggestions.push('   Either use the original key, or push new secrets:');
+      suggestions.push(`   lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+    }
+
+    if (!status.localExists && status.cloudExists && status.keyMatches) {
+      suggestions.push('💡 Cloud secrets available but no local file');
+      suggestions.push(`   Pull from cloud: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+    }
+
+    if (status.localExists && !status.cloudExists) {
+      suggestions.push('💡 Local .env exists but not in cloud');
+      suggestions.push(`   Push to cloud: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+    }
+
+    if (status.localExists && status.cloudExists && status.keyMatches) {
+      if (status.localModified && status.cloudModified) {
+        const localNewer = status.localModified > status.cloudModified;
+        const timeDiff = Math.abs(status.localModified.getTime() - status.cloudModified.getTime());
+        const daysDiff = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+        if (localNewer && daysDiff > 0) {
+          suggestions.push('💡 Local file is newer than cloud');
+          suggestions.push(`   Push to cloud: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+        } else if (!localNewer && daysDiff > 0) {
+          suggestions.push('💡 Cloud is newer than local file');
+          suggestions.push(`   Pull from cloud: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+        } else {
+          suggestions.push('✅ Local and cloud are in sync!');
+        }
+      }
+    }
+
+    // Show how to load secrets in current shell
+    if (status.localExists && status.keySet) {
+      suggestions.push('');
+      suggestions.push('📝 To load secrets in your current shell:');
+      suggestions.push(`   export $(cat ${envFilePath} | grep -v '^#' | xargs)`);
+      suggestions.push('');
+      suggestions.push('   Or for safer loading (with quotes):');
+      suggestions.push(`   set -a; source ${envFilePath}; set +a`);
+      suggestions.push('');
+      suggestions.push('💡 Add to your shell profile for auto-loading:');
+      suggestions.push(`   echo "set -a; source ${path.resolve(envFilePath)}; set +a" >> ~/.zshrc`);
+    }
+
+    // Display suggestions
+    if (suggestions.length > 0) {
+      console.log('📋 Recommendations:\n');
+      suggestions.forEach(s => console.log(s));
+      console.log();
+    }
   }
 }
 

@@ -75,6 +75,7 @@ program
         console.log('LSH - Encrypted Secrets Manager with Automatic Rotation');
         console.log('');
         console.log('🔐 Secrets Management (Primary Features):');
+        console.log('  lib secrets sync        Check sync status & get recommendations');
         console.log('  lib secrets push        Upload .env to encrypted cloud storage');
         console.log('  lib secrets pull        Download .env from cloud storage');
         console.log('  lib secrets list        List all stored environments');
