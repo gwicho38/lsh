@@ -63,13 +63,63 @@ export class JobManager extends BaseJobManager {
   private nextJobId = 1;
   private persistenceFile: string;
   private schedulerInterval?: NodeJS.Timeout;
+  private initPromise: Promise<void>;
 
   constructor(persistenceFile = '/tmp/lsh-jobs.json') {
     super(new MemoryJobStorage(), 'JobManager');
     this.persistenceFile = persistenceFile;
-    this.loadPersistedJobs();
+    this.initPromise = this.loadPersistedJobs();
     this.startScheduler();
     this.setupCleanupHandlers();
+  }
+
+  /**
+   * Wait for initialization to complete
+   */
+  async ready(): Promise<void> {
+    await this.initPromise;
+  }
+
+  /**
+   * Create a job and persist to filesystem
+   */
+  async createJob(spec: Partial<JobSpec>): Promise<BaseJobSpec> {
+    const job = await super.createJob(spec);
+    await this.persistJobs();
+    return job;
+  }
+
+  /**
+   * Update a job and persist to filesystem
+   */
+  async updateJob(jobId: string, updates: JobUpdate): Promise<BaseJobSpec> {
+    const job = await super.updateJob(jobId, updates);
+    await this.persistJobs();
+    return job;
+  }
+
+  /**
+   * Remove a job and persist to filesystem
+   */
+  async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
+    const result = await super.removeJob(jobId, force);
+    if (result) {
+      await this.persistJobs();
+    }
+    return result;
+  }
+
+  /**
+   * Update job status and persist to filesystem
+   */
+  protected async updateJobStatus(
+    jobId: string,
+    status: BaseJobSpec['status'],
+    additionalUpdates?: Partial<BaseJobSpec>
+  ): Promise<BaseJobSpec> {
+    const job = await super.updateJobStatus(jobId, status, additionalUpdates);
+    await this.persistJobs();
+    return job;
   }
 
   /**
@@ -124,14 +174,20 @@ export class JobManager extends BaseJobManager {
       });
 
       // Handle completion
-      job.process.on('exit', (code, signal) => {
+      job.process.on('exit', async (code, signal) => {
+        // Check if job still exists (might have been removed during cleanup)
+        const existingJob = await this.getJob(job.id);
+        if (!existingJob) {
+          this.logger.debug(`Job ${job.id} already removed, skipping status update`);
+          return;
+        }
+
         const status = code === 0 ? 'completed' : (signal === 'SIGKILL' ? 'killed' : 'failed');
-        this.updateJobStatus(job.id, status, {
+        await this.updateJobStatus(job.id, status, {
           completedAt: new Date(),
           exitCode: code || undefined,
         });
         this.emit('jobCompleted', job, code, signal);
-        this.persistJobs();
       });
 
       // Set timeout if specified
@@ -147,7 +203,6 @@ export class JobManager extends BaseJobManager {
         pid: job.pid,
       });
 
-      await this.persistJobs();
       return updatedJob;
 
     } catch (error: any) {
@@ -156,7 +211,6 @@ export class JobManager extends BaseJobManager {
         stderr: error.message,
       });
       this.emit('jobFailed', job, error);
-      await this.persistJobs();
       throw error;
     }
   }
@@ -198,7 +252,6 @@ export class JobManager extends BaseJobManager {
       completedAt: new Date(),
     });
 
-    await this.persistJobs();
     return updatedJob;
   }
 
@@ -378,6 +431,13 @@ export class JobManager extends BaseJobManager {
     try {
       if (fs.existsSync(this.persistenceFile)) {
         const data = fs.readFileSync(this.persistenceFile, 'utf8');
+
+        // Handle empty file
+        if (!data || data.trim() === '') {
+          this.logger.info('Persistence file is empty, starting fresh');
+          return;
+        }
+
         const persistedJobs = JSON.parse(data) as JobSpec[];
 
         for (const job of persistedJobs) {
