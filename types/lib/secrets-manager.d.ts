@@ -47,6 +47,14 @@ export declare class SecretsManager {
      */
     listEnvironments(): Promise<string[]>;
     /**
+     * List all tracked .env files
+     */
+    listAllFiles(): Promise<Array<{
+        filename: string;
+        environment: string;
+        updated: string;
+    }>>;
+    /**
      * Show secrets (masked)
      */
     show(environment?: string): Promise<void>;
