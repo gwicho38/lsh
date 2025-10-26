@@ -52,9 +52,27 @@ export async function init_secrets(program: Command) {
     .command('list [environment]')
     .alias('ls')
     .description('List all stored environments or show secrets for specific environment')
-    .action(async (environment) => {
+    .option('--all-files', 'List all tracked .env files across environments')
+    .action(async (environment, options) => {
       try {
         const manager = new SecretsManager();
+
+        // If --all-files flag is set, list all tracked files
+        if (options.allFiles) {
+          const files = await manager.listAllFiles();
+
+          if (files.length === 0) {
+            console.log('No .env files found. Push your first file with: lsh secrets push --file <filename>');
+            return;
+          }
+
+          console.log('\n📦 Tracked .env files:\n');
+          for (const file of files) {
+            console.log(`  • ${file.filename} (${file.environment}) - Last updated: ${file.updated}`);
+          }
+          console.log();
+          return;
+        }
 
         // If environment specified, show secrets for that environment
         if (environment) {
@@ -196,6 +214,105 @@ API_KEY=
         console.log(JSON.stringify(status, null, 2));
       } catch (error: any) {
         console.error('❌ Failed to get status:', error.message);
+        process.exit(1);
+      }
+    });
+
+  // Get a specific secret value
+  secretsCmd
+    .command('get <key>')
+    .description('Get a specific secret value from .env file')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .action(async (key, options) => {
+      try {
+        const envPath = path.resolve(options.file);
+
+        if (!fs.existsSync(envPath)) {
+          console.error(`❌ File not found: ${envPath}`);
+          process.exit(1);
+        }
+
+        const content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+
+        for (const line of lines) {
+          if (line.trim().startsWith('#') || !line.trim()) continue;
+          const match = line.match(/^([^=]+)=(.*)$/);
+          if (match && match[1].trim() === key) {
+            let value = match[2].trim();
+            // Remove quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.slice(1, -1);
+            }
+            console.log(value);
+            return;
+          }
+        }
+
+        console.error(`❌ Key '${key}' not found in ${options.file}`);
+        process.exit(1);
+      } catch (error: any) {
+        console.error('❌ Failed to get secret:', error.message);
+        process.exit(1);
+      }
+    });
+
+  // Set a specific secret value
+  secretsCmd
+    .command('set <key> <value>')
+    .description('Set a specific secret value in .env file')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .action(async (key, value, options) => {
+      try {
+        const envPath = path.resolve(options.file);
+
+        // Validate key format
+        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+          console.error(`❌ Invalid key format: ${key}. Must be a valid environment variable name.`);
+          process.exit(1);
+        }
+
+        let content = '';
+        let found = false;
+
+        if (fs.existsSync(envPath)) {
+          content = fs.readFileSync(envPath, 'utf8');
+          const lines = content.split('\n');
+          const newLines: string[] = [];
+
+          for (const line of lines) {
+            if (line.trim().startsWith('#') || !line.trim()) {
+              newLines.push(line);
+              continue;
+            }
+
+            const match = line.match(/^([^=]+)=(.*)$/);
+            if (match && match[1].trim() === key) {
+              // Quote values with spaces or special characters
+              const needsQuotes = /[\s#]/.test(value);
+              const quotedValue = needsQuotes ? `"${value}"` : value;
+              newLines.push(`${key}=${quotedValue}`);
+              found = true;
+            } else {
+              newLines.push(line);
+            }
+          }
+
+          content = newLines.join('\n');
+        }
+
+        // If key wasn't found, append it
+        if (!found) {
+          const needsQuotes = /[\s#]/.test(value);
+          const quotedValue = needsQuotes ? `"${value}"` : value;
+          content = content.trimRight() + `\n${key}=${quotedValue}\n`;
+        }
+
+        fs.writeFileSync(envPath, content, 'utf8');
+        console.log(`✅ Set ${key} in ${options.file}`);
+      } catch (error: any) {
+        console.error('❌ Failed to set secret:', error.message);
         process.exit(1);
       }
     });
