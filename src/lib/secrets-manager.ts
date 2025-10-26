@@ -152,6 +152,12 @@ export class SecretsManager {
       throw new Error(`File not found: ${envFilePath}`);
     }
 
+    // Validate filename pattern for custom files
+    const filename = path.basename(envFilePath);
+    if (filename !== '.env' && !filename.startsWith('.env.')) {
+      throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
+    }
+
     // Warn if using default key
     if (!process.env.LSH_SECRETS_KEY) {
       logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
@@ -168,9 +174,10 @@ export class SecretsManager {
     // Encrypt entire .env content
     const encrypted = this.encrypt(content);
 
-    // Store in Supabase (using job system for now)
+    // Include filename in job_id for tracking multiple .env files
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const secretData = {
-      job_id: `secrets_${environment}_${Date.now()}`,
+      job_id: `secrets_${environment}_${safeFilename}_${Date.now()}`,
       command: 'secrets_sync',
       status: 'completed',
       output: encrypted,
@@ -181,23 +188,35 @@ export class SecretsManager {
 
     await this.persistence.saveJob(secretData as any);
 
-    logger.info(`✅ Pushed ${Object.keys(env).length} secrets to Supabase`);
+    logger.info(`✅ Pushed ${Object.keys(env).length} secrets from ${filename} to Supabase`);
   }
 
   /**
    * Pull .env from Supabase
    */
   async pull(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
-    logger.info(`Pulling ${environment} secrets from Supabase...`);
+    // Validate filename pattern for custom files
+    const filename = path.basename(envFilePath);
+    if (filename !== '.env' && !filename.startsWith('.env.')) {
+      throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
+    }
 
-    // Get latest secrets
+    logger.info(`Pulling ${filename} (${environment}) from Supabase...`);
+
+    // Get latest secrets for this specific file
     const jobs = await this.persistence.getActiveJobs();
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const secretsJobs = jobs
-      .filter(j => j.command === 'secrets_sync' && j.job_id.includes(environment))
+      .filter(j => {
+        // Match secrets for this environment and filename
+        return j.command === 'secrets_sync' &&
+               j.job_id.includes(environment) &&
+               j.job_id.includes(safeFilename);
+      })
       .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
 
     if (secretsJobs.length === 0) {
-      throw new Error(`No secrets found for environment: ${environment}`);
+      throw new Error(`No secrets found for file '${filename}' in environment: ${environment}`);
     }
 
     const latestSecret = secretsJobs[0];
@@ -229,13 +248,66 @@ export class SecretsManager {
 
     const envs = new Set<string>();
     for (const job of secretsJobs) {
-      const match = job.job_id.match(/secrets_(.+?)_\d+/);
+      // Updated regex to handle new format with filename
+      const match = job.job_id.match(/secrets_([^_]+)_/);
       if (match) {
         envs.add(match[1]);
       }
     }
 
     return Array.from(envs).sort();
+  }
+
+  /**
+   * List all tracked .env files
+   */
+  async listAllFiles(): Promise<Array<{ filename: string; environment: string; updated: string }>> {
+    const jobs = await this.persistence.getActiveJobs();
+    const secretsJobs = jobs.filter(j => j.command === 'secrets_sync');
+
+    // Group by environment and filename to get latest of each
+    const fileMap = new Map<string, any>();
+
+    for (const job of secretsJobs) {
+      // Parse job_id: secrets_${environment}_${safeFilename}_${timestamp}
+      const parts = job.job_id.split('_');
+      if (parts.length >= 3 && parts[0] === 'secrets') {
+        const environment = parts[1];
+
+        // Handle both old and new format
+        let filename = '.env';
+        if (parts.length >= 4) {
+          // New format with filename
+          const timestamp = parts[parts.length - 1];
+          // Reconstruct filename from middle parts
+          const filenameParts = parts.slice(2, -1);
+          if (filenameParts.length > 0) {
+            // Convert underscores back to dots for the extension
+            filename = filenameParts.join('_');
+            // Fix the extension dots that were replaced
+            filename = filename.replace(/^env_/, '.env.');
+            if (filename === 'env') {
+              filename = '.env';
+            }
+          }
+        }
+
+        const key = `${environment}_${filename}`;
+        const existing = fileMap.get(key);
+
+        if (!existing || new Date(job.completed_at || job.started_at) > new Date(existing.updated)) {
+          fileMap.set(key, {
+            filename,
+            environment,
+            updated: new Date(job.completed_at || job.started_at).toLocaleString()
+          });
+        }
+      }
+    }
+
+    return Array.from(fileMap.values()).sort((a, b) =>
+      a.filename.localeCompare(b.filename) || a.environment.localeCompare(b.environment)
+    );
   }
 
   /**
