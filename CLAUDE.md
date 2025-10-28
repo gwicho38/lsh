@@ -129,8 +129,8 @@ When adding features, consider secrets integration:
 
 ### Secrets Documentation
 
-- **[SECRETS_GUIDE.md](SECRETS_GUIDE.md)** - Complete user guide
-- **[SECRETS_QUICK_REFERENCE.md](SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
+- **[SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)** - Complete user guide
+- **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
 - **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
 - **[examples/secrets-rotation/](examples/secrets-rotation/)** - Rotation examples and tutorials
 
@@ -349,3 +349,4 @@ Key libraries:
 - **zx** - Shell scripting utilities
 
 For full dependency list see `package.json`.
+- every time you push a new releasre it should be a new release in github and a new version published to npm
