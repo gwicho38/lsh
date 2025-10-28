@@ -38,7 +38,17 @@
       "Bash(npm view:*)",
       "Bash(git push:*)",
       "Bash(npm audit:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(lsh secrets --help)",
+      "Bash(lsh secrets key)",
+      "Bash(lsh secrets list)",
+      "Bash(gh run list --repo gwicho38/lsh --limit 10)",
+      "Bash(gh run list --repo gwicho38/lsh --workflow=node.js.yml --limit 5)",
+      "Bash(mkdir:*)",
+      "Bash(tailscale status:*)",
+      "Bash(tree:*)",
+      "Read(//Users/lefv/.mcli/commands/**)",
+      "Bash(ssh:*)"
     ],
     "deny": [],
     "ask": []
