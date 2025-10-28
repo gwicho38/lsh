@@ -297,7 +297,7 @@ lsh lib cron add \
 
 ## Resources
 
-- [LSH Secrets Guide](../../SECRETS_GUIDE.md)
+- [LSH Secrets Guide](../../docs/features/secrets/SECRETS_GUIDE.md)
 - [LSH Cron Documentation](../../docs/features/cron.md)
 - [LSH Daemon Documentation](../../docs/features/daemon.md)
 
