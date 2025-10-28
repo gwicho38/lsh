@@ -126,7 +126,7 @@ lsh lib secrets pull --env prod     # for production debugging
 | `lsh lib secrets create` | Create new .env file |
 | `lsh lib secrets delete` | Delete .env file (with confirmation) |
 
-See the complete guide: [SECRETS_GUIDE.md](SECRETS_GUIDE.md)
+See the complete guide: [SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)
 
 ## Installation
 
@@ -536,10 +536,10 @@ lsh lib daemon start
 
 ## Documentation
 
-- **[SECRETS_GUIDE.md](SECRETS_GUIDE.md)** - Complete secrets management guide
-- **[SECRETS_QUICK_REFERENCE.md](SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
+- **[SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)** - Complete secrets management guide
+- **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
 - **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
-- **[INSTALL.md](INSTALL.md)** - Detailed installation instructions
+- **[INSTALL.md](docs/deployment/INSTALL.md)** - Detailed installation instructions
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for contributors
 
 ## Architecture
