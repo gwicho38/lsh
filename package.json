@@ -1,6 +1,6 @@
 {
   "name": "lsh-framework",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Encrypted secrets manager with automatic rotation, team sync, and multi-environment support. Built on a powerful shell with daemon scheduling and CI/CD integration.",
   "main": "dist/app.js",
   "bin": {
