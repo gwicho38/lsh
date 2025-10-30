@@ -2,6 +2,8 @@
 
 Never copy .env files again! Sync your secrets across all development environments using encrypted Supabase storage.
 
+> **🆕 New in v0.8.2+:** [Smart Sync](./SMART_SYNC_GUIDE.md) is now available! It automatically handles setup, encryption keys, and synchronization with one command. This guide covers the traditional manual approach, which still works great if you need more control.
+
 ## Quick Start
 
 ### 1. Generate an Encryption Key
