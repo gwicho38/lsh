@@ -19,9 +19,44 @@ Traditional secret management tools are either too complex, too expensive, or re
 
 ## Quick Start (30 seconds)
 
+### New in v0.8.2+: Smart Sync (Easiest Way!)
+
 ```bash
 # 1. Install
-npm install -g gwicho38-lsh
+npm install -g lsh-framework
+
+# 2. Configure Supabase (free tier works!)
+# Add to .env:
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_ANON_KEY=<your-anon-key>
+
+# 3. ONE command does everything!
+cd ~/repos/your-project
+lsh lib secrets sync
+
+# That's it! Smart Sync:
+# ✅ Auto-generates encryption key
+# ✅ Creates .env from .env.example
+# ✅ Adds .env to .gitignore
+# ✅ Pushes to cloud
+# ✅ Namespaces by repo name
+```
+
+### Sync AND Load in One Command
+
+```bash
+# Sync and load secrets into current shell
+eval "$(lsh lib secrets sync --load)"
+
+# Your secrets are now available!
+echo $DATABASE_URL
+```
+
+### Traditional Method (Still Works)
+
+```bash
+# 1. Install
+npm install -g lsh-framework
 
 # 2. Generate encryption key
 lsh lib secrets key
@@ -44,6 +79,35 @@ lsh lib secrets pull
 
 ## Core Features
 
+### 🚀 Smart Sync (New in v0.8.2!)
+
+**One command. Zero configuration. Automatic everything.**
+
+```bash
+cd ~/repos/my-app
+lsh lib secrets sync              # Auto-setup and sync
+eval "$(lsh lib secrets sync --load)"  # Sync AND load into shell
+```
+
+What Smart Sync does automatically:
+- ✅ **Detects git repos** - Namespaces secrets by project name
+- ✅ **Generates keys** - Creates encryption key if missing
+- ✅ **Creates .env** - From .env.example or template
+- ✅ **Updates .gitignore** - Ensures .env is never committed
+- ✅ **Intelligent sync** - Pushes/pulls based on what's newer
+- ✅ **Load mode** - Sync and load with `eval` in one command
+
+**Repository Isolation:**
+```bash
+cd ~/repos/app1
+lsh lib secrets sync  # Stored as: app1_dev
+
+cd ~/repos/app2
+lsh lib secrets sync  # Stored as: app2_dev (separate!)
+```
+
+No more conflicts between projects using the same environment names!
+
 ### 🔐 Secrets Management
 
 - **AES-256 Encryption** - Military-grade encryption for all secrets
@@ -52,6 +116,7 @@ lsh lib secrets pull
 - **Masked Viewing** - View secrets safely without exposing full values
 - **Automatic Backup** - Never lose your `.env` files
 - **Version Control** - Track changes to your secrets over time
+- **Smart Sync** - Auto-setup with git repo detection (v0.8.2+)
 
 ### 🔄 Automatic Rotation (Unique Feature!)
 
@@ -536,11 +601,20 @@ lsh lib daemon start
 
 ## Documentation
 
+### Secrets Management
+- **[SMART_SYNC_GUIDE.md](docs/features/secrets/SMART_SYNC_GUIDE.md)** - 🆕 Smart Sync complete guide (v0.8.2+)
 - **[SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)** - Complete secrets management guide
 - **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
 - **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
+
+### Installation & Development
 - **[INSTALL.md](docs/deployment/INSTALL.md)** - Detailed installation instructions
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for contributors
+
+### Release Notes
+- **[v0.8.3](docs/releases/0.8.3.md)** - Hotfix: Logger output in load mode
+- **[v0.8.2](docs/releases/0.8.2.md)** - Smart Sync feature release
+- **[v0.8.1](docs/releases/0.8.1.md)** - Previous releases
 
 ## Architecture
 
