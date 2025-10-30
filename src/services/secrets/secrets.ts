@@ -185,18 +185,28 @@ API_KEY=
       }
     });
 
-  // Sync command - check status and suggest actions
+  // Sync command - automatically set up and synchronize secrets
   secretsCmd
     .command('sync')
-    .description('Check secrets sync status and show recommended actions')
+    .description('Automatically set up and synchronize secrets (smart mode)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name', 'dev')
+    .option('--dry-run', 'Show what would be done without executing')
+    .option('--legacy', 'Use legacy sync mode (suggestions only)')
+    .option('--load', 'Output eval-able export commands for loading secrets')
     .action(async (options) => {
       try {
         const manager = new SecretsManager();
-        await manager.sync(options.file, options.env);
+
+        if (options.legacy) {
+          // Use legacy sync (suggestions only)
+          await manager.sync(options.file, options.env);
+        } else {
+          // Use new smart sync (auto-execute)
+          await manager.smartSync(options.file, options.env, !options.dryRun, options.load);
+        }
       } catch (error: any) {
-        console.error('❌ Failed to check sync status:', error.message);
+        console.error('❌ Failed to sync:', error.message);
         process.exit(1);
       }
     });
