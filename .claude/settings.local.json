@@ -30,7 +30,11 @@
       "Bash(npm run build:*)",
       "Bash(npm test:*)",
       "Bash(npm run lint:fix:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npm version:*)",
+      "Bash(git commit:*)",
+      "Bash(npm publish:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

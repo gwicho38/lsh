@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import DatabasePersistence from './database-persistence.js';
-import { createLogger } from './logger.js';
+import { createLogger, LogLevel } from './logger.js';
 import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo } from './git-utils.js';
 
 const logger = createLogger('SecretsManager');
@@ -581,14 +581,22 @@ LSH_SECRETS_KEY=${this.encryptionKey}
    * This is the new enhanced sync that does everything automatically
    */
   async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false): Promise<void> {
-    // Use repo-aware environment if in git repo
-    const effectiveEnv = this.getRepoAwareEnvironment(environment);
-    const displayEnv = this.gitInfo?.repoName ? `${this.gitInfo.repoName}/${environment}` : environment;
+    // In load mode, suppress all logger output to prevent zsh glob interpretation
+    // Save original level and restore at the end
+    const originalLogLevel = loadMode ? logger['config'].level : undefined;
+    if (loadMode) {
+      logger.setLevel(LogLevel.NONE);
+    }
 
-    // In load mode, redirect output to stderr so stdout only has export commands
-    const out = loadMode ? console.error : console.log;
+    try {
+      // Use repo-aware environment if in git repo
+      const effectiveEnv = this.getRepoAwareEnvironment(environment);
+      const displayEnv = this.gitInfo?.repoName ? `${this.gitInfo.repoName}/${environment}` : environment;
 
-    out(`\n🔍 Smart sync for: ${displayEnv}\n`);
+      // In load mode, suppress all output except the final export commands
+      const out = loadMode ? () => {} : console.log;
+
+      out(`\n🔍 Smart sync for: ${displayEnv}\n`);
 
     // Show git repo context if detected
     if (this.gitInfo?.isGitRepo) {
@@ -760,14 +768,20 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       }
     }
 
-    // Default: everything is in sync
-    out('✅ Secrets are synchronized!');
-    out();
+      // Default: everything is in sync
+      out('✅ Secrets are synchronized!');
+      out();
 
-    if (!loadMode) {
-      this.showLoadInstructions(envFilePath);
-    } else if (fs.existsSync(envFilePath)) {
-      console.log(this.generateExportCommands(envFilePath));
+      if (!loadMode) {
+        this.showLoadInstructions(envFilePath);
+      } else if (fs.existsSync(envFilePath)) {
+        console.log(this.generateExportCommands(envFilePath));
+      }
+    } finally {
+      // Restore original logger level if it was changed
+      if (loadMode && originalLogLevel !== undefined) {
+        logger.setLevel(originalLogLevel);
+      }
     }
   }
 
