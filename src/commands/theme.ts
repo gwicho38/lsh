@@ -96,8 +96,9 @@ export function registerThemeCommands(program: Command): void {
         console.log('');
 
         process.exit(0);
-      } catch (error: any) {
-        console.error(chalk.red(`✗ Failed to import theme: ${error.message}`));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(`✗ Failed to import theme: ${err.message}`));
         process.exit(1);
       }
     });
@@ -125,7 +126,7 @@ export function registerThemeCommands(program: Command): void {
         console.log('');
 
         process.exit(0);
-      } catch (_error: any) {
+      } catch (_error) {
         console.error(chalk.red(`✗ Theme not found: ${name}`));
         console.log(chalk.dim('\nAvailable themes:'));
         console.log(chalk.dim('  lsh theme list'));
@@ -188,8 +189,9 @@ ${commands}
         console.log('');
 
         process.exit(0);
-      } catch (error: any) {
-        console.error(chalk.red(`✗ Failed to apply theme: ${error.message}`));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(`✗ Failed to apply theme: ${err.message}`));
         process.exit(1);
       }
     });
@@ -295,8 +297,9 @@ ${commands}
 
         console.log('');
         process.exit(0);
-      } catch (error: any) {
-        console.error(chalk.red(`✗ Failed to import theme: ${error.message}`));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(`✗ Failed to import theme: ${err.message}`));
         process.exit(1);
       }
     });

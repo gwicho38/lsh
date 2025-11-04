@@ -50,8 +50,9 @@ export function registerApiCommands(program: Command) {
         console.log(chalk.gray(`\nExample usage:`));
         console.log(chalk.gray(`  curl -H "X-API-Key: ${apiKey}" http://localhost:${options.port}/api/status`));
 
-      } catch (error: any) {
-        console.error(chalk.red(`❌ Failed to start API server: ${error.message}`));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(`❌ Failed to start API server: ${err.message}`));
         process.exit(1);
       }
     });
@@ -95,8 +96,9 @@ export function registerApiCommands(program: Command) {
         } else {
           console.error(chalk.red(`❌ API server returned ${response.status}: ${response.statusText}`));
         }
-      } catch (error: any) {
-        console.error(chalk.red(`❌ Failed to connect to API server: ${error.message}`));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(`❌ Failed to connect to API server: ${err.message}`));
         console.log(chalk.yellow('Make sure the daemon is running with API enabled:'));
         console.log(chalk.gray('  lsh api start'));
       }
@@ -164,8 +166,9 @@ export function registerApiCommands(program: Command) {
             console.error(chalk.red(`❌ Unknown action: ${action}`));
             console.log('Valid actions: add, list, remove');
         }
-      } catch (error: any) {
-        console.error(chalk.red(`❌ Failed: ${error.message}`));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(`❌ Failed: ${err.message}`));
       }
     });
 
