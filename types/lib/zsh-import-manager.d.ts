@@ -55,17 +55,18 @@ export interface ParsedZshConfig {
         line: number;
     }>;
 }
+export interface ImportStats {
+    total: number;
+    succeeded: number;
+    failed: number;
+    skipped: number;
+    conflicts: number;
+}
 export interface ImportResult {
     success: boolean;
     message: string;
     diagnostics: ImportDiagnostic[];
-    stats: {
-        total: number;
-        succeeded: number;
-        failed: number;
-        skipped: number;
-        conflicts: number;
-    };
+    stats: ImportStats;
 }
 export declare class ZshImportManager {
     private executor;
@@ -135,5 +136,7 @@ export declare class ZshImportManager {
     /**
      * Get import statistics from last run
      */
-    getLastImportStats(): any;
+    getLastImportStats(): ImportStats & {
+        byType: Record<string, ImportStats>;
+    } | null;
 }

@@ -4,6 +4,7 @@
  */
 
 import { supabaseClient } from './supabase-client.js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import * as os from 'os';
 import {
   ShellHistoryEntry,
@@ -14,7 +15,7 @@ import {
 } from './database-schema.js';
 
 export class DatabasePersistence {
-  private client: any;
+  private client: SupabaseClient;
   private userId?: string;
   private sessionId: string;
 
@@ -66,7 +67,7 @@ export class DatabasePersistence {
    */
   public async saveHistoryEntry(entry: Omit<ShellHistoryEntry, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
-      const insertData: any = {
+      const insertData: Record<string, unknown> = {
         ...entry,
         session_id: this.sessionId,
         created_at: new Date().toISOString(),
@@ -78,7 +79,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_history')
         .insert([insertData]);
 
@@ -131,7 +132,7 @@ export class DatabasePersistence {
    */
   public async saveJob(job: Omit<ShellJob, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
-      const insertData: any = {
+      const insertData: Record<string, unknown> = {
         ...job,
         session_id: this.sessionId,
         created_at: new Date().toISOString(),
@@ -143,7 +144,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_jobs')
         .insert([insertData]);
 
@@ -164,7 +165,7 @@ export class DatabasePersistence {
    */
   public async updateJobStatus(jobId: string, status: ShellJob['status'], exitCode?: number): Promise<boolean> {
     try {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         status,
         updated_at: new Date().toISOString(),
       };
@@ -188,7 +189,7 @@ export class DatabasePersistence {
         query = query.is('user_id', null);
       }
 
-      const { _data, error } = await query;
+      const { error } = await query;
 
       if (error) {
         console.error('Failed to update job status:', error);
@@ -239,7 +240,7 @@ export class DatabasePersistence {
    */
   public async saveConfiguration(config: Omit<ShellConfiguration, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
-      const upsertData: any = {
+      const upsertData: Record<string, unknown> = {
         ...config,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -250,7 +251,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_configuration')
         .upsert([upsertData], {
           onConflict: 'user_id,config_key'
@@ -308,7 +309,7 @@ export class DatabasePersistence {
    */
   public async saveAlias(alias: Omit<ShellAlias, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
-      const upsertData: any = {
+      const upsertData: Record<string, unknown> = {
         ...alias,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -319,7 +320,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_aliases')
         .upsert([upsertData], {
           onConflict: 'user_id,alias_name'
@@ -373,7 +374,7 @@ export class DatabasePersistence {
    */
   public async saveFunction(func: Omit<ShellFunction, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
-      const upsertData: any = {
+      const upsertData: Record<string, unknown> = {
         ...func,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -384,7 +385,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_functions')
         .upsert([upsertData], {
           onConflict: 'user_id,function_name'
@@ -438,7 +439,7 @@ export class DatabasePersistence {
    */
   public async startSession(workingDirectory: string, environmentVariables: Record<string, string>): Promise<boolean> {
     try {
-      const insertData: any = {
+      const insertData: Record<string, unknown> = {
         session_id: this.sessionId,
         hostname: os.hostname(),
         working_directory: workingDirectory,
@@ -454,7 +455,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_sessions')
         .insert([insertData]);
 
@@ -491,7 +492,7 @@ export class DatabasePersistence {
         query = query.is('user_id', null);
       }
 
-      const { _data, error } = await query;
+      const { error } = await query;
 
       if (error) {
         console.error('Failed to end session:', error);
@@ -523,9 +524,9 @@ export class DatabasePersistence {
    * Get latest rows from all database tables
    */
   public async getLatestRows(limit: number = 5): Promise<{
-    [tableName: string]: any[]
+    [tableName: string]: Record<string, unknown>[]
   }> {
-    const result: { [tableName: string]: any[] } = {};
+    const result: { [tableName: string]: Record<string, unknown>[] } = {};
 
     try {
       // Get latest shell history entries
@@ -674,7 +675,7 @@ export class DatabasePersistence {
   /**
    * Get latest rows from a specific table
    */
-  public async getLatestRowsFromTable(tableName: string, limit: number = 5): Promise<any[]> {
+  public async getLatestRowsFromTable(tableName: string, limit: number = 5): Promise<Record<string, unknown>[]> {
     try {
       const validTables = [
         'shell_history',

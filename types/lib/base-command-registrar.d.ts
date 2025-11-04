@@ -35,10 +35,54 @@ import { Command } from 'commander';
 import DaemonClient from './daemon-client.js';
 import CronJobManager from './cron-job-manager.js';
 import { Logger } from './logger.js';
+import { JobSpec } from './job-manager.js';
 /**
  * Command action handler signature
  */
-export type CommandAction = (...args: any[]) => Promise<void> | void;
+export type CommandAction = (...args: unknown[]) => Promise<void> | void;
+/**
+ * Schedule configuration
+ */
+export interface ScheduleConfig {
+    cron?: string;
+    interval?: number;
+}
+/**
+ * Job specification options for creating jobs
+ */
+export interface JobSpecOptions {
+    id?: string;
+    name: string;
+    description?: string;
+    command: string;
+    schedule?: string;
+    interval?: string;
+    workingDir?: string;
+    env?: string;
+    tags?: string;
+    priority?: string;
+    maxRetries?: string;
+    timeout?: string;
+    databaseSync?: boolean;
+}
+/**
+ * Job report structure
+ */
+export interface JobReport {
+    jobId?: string;
+    executions: number;
+    successes: number;
+    failures: number;
+    successRate: number;
+    averageDuration: number;
+    lastExecution?: Date;
+    lastSuccess?: Date;
+    lastFailure?: Date;
+    commonErrors?: Array<{
+        error: string;
+        count: number;
+    }>;
+}
 /**
  * Configuration for a subcommand
  */
@@ -102,11 +146,11 @@ export declare abstract class BaseCommandRegistrar {
     /**
      * Log success message
      */
-    protected logSuccess(message: string, data?: any): void;
+    protected logSuccess(message: string, data?: unknown): void;
     /**
      * Log error message
      */
-    protected logError(message: string, error?: Error | any): void;
+    protected logError(message: string, error?: Error | unknown): void;
     /**
      * Log info message
      */
@@ -118,7 +162,7 @@ export declare abstract class BaseCommandRegistrar {
     /**
      * Parse JSON from string with error handling
      */
-    protected parseJSON<T = any>(jsonString: string, context?: string): T;
+    protected parseJSON<T = unknown>(jsonString: string, context?: string): T;
     /**
      * Parse comma-separated tags
      */
@@ -126,26 +170,26 @@ export declare abstract class BaseCommandRegistrar {
     /**
      * Format job schedule for display
      */
-    protected formatSchedule(schedule: any): string;
+    protected formatSchedule(schedule: ScheduleConfig | undefined): string;
     /**
      * Validate required options
      */
-    protected validateRequired(options: Record<string, any>, required: string[], commandName?: string): void;
+    protected validateRequired(options: Record<string, unknown>, required: string[], commandName?: string): void;
     /**
      * Create a standardized job specification from options
      */
-    protected createJobSpec(options: any): any;
+    protected createJobSpec(options: JobSpecOptions): Partial<JobSpec>;
     /**
      * Display job information
      */
-    protected displayJob(job: any): void;
+    protected displayJob(job: Partial<JobSpec>): void;
     /**
      * Display multiple jobs
      */
-    protected displayJobs(jobs: any[]): void;
+    protected displayJobs(jobs: Array<Partial<JobSpec>>): void;
     /**
      * Display job report
      */
-    protected displayJobReport(report: any): void;
+    protected displayJobReport(report: JobReport): void;
 }
 export default BaseCommandRegistrar;
