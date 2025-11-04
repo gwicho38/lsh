@@ -6,6 +6,13 @@
 import { Command } from 'commander';
 import { BaseCommandRegistrar } from '../../lib/base-command-registrar.js';
 
+/**
+ * Type helper to extract options from commander command
+ */
+interface CommandOptions {
+  [key: string]: unknown;
+}
+
 export class CronCommandRegistrar extends BaseCommandRegistrar {
   constructor() {
     super('CronService');
@@ -55,18 +62,19 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-t, --tags <tags>', description: 'Comma-separated tags' },
         { flags: '-p, --priority <priority>', description: 'Priority (0-10)', defaultValue: '5' }
       ],
-      action: async (templateId, options) => {
+      action: async (templateId: unknown, options: unknown) => {
+        const opts = options as CommandOptions;
         const result = await this.withCronManager(async (manager) => {
-          const customizations: any = {};
-          if (options.name) customizations.name = options.name;
-          if (options.command) customizations.command = options.command;
-          if (options.schedule) customizations.schedule = { cron: options.schedule };
-          if (options.workingDir) customizations.workingDirectory = options.workingDir;
-          if (options.env) customizations.environment = this.parseJSON(options.env, 'environment variables');
-          if (options.tags) customizations.tags = this.parseTags(options.tags);
-          if (options.priority) customizations.priority = parseInt(options.priority);
+          const customizations: Record<string, unknown> = {};
+          if (opts.name) customizations.name = opts.name;
+          if (opts.command) customizations.command = opts.command;
+          if (opts.schedule) customizations.schedule = { cron: opts.schedule };
+          if (opts.workingDir) customizations.workingDirectory = opts.workingDir;
+          if (opts.env) customizations.environment = this.parseJSON(opts.env as string, 'environment variables');
+          if (opts.tags) customizations.tags = this.parseTags(opts.tags as string);
+          if (opts.priority) customizations.priority = parseInt(opts.priority as string);
 
-          return await manager.createJobFromTemplate(templateId, customizations);
+          return await manager.createJobFromTemplate(templateId as string, customizations);
         });
 
         this.logSuccess('Job created from template:');
@@ -87,9 +95,10 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-f, --filter <filter>', description: 'Filter by status' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const jobs = await this.withCronManager(async (manager) => {
-          return await manager.listJobs(options.filter ? { status: options.filter } : undefined);
+          return await manager.listJobs(opts.filter ? { status: opts.filter as string[] } : undefined);
         });
 
         this.logInfo(`Cron Jobs (${jobs.length} total):`);
@@ -110,9 +119,9 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
       name: 'info',
       description: 'Get job information',
       arguments: [{ name: 'jobId', required: true }],
-      action: async (jobId) => {
+      action: async (jobId: unknown) => {
         const job = await this.withCronManager(async (manager) => {
-          return await manager.getJob(jobId);
+          return await manager.getJob(jobId as string);
         });
 
         if (!job) {
@@ -140,9 +149,9 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
       name: 'start',
       description: 'Start a job',
       arguments: [{ name: 'jobId', required: true }],
-      action: async (jobId) => {
+      action: async (jobId: unknown) => {
         await this.withCronManager(async (manager) => {
-          await manager.startJob(jobId);
+          await manager.startJob(jobId as string);
         });
 
         this.logSuccess(`Job ${jobId} started`);
@@ -157,12 +166,13 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-s, --signal <signal>', description: 'Signal to send', defaultValue: 'SIGTERM' }
       ],
-      action: async (jobId, options) => {
+      action: async (jobId: unknown, options: unknown) => {
+        const opts = options as CommandOptions;
         await this.withCronManager(async (manager) => {
-          await manager.stopJob(jobId, options.signal);
+          await manager.stopJob(jobId as string, opts.signal as string);
         });
 
-        this.logSuccess(`Job ${jobId} stopped with signal ${options.signal}`);
+        this.logSuccess(`Job ${jobId} stopped with signal ${opts.signal}`);
       }
     });
 
@@ -174,9 +184,10 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-f, --force', description: 'Force removal', defaultValue: false }
       ],
-      action: async (jobId, options) => {
+      action: async (jobId: unknown, options: unknown) => {
+        const opts = options as CommandOptions;
         await this.withCronManager(async (manager) => {
-          await manager.removeJob(jobId, options.force);
+          await manager.removeJob(jobId as string, opts.force as boolean);
         });
 
         this.logSuccess(`Job ${jobId} removed`);
@@ -190,9 +201,9 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
       name: 'report',
       description: 'Get detailed job execution report',
       arguments: [{ name: 'jobId', required: true }],
-      action: async (jobId) => {
+      action: async (jobId: unknown) => {
         const report = await this.withCronManager(async (manager) => {
-          return await manager.getJobReport(jobId);
+          return await manager.getJobReport(jobId as string);
         });
 
         this.displayJobReport(report);
@@ -239,15 +250,16 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-f, --format <format>', description: 'Export format (json or csv)', defaultValue: 'json' },
         { flags: '-o, --output <file>', description: 'Output file path' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const data = await this.withCronManager(async (manager) => {
-          return await manager.exportJobData(options.format as 'json' | 'csv');
+          return await manager.exportJobData(opts.format as 'json' | 'csv');
         });
 
-        if (options.output) {
+        if (opts.output) {
           const fs = await import('fs');
-          fs.writeFileSync(options.output, data);
-          this.logSuccess(`Data exported to ${options.output}`);
+          fs.writeFileSync(opts.output as string, data);
+          this.logSuccess(`Data exported to ${opts.output}`);
         } else {
           this.logInfo(data);
         }

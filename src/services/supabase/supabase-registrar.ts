@@ -10,6 +10,13 @@ import DatabasePersistence from '../../lib/database-persistence.js';
 import CloudConfigManager from '../../lib/cloud-config-manager.js';
 import { CREATE_TABLES_SQL } from '../../lib/database-schema.js';
 
+/**
+ * Type helper to extract options from commander command
+ */
+interface CommandOptions {
+  [key: string]: unknown;
+}
+
 export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
   constructor() {
     super('SupabaseService');
@@ -102,11 +109,12 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-c, --count <number>', description: 'Number of entries to show', defaultValue: '10' },
         { flags: '-s, --search <query>', description: 'Search history entries' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const persistence = new DatabasePersistence();
 
-        if (options.list) {
-          const count = parseInt(options.count);
+        if (opts.list) {
+          const count = parseInt(opts.count as string);
           const entries = await persistence.getHistoryEntries(count);
 
           this.logInfo(`Recent ${entries.length} history entries:`);
@@ -115,10 +123,10 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
             const exitCode = entry.exit_code ? ` (exit: ${entry.exit_code})` : '';
             this.logInfo(`${index + 1}. [${timestamp}] ${entry.command}${exitCode}`);
           });
-        } else if (options.search) {
+        } else if (opts.search) {
           const entries = await persistence.getHistoryEntries(100);
           const filtered = entries.filter(entry =>
-            entry.command.toLowerCase().includes(options.search.toLowerCase())
+            entry.command.toLowerCase().includes((opts.search as string).toLowerCase())
           );
 
           this.logInfo(`Found ${filtered.length} matching entries:`);
@@ -143,30 +151,31 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-d, --delete <key>', description: 'Delete configuration key' },
         { flags: '-e, --export', description: 'Export configuration to JSON', defaultValue: false }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const configManager = new CloudConfigManager();
 
-        if (options.list) {
+        if (opts.list) {
           const config = configManager.getAll();
           this.logInfo('Current configuration:');
           config.forEach(item => {
             this.logInfo(`  ${item.key}: ${JSON.stringify(item.value)}`);
           });
-        } else if (options.get) {
-          const value = configManager.get(options.get);
+        } else if (opts.get) {
+          const value = configManager.get(opts.get as string);
           if (value !== undefined) {
-            this.logInfo(`${options.get}: ${JSON.stringify(value)}`);
+            this.logInfo(`${opts.get}: ${JSON.stringify(value)}`);
           } else {
-            this.logWarning(`Configuration key '${options.get}' not found`);
+            this.logWarning(`Configuration key '${opts.get}' not found`);
           }
-        } else if (options.set) {
-          const [key, value] = options.set;
+        } else if (opts.set) {
+          const [key, value] = opts.set as [string, string];
           configManager.set(key, value);
           this.logSuccess(`Configuration '${key}' set to: ${value}`);
-        } else if (options.delete) {
-          configManager.delete(options.delete);
-          this.logSuccess(`Configuration '${options.delete}' deleted`);
-        } else if (options.export) {
+        } else if (opts.delete) {
+          configManager.delete(opts.delete as string);
+          this.logSuccess(`Configuration '${opts.delete}' deleted`);
+        } else if (opts.export) {
           const exported = configManager.export();
           this.logInfo(exported);
         } else {
@@ -183,17 +192,18 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-l, --list', description: 'List active jobs', defaultValue: false },
         { flags: '-h, --history', description: 'List job history', defaultValue: false }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const persistence = new DatabasePersistence();
 
-        if (options.list) {
+        if (opts.list) {
           const jobs = await persistence.getActiveJobs();
           this.logInfo(`Active jobs (${jobs.length}):`);
           jobs.forEach(job => {
             const started = new Date(job.started_at).toLocaleString();
             this.logInfo(`${job.job_id}: ${job.command} (${job.status}) - Started: ${started}`);
           });
-        } else if (options.history) {
+        } else if (opts.history) {
           this.logInfo('Job history feature not yet implemented');
         } else {
           this.logInfo('Use --list or --history to manage jobs');
@@ -209,9 +219,10 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-l, --limit <number>', description: 'Number of rows to show per table', defaultValue: '5' },
         { flags: '-t, --table <name>', description: 'Show rows from specific table only' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const persistence = new DatabasePersistence();
-        const limit = parseInt(options.limit);
+        const limit = parseInt(opts.limit as string);
 
         // Test connection first
         const isConnected = await persistence.testConnection();
@@ -219,16 +230,16 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
           throw new Error('Cannot fetch rows - database not available');
         }
 
-        if (options.table) {
+        if (opts.table) {
           // Show rows from specific table
-          this.logInfo(`Latest ${limit} entries from table '${options.table}':`);
-          const rows = await persistence.getLatestRowsFromTable(options.table, limit);
+          this.logInfo(`Latest ${limit} entries from table '${opts.table}':`);
+          const rows = await persistence.getLatestRowsFromTable(opts.table as string, limit);
 
           if (rows.length === 0) {
             this.logInfo('No entries found.');
           } else {
             rows.forEach((row, index) => {
-              const timestamp = row.created_at ? new Date(row.created_at).toLocaleString() : 'N/A';
+              const timestamp = row.created_at ? new Date(row.created_at as string).toLocaleString() : 'N/A';
               this.logInfo(`\n${index + 1}. [${timestamp}]`);
               this.logInfo(JSON.stringify(row, null, 2));
             });
@@ -245,7 +256,7 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
               this.logInfo('No entries found.');
             } else {
               rows.forEach((row, index) => {
-                const timestamp = row.created_at ? new Date(row.created_at).toLocaleString() : 'N/A';
+                const timestamp = row.created_at ? new Date(row.created_at as string).toLocaleString() : 'N/A';
                 this.logInfo(`\n${index + 1}. [${timestamp}]`);
                 this.logInfo(JSON.stringify(row, null, 2));
               });
@@ -268,15 +279,16 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         { flags: '--model-type <type>', description: 'Model type for new job' },
         { flags: '--dataset <name>', description: 'Dataset name for new job' }
       ],
-      action: async (options) => {
-        if (options.list) {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
+        if (opts.list) {
           let query = supabaseClient.getClient()
             .from('ml_training_jobs')
             .select('*')
             .order('created_at', { ascending: false });
 
-          if (options.status) {
-            query = query.eq('status', options.status);
+          if (opts.status) {
+            query = query.eq('status', opts.status as string);
           }
 
           const { data: jobs, error } = await query.limit(20);
@@ -293,17 +305,17 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
             this.logInfo(`  Created: ${created}`);
             this.logInfo(`  Dataset: ${job.dataset_name}`);
           });
-        } else if (options.create) {
-          if (!options.modelType || !options.dataset) {
+        } else if (opts.create) {
+          if (!opts.modelType || !opts.dataset) {
             throw new Error('Both --model-type and --dataset are required to create a job');
           }
 
           const { data, error } = await supabaseClient.getClient()
             .from('ml_training_jobs')
             .insert({
-              job_name: options.create,
-              model_type: options.modelType,
-              dataset_name: options.dataset,
+              job_name: opts.create as string,
+              model_type: opts.modelType as string,
+              dataset_name: opts.dataset as string,
               status: 'pending',
               created_at: new Date().toISOString()
             })
@@ -313,7 +325,7 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
             throw new Error(`Failed to create training job: ${error.message}`);
           }
 
-          this.logSuccess(`Created training job: ${options.create}`);
+          this.logSuccess(`Created training job: ${opts.create}`);
           this.logInfo(JSON.stringify(data, null, 2));
         } else {
           this.logInfo('Use --list or --create to manage training jobs');
@@ -329,14 +341,15 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-l, --list', description: 'List ML models', defaultValue: false },
         { flags: '--deployed', description: 'Filter by deployed models only', defaultValue: false }
       ],
-      action: async (options) => {
-        if (options.list) {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
+        if (opts.list) {
           let query = supabaseClient.getClient()
             .from('ml_models')
             .select('*')
             .order('created_at', { ascending: false });
 
-          if (options.deployed) {
+          if (opts.deployed) {
             query = query.eq('deployed', true);
           }
 
@@ -368,8 +381,9 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-l, --list', description: 'List feature definitions', defaultValue: false }
       ],
-      action: async (options) => {
-        if (options.list) {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
+        if (opts.list) {
           const { data: features, error } = await supabaseClient.getClient()
             .from('ml_features')
             .select('*')

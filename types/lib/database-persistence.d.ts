@@ -84,11 +84,11 @@ export declare class DatabasePersistence {
      * Get latest rows from all database tables
      */
     getLatestRows(limit?: number): Promise<{
-        [tableName: string]: any[];
+        [tableName: string]: Record<string, unknown>[];
     }>;
     /**
      * Get latest rows from a specific table
      */
-    getLatestRowsFromTable(tableName: string, limit?: number): Promise<any[]>;
+    getLatestRowsFromTable(tableName: string, limit?: number): Promise<Record<string, unknown>[]>;
 }
 export default DatabasePersistence;

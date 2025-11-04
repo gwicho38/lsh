@@ -36,9 +36,17 @@ export declare class SecretsManager {
      */
     private formatEnvFile;
     /**
+     * Detect destructive changes (filled secrets becoming empty)
+     */
+    private detectDestructiveChanges;
+    /**
+     * Format error message for destructive changes
+     */
+    private formatDestructiveChangesError;
+    /**
      * Push local .env to Supabase
      */
-    push(envFilePath?: string, environment?: string): Promise<void>;
+    push(envFilePath?: string, environment?: string, force?: boolean): Promise<void>;
     /**
      * Pull .env from Supabase
      */
@@ -94,7 +102,7 @@ export declare class SecretsManager {
      * Smart sync command - automatically set up and synchronize secrets
      * This is the new enhanced sync that does everything automatically
      */
-    smartSync(envFilePath?: string, environment?: string, autoExecute?: boolean, loadMode?: boolean): Promise<void>;
+    smartSync(envFilePath?: string, environment?: string, autoExecute?: boolean, loadMode?: boolean, force?: boolean): Promise<void>;
     /**
      * Show instructions for loading secrets
      */

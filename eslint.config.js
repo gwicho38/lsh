@@ -107,9 +107,22 @@ export default [
     },
   },
   {
-    files: ['src/commands/self.ts'],
+    files: [
+      'src/commands/**/*.{ts,tsx}',
+      'src/services/**/*.{ts,tsx}',
+      'src/components/**/*.{ts,tsx}',
+      'src/cli.ts',
+      'src/lib/**/*.ts',
+      'src/simple-api-server.ts',
+      'src/cicd/**/*.ts',
+      'src/store/store.ts',
+      'src/daemon/**/*.ts',
+      'src/examples/**/*.ts',
+      'src/pipeline/**/*.js',
+      'src/electron/**/*.{js,cjs}',
+    ],
     rules: {
-      'no-console': 'off', // CLI commands need console output
+      'no-console': 'off', // CLI commands, services, and interactive components need console output
     },
   },
 ];

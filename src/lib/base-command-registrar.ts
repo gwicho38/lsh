@@ -41,11 +41,55 @@ import {
   withDaemonClientForUser,
   isDaemonRunning
 } from './daemon-client-helper.js';
+import { JobSpec } from './job-manager.js';
 
 /**
  * Command action handler signature
  */
-export type CommandAction = (...args: any[]) => Promise<void> | void;
+export type CommandAction = (...args: unknown[]) => Promise<void> | void;
+
+/**
+ * Schedule configuration
+ */
+export interface ScheduleConfig {
+  cron?: string;
+  interval?: number;
+}
+
+/**
+ * Job specification options for creating jobs
+ */
+export interface JobSpecOptions {
+  id?: string;
+  name: string;
+  description?: string;
+  command: string;
+  schedule?: string;
+  interval?: string;
+  workingDir?: string;
+  env?: string;
+  tags?: string;
+  priority?: string;
+  maxRetries?: string;
+  timeout?: string;
+  databaseSync?: boolean;
+}
+
+/**
+ * Job report structure
+ */
+export interface JobReport {
+  jobId?: string;
+  executions: number;
+  successes: number;
+  failures: number;
+  successRate: number;
+  averageDuration: number;
+  lastExecution?: Date;
+  lastSuccess?: Date;
+  lastFailure?: Date;
+  commonErrors?: Array<{ error: string; count: number }>;
+}
 
 /**
  * Configuration for a subcommand
@@ -139,11 +183,12 @@ export abstract class BaseCommandRegistrar {
     }
 
     // Wrap action with error handling
-    cmd.action(async (...args: any[]) => {
+    cmd.action(async (...args: unknown[]) => {
       try {
         await config.action(...args);
-      } catch (error: any) {
-        this.logError('Command failed', error);
+      } catch (error) {
+        const err = error as Error;
+        this.logError('Command failed', err);
         process.exit(1);
       }
     });
@@ -192,7 +237,7 @@ export abstract class BaseCommandRegistrar {
       const result = await action(manager);
       manager.disconnect();
       return result;
-    } catch (error: any) {
+    } catch (error) {
       manager.disconnect();
       throw error;
     }
@@ -208,16 +253,16 @@ export abstract class BaseCommandRegistrar {
   /**
    * Log success message
    */
-  protected logSuccess(message: string, data?: any): void {
+  protected logSuccess(message: string, data?: unknown): void {
     this.logger.info(message);
     if (data !== undefined) {
-      if (typeof data === 'object' && !Array.isArray(data)) {
+      if (typeof data === 'object' && data !== null && !Array.isArray(data)) {
         Object.entries(data).forEach(([key, value]) => {
           this.logger.info(`  ${key}: ${value}`);
         });
       } else if (Array.isArray(data)) {
         data.forEach(item => {
-          if (typeof item === 'object') {
+          if (typeof item === 'object' && item !== null) {
             this.logger.info(`  ${JSON.stringify(item, null, 2)}`);
           } else {
             this.logger.info(`  ${item}`);
@@ -232,7 +277,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Log error message
    */
-  protected logError(message: string, error?: Error | any): void {
+  protected logError(message: string, error?: Error | unknown): void {
     if (error instanceof Error) {
       this.logger.error(message, error);
     } else if (error) {
@@ -259,9 +304,9 @@ export abstract class BaseCommandRegistrar {
   /**
    * Parse JSON from string with error handling
    */
-  protected parseJSON<T = any>(jsonString: string, context: string = 'JSON'): T {
+  protected parseJSON<T = unknown>(jsonString: string, context: string = 'JSON'): T {
     try {
-      return JSON.parse(jsonString);
+      return JSON.parse(jsonString) as T;
     } catch (error) {
       throw new Error(`Invalid ${context}: ${error instanceof Error ? error.message : String(error)}`);
     }
@@ -277,7 +322,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Format job schedule for display
    */
-  protected formatSchedule(schedule: any): string {
+  protected formatSchedule(schedule: ScheduleConfig | undefined): string {
     if (schedule?.cron) {
       return schedule.cron;
     }
@@ -291,7 +336,7 @@ export abstract class BaseCommandRegistrar {
    * Validate required options
    */
   protected validateRequired(
-    options: Record<string, any>,
+    options: Record<string, unknown>,
     required: string[],
     commandName: string = 'command'
   ): void {
@@ -306,7 +351,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Create a standardized job specification from options
    */
-  protected createJobSpec(options: any): any {
+  protected createJobSpec(options: JobSpecOptions): Partial<JobSpec> {
     return {
       id: options.id || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name: options.name,
@@ -316,8 +361,8 @@ export abstract class BaseCommandRegistrar {
         cron: options.schedule,
         interval: options.interval ? parseInt(options.interval) : undefined,
       },
-      workingDirectory: options.workingDir,
-      environment: options.env ? this.parseJSON(options.env, 'environment variables') : {},
+      cwd: options.workingDir,
+      env: options.env ? this.parseJSON<Record<string, string>>(options.env, 'environment variables') : {},
       tags: options.tags ? this.parseTags(options.tags) : [],
       priority: options.priority ? parseInt(options.priority) : 5,
       maxRetries: options.maxRetries ? parseInt(options.maxRetries) : 3,
@@ -329,10 +374,10 @@ export abstract class BaseCommandRegistrar {
   /**
    * Display job information
    */
-  protected displayJob(job: any): void {
+  protected displayJob(job: Partial<JobSpec>): void {
     this.logInfo(`  ${job.id}: ${job.name}`);
     this.logInfo(`    Command: ${job.command}`);
-    this.logInfo(`    Schedule: ${this.formatSchedule(job.schedule)}`);
+    this.logInfo(`    Schedule: ${this.formatSchedule(job.schedule as ScheduleConfig)}`);
     this.logInfo(`    Status: ${job.status}`);
     this.logInfo(`    Priority: ${job.priority}`);
     if (job.tags && job.tags.length > 0) {
@@ -343,7 +388,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Display multiple jobs
    */
-  protected displayJobs(jobs: any[]): void {
+  protected displayJobs(jobs: Array<Partial<JobSpec>>): void {
     this.logInfo(`Jobs (${jobs.length} total):`);
     jobs.forEach(job => {
       this.displayJob(job);
@@ -354,7 +399,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Display job report
    */
-  protected displayJobReport(report: any): void {
+  protected displayJobReport(report: JobReport): void {
     this.logInfo(`Job Report: ${report.jobId || 'N/A'}`);
     this.logInfo(`  Executions: ${report.executions}`);
     this.logInfo(`  Successes: ${report.successes}`);
@@ -367,7 +412,7 @@ export abstract class BaseCommandRegistrar {
 
     if (report.commonErrors && report.commonErrors.length > 0) {
       this.logInfo('\n  Common Errors:');
-      report.commonErrors.forEach((error: any) => {
+      report.commonErrors.forEach((error) => {
         this.logInfo(`    - ${error.error} (${error.count} times)`);
       });
     }

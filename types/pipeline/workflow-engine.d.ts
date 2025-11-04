@@ -5,7 +5,7 @@ export interface WorkflowNode {
     id: string;
     name: string;
     type: 'job' | 'condition' | 'parallel' | 'wait';
-    config: any;
+    config: Record<string, unknown>;
     dependencies: string[];
     retryPolicy?: {
         maxRetries: number;
@@ -21,7 +21,7 @@ export interface WorkflowDefinition {
     description?: string;
     version: string;
     nodes: WorkflowNode[];
-    parameters?: Record<string, any>;
+    parameters?: Record<string, unknown>;
     schedule?: {
         cron: string;
         timezone?: string;
@@ -40,14 +40,14 @@ export interface WorkflowExecution {
     status: WorkflowStatus;
     triggeredBy: string;
     triggerType: 'manual' | 'schedule' | 'webhook' | 'dependency';
-    parameters: Record<string, any>;
+    parameters: Record<string, unknown>;
     startedAt: Date;
     completedAt?: Date;
     durationMs?: number;
     currentStage?: string;
     completedStages: string[];
     failedStages: string[];
-    result?: any;
+    result?: unknown;
     errorMessage?: string;
     nodeStates: Record<string, NodeState>;
 }
@@ -58,7 +58,7 @@ export interface NodeState {
     completedAt?: Date;
     durationMs?: number;
     jobId?: string;
-    result?: any;
+    result?: unknown;
     error?: string;
     retryCount: number;
     nextRetryAt?: Date;
@@ -92,7 +92,7 @@ export declare class WorkflowEngine extends EventEmitter {
     getWorkflow(workflowId: string): Promise<WorkflowDefinition | null>;
     updateWorkflow(workflowId: string, definition: WorkflowDefinition): Promise<void>;
     deleteWorkflow(workflowId: string): Promise<void>;
-    executeWorkflow(workflowId: string, triggeredBy: string, triggerType: 'manual' | 'schedule' | 'webhook' | 'dependency', parameters?: Record<string, any>): Promise<WorkflowExecution>;
+    executeWorkflow(workflowId: string, triggeredBy: string, triggerType: 'manual' | 'schedule' | 'webhook' | 'dependency', parameters?: Record<string, unknown>): Promise<WorkflowExecution>;
     private startExecution;
     private executeNode;
     private executeJobNode;

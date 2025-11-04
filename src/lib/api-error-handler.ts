@@ -11,14 +11,14 @@ import { Request, Response, NextFunction } from 'express';
 export interface ApiErrorResponse {
   error: string;
   code?: string;
-  details?: any;
+  details?: unknown;
   timestamp?: string;
 }
 
 /**
  * Standard API success response format
  */
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
   data: T;
   timestamp?: string;
 }
@@ -30,7 +30,7 @@ export interface ApiHandlerConfig {
   successStatus?: number;
   includeTimestamp?: boolean;
   webhookEvent?: string;
-  webhookData?: (result: any) => any;
+  webhookData?: (result: unknown) => unknown;
 }
 
 /**
@@ -54,7 +54,7 @@ export class ApiError extends Error {
     message: string,
     public statusCode: number = ErrorStatusCodes.INTERNAL_SERVER_ERROR,
     public code?: string,
-    public details?: any
+    public details?: unknown
   ) {
     super(message);
     this.name = 'ApiError';
@@ -70,24 +70,25 @@ export class ApiError extends Error {
  */
 export function sendError(
   res: Response,
-  error: Error | ApiError | any,
+  error: unknown,
   statusCode?: number
 ): void {
-  const status = statusCode || (error instanceof ApiError ? error.statusCode : 500);
+  const err = error instanceof Error ? error : new Error(String(error));
+  const status = statusCode || (err instanceof ApiError ? err.statusCode : 500);
 
   const response: ApiErrorResponse = {
-    error: error.message || 'An unexpected error occurred',
+    error: err.message || 'An unexpected error occurred',
     timestamp: new Date().toISOString(),
   };
 
-  if (error instanceof ApiError) {
-    if (error.code) response.code = error.code;
-    if (error.details) response.details = error.details;
+  if (err instanceof ApiError) {
+    if (err.code) response.code = err.code;
+    if (err.details) response.details = err.details;
   }
 
   // Log error for debugging (in production, use proper logger)
   if (status >= 500) {
-    console.error('API Error:', error);
+    console.error('API Error:', err);
   }
 
   res.status(status).json(response);
@@ -112,7 +113,7 @@ export function sendSuccess<T>(
     return;
   }
 
-  const response: any = includeTimestamp
+  const response: ApiSuccessResponse<T> | T = includeTimestamp
     ? { data, timestamp: new Date().toISOString() }
     : data;
 
@@ -178,7 +179,7 @@ export async function handleApiOperation<T>(
   res: Response,
   operation: () => Promise<T>,
   config: ApiHandlerConfig = {},
-  webhookTrigger?: (event: string, data: any) => void
+  webhookTrigger?: (event: string, data: unknown) => void
 ): Promise<void> {
   const {
     successStatus = 200,
@@ -198,21 +199,22 @@ export async function handleApiOperation<T>(
       const webhookPayload = webhookData ? webhookData(result) : result;
       webhookTrigger(webhookEvent, webhookPayload);
     }
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     // Determine appropriate status code
     let statusCode = 400;
 
-    if (error instanceof ApiError) {
-      statusCode = error.statusCode;
-    } else if (error.message.includes('not found') || error.message.includes('Not found')) {
+    if (err instanceof ApiError) {
+      statusCode = err.statusCode;
+    } else if (err.message.includes('not found') || err.message.includes('Not found')) {
       statusCode = 404;
-    } else if (error.message.includes('permission') || error.message.includes('unauthorized')) {
+    } else if (err.message.includes('permission') || err.message.includes('unauthorized')) {
       statusCode = 403;
-    } else if (error.message.includes('exists') || error.message.includes('duplicate')) {
+    } else if (err.message.includes('exists') || err.message.includes('duplicate')) {
       statusCode = 409;
     }
 
-    sendError(res, error, statusCode);
+    sendError(res, err, statusCode);
   }
 }
 
@@ -225,7 +227,7 @@ export async function handleApiOperation<T>(
  * @param webhookTrigger - Webhook trigger function
  * @returns Handler function
  */
-export function createApiHandler(webhookTrigger?: (event: string, data: any) => void) {
+export function createApiHandler(webhookTrigger?: (event: string, data: unknown) => void) {
   return async function <T>(
     res: Response,
     operation: () => Promise<T>,

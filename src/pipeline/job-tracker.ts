@@ -2,6 +2,24 @@ import { Pool } from 'pg';
 import { EventEmitter } from 'events';
 import { v4 as uuidv4 } from 'uuid';
 
+export interface Dataset {
+  id: string;
+  name: string;
+  path: string;
+  size?: number;
+  format?: string;
+  [key: string]: unknown;
+}
+
+export interface Artifact {
+  id: string;
+  name: string;
+  path: string;
+  type: string;
+  size?: number;
+  [key: string]: unknown;
+}
+
 export interface PipelineJob {
   id?: string;
   externalId?: string;
@@ -11,8 +29,8 @@ export interface PipelineJob {
   targetSystem: string;
   status: JobStatus;
   priority: JobPriority;
-  config: any;
-  parameters?: any;
+  config: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
   cpuRequest?: number;
   memoryRequest?: number;
   gpuRequest?: number;
@@ -38,16 +56,16 @@ export interface JobExecution {
   executor?: string;
   workerNode?: string;
   containerId?: string;
-  inputDatasets?: any[];
-  outputDatasets?: any[];
-  artifacts?: any[];
-  result?: any;
+  inputDatasets?: Dataset[];
+  outputDatasets?: Dataset[];
+  artifacts?: Artifact[];
+  result?: Record<string, unknown>;
   errorMessage?: string;
-  errorDetails?: any;
+  errorDetails?: Record<string, unknown>;
   retryCount?: number;
   retryAfter?: Date;
   logUrl?: string;
-  metrics?: Record<string, any>;
+  metrics?: Record<string, number>;
 }
 
 export enum JobStatus {
@@ -71,7 +89,7 @@ export interface JobEvent {
   type: string;
   jobId: string;
   executionId?: string;
-  data: any;
+  data: Record<string, unknown>;
   timestamp: Date;
 }
 
@@ -186,7 +204,7 @@ export class JobTracker extends EventEmitter {
     offset?: number;
   } = {}): Promise<{ jobs: PipelineJob[]; total: number }> {
     let whereClause = 'WHERE 1=1';
-    const values: any[] = [];
+    const values: (string | number | Date)[] = [];
     let paramCount = 0;
 
     if (filters.status) {
@@ -298,9 +316,9 @@ export class JobTracker extends EventEmitter {
 
   async completeExecution(
     executionId: string,
-    result: any,
-    metrics?: Record<string, any>,
-    outputDatasets?: any[]
+    result: Record<string, unknown>,
+    metrics?: Record<string, number>,
+    outputDatasets?: Dataset[]
   ): Promise<void> {
     const query = `
       UPDATE job_executions
@@ -347,7 +365,7 @@ export class JobTracker extends EventEmitter {
     }
   }
 
-  async failExecution(executionId: string, errorMessage: string, errorDetails?: any): Promise<void> {
+  async failExecution(executionId: string, errorMessage: string, errorDetails?: Record<string, unknown>): Promise<void> {
     const query = `
       UPDATE job_executions
       SET
@@ -414,7 +432,7 @@ export class JobTracker extends EventEmitter {
     metricName: string,
     metricValue: number,
     metricUnit?: string,
-    tags?: Record<string, any>
+    tags?: Record<string, string>
   ): Promise<void> {
     const query = `
       INSERT INTO pipeline_metrics (
@@ -437,9 +455,9 @@ export class JobTracker extends EventEmitter {
     await this.pool.query(query, values);
   }
 
-  async getJobMetrics(jobId: string, metricName?: string): Promise<any[]> {
+  async getJobMetrics(jobId: string, metricName?: string): Promise<Record<string, unknown>[]> {
     let query = 'SELECT * FROM pipeline_metrics WHERE job_id = $1';
-    const values: any[] = [jobId];
+    const values: (string | number)[] = [jobId];
 
     if (metricName) {
       query += ' AND metric_name = $2';
@@ -456,7 +474,7 @@ export class JobTracker extends EventEmitter {
   async recordEvent(
     eventType: string,
     eventSource: string,
-    eventData: any,
+    eventData: Record<string, unknown>,
     jobId?: string,
     executionId?: string
   ): Promise<void> {
@@ -491,7 +509,7 @@ export class JobTracker extends EventEmitter {
     return result.rows.map(row => this.parseJobRow(row));
   }
 
-  async getJobSuccessRates(): Promise<any[]> {
+  async getJobSuccessRates(): Promise<Record<string, unknown>[]> {
     const query = 'SELECT * FROM job_success_rates';
     const result = await this.pool.query(query);
     return result.rows;
@@ -598,55 +616,55 @@ export class JobTracker extends EventEmitter {
     return result.rows[0].num;
   }
 
-  private parseJobRow(row: any): PipelineJob {
+  private parseJobRow(row: Record<string, unknown>): PipelineJob {
     return {
-      id: row.id,
-      externalId: row.external_id,
-      name: row.name,
-      type: row.type,
-      sourceSystem: row.source_system,
-      targetSystem: row.target_system,
-      status: row.status,
-      priority: row.priority,
-      config: row.config,
-      parameters: row.parameters,
-      cpuRequest: row.cpu_request ? parseFloat(row.cpu_request) : undefined,
-      memoryRequest: row.memory_request,
-      gpuRequest: row.gpu_request,
-      scheduledAt: row.scheduled_at,
-      tags: row.tags,
-      labels: row.labels,
-      owner: row.owner,
-      team: row.team,
-      createdBy: row.created_by
+      id: row.id as string | undefined,
+      externalId: row.external_id as string | undefined,
+      name: row.name as string,
+      type: row.type as string,
+      sourceSystem: row.source_system as string,
+      targetSystem: row.target_system as string,
+      status: row.status as JobStatus,
+      priority: row.priority as JobPriority,
+      config: (row.config as Record<string, unknown>) || {},
+      parameters: row.parameters as Record<string, unknown> | undefined,
+      cpuRequest: row.cpu_request ? parseFloat(row.cpu_request as string) : undefined,
+      memoryRequest: row.memory_request as number | undefined,
+      gpuRequest: row.gpu_request as number | undefined,
+      scheduledAt: row.scheduled_at as Date | undefined,
+      tags: row.tags as string[] | undefined,
+      labels: row.labels as Record<string, string> | undefined,
+      owner: row.owner as string | undefined,
+      team: row.team as string | undefined,
+      createdBy: row.created_by as string | undefined
     };
   }
 
-  private parseExecutionRow(row: any): JobExecution {
+  private parseExecutionRow(row: Record<string, unknown>): JobExecution {
     return {
-      id: row.id,
-      jobId: row.job_id,
-      executionNumber: row.execution_number,
-      status: row.status,
-      startedAt: row.started_at,
-      completedAt: row.completed_at,
-      durationMs: row.duration_ms,
-      cpuUsed: row.cpu_used ? parseFloat(row.cpu_used) : undefined,
-      memoryUsed: row.memory_used,
-      gpuUsed: row.gpu_used,
-      executor: row.executor,
-      workerNode: row.worker_node,
-      containerId: row.container_id,
-      inputDatasets: row.input_datasets,
-      outputDatasets: row.output_datasets,
-      artifacts: row.artifacts,
-      result: row.result,
-      errorMessage: row.error_message,
-      errorDetails: row.error_details,
-      retryCount: row.retry_count,
-      retryAfter: row.retry_after,
-      logUrl: row.log_url,
-      metrics: row.metrics
+      id: row.id as string | undefined,
+      jobId: row.job_id as string,
+      executionNumber: row.execution_number as number,
+      status: row.status as JobStatus,
+      startedAt: row.started_at as Date | undefined,
+      completedAt: row.completed_at as Date | undefined,
+      durationMs: row.duration_ms as number | undefined,
+      cpuUsed: row.cpu_used ? parseFloat(row.cpu_used as string) : undefined,
+      memoryUsed: row.memory_used as number | undefined,
+      gpuUsed: row.gpu_used as number | undefined,
+      executor: row.executor as string | undefined,
+      workerNode: row.worker_node as string | undefined,
+      containerId: row.container_id as string | undefined,
+      inputDatasets: row.input_datasets as Dataset[] | undefined,
+      outputDatasets: row.output_datasets as Dataset[] | undefined,
+      artifacts: row.artifacts as Artifact[] | undefined,
+      result: row.result as Record<string, unknown> | undefined,
+      errorMessage: row.error_message as string | undefined,
+      errorDetails: row.error_details as Record<string, unknown> | undefined,
+      retryCount: row.retry_count as number | undefined,
+      retryAfter: row.retry_after as Date | undefined,
+      logUrl: row.log_url as string | undefined,
+      metrics: row.metrics as Record<string, number> | undefined
     };
   }
 

@@ -9,13 +9,13 @@ import { Request, Response, NextFunction } from 'express';
 export interface ApiErrorResponse {
     error: string;
     code?: string;
-    details?: any;
+    details?: unknown;
     timestamp?: string;
 }
 /**
  * Standard API success response format
  */
-export interface ApiSuccessResponse<T = any> {
+export interface ApiSuccessResponse<T = unknown> {
     data: T;
     timestamp?: string;
 }
@@ -26,7 +26,7 @@ export interface ApiHandlerConfig {
     successStatus?: number;
     includeTimestamp?: boolean;
     webhookEvent?: string;
-    webhookData?: (result: any) => any;
+    webhookData?: (result: unknown) => unknown;
 }
 /**
  * HTTP status codes for common error types
@@ -46,8 +46,8 @@ export declare const ErrorStatusCodes: {
 export declare class ApiError extends Error {
     statusCode: number;
     code?: string | undefined;
-    details?: any | undefined;
-    constructor(message: string, statusCode?: number, code?: string | undefined, details?: any | undefined);
+    details?: unknown | undefined;
+    constructor(message: string, statusCode?: number, code?: string | undefined, details?: unknown | undefined);
 }
 /**
  * Send error response with consistent formatting
@@ -56,7 +56,7 @@ export declare class ApiError extends Error {
  * @param error - Error object
  * @param statusCode - HTTP status code (default: 500)
  */
-export declare function sendError(res: Response, error: Error | ApiError | any, statusCode?: number): void;
+export declare function sendError(res: Response, error: unknown, statusCode?: number): void;
 /**
  * Send success response with consistent formatting
  *
@@ -112,7 +112,7 @@ export declare function asyncHandler(handler: (req: Request, res: Response, next
  * });
  * ```
  */
-export declare function handleApiOperation<T>(res: Response, operation: () => Promise<T>, config?: ApiHandlerConfig, webhookTrigger?: (event: string, data: any) => void): Promise<void>;
+export declare function handleApiOperation<T>(res: Response, operation: () => Promise<T>, config?: ApiHandlerConfig, webhookTrigger?: (event: string, data: unknown) => void): Promise<void>;
 /**
  * Create a typed API handler with webhook support
  *
@@ -122,7 +122,7 @@ export declare function handleApiOperation<T>(res: Response, operation: () => Pr
  * @param webhookTrigger - Webhook trigger function
  * @returns Handler function
  */
-export declare function createApiHandler(webhookTrigger?: (event: string, data: any) => void): <T>(res: Response, operation: () => Promise<T>, config?: ApiHandlerConfig) => Promise<void>;
+export declare function createApiHandler(webhookTrigger?: (event: string, data: unknown) => void): <T>(res: Response, operation: () => Promise<T>, config?: ApiHandlerConfig) => Promise<void>;
 /**
  * Express error handling middleware
  *

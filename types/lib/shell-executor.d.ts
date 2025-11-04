@@ -4,6 +4,7 @@
  */
 import { ASTNode } from './shell-parser.js';
 import { CompletionFunction } from './completion-system.js';
+import ZshCompatibility from './zsh-compatibility.js';
 import { ExecutionResult, Job, JobControl, ShellOptions, ShellContext } from './shell-types.js';
 export { ExecutionResult, Job, JobControl, ShellOptions, ShellContext, };
 export declare class ShellExecutor {
@@ -98,7 +99,7 @@ export declare class ShellExecutor {
         exitCode?: number;
     }>;
     setPositionalParams(params: string[]): void;
-    getZshCompatibility(): any;
+    getZshCompatibility(): ZshCompatibility;
     getPrompt(): string;
     getRPrompt(): string;
     private builtin_source;

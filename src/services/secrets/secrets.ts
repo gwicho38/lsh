@@ -10,28 +10,26 @@ import * as path from 'path';
 import * as readline from 'readline';
 
 export async function init_secrets(program: Command) {
-  const secretsCmd = program
-    .command('secrets')
-    .description('Manage environment secrets across machines');
-
   // Push secrets to cloud
-  secretsCmd
+  program
     .command('push')
     .description('Push local .env to encrypted cloud storage')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name (dev/staging/prod)', 'dev')
+    .option('--force', 'Force push even if destructive changes detected')
     .action(async (options) => {
       try {
         const manager = new SecretsManager();
-        await manager.push(options.file, options.env);
-      } catch (error: any) {
-        console.error('❌ Failed to push secrets:', error.message);
+        await manager.push(options.file, options.env, options.force);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to push secrets:', err.message);
         process.exit(1);
       }
     });
 
   // Pull secrets from cloud
-  secretsCmd
+  program
     .command('pull')
     .description('Pull .env from encrypted cloud storage')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -41,14 +39,15 @@ export async function init_secrets(program: Command) {
       try {
         const manager = new SecretsManager();
         await manager.pull(options.file, options.env, options.force);
-      } catch (error: any) {
-        console.error('❌ Failed to pull secrets:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to pull secrets:', err.message);
         process.exit(1);
       }
     });
 
   // List environments
-  secretsCmd
+  program
     .command('list [environment]')
     .alias('ls')
     .description('List all stored environments or show secrets for specific environment')
@@ -62,7 +61,7 @@ export async function init_secrets(program: Command) {
           const files = await manager.listAllFiles();
 
           if (files.length === 0) {
-            console.log('No .env files found. Push your first file with: lsh secrets push --file <filename>');
+            console.log('No .env files found. Push your first file with: lsh push --file <filename>');
             return;
           }
 
@@ -84,7 +83,7 @@ export async function init_secrets(program: Command) {
         const envs = await manager.listEnvironments();
 
         if (envs.length === 0) {
-          console.log('No environments found. Push your first .env with: lsh secrets push');
+          console.log('No environments found. Push your first .env with: lsh push');
           return;
         }
 
@@ -93,14 +92,15 @@ export async function init_secrets(program: Command) {
           console.log(`  • ${env}`);
         }
         console.log();
-      } catch (error: any) {
-        console.error('❌ Failed to list environments:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to list environments:', err.message);
         process.exit(1);
       }
     });
 
   // Show secrets (masked)
-  secretsCmd
+  program
     .command('show')
     .description('Show secrets for an environment (masked)')
     .option('-e, --env <name>', 'Environment name', 'dev')
@@ -108,14 +108,15 @@ export async function init_secrets(program: Command) {
       try {
         const manager = new SecretsManager();
         await manager.show(options.env);
-      } catch (error: any) {
-        console.error('❌ Failed to show secrets:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to show secrets:', err.message);
         process.exit(1);
       }
     });
 
   // Generate encryption key
-  secretsCmd
+  program
     .command('key')
     .description('Generate a new encryption key')
     .action(async () => {
@@ -128,7 +129,7 @@ export async function init_secrets(program: Command) {
     });
 
   // Create .env file
-  secretsCmd
+  program
     .command('create')
     .description('Create a new .env file')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -179,14 +180,15 @@ API_KEY=
         console.log(`  1. Edit the file: ${options.file}`);
         console.log(`  2. Push to cloud: lsh lib secrets push -f ${options.file}`);
         console.log('');
-      } catch (error: any) {
-        console.error('❌ Failed to create .env file:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to create .env file:', err.message);
         process.exit(1);
       }
     });
 
   // Sync command - automatically set up and synchronize secrets
-  secretsCmd
+  program
     .command('sync')
     .description('Automatically set up and synchronize secrets (smart mode)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -194,6 +196,7 @@ API_KEY=
     .option('--dry-run', 'Show what would be done without executing')
     .option('--legacy', 'Use legacy sync mode (suggestions only)')
     .option('--load', 'Output eval-able export commands for loading secrets')
+    .option('--force', 'Force sync even if destructive changes detected')
     .action(async (options) => {
       try {
         const manager = new SecretsManager();
@@ -203,16 +206,17 @@ API_KEY=
           await manager.sync(options.file, options.env);
         } else {
           // Use new smart sync (auto-execute)
-          await manager.smartSync(options.file, options.env, !options.dryRun, options.load);
+          await manager.smartSync(options.file, options.env, !options.dryRun, options.load, options.force);
         }
-      } catch (error: any) {
-        console.error('❌ Failed to sync:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to sync:', err.message);
         process.exit(1);
       }
     });
 
   // Status command - get detailed status info
-  secretsCmd
+  program
     .command('status')
     .description('Get detailed secrets status (JSON output)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -222,14 +226,15 @@ API_KEY=
         const manager = new SecretsManager();
         const status = await manager.status(options.file, options.env);
         console.log(JSON.stringify(status, null, 2));
-      } catch (error: any) {
-        console.error('❌ Failed to get status:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to get status:', err.message);
         process.exit(1);
       }
     });
 
   // Get a specific secret value
-  secretsCmd
+  program
     .command('get <key>')
     .description('Get a specific secret value from .env file')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -262,14 +267,15 @@ API_KEY=
 
         console.error(`❌ Key '${key}' not found in ${options.file}`);
         process.exit(1);
-      } catch (error: any) {
-        console.error('❌ Failed to get secret:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to get secret:', err.message);
         process.exit(1);
       }
     });
 
   // Set a specific secret value
-  secretsCmd
+  program
     .command('set <key> <value>')
     .description('Set a specific secret value in .env file')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -321,14 +327,15 @@ API_KEY=
 
         fs.writeFileSync(envPath, content, 'utf8');
         console.log(`✅ Set ${key} in ${options.file}`);
-      } catch (error: any) {
-        console.error('❌ Failed to set secret:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to set secret:', err.message);
         process.exit(1);
       }
     });
 
   // Delete .env file with confirmation
-  secretsCmd
+  program
     .command('delete')
     .description('Delete .env file (requires confirmation)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
@@ -383,8 +390,9 @@ API_KEY=
         console.log('💡 Tip: You can still pull from cloud if you pushed previously:');
         console.log(`   lsh lib secrets pull -f ${options.file}`);
         console.log('');
-      } catch (error: any) {
-        console.error('❌ Failed to delete .env file:', error.message);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to delete .env file:', err.message);
         process.exit(1);
       }
     });

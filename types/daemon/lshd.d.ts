@@ -5,6 +5,22 @@
  */
 import { EventEmitter } from 'events';
 import { JobSpec } from '../lib/job-manager.js';
+import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
+/**
+ * IPC Message structure for daemon communication
+ */
+export interface IPCMessage {
+    id?: string;
+    command: string;
+    args?: Record<string, unknown>;
+}
+/**
+ * IPC Response structure
+ */
+export interface IPCResponse {
+    message?: string;
+    [key: string]: unknown;
+}
 export interface DaemonConfig {
     pidFile: string;
     logFile: string;
@@ -45,7 +61,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * Get daemon status
      */
-    getStatus(): Promise<any>;
+    getStatus(): Promise<DaemonStatus>;
     /**
      * Add a job to the daemon
      */
@@ -70,7 +86,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * Get job information
      */
-    getJob(jobId: string): Promise<JobSpec | undefined>;
+    getJob(jobId: string): Promise<Record<string, unknown> | undefined>;
     /**
      * Sanitize job objects for safe JSON serialization
      */
@@ -78,7 +94,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * List all jobs
      */
-    listJobs(filter?: any, limit?: number): Promise<JobSpec[]>;
+    listJobs(filter?: JobFilter, limit?: number): Promise<Array<Record<string, unknown>>>;
     /**
      * Remove a job
      */

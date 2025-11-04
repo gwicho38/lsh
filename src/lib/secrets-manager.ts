@@ -90,18 +90,19 @@ export class SecretsManager {
       decrypted += decipher.final('utf8');
 
       return decrypted;
-    } catch (error: any) {
-      if (error.message.includes('bad decrypt') || error.message.includes('wrong final block length')) {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message.includes('bad decrypt') || err.message.includes('wrong final block length')) {
         throw new Error(
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
           '  3. Generate a shared key with: lsh secrets key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + error.message
+          '\nOriginal error: ' + err.message
         );
       }
-      throw error;
+      throw err;
     }
   }
 
@@ -152,9 +153,60 @@ export class SecretsManager {
   }
 
   /**
+   * Detect destructive changes (filled secrets becoming empty)
+   */
+  private detectDestructiveChanges(
+    cloudSecrets: Record<string, string>,
+    localSecrets: Record<string, string>
+  ): Array<{ key: string; cloudValue: string; localValue: string }> {
+    const destructive: Array<{ key: string; cloudValue: string; localValue: string }> = [];
+
+    for (const [key, cloudValue] of Object.entries(cloudSecrets)) {
+      // Only check if key exists in local AND cloud has a non-empty value
+      if (key in localSecrets && cloudValue.trim() !== '') {
+        const localValue = localSecrets[key];
+        // If cloud had value but local is now empty/whitespace - this is destructive
+        if (localValue.trim() === '') {
+          destructive.push({ key, cloudValue, localValue });
+        }
+      }
+    }
+
+    return destructive;
+  }
+
+  /**
+   * Format error message for destructive changes
+   */
+  private formatDestructiveChangesError(
+    destructive: Array<{ key: string; cloudValue: string; localValue: string }>
+  ): string {
+    const count = destructive.length;
+    const plural = count === 1 ? 'secret' : 'secrets';
+
+    let message = `⚠️  Destructive change detected!\n\n`;
+    message += `${count} ${plural} would go from filled → empty:\n\n`;
+
+    for (const { key, cloudValue } of destructive) {
+      // Mask the value for security (show first 4-5 chars)
+      const preview = cloudValue.length > 5
+        ? cloudValue.substring(0, 5) + '****'
+        : '****';
+      message += `  • ${key}: "${preview}" → "" (empty)\n`;
+    }
+
+    message += `\nThis is likely unintentional and could break your application.\n\n`;
+    message += `To proceed anyway, use the --force flag:\n`;
+    message += `  lsh lib secrets push --force\n`;
+    message += `  lsh lib secrets sync --force\n`;
+
+    return message;
+  }
+
+  /**
    * Push local .env to Supabase
    */
-  async push(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
+  async push(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     if (!fs.existsSync(envFilePath)) {
       throw new Error(`File not found: ${envFilePath}`);
     }
@@ -178,6 +230,52 @@ export class SecretsManager {
     const content = fs.readFileSync(envFilePath, 'utf8');
     const env = this.parseEnvFile(content);
 
+    // Check for destructive changes unless force is true
+    if (!force) {
+      try {
+        const jobs = await this.persistence.getActiveJobs();
+        const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const secretsJobs = jobs
+          .filter(j => {
+            return j.command === 'secrets_sync' &&
+                   j.job_id.includes(environment) &&
+                   j.job_id.includes(safeFilename);
+          })
+          .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+
+        if (secretsJobs.length > 0) {
+          const latestSecret = secretsJobs[0];
+          if (latestSecret.output) {
+            try {
+              const decrypted = this.decrypt(latestSecret.output);
+              const cloudEnv = this.parseEnvFile(decrypted);
+
+              const destructive = this.detectDestructiveChanges(cloudEnv, env);
+              if (destructive.length > 0) {
+                throw new Error(this.formatDestructiveChangesError(destructive));
+              }
+            } catch (error) {
+      const err = error as Error;
+              // If decryption fails, it's a key mismatch - let it proceed
+              // (will fail later with proper error)
+              if (!err.message.includes('Destructive change')) {
+                // Only ignore decryption errors, re-throw destructive change errors
+                throw err;
+              }
+              throw err;
+            }
+          }
+        }
+      } catch (error) {
+      const err = error as Error;
+        // Re-throw any errors (including destructive change errors)
+        if (err.message.includes('Destructive change') || err.message.includes('Decryption failed')) {
+          throw err;
+        }
+        // Ignore other errors (like connection issues) and proceed
+      }
+    }
+
     // Encrypt entire .env content
     const encrypted = this.encrypt(content);
 
@@ -193,7 +291,7 @@ export class SecretsManager {
       working_directory: process.cwd(),
     };
 
-    await this.persistence.saveJob(secretData as any);
+    await this.persistence.saveJob(secretData as Parameters<typeof this.persistence.saveJob>[0]);
 
     logger.info(`✅ Pushed ${Object.keys(env).length} secrets from ${filename} to Supabase`);
   }
@@ -273,7 +371,7 @@ export class SecretsManager {
     const secretsJobs = jobs.filter(j => j.command === 'secrets_sync');
 
     // Group by environment and filename to get latest of each
-    const fileMap = new Map<string, any>();
+    const fileMap = new Map<string, { filename: string; environment: string; updated: string }>();
 
     for (const job of secretsJobs) {
       // Parse job_id: secrets_${environment}_${safeFilename}_${timestamp}
@@ -285,7 +383,7 @@ export class SecretsManager {
         let filename = '.env';
         if (parts.length >= 4) {
           // New format with filename
-          const timestamp = parts[parts.length - 1];
+          const _timestamp = parts[parts.length - 1];
           // Reconstruct filename from middle parts
           const filenameParts = parts.slice(2, -1);
           if (filenameParts.length > 0) {
@@ -404,12 +502,12 @@ export class SecretsManager {
             const env = this.parseEnvFile(decrypted);
             status.cloudKeys = Object.keys(env).length;
             status.keyMatches = true;
-          } catch (error: any) {
+          } catch (_error) {
             status.keyMatches = false;
           }
         }
       }
-    } catch (error: any) {
+    } catch (_error) {
       // Cloud check failed, likely no connection
     }
 
@@ -469,7 +567,8 @@ export class SecretsManager {
       logger.info('💡 Load it now: export LSH_SECRETS_KEY=' + key.substring(0, 8) + '...');
 
       return true;
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error(`Failed to save encryption key: ${error.message}`);
       logger.info('Please set it manually:');
       logger.info(`export LSH_SECRETS_KEY=${key}`);
@@ -507,7 +606,8 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         fs.writeFileSync(envFilePath, template, 'utf8');
         logger.info(`✅ Created ${envFilePath} from template`);
         return true;
-      } catch (error: any) {
+      } catch (error) {
+      const err = error as Error;
         logger.error(`Failed to create ${envFilePath}: ${error.message}`);
         return false;
       }
@@ -526,7 +626,8 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       fs.writeFileSync(envFilePath, newContent, 'utf8');
       logger.info(`✅ Created ${envFilePath} from ${path.basename(examplePath)}`);
       return true;
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       logger.error(`Failed to create ${envFilePath}: ${error.message}`);
       return false;
     }
@@ -580,7 +681,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
    * Smart sync command - automatically set up and synchronize secrets
    * This is the new enhanced sync that does everything automatically
    */
-  async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false): Promise<void> {
+  async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false, force: boolean = false): Promise<void> {
     // In load mode, suppress all logger output to prevent zsh glob interpretation
     // Save original level and restore at the end
     const originalLogLevel = loadMode ? logger['config'].level : undefined;
@@ -635,10 +736,10 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     out();
 
     // Step 4: Determine action and execute if auto mode
-    let action: 'push' | 'pull' | 'create-and-push' | 'in-sync' | 'key-mismatch' = 'in-sync';
+    let _action: 'push' | 'pull' | 'create-and-push' | 'in-sync' | 'key-mismatch' = 'in-sync';
 
     if (status.cloudExists && status.keyMatches === false) {
-      action = 'key-mismatch';
+      _action = 'key-mismatch';
       out('⚠️  Encryption key mismatch!');
       out('   The local key does not match the cloud storage.');
       out('   Please use the original key or push new secrets with:');
@@ -648,14 +749,14 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     }
 
     if (!status.localExists && !status.cloudExists) {
-      action = 'create-and-push';
+      _action = 'create-and-push';
       out('🆕 No secrets found locally or in cloud');
       out('   Creating new .env file...');
 
       if (autoExecute) {
         await this.createEnvFromExample(envFilePath);
         out('   Pushing to cloud...');
-        await this.push(envFilePath, effectiveEnv);
+        await this.push(envFilePath, effectiveEnv, force);
         out();
         out('✅ Setup complete! Edit your .env and run sync again to update.');
       } else {
@@ -671,12 +772,12 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     }
 
     if (status.localExists && !status.cloudExists) {
-      action = 'push';
+      _action = 'push';
       out('⬆️  Local .env exists but not in cloud');
 
       if (autoExecute) {
         out('   Pushing to cloud...');
-        await this.push(envFilePath, effectiveEnv);
+        await this.push(envFilePath, effectiveEnv, force);
         out('✅ Secrets pushed to cloud!');
       } else {
         out(`💡 Run: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
@@ -691,7 +792,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     }
 
     if (!status.localExists && status.cloudExists && status.keyMatches) {
-      action = 'pull';
+      _action = 'pull';
       out('⬇️  Cloud secrets available but no local file');
 
       if (autoExecute) {
@@ -730,20 +831,20 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         }
 
         if (localNewer) {
-          action = 'push';
+          _action = 'push';
           out('⬆️  Local file is newer than cloud');
           out(`   Local: ${status.localModified.toLocaleString()}`);
           out(`   Cloud: ${status.cloudModified.toLocaleString()}`);
 
           if (autoExecute) {
             out('   Pushing to cloud...');
-            await this.push(envFilePath, effectiveEnv);
+            await this.push(envFilePath, effectiveEnv, force);
             out('✅ Secrets synced to cloud!');
           } else {
             out(`💡 Run: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
           }
         } else {
-          action = 'pull';
+          _action = 'pull';
           out('⬇️  Cloud is newer than local file');
           out(`   Local: ${status.localModified.toLocaleString()}`);
           out(`   Cloud: ${status.cloudModified.toLocaleString()}`);
@@ -790,10 +891,15 @@ LSH_SECRETS_KEY=${this.encryptionKey}
    */
   private showLoadInstructions(envFilePath: string): void {
     console.log('📝 To load secrets in your current shell:');
-    console.log(`   export $(cat ${envFilePath} | grep -v '^#' | xargs)`);
     console.log();
-    console.log('   Or for safer loading (preserves quotes):');
-    console.log(`   set -a; source ${envFilePath}; set +a`);
+    console.log('   bash/zsh:');
+    console.log(`   set -a && source ${envFilePath} && set +a`);
+    console.log();
+    console.log('   fish:');
+    console.log(`   export (cat ${envFilePath} | grep -v '^#')`);
+    console.log();
+    console.log('   Or use lsh to load:');
+    console.log(`   eval "$(lsh get --all --export)"`);
     console.log();
   }
 
@@ -865,13 +971,15 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     if (status.localExists && status.keySet) {
       suggestions.push('');
       suggestions.push('📝 To load secrets in your current shell:');
-      suggestions.push(`   export $(cat ${envFilePath} | grep -v '^#' | xargs)`);
       suggestions.push('');
-      suggestions.push('   Or for safer loading (with quotes):');
-      suggestions.push(`   set -a; source ${envFilePath}; set +a`);
+      suggestions.push('   bash/zsh:');
+      suggestions.push(`   set -a && source ${envFilePath} && set +a`);
+      suggestions.push('');
+      suggestions.push('   fish:');
+      suggestions.push(`   export (cat ${envFilePath} | grep -v '^#')`);
       suggestions.push('');
       suggestions.push('💡 Add to your shell profile for auto-loading:');
-      suggestions.push(`   echo "set -a; source ${path.resolve(envFilePath)}; set +a" >> ~/.zshrc`);
+      suggestions.push(`   echo "set -a && source ${path.resolve(envFilePath)} && set +a" >> ~/.zshrc`);
     }
 
     // Display suggestions

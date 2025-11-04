@@ -7,7 +7,7 @@ export interface WorkflowNode {
   id: string;
   name: string;
   type: 'job' | 'condition' | 'parallel' | 'wait';
-  config: any;
+  config: Record<string, unknown>;
   dependencies: string[]; // Node IDs this node depends on
   retryPolicy?: {
     maxRetries: number;
@@ -24,7 +24,7 @@ export interface WorkflowDefinition {
   description?: string;
   version: string;
   nodes: WorkflowNode[];
-  parameters?: Record<string, any>;
+  parameters?: Record<string, unknown>;
   schedule?: {
     cron: string;
     timezone?: string;
@@ -44,14 +44,14 @@ export interface WorkflowExecution {
   status: WorkflowStatus;
   triggeredBy: string;
   triggerType: 'manual' | 'schedule' | 'webhook' | 'dependency';
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   startedAt: Date;
   completedAt?: Date;
   durationMs?: number;
   currentStage?: string;
   completedStages: string[];
   failedStages: string[];
-  result?: any;
+  result?: unknown;
   errorMessage?: string;
   nodeStates: Record<string, NodeState>;
 }
@@ -63,7 +63,7 @@ export interface NodeState {
   completedAt?: Date;
   durationMs?: number;
   jobId?: string; // For job nodes
-  result?: any;
+  result?: unknown;
   error?: string;
   retryCount: number;
   nextRetryAt?: Date;
@@ -208,7 +208,7 @@ export class WorkflowEngine extends EventEmitter {
     workflowId: string,
     triggeredBy: string,
     triggerType: 'manual' | 'schedule' | 'webhook' | 'dependency',
-    parameters: Record<string, any> = {}
+    parameters: Record<string, unknown> = {}
   ): Promise<WorkflowExecution> {
     const workflow = await this.getWorkflow(workflowId);
     if (!workflow) {
@@ -318,22 +318,23 @@ export class WorkflowEngine extends EventEmitter {
 
   private async executeJobNode(execution: WorkflowExecution, node: WorkflowNode): Promise<void> {
     // Create job from node configuration
+    const config = node.config as Record<string, unknown>;
     const jobConfig: PipelineJob = {
       name: `${execution.runId}-${node.name}`,
-      type: node.config.type || 'workflow_job',
+      type: (config.type as string) || 'workflow_job',
       sourceSystem: 'workflow',
-      targetSystem: node.config.targetSystem || 'mcli',
+      targetSystem: (config.targetSystem as string) || 'mcli',
       status: JobStatus.PENDING,
-      priority: node.config.priority || JobPriority.NORMAL,
+      priority: (config.priority as JobPriority) || JobPriority.NORMAL,
       config: {
-        ...node.config,
+        ...config,
         workflowExecutionId: execution.id,
         workflowNodeId: node.id,
         workflowRunId: execution.runId
       },
       parameters: {
         ...execution.parameters,
-        ...node.config.parameters
+        ...(config.parameters as Record<string, unknown> || {})
       },
       owner: execution.triggeredBy,
       tags: [`workflow:${execution.workflowId}`, `run:${execution.runId}`]
@@ -385,7 +386,8 @@ export class WorkflowEngine extends EventEmitter {
   }
 
   private async executeWaitNode(execution: WorkflowExecution, node: WorkflowNode): Promise<void> {
-    const waitMs = node.config.waitMs || 1000;
+    const config = node.config as Record<string, unknown>;
+    const waitMs = (config.waitMs as number) || 1000;
 
     setTimeout(async () => {
       const nodeState = execution.nodeStates[node.id];
@@ -405,7 +407,7 @@ export class WorkflowEngine extends EventEmitter {
     jobId: string,
     executionId: string,
     status: 'completed' | 'failed',
-    data: any
+    data: unknown
   ): Promise<void> {
     // Find workflow execution by job ID
     let targetExecution: WorkflowExecution | null = null;
@@ -436,7 +438,8 @@ export class WorkflowEngine extends EventEmitter {
     }
 
     if (status === 'failed') {
-      nodeState.error = data.errorMessage || 'Job failed';
+      const errorData = data as { errorMessage?: string };
+      nodeState.error = errorData.errorMessage || 'Job failed';
 
       // Check retry policy
       const workflow = await this.getWorkflow(targetExecution.workflowId);
@@ -686,7 +689,7 @@ export class WorkflowEngine extends EventEmitter {
     }
   }
 
-  private evaluateCondition(condition: string, parameters: Record<string, any>): boolean {
+  private evaluateCondition(condition: string, parameters: Record<string, unknown>): boolean {
     try {
       // Simple condition evaluation - in production, use a safer evaluator
       const func = new Function('params', `return ${condition}`);
@@ -793,7 +796,7 @@ export class WorkflowEngine extends EventEmitter {
 
   async listExecutions(workflowId?: string, limit: number = 50): Promise<WorkflowExecution[]> {
     let query = 'SELECT * FROM workflow_executions';
-    const values: any[] = [];
+    const values: unknown[] = [];
 
     if (workflowId) {
       query += ' WHERE workflow_id = $1';
@@ -806,23 +809,23 @@ export class WorkflowEngine extends EventEmitter {
     return result.rows.map(row => this.parseExecutionRow(row));
   }
 
-  private parseExecutionRow(row: any): WorkflowExecution {
+  private parseExecutionRow(row: Record<string, unknown>): WorkflowExecution {
     return {
-      id: row.id,
-      workflowId: row.workflow_id,
-      runId: row.run_id,
-      status: row.status,
-      triggeredBy: row.triggered_by,
-      triggerType: row.trigger_type,
-      parameters: row.parameters || {},
-      startedAt: row.started_at,
-      completedAt: row.completed_at,
-      durationMs: row.duration_ms,
-      currentStage: row.current_stage,
-      completedStages: row.completed_stages || [],
-      failedStages: row.failed_stages || [],
+      id: row.id as string,
+      workflowId: row.workflow_id as string,
+      runId: row.run_id as string,
+      status: row.status as WorkflowStatus,
+      triggeredBy: row.triggered_by as string,
+      triggerType: row.trigger_type as 'manual' | 'schedule' | 'webhook' | 'dependency',
+      parameters: (row.parameters as Record<string, unknown>) || {},
+      startedAt: row.started_at as Date,
+      completedAt: row.completed_at as Date | undefined,
+      durationMs: row.duration_ms as number | undefined,
+      currentStage: row.current_stage as string | undefined,
+      completedStages: (row.completed_stages as string[]) || [],
+      failedStages: (row.failed_stages as string[]) || [],
       result: row.result,
-      errorMessage: row.error_message,
+      errorMessage: row.error_message as string | undefined,
       nodeStates: {} // Would need to be loaded from separate storage
     };
   }
@@ -862,7 +865,7 @@ export class WorkflowEngine extends EventEmitter {
     offset?: number;
   } = {}): Promise<WorkflowDefinition[]> {
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     let paramCount = 1;
 
     if (filters.status) {
@@ -1094,20 +1097,20 @@ export class WorkflowEngine extends EventEmitter {
     }
   }
 
-  private parseWorkflowRow(row: any): WorkflowDefinition {
+  private parseWorkflowRow(row: Record<string, unknown>): WorkflowDefinition {
     return {
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      version: row.version,
-      nodes: JSON.parse(row.nodes || '[]'),
-      parameters: JSON.parse(row.parameters || '{}'),
-      schedule: row.schedule ? JSON.parse(row.schedule) : undefined,
-      timeout: row.timeout,
-      maxConcurrentRuns: row.max_concurrent_runs,
-      tags: JSON.parse(row.tags || '[]'),
-      owner: row.owner,
-      team: row.team
+      id: row.id as string | undefined,
+      name: row.name as string,
+      description: row.description as string | undefined,
+      version: row.version as string,
+      nodes: JSON.parse((row.nodes as string) || '[]') as WorkflowNode[],
+      parameters: JSON.parse((row.parameters as string) || '{}') as Record<string, unknown>,
+      schedule: row.schedule ? JSON.parse(row.schedule as string) as { cron: string; timezone?: string; enabled: boolean } : undefined,
+      timeout: row.timeout as number | undefined,
+      maxConcurrentRuns: row.max_concurrent_runs as number | undefined,
+      tags: JSON.parse((row.tags as string) || '[]') as string[],
+      owner: row.owner as string | undefined,
+      team: row.team as string | undefined
     };
   }
 
