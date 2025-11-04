@@ -10,7 +10,7 @@ export interface CloudConfigOptions {
 }
 export interface ConfigValue {
     key: string;
-    value: any;
+    value: unknown;
     type: 'string' | 'number' | 'boolean' | 'array' | 'object';
     description?: string;
     isDefault: boolean;
@@ -69,11 +69,11 @@ export declare class CloudConfigManager {
     /**
      * Get configuration value
      */
-    get(key: string, defaultValue?: any): any;
+    get(key: string, defaultValue?: unknown): unknown;
     /**
      * Set configuration value
      */
-    set(key: string, value: any, description?: string): void;
+    set(key: string, value: unknown, description?: string): void;
     /**
      * Get all configuration keys
      */
