@@ -289,14 +289,14 @@ export function printValidationResults(result: EnvValidationResult, exitOnError 
   }
 
   if (result.recommendations.length > 0) {
-    // eslint-disable-next-line no-console
+     
     console.log('\nℹ️  Environment Variable Recommendations:');
-    // eslint-disable-next-line no-console
+     
     result.recommendations.forEach(rec => console.log(`  - ${rec}`));
   }
 
   if (result.isValid) {
-    // eslint-disable-next-line no-console
+     
     console.log('\n✅ Environment validation passed');
   } else {
     console.error('\n❌ Environment validation failed');

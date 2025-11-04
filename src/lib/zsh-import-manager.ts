@@ -42,17 +42,19 @@ export interface ParsedZshConfig {
   plugins: Array<{ name: string; line: number }>;
 }
 
+export interface ImportStats {
+  total: number;
+  succeeded: number;
+  failed: number;
+  skipped: number;
+  conflicts: number;
+}
+
 export interface ImportResult {
   success: boolean;
   message: string;
   diagnostics: ImportDiagnostic[];
-  stats: {
-    total: number;
-    succeeded: number;
-    failed: number;
-    skipped: number;
-    conflicts: number;
-  };
+  stats: ImportStats;
 }
 
 export class ZshImportManager {
@@ -189,17 +191,18 @@ export class ZshImportManager {
       this.writeDiagnosticLog();
       return result;
 
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       this.log({
         type: 'error',
         name: 'IMPORT_ERROR',
         status: 'failed',
-        reason: error.message
+        reason: err.message
       });
 
       const result: ImportResult = {
         success: false,
-        message: `Import failed: ${error.message}`,
+        message: `Import failed: ${err.message}`,
         diagnostics: this.diagnostics,
         stats: { total: 0, succeeded: 0, failed: 1, skipped: 0, conflicts: 0 },
       };
@@ -365,7 +368,7 @@ export class ZshImportManager {
    */
   private async loadExistingItems(): Promise<void> {
     // Get existing aliases from context
-    const context = (this.executor as any).context;
+    const context = this.executor.getContext();
     if (context && context.variables) {
       for (const key in context.variables) {
         if (key.startsWith('alias_')) {
@@ -382,7 +385,7 @@ export class ZshImportManager {
   /**
    * Import aliases with conflict resolution
    */
-  private async importAliases(aliases: Array<{ name: string; value: string; line: number }>): Promise<any> {
+  private async importAliases(aliases: Array<{ name: string; value: string; line: number }>): Promise<ImportStats> {
     const stats = { total: aliases.length, succeeded: 0, failed: 0, skipped: 0, conflicts: 0 };
 
     for (const alias of aliases) {
@@ -441,12 +444,13 @@ export class ZshImportManager {
           source: `line ${alias.line}`,
         });
         stats.succeeded++;
-      } catch (error: any) {
+      } catch (error) {
+        const err = error as Error;
         this.log({
           type: 'alias',
           name: alias.name,
           status: 'failed',
-          reason: error.message,
+          reason: err.message,
           source: `line ${alias.line}`,
         });
         stats.failed++;
@@ -459,7 +463,7 @@ export class ZshImportManager {
   /**
    * Import environment variables with conflict resolution
    */
-  private async importExports(exports: Array<{ name: string; value: string; line: number }>): Promise<any> {
+  private async importExports(exports: Array<{ name: string; value: string; line: number }>): Promise<ImportStats> {
     const stats = { total: exports.length, succeeded: 0, failed: 0, skipped: 0, conflicts: 0 };
 
     for (const export_ of exports) {
@@ -509,12 +513,13 @@ export class ZshImportManager {
           source: `line ${export_.line}`,
         });
         stats.succeeded++;
-      } catch (error: any) {
+      } catch (error) {
+        const err = error as Error;
         this.log({
           type: 'export',
           name: export_.name,
           status: 'failed',
-          reason: error.message,
+          reason: err.message,
           source: `line ${export_.line}`,
         });
         stats.failed++;
@@ -527,7 +532,7 @@ export class ZshImportManager {
   /**
    * Import functions with enhanced parsing
    */
-  private async importFunctions(functions: Array<{ name: string; body: string; line: number }>): Promise<any> {
+  private async importFunctions(functions: Array<{ name: string; body: string; line: number }>): Promise<ImportStats> {
     const stats = { total: functions.length, succeeded: 0, failed: 0, skipped: 0, conflicts: 0 };
 
     for (const func of functions) {
@@ -592,12 +597,13 @@ export class ZshImportManager {
           source: `line ${func.line}`,
         });
         stats.succeeded++;
-      } catch (error: any) {
+      } catch (error) {
+        const err = error as Error;
         this.log({
           type: 'function',
           name: func.name,
           status: 'disabled',
-          reason: `Parse error: ${error.message}`,
+          reason: `Parse error: ${err.message}`,
           source: `line ${func.line}`,
         });
         stats.failed++;
@@ -610,7 +616,7 @@ export class ZshImportManager {
   /**
    * Import ZSH options
    */
-  private async importSetopts(setopts: Array<{ option: string; enabled: boolean; line: number }>): Promise<any> {
+  private async importSetopts(setopts: Array<{ option: string; enabled: boolean; line: number }>): Promise<ImportStats> {
     const stats = { total: setopts.length, succeeded: 0, failed: 0, skipped: 0, conflicts: 0 };
 
     for (const setopt of setopts) {
@@ -626,12 +632,13 @@ export class ZshImportManager {
           source: `line ${setopt.line}`,
         });
         stats.succeeded++;
-      } catch (error: any) {
+      } catch (error) {
+        const err = error as Error;
         this.log({
           type: 'setopt',
           name: setopt.option,
           status: 'disabled',
-          reason: error.message,
+          reason: err.message,
           source: `line ${setopt.line}`,
         });
         stats.failed++;
@@ -644,7 +651,7 @@ export class ZshImportManager {
   /**
    * Import Oh-My-Zsh plugins
    */
-  private async importPlugins(plugins: Array<{ name: string; line: number }>): Promise<any> {
+  private async importPlugins(plugins: Array<{ name: string; line: number }>): Promise<ImportStats> {
     const stats = { total: plugins.length, succeeded: 0, failed: 0, skipped: 0, conflicts: 0 };
 
     for (const plugin of plugins) {
@@ -751,15 +758,16 @@ export class ZshImportManager {
         .join('\n');
 
       fs.appendFileSync(this.options.diagnosticLog, logContent + '\n\n', 'utf8');
-    } catch (error: any) {
-      console.error(`Failed to write diagnostic log: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`Failed to write diagnostic log: ${err.message}`);
     }
   }
 
   /**
    * Format import summary message
    */
-  private formatImportMessage(stats: any): string {
+  private formatImportMessage(stats: ImportStats): string {
     const lines = [
       `ZSH Import Complete:`,
       `  ✅ Succeeded: ${stats.succeeded}`,
@@ -779,7 +787,7 @@ export class ZshImportManager {
   /**
    * Get import statistics from last run
    */
-  public getLastImportStats(): any {
+  public getLastImportStats(): ImportStats & { byType: Record<string, ImportStats> } | null {
     if (this.diagnostics.length === 0) {
       return null;
     }
@@ -790,7 +798,7 @@ export class ZshImportManager {
       failed: 0,
       skipped: 0,
       conflicts: 0,
-      byType: {} as any,
+      byType: {} as Record<string, ImportStats>,
     };
 
     for (const diagnostic of this.diagnostics) {
@@ -806,12 +814,13 @@ export class ZshImportManager {
       if (diagnostic.status === 'conflict') stats.conflicts++;
 
       if (!stats.byType[diagnostic.type]) {
-        stats.byType[diagnostic.type] = { total: 0, succeeded: 0, failed: 0, skipped: 0 };
+        stats.byType[diagnostic.type] = { total: 0, succeeded: 0, failed: 0, skipped: 0, conflicts: 0 };
       }
       stats.byType[diagnostic.type].total++;
       if (diagnostic.status === 'success') stats.byType[diagnostic.type].succeeded++;
       if (diagnostic.status === 'failed') stats.byType[diagnostic.type].failed++;
       if (diagnostic.status === 'skipped') stats.byType[diagnostic.type].skipped++;
+      if (diagnostic.status === 'conflict') stats.byType[diagnostic.type].conflicts++;
     }
 
     return stats;

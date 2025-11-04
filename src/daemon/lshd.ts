@@ -16,8 +16,26 @@ import { LSHApiServer, ApiConfig as _ApiConfig } from './api-server.js';
 import { validateCommand } from '../lib/command-validator.js';
 import { validateEnvironment, printValidationResults } from '../lib/env-validator.js';
 import { createLogger } from '../lib/logger.js';
+import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
 
 const execAsync = promisify(exec);
+
+/**
+ * IPC Message structure for daemon communication
+ */
+export interface IPCMessage {
+  id?: string;
+  command: string;
+  args?: Record<string, unknown>;
+}
+
+/**
+ * IPC Response structure
+ */
+export interface IPCResponse {
+  message?: string;
+  [key: string]: unknown;
+}
 
 export interface DaemonConfig {
   pidFile: string;
@@ -40,7 +58,7 @@ export class LSHJobDaemon extends EventEmitter {
   private isRunning = false;
   private checkTimer?: NodeJS.Timeout;
   private logStream?: fs.WriteStream;
-  private ipcServer?: any; // Unix socket server for communication
+  private ipcServer?: net.Server; // Unix socket server for communication
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
   private apiServer?: LSHApiServer; // API server instance
   private logger = createLogger('LSHJobDaemon');
@@ -123,8 +141,9 @@ export class LSHJobDaemon extends EventEmitter {
         });
         await this.apiServer.start();
         this.log('INFO', `API Server started on port ${this.config.apiPort}`);
-      } catch (error: any) {
-        this.log('ERROR', `Failed to start API server: ${error.message}`);
+      } catch (error) {
+        const err = error as Error;
+        this.log('ERROR', `Failed to start API server: ${err.message}`);
       }
     }
 
@@ -193,18 +212,27 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Get daemon status
    */
-  async getStatus(): Promise<any> {
+  async getStatus(): Promise<DaemonStatus> {
     const stats = this.jobManager.getJobStats();
     const uptime = process.uptime();
 
+    const memUsage = process.memoryUsage();
     return {
-      isRunning: this.isRunning,
+      running: this.isRunning,
       pid: process.pid,
       uptime,
-      jobs: stats,
-      config: this.config,
-      memoryUsage: process.memoryUsage(),
-      cpuUsage: process.cpuUsage()
+      jobCount: stats.total || 0,
+      memoryUsage: {
+        heapUsed: memUsage.heapUsed,
+        heapTotal: memUsage.heapTotal,
+        external: memUsage.external
+      },
+      jobs: {
+        total: stats.total || 0,
+        running: stats.running || 0,
+        completed: stats.completed,
+        failed: stats.failed
+      }
     };
   }
 
@@ -293,17 +321,17 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Get job information
    */
-  async getJob(jobId: string): Promise<JobSpec | undefined> {
+  async getJob(jobId: string): Promise<Record<string, unknown> | undefined> {
     const job = await this.jobManager.getJob(jobId);
-    return job ? this.sanitizeJobForSerialization(job) : undefined;
+    return job ? this.sanitizeJobForSerialization(job as JobSpec) : undefined;
   }
 
   /**
    * Sanitize job objects for safe JSON serialization
    */
-  private sanitizeJobForSerialization(job: any): any {
+  private sanitizeJobForSerialization(job: JobSpec): Record<string, unknown> {
     // Use a whitelist approach - only include safe properties
-    const sanitized: any = {
+    const sanitized: Record<string, unknown> = {
       id: job.id,
       name: job.name,
       command: job.command,
@@ -327,14 +355,14 @@ export class LSHJobDaemon extends EventEmitter {
       stdout: job.stdout,
       stderr: job.stderr,
       exitCode: job.exitCode,
-      error: job.error,
+      error: (job as unknown as { error?: string }).error,
       tags: job.tags,
       maxRetries: job.maxRetries,
       retryCount: job.retryCount,
-      killSignal: job.killSignal,
-      killed: job.killed,
+      killSignal: (job as unknown as { killSignal?: string }).killSignal,
+      killed: (job as unknown as { killed?: boolean }).killed,
       description: job.description,
-      workingDirectory: job.workingDirectory,
+      workingDirectory: (job as unknown as { workingDirectory?: string }).workingDirectory,
       databaseSync: job.databaseSync
     };
 
@@ -360,12 +388,12 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * List all jobs
    */
-  async listJobs(filter?: any, limit?: number): Promise<JobSpec[]> {
+  async listJobs(filter?: JobFilter, limit?: number): Promise<Array<Record<string, unknown>>> {
     try {
       const jobs = await this.jobManager.listJobs(filter);
 
       // Sanitize jobs to remove circular references before serialization
-      const sanitizedJobs = jobs.map(job => this.sanitizeJobForSerialization(job));
+      const sanitizedJobs = jobs.map(job => this.sanitizeJobForSerialization(job as JobSpec));
 
       // Apply limit if specified
       if (limit && limit > 0) {
@@ -497,7 +525,7 @@ export class LSHJobDaemon extends EventEmitter {
               job.completedAt = undefined;
               job.stdout = '';
               job.stderr = '';
-              (this.jobManager as any).persistJobs();
+              await (this.jobManager as unknown as { persistJobs(): Promise<void> }).persistJobs();
               this.log('INFO', `🔄 Reset completed job for recurring execution: ${job.id} (${job.name})`);
             }
 
@@ -625,7 +653,7 @@ export class LSHJobDaemon extends EventEmitter {
 
         // Force persistence by calling internal method via reflection
         // Note: This is a temporary workaround for private method access
-        (this.jobManager as any).persistJobs();
+        await (this.jobManager as unknown as { persistJobs(): Promise<void> }).persistJobs();
 
         this.log('INFO', `🔄 Reset recurring job status: ${jobId} (${job.name}) for next scheduled run`);
       }
@@ -689,7 +717,7 @@ export class LSHJobDaemon extends EventEmitter {
       // Ignore if doesn't exist
     }
 
-    this.ipcServer = net.createServer((socket: any) => {
+    this.ipcServer = net.createServer((socket: net.Socket) => {
       socket.on('data', async (data: Buffer) => {
         let messageId: string | undefined;
         try {
@@ -735,7 +763,7 @@ export class LSHJobDaemon extends EventEmitter {
             fs.unlinkSync(this.config.socketPath);
             // Retry after cleanup
             setTimeout(() => {
-              this.ipcServer.listen(this.config.socketPath);
+              this.ipcServer?.listen(this.config.socketPath);
             }, 1000);
           } catch (cleanupError) {
             this.log('ERROR', `Failed to cleanup socket: ${cleanupError.message}`);
@@ -745,26 +773,26 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
-  private async handleIPCMessage(message: any): Promise<any> {
-    const { command, args } = message;
+  private async handleIPCMessage(message: IPCMessage): Promise<IPCResponse | DaemonStatus | JobSpec | Record<string, unknown> | Array<Record<string, unknown>> | boolean | undefined> {
+    const { command, args = {} } = message;
 
     switch (command) {
       case 'status':
         return await this.getStatus();
       case 'addJob':
-        return await this.addJob(args.jobSpec);
+        return await this.addJob((args as { jobSpec: Partial<JobSpec> }).jobSpec);
       case 'startJob':
-        return await this.startJob(args.jobId);
+        return await this.startJob((args as { jobId: string }).jobId);
       case 'triggerJob':
-        return await this.triggerJob(args.jobId);
+        return await this.triggerJob((args as { jobId: string }).jobId);
       case 'stopJob':
-        return await this.stopJob(args.jobId, args.signal);
+        return await this.stopJob((args as { jobId: string; signal?: string }).jobId, (args as { jobId: string; signal?: string }).signal);
       case 'listJobs':
-        return this.listJobs(args.filter, args.limit);
+        return this.listJobs((args as { filter?: JobFilter; limit?: number }).filter, (args as { filter?: JobFilter; limit?: number }).limit);
       case 'getJob':
-        return this.getJob(args.jobId);
+        return this.getJob((args as { jobId: string }).jobId);
       case 'removeJob':
-        return await this.removeJob(args.jobId, args.force);
+        return await this.removeJob((args as { jobId: string; force?: boolean }).jobId, (args as { jobId: string; force?: boolean }).force);
       case 'restart':
         await this.restart();
         return { message: 'Daemon restarted' };
@@ -876,18 +904,17 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
         await client.connect();
 
-        const jobSpec = {
+        const jobSpec: Partial<JobSpec> = {
           id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: `Manual Job - ${jobCommand}`,
           command: jobCommand,
-          type: 'manual',
+          type: 'shell' as const,
           schedule: { interval: 0 }, // Run once
-          env: process.env,
+          env: process.env as Record<string, string>,
           cwd: process.cwd(),
           user: process.env.USER,
           priority: 5,
           tags: ['manual'],
-          enabled: true,
           maxRetries: 0,
           timeout: 0,
         };
@@ -901,8 +928,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
         client.disconnect();
         process.exit(0);
-      } catch (error: any) {
-        cliLogger.error('Failed to add job', error);
+      } catch (error) {
+        const err = error as Error;
+        cliLogger.error('Failed to add job', err);
         process.exit(1);
       }
     })();

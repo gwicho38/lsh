@@ -9,18 +9,55 @@ import * as _path from 'path';
 import { EventEmitter } from 'events';
 import DatabasePersistence from './database-persistence.js';
 import { createLogger } from './logger.js';
+import { JobSpec } from './job-manager.js';
+import { ShellJob } from './database-schema.js';
 
 export interface DaemonMessage {
   command: string;
-  args?: any;
+  args?: Record<string, unknown>;
   id?: string;
 }
 
 export interface DaemonResponse {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   id?: string;
+}
+
+export interface DaemonStatus {
+  running: boolean;
+  uptime: number;
+  jobCount: number;
+  pid?: number;
+  memoryUsage?: {
+    heapUsed: number;
+    heapTotal: number;
+    external: number;
+    [key: string]: number;
+  };
+  jobs?: {
+    total: number;
+    running: number;
+    completed?: number;
+    failed?: number;
+    [key: string]: number | undefined;
+  };
+  [key: string]: unknown;
+}
+
+export interface JobFilter {
+  status?: string | string[];
+  type?: string | string[];
+  tags?: string[];
+  [key: string]: unknown;
+}
+
+export interface JobStatistics {
+  totalJobs: number;
+  byStatus: Record<string, number>;
+  successRate: number;
+  lastExecution: string | null;
 }
 
 export interface CronJobSpec {
@@ -191,7 +228,7 @@ export class DaemonClient extends EventEmitter {
         }
       });
 
-      this.socket.on('error', (error: any) => {
+      this.socket.on('error', (error: Error & { code?: string }) => {
         this.connected = false;
 
         // Enhance error messages for common issues
@@ -230,7 +267,7 @@ export class DaemonClient extends EventEmitter {
   /**
    * Send a message to the daemon
    */
-  private async sendMessage(message: DaemonMessage): Promise<any> {
+  private async sendMessage(message: DaemonMessage): Promise<unknown> {
     if (!this.connected || !this.socket) {
       throw new Error('Not connected to daemon');
     }
@@ -249,11 +286,11 @@ export class DaemonClient extends EventEmitter {
 
       // Store timeout ID for cleanup
       this.pendingMessages.set(id, {
-        resolve: (data: any) => {
+        resolve: (data: unknown) => {
           clearTimeout(timeoutId);
           resolve(data);
         },
-        reject: (error: any) => {
+        reject: (error: Error) => {
           clearTimeout(timeoutId);
           reject(error);
         }
@@ -282,24 +319,24 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get daemon status
    */
-  public async getStatus(): Promise<any> {
-    return await this.sendMessage({ command: 'status' });
+  public async getStatus(): Promise<DaemonStatus> {
+    return await this.sendMessage({ command: 'status' }) as Promise<DaemonStatus>;
   }
 
   /**
    * Add a simple job to the daemon
    */
-  public async addJob(jobSpec: any): Promise<any> {
+  public async addJob(jobSpec: Partial<JobSpec>): Promise<JobSpec> {
     return await this.sendMessage({
       command: 'addJob',
       args: { jobSpec }
-    });
+    }) as Promise<JobSpec>;
   }
 
   /**
    * Create a cron job
    */
-  public async createCronJob(jobSpec: CronJobSpec): Promise<any> {
+  public async createCronJob(jobSpec: CronJobSpec): Promise<JobSpec> {
     const daemonJobSpec = {
       id: jobSpec.id,
       name: jobSpec.name,
@@ -326,13 +363,13 @@ export class DaemonClient extends EventEmitter {
       await this.syncJobToDatabase(jobSpec, 'created');
     }
 
-    return result;
+    return result as JobSpec;
   }
 
   /**
    * Start a job
    */
-  public async startJob(jobId: string): Promise<any> {
+  public async startJob(jobId: string): Promise<JobSpec> {
     const result = await this.sendMessage({
       command: 'startJob',
       args: { jobId }
@@ -343,13 +380,13 @@ export class DaemonClient extends EventEmitter {
       await this.syncJobToDatabase({ id: jobId } as CronJobSpec, 'running');
     }
 
-    return result;
+    return result as JobSpec;
   }
 
   /**
    * Trigger a job to run immediately (bypass schedule)
    */
-  public async triggerJob(jobId: string): Promise<any> {
+  public async triggerJob(jobId: string): Promise<{ success: boolean; output?: string; error?: string }> {
     const result = await this.sendMessage({
       command: 'triggerJob',
       args: { jobId }
@@ -358,32 +395,34 @@ export class DaemonClient extends EventEmitter {
     // Record job execution in database
     if (this.databasePersistence) {
       try {
+        const jobResult = result as { success: boolean; output?: string; error?: string };
         await this.databasePersistence.saveJob({
           user_id: this.userId,
           session_id: this.sessionId,
           job_id: jobId,
           command: `Triggered execution of ${jobId}`,
-          status: result.success ? 'completed' : 'failed',
+          status: jobResult.success ? 'completed' : 'failed',
           working_directory: process.cwd(),
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),
-          exit_code: result.success ? 0 : 1,
-          output: result.output,
-          error: result.error
+          exit_code: jobResult.success ? 0 : 1,
+          output: jobResult.output,
+          error: jobResult.error
         });
-      } catch (error: any) {
+      } catch (error) {
         // Don't fail the trigger if database save fails
-        this.logger.warn(`Failed to save job execution to database: ${error.message}`);
+        const err = error as Error;
+        this.logger.warn(`Failed to save job execution to database: ${err.message}`);
       }
     }
 
-    return result;
+    return result as { success: boolean; output?: string; error?: string };
   }
 
   /**
    * Stop a job
    */
-  public async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<any> {
+  public async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<JobSpec> {
     const result = await this.sendMessage({
       command: 'stopJob',
       args: { jobId, signal }
@@ -394,13 +433,13 @@ export class DaemonClient extends EventEmitter {
       await this.syncJobToDatabase({ id: jobId } as CronJobSpec, 'stopped');
     }
 
-    return result;
+    return result as JobSpec;
   }
 
   /**
    * List all jobs
    */
-  public async listJobs(filter?: any): Promise<any[]> {
+  public async listJobs(filter?: JobFilter): Promise<JobSpec[]> {
     try {
       const result = await this.sendMessage({
         command: 'listJobs',
@@ -412,15 +451,15 @@ export class DaemonClient extends EventEmitter {
 
       // Ensure we return an array
       if (Array.isArray(result)) {
-        return result;
-      } else if (result && typeof result === 'object' && Array.isArray(result.jobs)) {
-        return result.jobs;
+        return result as JobSpec[];
+      } else if (result && typeof result === 'object' && 'jobs' in result && Array.isArray((result as Record<string, unknown>).jobs)) {
+        return (result as { jobs: JobSpec[] }).jobs;
       } else {
         this.logger.warn('Unexpected job list format', { resultType: typeof result });
         return [];
       }
-    } catch (error: any) {
-      this.logger.error('Failed to list jobs', error);
+    } catch (error) {
+      this.logger.error('Failed to list jobs', error as Error);
       // Return empty array instead of throwing to prevent crashes
       return [];
     }
@@ -429,11 +468,11 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get job details
    */
-  public async getJob(jobId: string): Promise<any> {
+  public async getJob(jobId: string): Promise<JobSpec> {
     return await this.sendMessage({
       command: 'getJob',
       args: { jobId }
-    });
+    }) as Promise<JobSpec>;
   }
 
   /**
@@ -451,7 +490,7 @@ export class DaemonClient extends EventEmitter {
       // This would need to be implemented
     }
 
-    return result;
+    return result as boolean;
   }
 
   /**
@@ -479,7 +518,7 @@ export class DaemonClient extends EventEmitter {
         session_id: this.databasePersistence.getSessionId(),
         job_id: jobSpec.id,
         command: jobSpec.command,
-        status: status as any,
+        status: status as 'running' | 'completed' | 'failed' | 'stopped',
         working_directory: jobSpec.workingDirectory || process.cwd(),
         started_at: new Date().toISOString(),
       });
@@ -491,7 +530,7 @@ export class DaemonClient extends EventEmitter {
   /**
    * Create a database-backed cron job
    */
-  public async createDatabaseCronJob(jobSpec: CronJobSpec): Promise<any> {
+  public async createDatabaseCronJob(jobSpec: CronJobSpec): Promise<JobSpec> {
     // Create job in daemon
     const daemonResult = await this.createCronJob({
       ...jobSpec,
@@ -516,55 +555,57 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get job execution history from database
    */
-  public async getJobHistory(jobId?: string, limit: number = 100): Promise<any[]> {
+  public async getJobHistory(jobId?: string, limit: number = 100): Promise<ShellJob[]> {
     if (!this.databasePersistence) {
       throw new Error('Database persistence not configured');
     }
 
     const jobs = await this.databasePersistence.getActiveJobs();
-    
+
     if (jobId) {
       return jobs.filter(job => job.job_id === jobId);
     }
-    
+
     return jobs.slice(0, limit);
   }
 
   /**
    * Get job statistics from database
    */
-  public async getJobStatistics(jobId?: string): Promise<any> {
+  public async getJobStatistics(jobId?: string): Promise<JobStatistics> {
     if (!this.databasePersistence) {
       throw new Error('Database persistence not configured');
     }
 
     const jobs = await this.databasePersistence.getActiveJobs();
-    
+
     if (jobId) {
       const jobJobs = jobs.filter(job => job.job_id === jobId);
       return this.calculateJobStatistics(jobJobs);
     }
-    
+
     return this.calculateJobStatistics(jobs);
   }
 
   /**
    * Calculate job statistics
    */
-  private calculateJobStatistics(jobs: any[]): any {
+  private calculateJobStatistics(jobs: ShellJob[]): JobStatistics {
     const total = jobs.length;
     const byStatus = jobs.reduce((acc, job) => {
-      acc[job.status] = (acc[job.status] || 0) + 1;
+      const status = String(job.status);
+      acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
-    const successRate = byStatus.completed ? (byStatus.completed / total) * 100 : 0;
+    const completedCount = byStatus.completed || 0;
+    const successRate = total > 0 ? (completedCount / total) * 100 : 0;
 
     return {
       totalJobs: total,
       byStatus,
       successRate,
-      lastExecution: jobs.length > 0 ? jobs[0].started_at : null,
+      lastExecution: jobs.length > 0 ? (jobs[0].started_at || null) : null,
     };
   }
 

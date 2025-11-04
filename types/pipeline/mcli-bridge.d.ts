@@ -10,21 +10,21 @@ export interface MCLIJob {
     id: string;
     name: string;
     type: string;
-    config: any;
+    config: Record<string, unknown>;
     status: string;
     created_at: string;
     started_at?: string;
     completed_at?: string;
-    result?: any;
+    result?: unknown;
     error?: string;
 }
 export interface MCLISubmitRequest {
     name: string;
     type: string;
-    config: any;
-    parameters?: any;
+    config: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
     callback_url?: string;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, unknown>;
 }
 export interface MCLISubmitResponse {
     job_id: string;
@@ -42,13 +42,13 @@ export declare class MCLIBridge extends EventEmitter {
     getJobStatus(mcliJobId: string): Promise<MCLIJob>;
     cancelJob(mcliJobId: string): Promise<void>;
     getJobLogs(mcliJobId: string): Promise<string>;
-    handleWebhook(payload: any): Promise<void>;
+    handleWebhook(payload: Record<string, unknown>): Promise<void>;
     syncJobStatus(mcliJobId: string): Promise<void>;
     syncAllActiveJobs(): Promise<void>;
     startPeriodicSync(intervalMs?: number): NodeJS.Timeout;
     private updateJobExternalId;
     private getLatestExecution;
     healthCheck(): Promise<boolean>;
-    getStatistics(): Promise<any>;
+    getStatistics(): Promise<Record<string, unknown> | null>;
     cleanup(): void;
 }

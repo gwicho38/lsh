@@ -267,7 +267,7 @@ export class Logger {
     } else {
       // INFO and DEBUG go to stdout
       // Using console.log here is intentional for the logger itself
-      // eslint-disable-next-line no-console
+       
       console.log(output);
     }
   }

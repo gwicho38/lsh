@@ -1,5 +1,21 @@
 import { Pool } from 'pg';
 import { EventEmitter } from 'events';
+export interface Dataset {
+    id: string;
+    name: string;
+    path: string;
+    size?: number;
+    format?: string;
+    [key: string]: unknown;
+}
+export interface Artifact {
+    id: string;
+    name: string;
+    path: string;
+    type: string;
+    size?: number;
+    [key: string]: unknown;
+}
 export interface PipelineJob {
     id?: string;
     externalId?: string;
@@ -9,8 +25,8 @@ export interface PipelineJob {
     targetSystem: string;
     status: JobStatus;
     priority: JobPriority;
-    config: any;
-    parameters?: any;
+    config: Record<string, unknown>;
+    parameters?: Record<string, unknown>;
     cpuRequest?: number;
     memoryRequest?: number;
     gpuRequest?: number;
@@ -35,16 +51,16 @@ export interface JobExecution {
     executor?: string;
     workerNode?: string;
     containerId?: string;
-    inputDatasets?: any[];
-    outputDatasets?: any[];
-    artifacts?: any[];
-    result?: any;
+    inputDatasets?: Dataset[];
+    outputDatasets?: Dataset[];
+    artifacts?: Artifact[];
+    result?: Record<string, unknown>;
     errorMessage?: string;
-    errorDetails?: any;
+    errorDetails?: Record<string, unknown>;
     retryCount?: number;
     retryAfter?: Date;
     logUrl?: string;
-    metrics?: Record<string, any>;
+    metrics?: Record<string, number>;
 }
 export declare enum JobStatus {
     PENDING = "pending",
@@ -65,7 +81,7 @@ export interface JobEvent {
     type: string;
     jobId: string;
     executionId?: string;
-    data: any;
+    data: Record<string, unknown>;
     timestamp: Date;
 }
 export declare class JobTracker extends EventEmitter {
@@ -89,14 +105,14 @@ export declare class JobTracker extends EventEmitter {
     }>;
     createExecution(jobId: string): Promise<JobExecution>;
     startExecution(executionId: string, executor: string, workerNode?: string): Promise<void>;
-    completeExecution(executionId: string, result: any, metrics?: Record<string, any>, outputDatasets?: any[]): Promise<void>;
-    failExecution(executionId: string, errorMessage: string, errorDetails?: any): Promise<void>;
+    completeExecution(executionId: string, result: Record<string, unknown>, metrics?: Record<string, number>, outputDatasets?: Dataset[]): Promise<void>;
+    failExecution(executionId: string, errorMessage: string, errorDetails?: Record<string, unknown>): Promise<void>;
     private scheduleRetry;
-    recordMetric(jobId: string, executionId: string | null, metricName: string, metricValue: number, metricUnit?: string, tags?: Record<string, any>): Promise<void>;
-    getJobMetrics(jobId: string, metricName?: string): Promise<any[]>;
-    recordEvent(eventType: string, eventSource: string, eventData: any, jobId?: string, executionId?: string): Promise<void>;
+    recordMetric(jobId: string, executionId: string | null, metricName: string, metricValue: number, metricUnit?: string, tags?: Record<string, string>): Promise<void>;
+    getJobMetrics(jobId: string, metricName?: string): Promise<Record<string, unknown>[]>;
+    recordEvent(eventType: string, eventSource: string, eventData: Record<string, unknown>, jobId?: string, executionId?: string): Promise<void>;
     getActiveJobs(): Promise<PipelineJob[]>;
-    getJobSuccessRates(): Promise<any[]>;
+    getJobSuccessRates(): Promise<Record<string, unknown>[]>;
     startPolling(intervalMs?: number): void;
     stopPolling(): void;
     private processRetries;
