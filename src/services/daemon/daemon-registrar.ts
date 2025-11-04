@@ -244,8 +244,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 const preview = result.output.substring(0, 100);
                 this.logInfo(`  Output: ${preview}${result.output.length > 100 ? '...' : ''}`);
               }
-            } catch (error: any) {
-              this.logError(`  ${job.name} failed: ${error.message || error}`);
+            } catch (error) {
+              const err = error as Error;
+              this.logError(`  ${job.name} failed: ${err.message || err}`);
             }
           }
         }, { forUser: true });
@@ -495,8 +496,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
               } as any, dbStatus);
               this.logSuccess(`  Synced ${job.name} (${job.id}) - status: ${dbStatus}`);
               syncCount++;
-            } catch (error: any) {
-              this.logError(`  Failed to sync ${job.name}: ${error.message}`);
+            } catch (error) {
+              const err = error as Error;
+              this.logError(`  Failed to sync ${job.name}: ${err.message}`);
             }
           }
 
@@ -570,8 +572,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 fs.unlinkSync(socket);
                 this.logSuccess(`Removed: ${socket}`);
               }
-            } catch (error: any) {
-              this.logWarning(`Could not remove: ${socket} (${error.message})`);
+            } catch (error) {
+              const err = error as Error;
+              this.logWarning(`Could not remove: ${socket} (${err.message})`);
             }
           }
         } else {
@@ -597,8 +600,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 fs.unlinkSync(pidFile);
                 this.logSuccess(`Removed: ${pidFile}`);
               }
-            } catch (error: any) {
-              this.logWarning(`Could not remove: ${pidFile} (${error.message})`);
+            } catch (error) {
+              const err = error as Error;
+              this.logWarning(`Could not remove: ${pidFile} (${err.message})`);
             }
           }
         } else {
@@ -648,8 +652,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
         this.logInfo('   lsh daemon cleanup --force');
       }
 
-    } catch (error: any) {
-      throw new Error(`Cleanup failed: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(`Cleanup failed: ${err.message}`);
     }
   }
 }
