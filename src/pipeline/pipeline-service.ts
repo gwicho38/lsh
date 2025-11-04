@@ -35,6 +35,7 @@ export interface PipelineServiceConfig {
 
 export class PipelineService {
   private app: express.Application;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private server: any;
   private io: Server;
   private pool: Pool;
@@ -45,7 +46,9 @@ export class PipelineService {
   private isDemoMode: boolean = false;
   private streamlitProcess: ChildProcess | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private getSystemJobs(): any[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const jobs: any[] = [];
     const monitoringJobs = [
       { script: 'db-health-monitor', name: 'Database Health Monitor', type: 'monitoring', owner: 'ops-team', schedule: '*/5 * * * *' },
