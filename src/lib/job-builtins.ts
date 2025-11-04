@@ -489,7 +489,9 @@ export class JobBuiltins {
 
   // Helper methods for parsing options and formatting output
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private parseCreateOptions(args: string[]): any {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const options: any = { tags: [] };
 
     for (let i = 0; i < args.length; i++) {

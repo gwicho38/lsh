@@ -19,6 +19,7 @@ export interface SupabaseConfig {
 }
 
 export class SupabaseClient {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private client: any;
   private config: SupabaseConfig;
 

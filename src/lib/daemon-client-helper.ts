@@ -85,14 +85,15 @@ export async function withDaemonClient<T>(
 
     return result;
 
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     // Always disconnect on error
     client.disconnect();
 
     // Handle errors with helpful messages
-    if (error.message.includes('Permission denied')) {
+    if (err.message.includes('Permission denied')) {
       const enhancedError = new Error(
-        `❌ ${error.message}\n` +
+        `❌ ${err.message}\n` +
         `The daemon socket may be owned by another user.\n` +
         `Try starting your own daemon with: lsh daemon start`
       );
@@ -101,7 +102,7 @@ export async function withDaemonClient<T>(
         process.exit(1);
       }
       throw enhancedError;
-    } else if (error.message.includes('not found') || error.message.includes('ENOENT')) {
+    } else if (err.message.includes('not found') || err.message.includes('ENOENT')) {
       const enhancedError = new Error(
         `❌ Daemon socket not found.\n` +
         `Start the daemon with: lsh daemon start`
@@ -111,7 +112,7 @@ export async function withDaemonClient<T>(
         process.exit(1);
       }
       throw enhancedError;
-    } else if (error.message.includes('ECONNREFUSED')) {
+    } else if (err.message.includes('ECONNREFUSED')) {
       const enhancedError = new Error(
         `❌ Daemon is not responding.\n` +
         `The daemon may have crashed. Try restarting with: lsh daemon restart`
@@ -123,7 +124,7 @@ export async function withDaemonClient<T>(
       throw enhancedError;
     } else {
       if (exitOnError) {
-        console.error('❌ Error:', error.message);
+        console.error('❌ Error:', err.message);
         process.exit(1);
       }
       throw error;
