@@ -317,8 +317,8 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 /**
  * Start interactive shell
  */
-async function startInteractiveShell(options: any): Promise<void> {
-  const shellOptions: any = {
+async function startInteractiveShell(options: Record<string, unknown>): Promise<void> {
+  const shellOptions: Record<string, unknown> = {
     verbose: options.verbose,
     debug: options.debug,
   };
@@ -335,13 +335,13 @@ async function startInteractiveShell(options: any): Promise<void> {
 /**
  * Execute single command
  */
-async function executeCommand(command: string, options: any): Promise<void> {
+async function executeCommand(command: string, options: Record<string, unknown>): Promise<void> {
   const { ShellExecutor } = await import('./lib/shell-executor.js');
   const executor = new ShellExecutor();
 
   // Load configuration if rc file specified
   if (options.rc) {
-    await loadRcFile(executor, options.rc);
+    await loadRcFile(executor, options.rc as string);
   }
 
   try {
@@ -365,19 +365,19 @@ async function executeCommand(command: string, options: any): Promise<void> {
 /**
  * Execute script file
  */
-async function executeScript(scriptPath: string, options: any): Promise<void> {
+async function executeScript(scriptPath: string, options: Record<string, unknown>): Promise<void> {
   if (!fs.existsSync(scriptPath)) {
     console.error(`Script file not found: ${scriptPath}`);
     process.exit(1);
   }
 
   const runner = new ScriptRunner({
-    cwd: options.cwd,
-    env: parseEnvOptions(options.env),
+    cwd: options.cwd as string | undefined,
+    env: parseEnvOptions(options.env as string[]),
   });
 
   const result = await runner.executeScript(scriptPath, {
-    args: options.args || [],
+    args: (options.args as string[]) || [],
   });
 
   if (result.output) {
@@ -393,7 +393,7 @@ async function executeScript(scriptPath: string, options: any): Promise<void> {
 /**
  * Handle configuration commands
  */
-async function handleConfig(options: any): Promise<void> {
+async function handleConfig(options: Record<string, unknown>): Promise<void> {
   const rcFile = path.join(process.env.HOME || '/', '.lshrc');
 
   if (options.init) {
@@ -524,6 +524,7 @@ async function validateConfig(rcFile: string): Promise<void> {
 /**
  * Load rc file
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadRcFile(executor: any, rcFile: string): Promise<void> {
   if (!fs.existsSync(rcFile)) {
     console.error(`Configuration file not found: ${rcFile}`);
@@ -574,7 +575,7 @@ function parseEnvOptions(envOptions: string[]): Record<string, string> {
 /**
  * Handle ZSH compatibility commands
  */
-async function handleZshCompatibility(options: any): Promise<void> {
+async function handleZshCompatibility(options: Record<string, unknown>): Promise<void> {
   const { ShellExecutor } = await import('./lib/shell-executor.js');
   const executor = new ShellExecutor();
 
