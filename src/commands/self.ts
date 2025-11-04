@@ -140,6 +140,7 @@ async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?
             const runs = ghData.workflow_runs || [];
 
             // Find the most recent workflow run for main branch
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const mainRuns = runs.filter((run: any) =>
               run.head_branch === 'main' && run.status === 'completed'
             );

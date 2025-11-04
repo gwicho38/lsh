@@ -73,7 +73,7 @@ export declare class CronJobManager extends BaseJobManager {
      * List all jobs - overrides BaseJobManager to use daemon client
      * Returns jobs from daemon rather than storage layer
      */
-    listJobs(filter?: any): Promise<BaseJobSpec[]>;
+    listJobs(filter?: Record<string, unknown>): Promise<BaseJobSpec[]>;
     /**
      * Get job execution report
      */

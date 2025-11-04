@@ -74,7 +74,8 @@
       "Bash(node dist/cli.js push:*)",
       "Bash(node dist/cli.js pull:*)",
       "Bash(node dist/cli.js:*)",
-      "Bash(npm view:*)"
+      "Bash(npm view:*)",
+      "Bash(for file in src/services/lib/lib.ts src/lib/supabase-client.ts src/lib/daemon-client-helper.ts src/lib/base-api-server.ts src/daemon/job-registry.ts src/commands/self.ts)"
     ],
     "deny": [],
     "ask": []

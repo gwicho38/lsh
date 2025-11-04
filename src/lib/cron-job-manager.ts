@@ -194,7 +194,7 @@ export class CronJobManager extends BaseJobManager {
    * List all jobs - overrides BaseJobManager to use daemon client
    * Returns jobs from daemon rather than storage layer
    */
-  async listJobs(filter?: any): Promise<BaseJobSpec[]> {
+  async listJobs(filter?: Record<string, unknown>): Promise<BaseJobSpec[]> {
     const daemonJobs = await this.daemonClient.listJobs(filter);
     // Daemon jobs are compatible with BaseJobSpec structure
     return daemonJobs as BaseJobSpec[];
@@ -205,6 +205,7 @@ export class CronJobManager extends BaseJobManager {
    */
   public async getJobReport(jobId: string): Promise<JobExecutionReport> {
     // Try to get historical data from database if available, otherwise use current job info
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let jobs: any[] = [];
 
     try {
