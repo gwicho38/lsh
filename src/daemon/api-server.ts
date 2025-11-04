@@ -229,13 +229,14 @@ export class LSHApiServer extends BaseAPIServer {
         return res.status(400).json({ error: 'Jobs must be an array' });
       }
 
-      const results: Array<{ success: boolean; job?: any; error?: string; jobSpec?: any }> = [];
+      const results: Array<{ success: boolean; job?: unknown; error?: string; jobSpec?: unknown }> = [];
       for (const jobSpec of jobs) {
         try {
           const job = await this.daemon.addJob(jobSpec);
           results.push({ success: true, job });
-        } catch (error: any) {
-          results.push({ success: false, error: error.message, jobSpec });
+        } catch (error) {
+          const err = error as Error;
+          results.push({ success: false, error: err.message, jobSpec });
         }
       }
 
@@ -351,14 +352,14 @@ export class LSHApiServer extends BaseAPIServer {
     });
   }
 
-  private broadcastToClients(data: any) {
+  private broadcastToClients(data: unknown) {
     const message = `data: ${JSON.stringify(data)}\n\n`;
     this.clients.forEach(client => {
       client.write(message);
     });
   }
 
-  private async triggerWebhook(event: string, data: any) {
+  private async triggerWebhook(event: string, data: unknown) {
     if (!this.apiConfig.webhookEndpoints?.length) return;
 
     const payload = {
@@ -384,7 +385,7 @@ export class LSHApiServer extends BaseAPIServer {
     }
   }
 
-  private convertToCSV(data: any[]): string {
+  private convertToCSV(data: Record<string, unknown>[]): string {
     if (!data.length) return '';
 
     const headers = Object.keys(data[0]);
