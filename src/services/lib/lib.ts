@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import { getFiles } from "../../util/lib.util.js";
 
-async function parseCommands(files: any) {
+async function parseCommands(files: string[]) {
   const commands = {};
 
   for (const file of files) {

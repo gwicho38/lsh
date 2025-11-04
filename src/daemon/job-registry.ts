@@ -600,7 +600,7 @@ export class JobRegistry extends BaseJobManager {
     if (!record.pid) return;
 
     try {
-      exec(`ps -p ${record.pid} -o %mem,%cpu`, (error: any, stdout: string) => {
+      exec(`ps -p ${record.pid} -o %mem,%cpu`, (error: unknown, stdout: string) => {
         if (!error && stdout) {
           const lines = stdout.trim().split('\n');
           if (lines.length > 1) {

@@ -167,8 +167,9 @@ export function isEnvIgnored(dir: string = process.cwd()): boolean {
     }
 
     return false;
-  } catch (error: any) {
-    logger.warn(`Failed to read .gitignore: ${error.message}`);
+  } catch (error) {
+    const err = error as Error;
+    logger.warn(`Failed to read .gitignore: ${err.message}`);
     return false;
   }
 }
@@ -198,8 +199,9 @@ export function ensureEnvInGitignore(dir: string = process.cwd()): void {
 
     fs.writeFileSync(gitignorePath, content, 'utf8');
     logger.info('✅ Added .env to .gitignore');
-  } catch (error: any) {
-    logger.warn(`Failed to update .gitignore: ${error.message}`);
+  } catch (error) {
+    const err = error as Error;
+    logger.warn(`Failed to update .gitignore: ${err.message}`);
   }
 }
 

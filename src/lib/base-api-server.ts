@@ -179,7 +179,7 @@ export abstract class BaseAPIServer extends EventEmitter {
       this.handleFatalError(error);
     });
 
-    process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+    process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
       this.logger.error('Unhandled Rejection', reason instanceof Error ? reason : new Error(String(reason)), {
         promise: String(promise)
       });
