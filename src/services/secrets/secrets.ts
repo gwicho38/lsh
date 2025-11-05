@@ -182,13 +182,22 @@ export async function init_secrets(program: Command) {
   program
     .command('key')
     .description('Generate a new encryption key')
-    .action(async () => {
+    .option('--export', 'Output in export format for shell evaluation')
+    .action(async (options) => {
       const { randomBytes } = await import('crypto');
       const key = randomBytes(32).toString('hex');
-      console.log('\n🔑 New encryption key (add to your .env):\n');
-      console.log(`LSH_SECRETS_KEY=${key}\n`);
-      console.log('💡 Tip: Share this key securely with your team to sync secrets.');
-      console.log('    Never commit it to git!\n');
+
+      if (options.export) {
+        // Just output the export statement for eval
+        console.log(`export LSH_SECRETS_KEY='${key}'`);
+      } else {
+        // Interactive output with tips
+        console.log('\n🔑 New encryption key (add to your .env):\n');
+        console.log(`export LSH_SECRETS_KEY='${key}'\n`);
+        console.log('💡 Tip: Share this key securely with your team to sync secrets.');
+        console.log('    Never commit it to git!\n');
+        console.log('💡 To load immediately: eval "$(lsh key --export)"\n');
+      }
     });
 
   // Create .env file
