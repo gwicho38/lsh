@@ -46,10 +46,73 @@ export async function init_secrets(program: Command) {
       }
     });
 
-  // List environments
+  // List current local secrets
   program
-    .command('list [environment]')
+    .command('list')
     .alias('ls')
+    .description('List secrets in the current local .env file')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('--keys-only', 'Show only keys, not values')
+    .action(async (options) => {
+      try {
+        const envPath = path.resolve(options.file);
+
+        if (!fs.existsSync(envPath)) {
+          console.error(`❌ File not found: ${envPath}`);
+          console.log('💡 Tip: Pull from cloud with: lsh pull --env <environment>');
+          process.exit(1);
+        }
+
+        const content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+        const secrets: Array<{ key: string; value: string }> = [];
+
+        for (const line of lines) {
+          if (line.trim().startsWith('#') || !line.trim()) continue;
+          const match = line.match(/^([^=]+)=(.*)$/);
+          if (match) {
+            const key = match[1].trim();
+            let value = match[2].trim();
+            // Remove quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.slice(1, -1);
+            }
+            secrets.push({ key, value });
+          }
+        }
+
+        if (secrets.length === 0) {
+          console.log('No secrets found in .env file');
+          return;
+        }
+
+        console.log(`\n📋 Secrets in ${options.file}:\n`);
+        for (const { key, value } of secrets) {
+          if (options.keysOnly) {
+            console.log(`  ${key}`);
+          } else {
+            // Mask the value but show first/last 3 chars if long enough
+            let maskedValue = value;
+            if (value.length > 8) {
+              maskedValue = `${value.substring(0, 3)}${'*'.repeat(value.length - 6)}${value.substring(value.length - 3)}`;
+            } else if (value.length > 0) {
+              maskedValue = '*'.repeat(value.length);
+            }
+            console.log(`  ${key}=${maskedValue}`);
+          }
+        }
+        console.log(`\n  Total: ${secrets.length} secrets\n`);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to list secrets:', err.message);
+        process.exit(1);
+      }
+    });
+
+  // Manage environments (old 'list' functionality)
+  program
+    .command('env [environment]')
     .description('List all stored environments or show secrets for specific environment')
     .option('--all-files', 'List all tracked .env files across environments')
     .action(async (environment, options) => {
