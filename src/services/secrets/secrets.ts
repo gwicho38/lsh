@@ -162,22 +162,6 @@ export async function init_secrets(program: Command) {
       }
     });
 
-  // Show secrets (masked)
-  program
-    .command('show')
-    .description('Show secrets for an environment (masked)')
-    .option('-e, --env <name>', 'Environment name', 'dev')
-    .action(async (options) => {
-      try {
-        const manager = new SecretsManager();
-        await manager.show(options.env);
-      } catch (error) {
-        const err = error as Error;
-        console.error('❌ Failed to show secrets:', err.message);
-        process.exit(1);
-      }
-    });
-
   // Generate encryption key
   program
     .command('key')

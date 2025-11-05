@@ -79,8 +79,7 @@ program
         console.log('  push                    Upload .env to encrypted cloud storage');
         console.log('  pull                    Download .env from cloud storage');
         console.log('  list                    List secrets in current local .env file');
-        console.log('  env                     List all stored environments');
-        console.log('  show                    View secrets (masked)');
+        console.log('  env [name]              List/view cloud environments');
         console.log('  key                     Generate encryption key');
         console.log('  create                  Create new .env file');
         console.log('  get <key>               Get a specific secret value (--all for all)');
