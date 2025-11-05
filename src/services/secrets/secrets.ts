@@ -235,9 +235,11 @@ API_KEY=
 
   // Get a specific secret value
   program
-    .command('get <key>')
-    .description('Get a specific secret value from .env file')
+    .command('get [key]')
+    .description('Get a specific secret value from .env file, or all secrets with --all')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('--all', 'Get all secrets from the file')
+    .option('--export', 'Output in export format for shell evaluation')
     .action(async (key, options) => {
       try {
         const envPath = path.resolve(options.file);
@@ -249,6 +251,47 @@ API_KEY=
 
         const content = fs.readFileSync(envPath, 'utf8');
         const lines = content.split('\n');
+
+        // Handle --all flag
+        if (options.all) {
+          const secrets: Array<{ key: string; value: string }> = [];
+
+          for (const line of lines) {
+            if (line.trim().startsWith('#') || !line.trim()) continue;
+            const match = line.match(/^([^=]+)=(.*)$/);
+            if (match) {
+              const key = match[1].trim();
+              let value = match[2].trim();
+              // Remove quotes if present
+              if ((value.startsWith('"') && value.endsWith('"')) ||
+                  (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+              }
+              secrets.push({ key, value });
+            }
+          }
+
+          if (options.export) {
+            // Output in export format for shell evaluation
+            for (const { key, value } of secrets) {
+              // Escape single quotes in value and wrap in single quotes
+              const escapedValue = value.replace(/'/g, "'\\''");
+              console.log(`export ${key}='${escapedValue}'`);
+            }
+          } else {
+            // Output in KEY=VALUE format
+            for (const { key, value } of secrets) {
+              console.log(`${key}=${value}`);
+            }
+          }
+          return;
+        }
+
+        // Handle single key lookup
+        if (!key) {
+          console.error('❌ Please provide a key or use --all flag');
+          process.exit(1);
+        }
 
         for (const line of lines) {
           if (line.trim().startsWith('#') || !line.trim()) continue;
