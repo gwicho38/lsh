@@ -245,7 +245,6 @@ export class JobManager extends BaseJobManager {
     try {
       job.process.kill(signal as NodeJS.Signals);
     } catch (error) {
-      const err = error as Error;
       this.logger.error(`Failed to kill job ${jobId}`, error);
     }
 

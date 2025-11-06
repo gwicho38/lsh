@@ -88,9 +88,9 @@ program
         console.log('  status                  Get detailed secrets status');
         console.log('');
         console.log('🔄 Automation (Schedule secret rotation):');
-        console.log('  lib cron add            Schedule automatic tasks');
-        console.log('  lib cron list           List scheduled jobs');
-        console.log('  lib daemon start        Start persistent daemon');
+        console.log('  cron add                Schedule automatic tasks');
+        console.log('  cron list               List scheduled jobs');
+        console.log('  daemon start            Start persistent daemon');
         console.log('');
         console.log('🚀 Quick Start:');
         console.log('  lsh key                           # Generate encryption key');
@@ -98,10 +98,10 @@ program
         console.log('  lsh pull --env dev                # Pull on another machine');
         console.log('');
         console.log('📚 More Commands:');
-        console.log('  lib api                 API server management');
-        console.log('  lib supabase            Supabase database management');
-        console.log('  lib daemon              Daemon management');
-        console.log('  lib cron                Cron job management');
+        console.log('  api                     API server management');
+        console.log('  supabase                Supabase database management');
+        console.log('  daemon                  Daemon management');
+        console.log('  cron                    Cron job management');
         console.log('  self                    Self-management commands');
         console.log('  self zsh                ZSH compatibility commands');
         console.log('  -i, --interactive       Start interactive shell');
@@ -226,10 +226,14 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   // REPL interactive shell
   await init_ishell(program);
 
-  // Library commands (parent for service commands)
-  const libCommand = await init_lib(program);
+  // Flatten all service commands to top-level (no more 'lib' parent)
+  await init_supabase(program);
+  await init_daemon(program);
+  await init_cron(program);
+  registerApiCommands(program);
 
-  // Nest service commands under lib
+  // Legacy 'lib' command group with deprecation warnings
+  const libCommand = await init_lib(program);
   await init_supabase(libCommand);
   await init_daemon(libCommand);
   await init_cron(libCommand);
@@ -642,13 +646,13 @@ function showDetailedHelp(): void {
   console.log('  self zsh                ZSH compatibility commands');
   console.log('  self zsh-import         Import ZSH configs (aliases, functions, exports)');
   console.log('');
-  console.log('Library Commands (lsh lib <command>):');
-  console.log('  lib api                 API server management');
-  console.log('  lib supabase            Supabase database management');
-  console.log('  lib daemon              Daemon management');
-  console.log('  lib daemon job          Job management');
-  console.log('  lib daemon db           Database integration');
-  console.log('  lib cron                Cron job management');
+  console.log('Service Commands:');
+  console.log('  api                     API server management');
+  console.log('  supabase                Supabase database management');
+  console.log('  daemon                  Daemon management');
+  console.log('  daemon job              Job management');
+  console.log('  daemon db               Database integration');
+  console.log('  cron                    Cron job management');
   console.log('');
   console.log('Examples:');
   console.log('');
@@ -678,13 +682,13 @@ function showDetailedHelp(): void {
   console.log('    lsh secrets pull                    # Pull secrets from cloud');
   console.log('    lsh secrets list                    # List environments');
   console.log('');
-  console.log('  Library Services:');
-  console.log('    lsh lib daemon start                # Start daemon');
-  console.log('    lsh lib daemon status               # Check daemon status');
-  console.log('    lsh lib daemon job list             # List all jobs');
-  console.log('    lsh lib cron list                   # List cron jobs');
-  console.log('    lsh lib api start                   # Start API server');
-  console.log('    lsh lib api key                     # Generate API key');
+  console.log('  Service Operations:');
+  console.log('    lsh daemon start                    # Start daemon');
+  console.log('    lsh daemon status                   # Check daemon status');
+  console.log('    lsh daemon job list                 # List all jobs');
+  console.log('    lsh cron list                       # List cron jobs');
+  console.log('    lsh api start                       # Start API server');
+  console.log('    lsh api key                         # Generate API key');
   console.log('');
   console.log('Features:');
   console.log('  ✅ POSIX Shell Compliance (85-95%)');
