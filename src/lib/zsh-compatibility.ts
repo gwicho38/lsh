@@ -399,7 +399,7 @@ export class ZshCompatibility {
   /**
    * Generate completions based on patterns
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private async generateCompletions(
     context: any,
     patterns: Array<{ type: string; pattern: string }>

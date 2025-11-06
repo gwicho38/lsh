@@ -52,10 +52,10 @@ EOF
 ```bash
 # Smart sync - automatically handles everything!
 cd ~/repos/my-project
-lsh lib secrets sync
+lsh sync
 
 # Smart sync AND load in one command!
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 
 # Now your secrets are synced AND loaded in your shell
 echo $DATABASE_URL
@@ -191,8 +191,8 @@ lsh secrets push --env myenv
 
 | Command | Description |
 |---------|-------------|
-| `lsh lib secrets sync` | 🆕 Smart sync (auto push/pull) |
-| `lsh lib secrets sync --load` | 🆕 Sync AND load into shell |
+| `lsh sync` | 🆕 Smart sync (auto push/pull) |
+| `lsh sync --load` | 🆕 Sync AND load into shell |
 | `lsh secrets list` | Show all environments |
 | `lsh secrets push` | Upload .env to cloud |
 | `lsh secrets pull` | Download .env from cloud |

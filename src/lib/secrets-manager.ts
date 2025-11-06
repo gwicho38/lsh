@@ -568,8 +568,8 @@ export class SecretsManager {
 
       return true;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to save encryption key: ${error.message}`);
+      const _err = error as Error;
+      logger.error(`Failed to save encryption key: ${_err.message}`);
       logger.info('Please set it manually:');
       logger.info(`export LSH_SECRETS_KEY=${key}`);
       return false;
@@ -607,8 +607,8 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         logger.info(`✅ Created ${envFilePath} from template`);
         return true;
       } catch (error) {
-      const err = error as Error;
-        logger.error(`Failed to create ${envFilePath}: ${error.message}`);
+        const _err = error as Error;
+        logger.error(`Failed to create ${envFilePath}: ${_err.message}`);
         return false;
       }
     }
@@ -627,8 +627,8 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       logger.info(`✅ Created ${envFilePath} from ${path.basename(examplePath)}`);
       return true;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to create ${envFilePath}: ${error.message}`);
+      const _err = error as Error;
+      logger.error(`Failed to create ${envFilePath}: ${_err.message}`);
       return false;
     }
   }

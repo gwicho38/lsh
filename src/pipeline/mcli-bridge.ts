@@ -232,7 +232,7 @@ export class MCLIBridge extends EventEmitter {
         break;
 
       case 'failed':
-      case 'error':
+      case 'error': {
         const errorObj = error as { message?: string } | undefined;
         await this.jobTracker.failExecution(
           execution.id!,
@@ -240,6 +240,7 @@ export class MCLIBridge extends EventEmitter {
           error as Record<string, unknown> | undefined
         );
         break;
+      }
 
       case 'cancelled':
         await this.jobTracker.updateJobStatus(pipelineJobId, JobStatus.CANCELLED);

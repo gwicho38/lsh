@@ -31,7 +31,7 @@ Smart Sync automatically:
 cd ~/repos/my-project
 
 # One command does everything!
-lsh lib secrets sync
+lsh sync
 ```
 
 That's it! Smart sync will:
@@ -48,7 +48,7 @@ That's it! Smart sync will:
 cd ~/repos/my-project
 
 # Same command - it detects cloud secrets exist!
-lsh lib secrets sync
+lsh sync
 ```
 
 Smart sync will:
@@ -125,7 +125,7 @@ API_KEY=
 EOF
 
 # Smart sync sets everything up!
-lsh lib secrets sync
+lsh sync
 ```
 
 **Output:**
@@ -164,7 +164,7 @@ git clone https://github.com/user/existing-app.git
 cd existing-app
 
 # Project already has secrets in cloud
-lsh lib secrets sync
+lsh sync
 ```
 
 **Output:**
@@ -196,7 +196,7 @@ lsh lib secrets sync
 cd ~/repos/my-app
 
 # Check and sync
-lsh lib secrets sync
+lsh sync
 ```
 
 **Output:**
@@ -231,7 +231,7 @@ Backed up existing .env to .env.backup.1730304900000
 echo "NEW_API_KEY=abc123" >> .env
 
 # Sync automatically pushes newer local file
-lsh lib secrets sync
+lsh sync
 ```
 
 **Output:**
@@ -263,9 +263,9 @@ lsh lib secrets sync
 ### Basic Usage
 
 ```bash
-lsh lib secrets sync                    # Smart sync with defaults
-lsh lib secrets sync --env staging      # Sync staging environment
-lsh lib secrets sync --file .env.prod   # Sync specific file
+lsh sync                    # Smart sync with defaults
+lsh sync --env staging      # Sync staging environment
+lsh sync --file .env.prod   # Sync specific file
 ```
 
 ### Load Mode - Sync AND Load in One Command! 🎉
@@ -274,7 +274,7 @@ The `--load` flag syncs your secrets and outputs eval-able export commands:
 
 ```bash
 # Sync and load secrets in one command!
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 
 # Your .env variables are now loaded in the current shell!
 echo $DATABASE_URL
@@ -292,7 +292,7 @@ echo $API_KEY
 cd ~/repos/my-app
 
 # Sync and load in one line
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 
 # Start your app with secrets loaded
 npm start
@@ -302,16 +302,16 @@ npm start
 
 ```bash
 # Dry run - see what would happen without executing
-lsh lib secrets sync --dry-run
+lsh sync --dry-run
 
 # Legacy mode - just show suggestions, don't auto-execute
-lsh lib secrets sync --legacy
+lsh sync --legacy
 
 # Sync and load with custom environment
-eval "$(lsh lib secrets sync --env production --load)"
+eval "$(lsh sync --env production --load)"
 
 # Different file
-eval "$(lsh lib secrets sync --file .env.local --load)"
+eval "$(lsh sync --file .env.local --load)"
 ```
 
 ## Repository-Aware Namespacing
@@ -381,7 +381,7 @@ If mismatch:
 ⚠️  Encryption key mismatch!
    The local key does not match the cloud storage.
    Please use the original key or push new secrets with:
-   lsh lib secrets push -f .env -e dev
+   lsh push -f .env -e dev
 ```
 
 ## Comparison: Smart Sync vs Manual
@@ -390,18 +390,18 @@ If mismatch:
 
 ```bash
 # Setup encryption key
-lsh lib secrets key
+lsh key
 # Copy key to .env manually
 echo "LSH_SECRETS_KEY=abc..." >> .env
 
 # Check status
-lsh lib secrets status
+lsh status
 
 # Look at suggestions
-lsh lib secrets sync
+lsh sync
 
 # Manually push or pull
-lsh lib secrets push --env dev
+lsh push --env dev
 
 # Make sure it's in gitignore
 echo ".env" >> .gitignore
@@ -411,7 +411,7 @@ echo ".env" >> .gitignore
 
 ```bash
 # One command!
-lsh lib secrets sync
+lsh sync
 ```
 
 ## Tips & Best Practices
@@ -422,18 +422,18 @@ Instead of syncing and then manually loading:
 
 ```bash
 # Old way (2 commands)
-lsh lib secrets sync
+lsh sync
 set -a; source .env; set +a
 
 # New way (1 command!)
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 ```
 
 Add to your shell profile for instant setup:
 
 ```bash
 # Add to ~/.zshrc or ~/.bashrc
-alias load-secrets='eval "$(lsh lib secrets sync --load)"'
+alias load-secrets='eval "$(lsh sync --load)"'
 
 # Then just use:
 cd ~/repos/my-app
@@ -447,13 +447,13 @@ Add to your daily workflow:
 ```bash
 # At start of day
 cd ~/repos/my-app
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 
 # After pulling latest code
-git pull && eval "$(lsh lib secrets sync --load)"
+git pull && eval "$(lsh sync --load)"
 
 # Before important work
-eval "$(lsh lib secrets sync --load)" && npm start
+eval "$(lsh sync --load)" && npm start
 ```
 
 ### 2. Create Good .env.example Files
@@ -476,27 +476,27 @@ Share the encryption key securely:
 
 ```bash
 # Generate key on first machine
-lsh lib secrets sync
+lsh sync
 
 # Share the key via 1Password/LastPass
 # Team members add it to their .env:
 LSH_SECRETS_KEY=fdc6fca3488483b15315e9512083c26de2e973671f3211cb6015bb86ba09fe02
 
 # Then they just sync!
-lsh lib secrets sync
+lsh sync
 ```
 
 ### 4. Multiple Environments Per Repo
 
 ```bash
 # Development
-lsh lib secrets sync --env dev
+lsh sync --env dev
 
 # Staging
-lsh lib secrets sync --env staging --file .env.staging
+lsh sync --env staging --file .env.staging
 
 # Production
-lsh lib secrets sync --env production --file .env.production
+lsh sync --env production --file .env.production
 ```
 
 ### 5. Backup Before Major Changes
@@ -509,7 +509,7 @@ cp .env .env.backup
 nano .env
 
 # Sync (it will create another backup automatically)
-lsh lib secrets sync
+lsh sync
 ```
 
 ## Troubleshooting
@@ -531,7 +531,7 @@ echo "LSH_SECRETS_KEY=correct-key-here" >> .env
 export LSH_SECRETS_KEY=correct-key-here
 
 # Try again
-lsh lib secrets sync
+lsh sync
 ```
 
 ### "Not in a git repository"
@@ -545,7 +545,7 @@ git init
 git remote add origin <url>
 
 # Or just use without git (standard namespace)
-lsh lib secrets sync  # Uses 'dev' instead of 'my-project_dev'
+lsh sync  # Uses 'dev' instead of 'my-project_dev'
 ```
 
 ### "Cloud secrets exist but key mismatch"
@@ -559,16 +559,16 @@ echo "LSH_SECRETS_KEY=original-key" >> .env
 export LSH_SECRETS_KEY=original-key
 
 # Now sync works
-lsh lib secrets sync
+lsh sync
 ```
 
 **Solution 2:** Reinitialize with your key (only if you're sure!)
 ```bash
 # Force push with your key
-lsh lib secrets push --env dev --force
+lsh push --env dev --force
 
 # Now sync works
-lsh lib secrets sync
+lsh sync
 ```
 
 ## FAQ
@@ -579,7 +579,7 @@ lsh lib secrets sync
 
 ### Q: Can I still use the old push/pull commands?
 
-**A:** Absolutely! `lsh lib secrets push` and `lsh lib secrets pull` still work exactly as before.
+**A:** Absolutely! `lsh push` and `lsh pull` still work exactly as before.
 
 ### Q: What if I want manual control?
 
@@ -589,8 +589,8 @@ lsh lib secrets sync
 
 **A:** Yes! Use `--file` flag:
 ```bash
-lsh lib secrets sync --file .env.production --env prod
-lsh lib secrets sync --file .env.staging --env staging
+lsh sync --file .env.production --env prod
+lsh sync --file .env.staging --env staging
 ```
 
 ### Q: What about secrets that aren't in .env?
@@ -613,14 +613,14 @@ lsh --version  # Should be 0.8.3 or higher
 
 If you're on v0.8.3+, the `--load` flag should work perfectly:
 ```bash
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 ```
 
 ## Summary
 
 Smart Sync makes secrets management effortless:
 
-- 🎯 **One command** - `lsh lib secrets sync` does everything
+- 🎯 **One command** - `lsh sync` does everything
 - 🔍 **Auto-detection** - Finds git repos, detects state
 - 🔐 **Auto-security** - Generates keys, adds to .gitignore
 - 🌍 **Repo-aware** - Namespaces by project automatically
@@ -631,22 +631,22 @@ Smart Sync makes secrets management effortless:
 **Before Smart Sync:**
 ```bash
 # 10+ commands to set up and sync
-lsh lib secrets key
+lsh key
 echo "LSH_SECRETS_KEY=..." >> .env
-lsh lib secrets push
+lsh push
 # ... on another machine
-lsh lib secrets pull
+lsh pull
 set -a; source .env; set +a
 ```
 
 **With Smart Sync:**
 ```bash
-lsh lib secrets sync
+lsh sync
 ```
 
 **With Smart Sync + Load:**
 ```bash
-eval "$(lsh lib secrets sync --load)"
+eval "$(lsh sync --load)"
 # Synced AND loaded! 🎉
 ```
 
@@ -655,7 +655,7 @@ That's it! 🎉
 ---
 
 **Next Steps:**
-- Try it: `cd your-project && lsh lib secrets sync`
+- Try it: `cd your-project && lsh sync`
 - Read: [SECRETS_GUIDE.md](./SECRETS_GUIDE.md) for full documentation
 - Cheat sheet: [SECRETS_QUICK_REFERENCE.md](./SECRETS_QUICK_REFERENCE.md)
 
