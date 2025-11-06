@@ -373,65 +373,260 @@ API_KEY=
       }
     });
 
-  // Set a specific secret value
+  // Set a specific secret value or batch upsert from stdin
   program
-    .command('set <key> <value>')
-    .description('Set a specific secret value in .env file')
+    .command('set [key] [value]')
+    .description('Set a specific secret value in .env file, or batch upsert from stdin (KEY=VALUE format)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('--stdin', 'Read KEY=VALUE pairs from stdin (one per line)')
     .action(async (key, value, options) => {
       try {
         const envPath = path.resolve(options.file);
 
-        // Validate key format
-        if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
-          console.error(`❌ Invalid key format: ${key}. Must be a valid environment variable name.`);
-          process.exit(1);
-        }
+        // Check if we should read from stdin
+        const isStdin = options.stdin || (!key && !value);
 
-        let content = '';
-        let found = false;
-
-        if (fs.existsSync(envPath)) {
-          content = fs.readFileSync(envPath, 'utf8');
-          const lines = content.split('\n');
-          const newLines: string[] = [];
-
-          for (const line of lines) {
-            if (line.trim().startsWith('#') || !line.trim()) {
-              newLines.push(line);
-              continue;
-            }
-
-            const match = line.match(/^([^=]+)=(.*)$/);
-            if (match && match[1].trim() === key) {
-              // Quote values with spaces or special characters
-              const needsQuotes = /[\s#]/.test(value);
-              const quotedValue = needsQuotes ? `"${value}"` : value;
-              newLines.push(`${key}=${quotedValue}`);
-              found = true;
-            } else {
-              newLines.push(line);
-            }
+        if (isStdin) {
+          // Batch mode: read from stdin
+          await batchSetSecrets(envPath);
+        } else {
+          // Single mode: set one key-value pair
+          if (!key || value === undefined) {
+            console.error('❌ Usage: lsh set <key> <value>');
+            console.error('   Or pipe input: printenv | lsh set');
+            console.error('   Or use stdin: lsh set --stdin < file.env');
+            process.exit(1);
           }
 
-          content = newLines.join('\n');
+          await setSingleSecret(envPath, key, value);
         }
-
-        // If key wasn't found, append it
-        if (!found) {
-          const needsQuotes = /[\s#]/.test(value);
-          const quotedValue = needsQuotes ? `"${value}"` : value;
-          content = content.trimRight() + `\n${key}=${quotedValue}\n`;
-        }
-
-        fs.writeFileSync(envPath, content, 'utf8');
-        console.log(`✅ Set ${key} in ${options.file}`);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to set secret:', err.message);
         process.exit(1);
       }
     });
+
+  /**
+   * Set a single secret value
+   */
+  async function setSingleSecret(envPath: string, key: string, value: string): Promise<void> {
+    // Validate key format
+    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+      console.error(`❌ Invalid key format: ${key}. Must be a valid environment variable name.`);
+      process.exit(1);
+    }
+
+    let content = '';
+    let found = false;
+
+    if (fs.existsSync(envPath)) {
+      content = fs.readFileSync(envPath, 'utf8');
+      const lines = content.split('\n');
+      const newLines: string[] = [];
+
+      for (const line of lines) {
+        if (line.trim().startsWith('#') || !line.trim()) {
+          newLines.push(line);
+          continue;
+        }
+
+        const match = line.match(/^([^=]+)=(.*)$/);
+        if (match && match[1].trim() === key) {
+          // Quote values with spaces or special characters
+          const needsQuotes = /[\s#]/.test(value);
+          const quotedValue = needsQuotes ? `"${value}"` : value;
+          newLines.push(`${key}=${quotedValue}`);
+          found = true;
+        } else {
+          newLines.push(line);
+        }
+      }
+
+      content = newLines.join('\n');
+    }
+
+    // If key wasn't found, append it
+    if (!found) {
+      const needsQuotes = /[\s#]/.test(value);
+      const quotedValue = needsQuotes ? `"${value}"` : value;
+      content = content.trimRight() + `\n${key}=${quotedValue}\n`;
+    }
+
+    fs.writeFileSync(envPath, content, 'utf8');
+    console.log(`✅ Set ${key}`);
+  }
+
+  /**
+   * Batch upsert secrets from stdin
+   */
+  async function batchSetSecrets(envPath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let inputData = '';
+      const stdin = process.stdin;
+
+      // Check if stdin is a TTY (interactive terminal)
+      if (stdin.isTTY) {
+        console.error('❌ No input provided. Please pipe data or use --stdin flag.');
+        console.error('');
+        console.error('Examples:');
+        console.error('  printenv | lsh set');
+        console.error('  lsh set --stdin < .env.backup');
+        console.error('  echo "API_KEY=secret123" | lsh set');
+        process.exit(1);
+      }
+
+      stdin.setEncoding('utf8');
+
+      stdin.on('data', (chunk) => {
+        inputData += chunk;
+      });
+
+      stdin.on('end', () => {
+        try {
+          const lines = inputData.split('\n').filter(line => line.trim());
+
+          if (lines.length === 0) {
+            console.error('❌ No valid KEY=VALUE pairs found in input');
+            process.exit(1);
+          }
+
+          // Read existing .env file
+          let content = '';
+          const existingKeys = new Map<string, string>();
+
+          if (fs.existsSync(envPath)) {
+            content = fs.readFileSync(envPath, 'utf8');
+            const existingLines = content.split('\n');
+
+            for (const line of existingLines) {
+              if (line.trim().startsWith('#') || !line.trim()) continue;
+              const match = line.match(/^([^=]+)=(.*)$/);
+              if (match) {
+                existingKeys.set(match[1].trim(), line);
+              }
+            }
+          }
+
+          const updates: Array<{ key: string; value: string; action: 'updated' | 'added' }> = [];
+          const errors: string[] = [];
+          const newKeys = new Map<string, string>();
+
+          // Parse input lines
+          for (const line of lines) {
+            const trimmed = line.trim();
+
+            // Skip comments and empty lines
+            if (trimmed.startsWith('#') || !trimmed) continue;
+
+            // Parse KEY=VALUE format
+            const match = trimmed.match(/^([^=]+)=(.*)$/);
+            if (!match) {
+              errors.push(`Invalid format: ${trimmed}`);
+              continue;
+            }
+
+            const key = match[1].trim();
+            let value = match[2].trim();
+
+            // Validate key format
+            if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+              errors.push(`Invalid key format: ${key}`);
+              continue;
+            }
+
+            // Remove surrounding quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.slice(1, -1);
+            }
+
+            // Track if this is an update or addition
+            const action = existingKeys.has(key) ? 'updated' : 'added';
+            updates.push({ key, value, action });
+            newKeys.set(key, value);
+          }
+
+          // Build new content
+          const newLines: string[] = [];
+          let hasContent = false;
+
+          if (fs.existsSync(envPath)) {
+            const existingLines = content.split('\n');
+
+            for (const line of existingLines) {
+              if (line.trim().startsWith('#') || !line.trim()) {
+                newLines.push(line);
+                continue;
+              }
+
+              const match = line.match(/^([^=]+)=(.*)$/);
+              if (match) {
+                const key = match[1].trim();
+                if (newKeys.has(key)) {
+                  // Update existing key
+                  const value = newKeys.get(key)!;
+                  const needsQuotes = /[\s#]/.test(value);
+                  const quotedValue = needsQuotes ? `"${value}"` : value;
+                  newLines.push(`${key}=${quotedValue}`);
+                  newKeys.delete(key); // Mark as processed
+                  hasContent = true;
+                } else {
+                  // Keep existing line
+                  newLines.push(line);
+                  hasContent = true;
+                }
+              } else {
+                newLines.push(line);
+              }
+            }
+          }
+
+          // Add new keys that weren't in the existing file
+          for (const [key, value] of newKeys.entries()) {
+            const needsQuotes = /[\s#]/.test(value);
+            const quotedValue = needsQuotes ? `"${value}"` : value;
+            if (hasContent) {
+              newLines.push(`${key}=${quotedValue}`);
+            } else {
+              newLines.push(`${key}=${quotedValue}`);
+              hasContent = true;
+            }
+          }
+
+          // Write updated content
+          let finalContent = newLines.join('\n');
+          if (hasContent && !finalContent.endsWith('\n')) {
+            finalContent += '\n';
+          }
+
+          fs.writeFileSync(envPath, finalContent, 'utf8');
+
+          // Report results
+          const added = updates.filter(u => u.action === 'added').length;
+          const updated = updates.filter(u => u.action === 'updated').length;
+
+          console.log(`✅ Batch upsert complete:`);
+          if (added > 0) console.log(`   Added: ${added} key(s)`);
+          if (updated > 0) console.log(`   Updated: ${updated} key(s)`);
+
+          if (errors.length > 0) {
+            console.log('');
+            console.log('⚠️  Skipped invalid entries:');
+            errors.forEach(err => console.log(`   ${err}`));
+          }
+
+          resolve();
+        } catch (error) {
+          reject(error);
+        }
+      });
+
+      stdin.on('error', (error) => {
+        reject(error);
+      });
+    });
+  }
 
   // Delete .env file with confirmation
   program

@@ -179,6 +179,38 @@ lsh pull --env staging  # for testing
 lsh pull --env prod     # for production debugging
 ```
 
+### 📝 Batch Upsert Secrets
+
+**New in v1.1.0:** Pipe environment variables directly into your `.env` file!
+
+```bash
+# Copy all current environment variables
+printenv | lsh set
+
+# Import from another .env file
+cat .env.backup | lsh set
+
+# Import specific variables
+printenv | grep "^AWS_" | lsh set
+
+# Merge multiple sources
+cat .env.base .env.local | lsh set
+
+# From file with --stdin flag
+lsh set --stdin < .env.production
+
+# Single key-value still works
+lsh set API_KEY sk_live_12345
+lsh set DATABASE_URL postgres://localhost/db
+```
+
+**Features:**
+- ✅ Automatic upsert (updates existing, adds new)
+- ✅ Preserves comments and formatting
+- ✅ Handles quoted values
+- ✅ Validates key names
+- ✅ Shows summary of changes
+
 ## Secrets Commands
 
 | Command | Description |
@@ -192,6 +224,10 @@ lsh pull --env prod     # for production debugging
 | `lsh delete` | Delete .env file (with confirmation) |
 | `lsh sync` | Smart sync (auto-setup and sync) |
 | `lsh status` | Get detailed secrets status |
+| `lsh get <key>` | Get a specific secret value |
+| `lsh set <key> <value>` | Set a single secret value |
+| `printenv \| lsh set` | Batch upsert from stdin (pipe) |
+| `lsh set --stdin < file` | Batch upsert from file |
 
 See the complete guide: [SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)
 
