@@ -104,6 +104,34 @@ lsh sync  # Stored as: app1_dev
 
 cd ~/repos/app2
 lsh sync  # Stored as: app2_dev (separate!)
+
+# See what's tracked in the current directory
+lsh info
+```
+
+**Example `lsh info` output:**
+```
+📍 Current Directory Context
+
+📁 Git Repository:
+   Name: myapp
+   Branch: main
+
+🔐 Environment Tracking:
+   Base environment: dev
+   Cloud storage name: myapp_dev
+   Namespace: myapp
+   ℹ️  Repo-based isolation enabled
+
+📄 Local .env File:
+   Keys: 12
+   Has encryption key: ✅
+
+☁️  Cloud Storage:
+   Environment: myapp_dev
+   Keys stored: 12
+   Last updated: 11/6/2025, 10:15:23 PM
+   Key matches: ✅
 ```
 
 No more conflicts between projects using the same environment names!
@@ -223,7 +251,8 @@ lsh set DATABASE_URL postgres://localhost/db
 | `lsh create` | Create new .env file |
 | `lsh delete` | Delete .env file (with confirmation) |
 | `lsh sync` | Smart sync (auto-setup and sync) |
-| `lsh status` | Get detailed secrets status |
+| `lsh status` | Get detailed secrets status (JSON) |
+| `lsh info` | Show current context and tracked environment |
 | `lsh get <key>` | Get a specific secret value |
 | `lsh set <key> <value>` | Set a single secret value |
 | `printenv \| lsh set` | Batch upsert from stdin (pipe) |
