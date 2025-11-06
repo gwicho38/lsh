@@ -8,6 +8,7 @@ import SecretsManager from '../../lib/secrets-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
+import { getGitRepoInfo } from '../../lib/git-utils.js';
 
 export async function init_secrets(program: Command) {
   // Push secrets to cloud
@@ -285,6 +286,118 @@ API_KEY=
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to get status:', err.message);
+        process.exit(1);
+      }
+    });
+
+  // Info command - show relevant context information
+  program
+    .command('info')
+    .description('Show current directory context and tracked environment')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-e, --env <name>', 'Environment name', 'dev')
+    .action(async (options) => {
+      try {
+        const gitInfo = getGitRepoInfo();
+        const manager = new SecretsManager();
+        const envPath = path.resolve(options.file);
+
+        console.log('\n📍 Current Directory Context\n');
+
+        // Git Repository Info
+        if (gitInfo.isGitRepo) {
+          console.log('📁 Git Repository:');
+          console.log(`   Root: ${gitInfo.rootPath || 'unknown'}`);
+          console.log(`   Name: ${gitInfo.repoName || 'unknown'}`);
+          if (gitInfo.currentBranch) {
+            console.log(`   Branch: ${gitInfo.currentBranch}`);
+          }
+          if (gitInfo.remoteUrl) {
+            console.log(`   Remote: ${gitInfo.remoteUrl}`);
+          }
+        } else {
+          console.log('📁 Not in a git repository');
+        }
+
+        console.log('');
+
+        // Environment Tracking
+        console.log('🔐 Environment Tracking:');
+
+        // Show the effective environment name used for cloud storage
+        const effectiveEnv = gitInfo.repoName
+          ? `${gitInfo.repoName}_${options.env}`
+          : options.env;
+
+        console.log(`   Base environment: ${options.env}`);
+        console.log(`   Cloud storage name: ${effectiveEnv}`);
+
+        if (gitInfo.repoName) {
+          console.log(`   Namespace: ${gitInfo.repoName}`);
+          console.log('   ℹ️  Repo-based isolation enabled');
+        } else {
+          console.log('   Namespace: (none - not in git repo)');
+          console.log('   ⚠️  No isolation - shared environment name');
+        }
+
+        console.log('');
+
+        // Local File Status
+        console.log('📄 Local .env File:');
+        if (fs.existsSync(envPath)) {
+          const content = fs.readFileSync(envPath, 'utf8');
+          const lines = content.split('\n').filter(line => {
+            const trimmed = line.trim();
+            return trimmed && !trimmed.startsWith('#') && trimmed.includes('=');
+          });
+
+          console.log(`   Path: ${envPath}`);
+          console.log(`   Keys: ${lines.length}`);
+          console.log(`   Size: ${Math.round(content.length / 1024 * 10) / 10} KB`);
+
+          // Check for encryption key
+          const hasKey = content.includes('LSH_SECRETS_KEY=');
+          console.log(`   Has encryption key: ${hasKey ? '✅' : '❌'}`);
+        } else {
+          console.log(`   Path: ${envPath}`);
+          console.log('   Status: ❌ Not found');
+        }
+
+        console.log('');
+
+        // Cloud Status
+        console.log('☁️  Cloud Storage:');
+        try {
+          const status = await manager.status(options.file, options.env);
+
+          if (status.cloudExists) {
+            console.log(`   Environment: ${effectiveEnv}`);
+            console.log(`   Keys stored: ${status.cloudKeys}`);
+            console.log(`   Last updated: ${status.cloudModified ? new Date(status.cloudModified).toLocaleString() : 'unknown'}`);
+
+            if (status.keyMatches !== undefined) {
+              console.log(`   Key matches: ${status.keyMatches ? '✅' : '❌ MISMATCH'}`);
+            }
+          } else {
+            console.log(`   Environment: ${effectiveEnv}`);
+            console.log('   Status: ❌ Not synced yet');
+          }
+        } catch (_error) {
+          console.log('   Status: ⚠️  Unable to check (Supabase not configured)');
+        }
+
+        console.log('');
+
+        // Quick Actions
+        console.log('💡 Quick Actions:');
+        console.log(`   Push:  lsh push --env ${options.env}`);
+        console.log(`   Pull:  lsh pull --env ${options.env}`);
+        console.log(`   Sync:  lsh sync --env ${options.env}`);
+
+        console.log('');
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to get info:', err.message);
         process.exit(1);
       }
     });
