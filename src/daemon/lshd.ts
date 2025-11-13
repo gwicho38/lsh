@@ -124,8 +124,8 @@ export class LSHJobDaemon extends EventEmitter {
 
     this.log('INFO', 'Starting LSH Job Daemon');
 
-    // Write PID file
-    await fs.promises.writeFile(this.config.pidFile, process.pid.toString());
+    // Write PID file with secure permissions (mode 0o600 = rw-------)
+    await fs.promises.writeFile(this.config.pidFile, process.pid.toString(), { mode: 0o600 });
 
     this.isRunning = true;
     this.startJobScheduler();
