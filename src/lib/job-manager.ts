@@ -471,7 +471,8 @@ export class JobManager extends BaseJobManager {
         return serializable;
       });
 
-      fs.writeFileSync(this.persistenceFile, JSON.stringify(jobs, null, 2));
+      // Write with secure permissions (mode 0o600 = rw-------)
+      fs.writeFileSync(this.persistenceFile, JSON.stringify(jobs, null, 2), { mode: 0o600 });
     } catch (error) {
       this.logger.error('Failed to persist jobs', error as Error);
     }

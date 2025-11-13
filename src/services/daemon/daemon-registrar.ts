@@ -8,6 +8,7 @@ import { BaseCommandRegistrar } from '../../lib/base-command-registrar.js';
 import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { getPlatformPaths } from '../../lib/platform-utils.js';
 
 const execAsync = promisify(exec);
 
@@ -59,8 +60,8 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       description: 'Start the daemon',
       action: async () => {
         const { spawn } = await import('child_process');
-        const socketPath = `/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`;
-        const daemonProcess = spawn('node', ['dist/daemon/lshd.js', 'start', socketPath], {
+        const platformPaths = getPlatformPaths('lsh');
+        const daemonProcess = spawn('node', ['dist/daemon/lshd.js', 'start', platformPaths.socketPath], {
           detached: true,
           stdio: 'ignore'
         });
