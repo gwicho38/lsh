@@ -13,11 +13,11 @@ export interface DaemonClientConfig {
     exitOnError?: boolean;
 }
 /**
- * Default socket path for the daemon
+ * Default socket path for the daemon (cross-platform)
  */
 export declare function getDefaultSocketPath(): string;
 /**
- * Get default user ID
+ * Get default user ID (cross-platform)
  */
 export declare function getDefaultUserId(): string;
 /**

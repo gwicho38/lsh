@@ -1,4 +1,3 @@
-import React from 'react';
 export declare const Divider: {
     ({ title, width, padding, titlePadding, titleColor, dividerChar }: {
         title: string | null;
@@ -7,7 +6,7 @@ export declare const Divider: {
         titlePadding: number;
         titleColor: string;
         dividerChar: string;
-    }): React.JSX.Element;
+    }): any;
     defaultProps: {
         title: string;
         width: number;
