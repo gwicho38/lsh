@@ -28,7 +28,8 @@ export function formatMessage(
   let result = template;
   for (const [key, value] of Object.entries(vars)) {
     const placeholder = `\${${key}}`;
-    result = result.replace(new RegExp(placeholder.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), String(value));
+    // Use replaceAll with literal string to avoid regex escaping complexity
+    result = result.replaceAll(placeholder, String(value));
   }
   return result;
 }
