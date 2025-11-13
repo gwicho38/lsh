@@ -11,6 +11,7 @@ import DatabasePersistence from './database-persistence.js';
 import { createLogger } from './logger.js';
 import { JobSpec } from './job-manager.js';
 import { ShellJob } from './database-schema.js';
+import { getPlatformPaths } from './platform-utils.js';
 
 export interface DaemonMessage {
   command: string;
@@ -94,8 +95,13 @@ export class DaemonClient extends EventEmitter {
 
   constructor(socketPath?: string, userId?: string) {
     super();
-    // Use user-specific socket path if not provided
-    this.socketPath = socketPath || `/tmp/lsh-job-daemon-${process.env.USER || 'default'}.sock`;
+    // Use cross-platform socket path if not provided
+    if (!socketPath) {
+      const platformPaths = getPlatformPaths('lsh');
+      this.socketPath = platformPaths.socketPath;
+    } else {
+      this.socketPath = socketPath;
+    }
     this.userId = userId;
     this.sessionId = `lsh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 

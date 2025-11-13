@@ -4,6 +4,7 @@
  */
 
 import DaemonClient from './daemon-client.js';
+import { getPlatformPaths } from './platform-utils.js';
 
 /**
  * Configuration for daemon client operations
@@ -16,17 +17,19 @@ export interface DaemonClientConfig {
 }
 
 /**
- * Default socket path for the daemon
+ * Default socket path for the daemon (cross-platform)
  */
 export function getDefaultSocketPath(): string {
-  return `/tmp/lsh-job-daemon-${process.env.USER || 'user'}.sock`;
+  const platformPaths = getPlatformPaths('lsh');
+  return platformPaths.socketPath;
 }
 
 /**
- * Get default user ID
+ * Get default user ID (cross-platform)
  */
 export function getDefaultUserId(): string {
-  return process.env.USER || 'user';
+  const platformPaths = getPlatformPaths('lsh');
+  return platformPaths.user;
 }
 
 /**
