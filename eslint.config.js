@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import lshPlugin from './eslint-plugin-lsh/index.js';
 
 export default [
   {
@@ -66,6 +67,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
+      'lsh': lshPlugin,
     },
     rules: {
       ...js.configs.recommended.rules,
@@ -83,6 +85,20 @@ export default [
       'no-duplicate-imports': 'error',
       'no-unused-expressions': 'error',
       'prefer-const': 'error',
+      // Custom LSH rules
+      'lsh/no-hardcoded-strings': ['error', {
+        minLength: 3,
+        allowTemplateStrings: true,
+        constantsPaths: ['/constants/', '/eslint-plugin-lsh/'],
+        allowedStrings: [
+          // Common JS/TS literals that are OK
+          'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS',
+          'utf8', 'utf-8', 'ascii', 'base64', 'hex', 'binary',
+          'localhost',
+          // File extensions
+          '.js', '.ts', '.tsx', '.json', '.md',
+        ]
+      }],
     },
   },
   {
@@ -104,6 +120,7 @@ export default [
     rules: {
       'no-console': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      'lsh/no-hardcoded-strings': 'off', // Allow hard-coded strings in tests
     },
   },
   {
