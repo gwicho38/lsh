@@ -1,0 +1,15 @@
+{
+  "name": "eslint-plugin-lsh",
+  "version": "1.0.0",
+  "description": "Custom ESLint rules for LSH project",
+  "main": "index.js",
+  "type": "module",
+  "keywords": [
+    "eslint",
+    "eslintplugin",
+    "eslint-plugin",
+    "lsh"
+  ],
+  "author": "LSH Team",
+  "license": "MIT"
+}
