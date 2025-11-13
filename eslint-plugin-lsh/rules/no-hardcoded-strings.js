@@ -15,6 +15,8 @@
  * - Type annotations
  */
 
+import path from 'path';
+
 export default {
   meta: {
     type: 'problem',
@@ -59,7 +61,7 @@ export default {
     ],
     messages: {
       hardcodedString:
-        'Hard-coded string "{{string}}" detected. Import from constants file instead.',
+        'Hard-coded string "{{string}}" detected. Import from constants file instead (e.g., ERRORS, PATHS, ENV_VARS from \'./constants/index.js\').',
       hardcodedStringWithSuggestion:
         'Hard-coded string "{{string}}" detected. Consider using {{suggestion}} from constants.',
     },
@@ -73,10 +75,16 @@ export default {
     const constantsPaths = options.constantsPaths || ['/constants/'];
 
     // Check if current file is in constants directory or test file
-    const filename = context.getFilename();
-    const isConstantsFile = constantsPaths.some((path) =>
-      filename.includes(path)
-    );
+    // Use path.normalize for cross-platform compatibility
+    const filename = path.normalize(context.getFilename());
+    const normalizedConstantsPaths = constantsPaths.map(p => path.normalize(p));
+
+    const isConstantsFile = normalizedConstantsPaths.some((constPath) => {
+      // Handle both absolute and relative paths, case-insensitive on Windows
+      const normalizedPath = constPath.replace(/^\//, '');
+      return filename.toLowerCase().includes(normalizedPath.toLowerCase());
+    });
+
     const isTestFile =
       filename.includes('__tests__') ||
       filename.includes('.test.') ||
@@ -120,7 +128,8 @@ export default {
       /^(utf8|utf-8|ascii|base64|hex|binary)$/i,
     ];
 
-    function isAllowedString(value) {
+    // Convert function declarations to expressions to avoid block-scoped issues
+    const isAllowedString = (value) => {
       // Check if in allowed list
       if (allowedStrings.has(value)) {
         return true;
@@ -133,9 +142,9 @@ export default {
 
       // Check against allowed patterns
       return ALLOWED_PATTERNS.some((pattern) => pattern.test(value));
-    }
+    };
 
-    function isInImportOrExport(node) {
+    const isInImportOrExport = (node) => {
       let parent = node.parent;
       while (parent) {
         if (
@@ -149,9 +158,9 @@ export default {
         parent = parent.parent;
       }
       return false;
-    }
+    };
 
-    function isInTypeAnnotation(node) {
+    const isInTypeAnnotation = (node) => {
       let parent = node.parent;
       while (parent) {
         if (
@@ -164,17 +173,17 @@ export default {
         parent = parent.parent;
       }
       return false;
-    }
+    };
 
-    function isPropertyKey(node) {
+    const isPropertyKey = (node) => {
       return (
         node.parent &&
         node.parent.type === 'Property' &&
         node.parent.key === node
       );
-    }
+    };
 
-    function checkString(node, value) {
+    const checkString = (node, value) => {
       // Skip if string is allowed
       if (isAllowedString(value)) {
         return;
@@ -195,7 +204,7 @@ export default {
         return;
       }
 
-      // Report the hard-coded string
+      // Report the hard-coded string with improved message
       context.report({
         node,
         messageId: 'hardcodedString',
@@ -203,17 +212,25 @@ export default {
           string: value.length > 50 ? value.substring(0, 47) + '...' : value,
         },
       });
-    }
+    };
 
     return {
       // Track imports from constants
       ImportDeclaration(node) {
         if (
-          constantsPaths.some((path) => node.source.value.includes('constants'))
+          constantsPaths.some((constPath) => node.source.value.includes('constants'))
         ) {
           node.specifiers.forEach((spec) => {
+            // Handle all import specifier types
             if (spec.type === 'ImportSpecifier') {
+              // Named import: import { ERRORS } from './constants'
               hasConstantsImport.add(spec.imported.name);
+            } else if (spec.type === 'ImportDefaultSpecifier') {
+              // Default import: import constants from './constants'
+              hasConstantsImport.add(spec.local.name);
+            } else if (spec.type === 'ImportNamespaceSpecifier') {
+              // Namespace import: import * as constants from './constants'
+              hasConstantsImport.add(spec.local.name);
             }
           });
         }

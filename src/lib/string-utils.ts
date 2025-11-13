@@ -26,7 +26,11 @@ export function formatMessage(
   vars: Record<string, string | number | boolean>
 ): string {
   let result = template;
-  for (const [key, value] of Object.entries(vars)) {
+  // Sort keys by length (longest first) to prevent overlapping variable name issues
+  // Example: if we have both 'id' and 'jobId', we want to replace 'jobId' first
+  const sortedEntries = Object.entries(vars).sort((a, b) => b[0].length - a[0].length);
+
+  for (const [key, value] of sortedEntries) {
     const placeholder = `\${${key}}`;
     // Use replaceAll with literal string to avoid regex escaping complexity
     result = result.replaceAll(placeholder, String(value));
@@ -57,12 +61,21 @@ export function formatPath(
 ): string {
   let result = pathTemplate;
   const pattern = /\$\{([^}]+)\}/g;
-  const matches = pathTemplate.matchAll(pattern);
+  const matches = Array.from(pathTemplate.matchAll(pattern));
 
+  // Process matches to collect unique variable names and their values
+  const replacements = new Map<string, string>();
   for (const match of matches) {
     const varName = match[1];
-    const value = process.env[varName] || fallbacks[varName] || '';
-    result = result.replace(match[0], value);
+    if (!replacements.has(match[0])) {
+      const value = process.env[varName] || fallbacks[varName] || '';
+      replacements.set(match[0], value);
+    }
+  }
+
+  // Replace all occurrences of each placeholder
+  for (const [placeholder, value] of replacements) {
+    result = result.replaceAll(placeholder, value);
   }
 
   return result;
@@ -83,6 +96,11 @@ export function formatPath(
  * ```
  */
 export function truncate(str: string, maxLength: number = 50, ellipsis: string = '...'): string {
+  // Validate that maxLength is greater than ellipsis length
+  if (maxLength < ellipsis.length) {
+    throw new Error(`maxLength (${maxLength}) must be greater than or equal to ellipsis length (${ellipsis.length})`);
+  }
+
   if (str.length <= maxLength) {
     return str;
   }
