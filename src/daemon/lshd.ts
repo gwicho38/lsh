@@ -12,7 +12,6 @@ import * as _os from 'os';
 import * as net from 'net';
 import { EventEmitter } from 'events';
 import JobManager, { JobSpec } from '../lib/job-manager.js';
-import { LSHApiServer, ApiConfig as _ApiConfig } from './api-server.js';
 import { validateCommand } from '../lib/command-validator.js';
 import { validateEnvironment, printValidationResults } from '../lib/env-validator.js';
 import { createLogger } from '../lib/logger.js';
@@ -60,7 +59,6 @@ export class LSHJobDaemon extends EventEmitter {
   private logStream?: fs.WriteStream;
   private ipcServer?: net.Server; // Unix socket server for communication
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
-  private apiServer?: LSHApiServer; // API server instance
   private logger = createLogger('LSHJobDaemon');
 
   constructor(config?: Partial<DaemonConfig>) {
@@ -130,23 +128,6 @@ export class LSHJobDaemon extends EventEmitter {
     this.startJobScheduler();
     this.startIPCServer();
 
-    // Start API server if enabled
-    if (this.config.apiEnabled) {
-      try {
-        this.apiServer = new LSHApiServer(this, {
-          port: this.config.apiPort,
-          apiKey: this.config.apiKey,
-          enableWebhooks: this.config.enableWebhooks,
-          webhookEndpoints: this.config.webhookEndpoints
-        });
-        await this.apiServer.start();
-        this.log('INFO', `API Server started on port ${this.config.apiPort}`);
-      } catch (error) {
-        const err = error as Error;
-        this.log('ERROR', `Failed to start API server: ${err.message}`);
-      }
-    }
-
     // Setup cleanup handlers
     this.setupSignalHandlers();
 
@@ -165,12 +146,6 @@ export class LSHJobDaemon extends EventEmitter {
     this.log('INFO', 'Stopping LSH Job Daemon');
 
     this.isRunning = false;
-
-    // Stop API server if running
-    if (this.apiServer) {
-      await this.apiServer.stop();
-      this.log('INFO', 'API Server stopped');
-    }
 
     if (this.checkTimer) {
       clearInterval(this.checkTimer);
