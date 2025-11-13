@@ -43,7 +43,6 @@ export declare class LSHJobDaemon extends EventEmitter {
     private logStream?;
     private ipcServer?;
     private lastRunTimes;
-    private apiServer?;
     private logger;
     constructor(config?: Partial<DaemonConfig>);
     /**

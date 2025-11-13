@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
  * LSH CLI Entry Point
- * Supports interactive mode and script execution
+ * Simple, cross-platform encrypted secrets manager
  */
 export {};

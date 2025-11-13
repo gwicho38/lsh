@@ -12,11 +12,11 @@ import * as _os from 'os';
 import * as net from 'net';
 import { EventEmitter } from 'events';
 import JobManager, { JobSpec } from '../lib/job-manager.js';
-import { LSHApiServer, ApiConfig as _ApiConfig } from './api-server.js';
 import { validateCommand } from '../lib/command-validator.js';
 import { validateEnvironment, printValidationResults } from '../lib/env-validator.js';
 import { createLogger } from '../lib/logger.js';
 import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
+import { getPlatformPaths } from '../lib/platform-utils.js';
 
 const execAsync = promisify(exec);
 
@@ -58,21 +58,22 @@ export class LSHJobDaemon extends EventEmitter {
   private isRunning = false;
   private checkTimer?: NodeJS.Timeout;
   private logStream?: fs.WriteStream;
-  private ipcServer?: net.Server; // Unix socket server for communication
+  private ipcServer?: net.Server; // IPC server (Unix sockets or Named Pipes)
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
-  private apiServer?: LSHApiServer; // API server instance
   private logger = createLogger('LSHJobDaemon');
 
   constructor(config?: Partial<DaemonConfig>) {
     super();
 
-    const userSuffix = process.env.USER ? `-${process.env.USER}` : '';
-    
+    // Use cross-platform paths
+    const platformPaths = getPlatformPaths('lsh');
+    const jobsFilePath = path.join(platformPaths.tmpDir, `lsh-daemon-jobs-${platformPaths.user}.json`);
+
     this.config = {
-      pidFile: `/tmp/lsh-job-daemon${userSuffix}.pid`,
-      logFile: `/tmp/lsh-job-daemon${userSuffix}.log`,
-      jobsFile: `/tmp/lsh-daemon-jobs${userSuffix}.json`,
-      socketPath: `/tmp/lsh-job-daemon${userSuffix}.sock`,
+      pidFile: platformPaths.pidFile,
+      logFile: platformPaths.logFile,
+      jobsFile: jobsFilePath,
+      socketPath: platformPaths.socketPath,
       checkInterval: 2000, // 2 seconds for better cron accuracy
       maxLogSize: 10 * 1024 * 1024, // 10MB
       autoRestart: true,
@@ -123,29 +124,12 @@ export class LSHJobDaemon extends EventEmitter {
 
     this.log('INFO', 'Starting LSH Job Daemon');
 
-    // Write PID file
-    await fs.promises.writeFile(this.config.pidFile, process.pid.toString());
+    // Write PID file with secure permissions (mode 0o600 = rw-------)
+    await fs.promises.writeFile(this.config.pidFile, process.pid.toString(), { mode: 0o600 });
 
     this.isRunning = true;
     this.startJobScheduler();
     this.startIPCServer();
-
-    // Start API server if enabled
-    if (this.config.apiEnabled) {
-      try {
-        this.apiServer = new LSHApiServer(this, {
-          port: this.config.apiPort,
-          apiKey: this.config.apiKey,
-          enableWebhooks: this.config.enableWebhooks,
-          webhookEndpoints: this.config.webhookEndpoints
-        });
-        await this.apiServer.start();
-        this.log('INFO', `API Server started on port ${this.config.apiPort}`);
-      } catch (error) {
-        const err = error as Error;
-        this.log('ERROR', `Failed to start API server: ${err.message}`);
-      }
-    }
 
     // Setup cleanup handlers
     this.setupSignalHandlers();
@@ -165,12 +149,6 @@ export class LSHJobDaemon extends EventEmitter {
     this.log('INFO', 'Stopping LSH Job Daemon');
 
     this.isRunning = false;
-
-    // Stop API server if running
-    if (this.apiServer) {
-      await this.apiServer.stop();
-      this.log('INFO', 'API Server stopped');
-    }
 
     if (this.checkTimer) {
       clearInterval(this.checkTimer);
