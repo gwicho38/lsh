@@ -1,0 +1,485 @@
+/**
+ * LSH Doctor Command
+ * Health check and troubleshooting utility
+ */
+
+import { Command } from 'commander';
+import chalk from 'chalk';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import ora from 'ora';
+import { getPlatformPaths, getPlatformInfo } from '../lib/platform-utils.js';
+
+interface HealthCheck {
+  name: string;
+  status: 'pass' | 'warn' | 'fail' | 'skip';
+  message: string;
+  details?: string;
+}
+
+/**
+ * Register doctor commands
+ */
+export function registerDoctorCommands(program: Command): void {
+  program
+    .command('doctor')
+    .description('Health check and troubleshooting')
+    .option('-v, --verbose', 'Show detailed information')
+    .option('--json', 'Output results as JSON')
+    .action(async (options) => {
+      try {
+        await runHealthCheck(options);
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red('\n❌ Health check failed:'), err.message);
+        process.exit(1);
+      }
+    });
+}
+
+/**
+ * Run comprehensive health check
+ */
+async function runHealthCheck(options: { verbose?: boolean; json?: boolean }): Promise<void> {
+  if (!options.json) {
+    console.log(chalk.bold.cyan('\n🏥 LSH Health Check'));
+    console.log(chalk.gray('━'.repeat(50)));
+    console.log('');
+  }
+
+  const checks: HealthCheck[] = [];
+
+  // Platform check
+  checks.push(await checkPlatform(options.verbose));
+
+  // .env file check
+  checks.push(await checkEnvFile(options.verbose));
+
+  // Encryption key check
+  checks.push(await checkEncryptionKey(options.verbose));
+
+  // Storage backend check
+  const storageChecks = await checkStorageBackend(options.verbose);
+  checks.push(...storageChecks);
+
+  // Git repository check
+  checks.push(await checkGitRepository(options.verbose));
+
+  // Permissions check
+  checks.push(await checkPermissions(options.verbose));
+
+  // Display results
+  if (options.json) {
+    console.log(JSON.stringify({ checks, summary: getSummary(checks) }, null, 2));
+  } else {
+    displayResults(checks);
+    displayRecommendations(checks);
+  }
+
+  // Exit code based on results
+  const hasFailed = checks.some(c => c.status === 'fail');
+  if (hasFailed) {
+    process.exit(1);
+  }
+}
+
+/**
+ * Check platform compatibility
+ */
+async function checkPlatform(verbose?: boolean): Promise<HealthCheck> {
+  const info = getPlatformInfo();
+
+  const supportedPlatforms = ['win32', 'darwin', 'linux'];
+  const isSupported = supportedPlatforms.includes(info.platform);
+
+  return {
+    name: 'Platform Compatibility',
+    status: isSupported ? 'pass' : 'warn',
+    message: isSupported
+      ? `${info.platformName} ${info.arch} (${info.release})`
+      : `${info.platformName} may not be fully supported`,
+    details: verbose ? `Node ${info.nodeVersion}` : undefined,
+  };
+}
+
+/**
+ * Check .env file
+ */
+async function checkEnvFile(verbose?: boolean): Promise<HealthCheck> {
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    await fs.access(envPath);
+
+    const content = await fs.readFile(envPath, 'utf-8');
+    const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#'));
+
+    return {
+      name: '.env File',
+      status: 'pass',
+      message: 'Found and readable',
+      details: verbose ? `${lines.length} variables configured` : undefined,
+    };
+  } catch {
+    return {
+      name: '.env File',
+      status: 'fail',
+      message: 'Not found',
+      details: 'Run "lsh init" to create configuration',
+    };
+  }
+}
+
+/**
+ * Check encryption key
+ */
+async function checkEncryptionKey(verbose?: boolean): Promise<HealthCheck> {
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    const content = await fs.readFile(envPath, 'utf-8');
+
+    const match = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
+    if (!match) {
+      return {
+        name: 'Encryption Key',
+        status: 'fail',
+        message: 'LSH_SECRETS_KEY not found in .env',
+        details: 'Run "lsh key" to generate a key',
+      };
+    }
+
+    const key = match[1].trim();
+    if (key.length < 32) {
+      return {
+        name: 'Encryption Key',
+        status: 'warn',
+        message: 'Key is too short (< 32 characters)',
+        details: 'Generate a stronger key with "lsh key"',
+      };
+    }
+
+    // Check if it's a valid hex string
+    const isHex = /^[0-9a-fA-F]+$/.test(key);
+    const expectedLength = 64; // 32 bytes in hex
+
+    if (isHex && key.length === expectedLength) {
+      return {
+        name: 'Encryption Key',
+        status: 'pass',
+        message: 'Valid (AES-256 compatible)',
+        details: verbose ? `${key.length} characters (hex)` : undefined,
+      };
+    }
+
+    return {
+      name: 'Encryption Key',
+      status: 'pass',
+      message: 'Present',
+      details: verbose ? `${key.length} characters` : undefined,
+    };
+  } catch {
+    return {
+      name: 'Encryption Key',
+      status: 'fail',
+      message: 'Could not verify',
+      details: 'Ensure .env file exists and is readable',
+    };
+  }
+}
+
+/**
+ * Check storage backend configuration
+ */
+async function checkStorageBackend(verbose?: boolean): Promise<HealthCheck[]> {
+  const checks: HealthCheck[] = [];
+
+  try {
+    const envPath = path.join(process.cwd(), '.env');
+    const content = await fs.readFile(envPath, 'utf-8');
+
+    const supabaseUrl = content.match(/^SUPABASE_URL=(.+)$/m)?.[1]?.trim();
+    const supabaseKey = content.match(/^SUPABASE_ANON_KEY=(.+)$/m)?.[1]?.trim();
+    const databaseUrl = content.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
+    const storageMode = content.match(/^LSH_STORAGE_MODE=(.+)$/m)?.[1]?.trim();
+
+    // Determine storage type
+    if (storageMode === 'local') {
+      checks.push({
+        name: 'Storage Backend',
+        status: 'pass',
+        message: 'Local encryption mode',
+        details: 'No cloud sync available',
+      });
+    } else if (supabaseUrl && supabaseKey) {
+      checks.push({
+        name: 'Storage Backend',
+        status: 'pass',
+        message: 'Supabase configured',
+      });
+
+      // Test connection
+      const connectionCheck = await testSupabaseConnection(supabaseUrl, supabaseKey, verbose);
+      checks.push(connectionCheck);
+    } else if (databaseUrl) {
+      checks.push({
+        name: 'Storage Backend',
+        status: 'pass',
+        message: 'PostgreSQL configured',
+        details: verbose ? maskConnectionString(databaseUrl) : undefined,
+      });
+    } else {
+      checks.push({
+        name: 'Storage Backend',
+        status: 'warn',
+        message: 'No storage backend configured',
+        details: 'Secrets will only be stored locally',
+      });
+    }
+  } catch {
+    checks.push({
+      name: 'Storage Backend',
+      status: 'fail',
+      message: 'Could not verify configuration',
+    });
+  }
+
+  return checks;
+}
+
+/**
+ * Test Supabase connection
+ */
+async function testSupabaseConnection(
+  url: string,
+  key: string,
+  verbose?: boolean
+): Promise<HealthCheck> {
+  try {
+    const supabase = createClient(url, key);
+
+    // Try to query (404 for missing table is fine - means connection works)
+    const { error } = await supabase.from('lsh_secrets').select('count').limit(0);
+
+    if (!error || error.code === 'PGRST116' || error.message.includes('relation')) {
+      return {
+        name: 'Supabase Connection',
+        status: 'pass',
+        message: 'Connected successfully',
+        details: verbose ? url : undefined,
+      };
+    }
+
+    return {
+      name: 'Supabase Connection',
+      status: 'warn',
+      message: `Connection warning: ${error.message}`,
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      name: 'Supabase Connection',
+      status: 'fail',
+      message: 'Cannot connect',
+      details: err.message,
+    };
+  }
+}
+
+/**
+ * Check if in git repository
+ */
+async function checkGitRepository(verbose?: boolean): Promise<HealthCheck> {
+  try {
+    const gitPath = path.join(process.cwd(), '.git');
+    await fs.access(gitPath);
+
+    // Check .gitignore
+    const gitignorePath = path.join(process.cwd(), '.gitignore');
+    try {
+      const gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
+      const ignoresEnv = gitignoreContent.includes('.env');
+
+      return {
+        name: 'Git Repository',
+        status: ignoresEnv ? 'pass' : 'warn',
+        message: ignoresEnv ? 'Git repository with .env in .gitignore' : 'Git repository found',
+        details: !ignoresEnv ? '.env not in .gitignore - secrets may be committed!' : undefined,
+      };
+    } catch {
+      return {
+        name: 'Git Repository',
+        status: 'warn',
+        message: 'Git repository found, no .gitignore',
+        details: 'Add .env to .gitignore to prevent committing secrets',
+      };
+    }
+  } catch {
+    return {
+      name: 'Git Repository',
+      status: 'skip',
+      message: 'Not in a git repository',
+    };
+  }
+}
+
+/**
+ * Check file permissions
+ */
+async function checkPermissions(verbose?: boolean): Promise<HealthCheck> {
+  try {
+    const paths = getPlatformPaths();
+
+    // Check if we can write to temp directory
+    const testFile = path.join(paths.tmpDir, `lsh-test-${Date.now()}`);
+    await fs.writeFile(testFile, 'test');
+    await fs.unlink(testFile);
+
+    // Check if we can create config directory
+    await fs.mkdir(paths.configDir, { recursive: true });
+
+    return {
+      name: 'File Permissions',
+      status: 'pass',
+      message: 'Can read/write required directories',
+      details: verbose ? `tmp: ${paths.tmpDir}, config: ${paths.configDir}` : undefined,
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      name: 'File Permissions',
+      status: 'fail',
+      message: 'Permission denied',
+      details: err.message,
+    };
+  }
+}
+
+/**
+ * Mask sensitive parts of connection string
+ */
+function maskConnectionString(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.password) {
+      parsed.password = '***';
+    }
+    return parsed.toString();
+  } catch {
+    return url.replace(/:[^:@]+@/, ':***@');
+  }
+}
+
+/**
+ * Get summary statistics
+ */
+function getSummary(checks: HealthCheck[]): {
+  total: number;
+  passed: number;
+  warned: number;
+  failed: number;
+  skipped: number;
+} {
+  return {
+    total: checks.length,
+    passed: checks.filter(c => c.status === 'pass').length,
+    warned: checks.filter(c => c.status === 'warn').length,
+    failed: checks.filter(c => c.status === 'fail').length,
+    skipped: checks.filter(c => c.status === 'skip').length,
+  };
+}
+
+/**
+ * Display results in terminal
+ */
+function displayResults(checks: HealthCheck[]): void {
+  for (const check of checks) {
+    let icon: string;
+    let color: (text: string) => string;
+
+    switch (check.status) {
+      case 'pass':
+        icon = '✅';
+        color = chalk.green;
+        break;
+      case 'warn':
+        icon = '⚠️ ';
+        color = chalk.yellow;
+        break;
+      case 'fail':
+        icon = '❌';
+        color = chalk.red;
+        break;
+      case 'skip':
+        icon = '⊝ ';
+        color = chalk.gray;
+        break;
+    }
+
+    console.log(icon, color(check.name), '-', check.message);
+    if (check.details) {
+      console.log(chalk.gray(`   ${check.details}`));
+    }
+  }
+
+  console.log('');
+}
+
+/**
+ * Display recommendations
+ */
+function displayRecommendations(checks: HealthCheck[]): void {
+  const summary = getSummary(checks);
+  const hasIssues = summary.failed > 0 || summary.warned > 0;
+
+  console.log(chalk.gray('━'.repeat(50)));
+  console.log('');
+
+  if (!hasIssues) {
+    console.log(chalk.bold.green('🎉 All checks passed!'));
+    console.log('');
+    console.log(chalk.gray('Your LSH installation is healthy and ready to use.'));
+  } else {
+    console.log(chalk.bold.yellow('💡 Recommendations:'));
+    console.log('');
+
+    const failedChecks = checks.filter(c => c.status === 'fail');
+    const warnedChecks = checks.filter(c => c.status === 'warn');
+
+    if (failedChecks.length > 0) {
+      console.log(chalk.red(`❌ ${failedChecks.length} critical issue(s):`));
+      failedChecks.forEach(c => {
+        console.log(chalk.gray(`   • ${c.name}: ${c.details || c.message}`));
+      });
+      console.log('');
+    }
+
+    if (warnedChecks.length > 0) {
+      console.log(chalk.yellow(`⚠️  ${warnedChecks.length} warning(s):`));
+      warnedChecks.forEach(c => {
+        console.log(chalk.gray(`   • ${c.name}: ${c.details || c.message}`));
+      });
+      console.log('');
+    }
+
+    // Specific recommendations
+    if (checks.some(c => c.name === '.env File' && c.status === 'fail')) {
+      console.log(chalk.cyan('👉 Run: lsh init'));
+    }
+
+    if (checks.some(c => c.name === 'Supabase Connection' && c.status === 'fail')) {
+      console.log(chalk.cyan('👉 Verify Supabase credentials in .env'));
+      console.log(chalk.gray('   Check SUPABASE_URL and SUPABASE_ANON_KEY'));
+    }
+
+    if (checks.some(c => c.name === 'Git Repository' && c.status === 'warn')) {
+      console.log(chalk.cyan('👉 Add .env to .gitignore:'));
+      console.log(chalk.gray('   echo ".env" >> .gitignore'));
+    }
+  }
+
+  console.log('');
+  console.log(chalk.gray('Need help? Visit https://github.com/gwicho38/lsh'));
+  console.log('');
+}
+
+export default registerDoctorCommands;

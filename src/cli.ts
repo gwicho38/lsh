@@ -7,6 +7,8 @@
 
 import { Command } from 'commander';
 import selfCommand from './commands/self.js';
+import { registerInitCommands } from './commands/init.js';
+import { registerDoctorCommands } from './commands/doctor.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_supabase } from './services/supabase/supabase.js';
 import { init_cron } from './services/cron/cron.js';
@@ -141,6 +143,10 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 
 // Register async command modules
 (async () => {
+  // Essential onboarding commands
+  registerInitCommands(program);
+  registerDoctorCommands(program);
+
   // Secrets management (primary feature)
   await init_secrets(program);
 
