@@ -109,8 +109,7 @@ async function checkPlatform(verbose?: boolean): Promise<HealthCheck> {
 async function checkEnvFile(verbose?: boolean): Promise<HealthCheck> {
   try {
     const envPath = path.join(process.cwd(), '.env');
-    await fs.access(envPath);
-
+    // Read file directly without access check to avoid TOCTOU race condition
     const content = await fs.readFile(envPath, 'utf-8');
     const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#'));
 
@@ -291,7 +290,8 @@ async function testSupabaseConnection(
 async function checkGitRepository(verbose?: boolean): Promise<HealthCheck> {
   try {
     const gitPath = path.join(process.cwd(), '.git');
-    await fs.access(gitPath);
+    // Use stat instead of access to avoid TOCTOU race condition
+    await fs.stat(gitPath);
 
     // Check .gitignore
     const gitignorePath = path.join(process.cwd(), '.gitignore');
@@ -329,9 +329,14 @@ async function checkPermissions(verbose?: boolean): Promise<HealthCheck> {
   try {
     const paths = getPlatformPaths();
 
-    // Check if we can write to temp directory
-    const testFile = path.join(paths.tmpDir, `lsh-test-${Date.now()}`);
-    await fs.writeFile(testFile, 'test');
+    // Check if we can write to temp directory with secure permissions
+    // Use crypto.randomBytes for secure random filename
+    const crypto = await import('crypto');
+    const randomSuffix = crypto.randomBytes(8).toString('hex');
+    const testFile = path.join(paths.tmpDir, `lsh-test-${randomSuffix}`);
+
+    // Create file with secure permissions (mode 0o600 = rw-------)
+    await fs.writeFile(testFile, 'test', { mode: 0o600 });
     await fs.unlink(testFile);
 
     // Check if we can create config directory

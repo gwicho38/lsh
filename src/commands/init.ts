@@ -138,8 +138,7 @@ async function runSetupWizard(options: {
 async function checkExistingConfig(): Promise<boolean> {
   try {
     const envPath = path.join(process.cwd(), '.env');
-    await fs.access(envPath);
-
+    // Read file directly without access check to avoid TOCTOU race condition
     const content = await fs.readFile(envPath, 'utf-8');
     return content.includes('LSH_SECRETS_KEY') ||
            content.includes('SUPABASE_URL') ||
