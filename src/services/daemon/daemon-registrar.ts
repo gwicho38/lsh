@@ -11,6 +11,13 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+/**
+ * Type helper to extract options from commander command
+ */
+interface CommandOptions {
+  [key: string]: unknown;
+}
+
 export class DaemonCommandRegistrar extends BaseCommandRegistrar {
   constructor() {
     super('Daemon');
@@ -37,8 +44,12 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
         this.logInfo('Daemon Status:');
         this.logInfo(`  PID: ${status.pid}`);
         this.logInfo(`  Uptime: ${Math.floor(status.uptime / 60)} minutes`);
-        this.logInfo(`  Memory: ${Math.round(status.memoryUsage.heapUsed / 1024 / 1024)} MB`);
-        this.logInfo(`  Jobs: ${status.jobs.total} total, ${status.jobs.running} running`);
+        if (status.memoryUsage) {
+          this.logInfo(`  Memory: ${Math.round(status.memoryUsage.heapUsed / 1024 / 1024)} MB`);
+        }
+        if (status.jobs) {
+          this.logInfo(`  Jobs: ${status.jobs.total} total, ${status.jobs.running} running`);
+        }
       }
     });
 
@@ -108,8 +119,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-f, --force', description: 'Force cleanup without prompts', defaultValue: false }
       ],
-      action: async (options) => {
-        await this.cleanupDaemon(options.force);
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
+        await this.cleanupDaemon(opts.force as boolean);
       }
     });
   }
@@ -137,15 +149,17 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
         { flags: '--timeout <timeout>', description: 'Timeout in milliseconds', defaultValue: '0' },
         { flags: '--no-database-sync', description: 'Disable database synchronization' }
       ],
-      action: async (options) => {
-        if (!options.name || !options.command || (!options.schedule && !options.interval)) {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
+        if (!opts.name || !opts.command || (!opts.schedule && !opts.interval)) {
           throw new Error('Missing required options: --name, --command, and (--schedule or --interval)');
         }
 
-        const jobSpec = this.createJobSpec(options);
+        const jobSpec = this.createJobSpec(opts as unknown as import('../../lib/base-command-registrar.js').JobSpecOptions);
 
         await this.withDaemonAction(async (client) => {
-          await client.createDatabaseCronJob(jobSpec);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await client.createDatabaseCronJob(jobSpec as any);
         });
 
         this.logSuccess('Job created successfully:');
@@ -164,9 +178,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-f, --filter <filter>', description: 'Filter jobs by status' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const jobs = await this.withDaemonAction(async (client) => {
-          return await client.listJobs(options.filter ? { status: options.filter } : undefined);
+          return await client.listJobs(opts.filter ? { status: opts.filter as string[] } : undefined);
         });
 
         this.displayJobs(jobs);
@@ -178,9 +193,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       name: 'start',
       description: 'Start a job',
       arguments: [{ name: 'jobId', required: true }],
-      action: async (jobId) => {
+      action: async (jobId: unknown) => {
         await this.withDaemonAction(async (client) => {
-          await client.startJob(jobId);
+          await client.startJob(jobId as string);
         });
 
         this.logSuccess(`Job ${jobId} started`);
@@ -192,9 +207,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       name: 'trigger',
       description: 'Trigger a job to run immediately (bypass schedule)',
       arguments: [{ name: 'jobId', required: true }],
-      action: async (jobId) => {
+      action: async (jobId: unknown) => {
         const result = await this.withDaemonAction(
-          async (client) => await client.triggerJob(jobId),
+          async (client) => await client.triggerJob(jobId as string),
           { forUser: true }
         );
 
@@ -213,9 +228,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-f, --filter <status>', description: 'Filter by job status', defaultValue: 'created' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         await this.withDaemonAction(async (client) => {
-          const jobs = await client.listJobs({ status: options.filter });
+          const jobs = await client.listJobs({ status: opts.filter as string[] });
 
           this.logInfo(`Triggering ${jobs.length} jobs...`);
 
@@ -228,8 +244,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 const preview = result.output.substring(0, 100);
                 this.logInfo(`  Output: ${preview}${result.output.length > 100 ? '...' : ''}`);
               }
-            } catch (error: any) {
-              this.logError(`  ${job.name} failed: ${error.message || error}`);
+            } catch (error) {
+              const err = error as Error;
+              this.logError(`  ${job.name} failed: ${err.message || err}`);
             }
           }
         }, { forUser: true });
@@ -246,12 +263,13 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-s, --signal <signal>', description: 'Signal to send', defaultValue: 'SIGTERM' }
       ],
-      action: async (jobId, options) => {
+      action: async (jobId: unknown, options: unknown) => {
+        const opts = options as CommandOptions;
         await this.withDaemonAction(async (client) => {
-          await client.stopJob(jobId, options.signal);
+          await client.stopJob(jobId as string, opts.signal as string);
         });
 
-        this.logSuccess(`Job ${jobId} stopped with signal ${options.signal}`);
+        this.logSuccess(`Job ${jobId} stopped with signal ${opts.signal}`);
       }
     });
 
@@ -263,9 +281,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-f, --force', description: 'Force removal', defaultValue: false }
       ],
-      action: async (jobId, options) => {
+      action: async (jobId: unknown, options: unknown) => {
+        const opts = options as CommandOptions;
         await this.withDaemonAction(async (client) => {
-          await client.removeJob(jobId, options.force);
+          await client.removeJob(jobId as string, opts.force as boolean);
         });
 
         this.logSuccess(`Job ${jobId} removed`);
@@ -277,9 +296,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       name: 'info',
       description: 'Get job information',
       arguments: [{ name: 'jobId', required: true }],
-      action: async (jobId) => {
+      action: async (jobId: unknown) => {
         const job = await this.withDaemonAction(async (client) => {
-          return await client.getJob(jobId);
+          return await client.getJob(jobId as string);
         });
 
         if (!job) {
@@ -315,9 +334,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
         { flags: '-j, --job-id <jobId>', description: 'Filter by job ID' },
         { flags: '-l, --limit <limit>', description: 'Limit number of results', defaultValue: '50' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const jobs = await this.withDaemonAction(
-          async (client) => await client.getJobHistory(options.jobId, parseInt(options.limit)),
+          async (client) => await client.getJobHistory(opts.jobId as string | undefined, parseInt(opts.limit as string)),
           { forUser: true, requireRunning: false }
         );
 
@@ -342,9 +362,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-j, --job-id <jobId>', description: 'Filter by job ID' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const stats = await this.withDaemonAction(
-          async (client) => await client.getJobStatistics(options.jobId),
+          async (client) => await client.getJobStatistics(opts.jobId as string | undefined),
           { forUser: true, requireRunning: false }
         );
 
@@ -367,9 +388,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       options: [
         { flags: '-l, --limit <limit>', description: 'Number of recent executions to show', defaultValue: '5' }
       ],
-      action: async (options) => {
+      action: async (options: unknown) => {
+        const opts = options as CommandOptions;
         const jobs = await this.withDaemonAction(
-          async (client) => await client.getJobHistory(undefined, parseInt(options.limit)),
+          async (client) => await client.getJobHistory(undefined, parseInt(opts.limit as string)),
           { forUser: true }
         );
 
@@ -417,13 +439,13 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
           }
 
           this.logInfo(`Job Status: ${job.name} (${jobId})`);
-          const cmdPreview = job.command.substring(0, 100);
-          this.logInfo(`   Command: ${cmdPreview}${job.command.length > 100 ? '...' : ''}`);
+          const cmdPreview = (job.command as string).substring(0, 100);
+          this.logInfo(`   Command: ${cmdPreview}${(job.command as string).length > 100 ? '...' : ''}`);
           this.logInfo(`   Status: ${job.status}`);
-          this.logInfo(`   Schedule: ${this.formatSchedule(job.schedule)}`);
+          this.logInfo(`   Schedule: ${this.formatSchedule(job.schedule as import('../../lib/base-command-registrar.js').ScheduleConfig | undefined)}`);
           this.logInfo(`   Priority: ${job.priority}`);
 
-          const executions = await client.getJobHistory(jobId, 5);
+          const executions = await client.getJobHistory(jobId as string, 5);
 
           if (executions.length > 0) {
             this.logInfo(`\nRecent Executions (${executions.length} records):`);
@@ -474,8 +496,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
               } as any, dbStatus);
               this.logSuccess(`  Synced ${job.name} (${job.id}) - status: ${dbStatus}`);
               syncCount++;
-            } catch (error: any) {
-              this.logError(`  Failed to sync ${job.name}: ${error.message}`);
+            } catch (error) {
+              const err = error as Error;
+              this.logError(`  Failed to sync ${job.name}: ${err.message}`);
             }
           }
 
@@ -549,8 +572,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 fs.unlinkSync(socket);
                 this.logSuccess(`Removed: ${socket}`);
               }
-            } catch (error: any) {
-              this.logWarning(`Could not remove: ${socket} (${error.message})`);
+            } catch (error) {
+              const err = error as Error;
+              this.logWarning(`Could not remove: ${socket} (${err.message})`);
             }
           }
         } else {
@@ -576,8 +600,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 fs.unlinkSync(pidFile);
                 this.logSuccess(`Removed: ${pidFile}`);
               }
-            } catch (error: any) {
-              this.logWarning(`Could not remove: ${pidFile} (${error.message})`);
+            } catch (error) {
+              const err = error as Error;
+              this.logWarning(`Could not remove: ${pidFile} (${err.message})`);
             }
           }
         } else {
@@ -627,8 +652,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
         this.logInfo('   lsh daemon cleanup --force');
       }
 
-    } catch (error: any) {
-      throw new Error(`Cleanup failed: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      throw new Error(`Cleanup failed: ${err.message}`);
     }
   }
 }

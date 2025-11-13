@@ -73,9 +73,9 @@ lsh api start --port 3030                     # Start API server
 ### Daemon Operations
 ```bash
 # Start/stop daemon
-lsh lib daemon start
-lsh lib daemon status
-lsh lib daemon stop
+lsh daemon start
+lsh daemon status
+lsh daemon stop
 
 # API server (requires LSH_API_ENABLED=true)
 LSH_API_ENABLED=true LSH_API_PORT=3030 node dist/daemon/lshd.js start
@@ -92,16 +92,16 @@ LSH's primary focus is encrypted secrets management. When working on features, a
 
 ```bash
 # Generate encryption key
-lsh lib secrets key
+lsh key
 
 # Push secrets to cloud
-lsh lib secrets push --env dev
+lsh push --env dev
 
 # Pull on another machine
-lsh lib secrets pull --env dev
+lsh pull --env dev
 
 # Schedule automatic rotation
-lsh lib cron add --name "rotate-keys" \
+lsh cron add --name "rotate-keys" \
   --schedule "0 0 1 * *" \
   --command "./examples/secrets-rotation/rotate-api-keys.sh"
 ```
@@ -129,8 +129,8 @@ When adding features, consider secrets integration:
 
 ### Secrets Documentation
 
-- **[SECRETS_GUIDE.md](SECRETS_GUIDE.md)** - Complete user guide
-- **[SECRETS_QUICK_REFERENCE.md](SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
+- **[SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)** - Complete user guide
+- **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
 - **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
 - **[examples/secrets-rotation/](examples/secrets-rotation/)** - Rotation examples and tutorials
 
@@ -349,3 +349,4 @@ Key libraries:
 - **zx** - Shell scripting utilities
 
 For full dependency list see `package.json`.
+- every time you push a new releasre it should be a new release in github and a new version published to npm

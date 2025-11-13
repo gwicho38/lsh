@@ -17,7 +17,7 @@ export interface CloudConfigOptions {
 
 export interface ConfigValue {
   key: string;
-  value: any;
+  value: unknown;
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   description?: string;
   isDefault: boolean;
@@ -75,7 +75,7 @@ export class CloudConfigManager {
    */
   private saveLocalConfig(): void {
     try {
-      const config: Record<string, any> = {};
+      const config: Record<string, unknown> = {};
       this.localConfig.forEach((configValue, key) => {
         config[key] = configValue.value;
       });
@@ -89,7 +89,7 @@ export class CloudConfigManager {
   /**
    * Get type of a value
    */
-  private getType(value: any): ConfigValue['type'] {
+  private getType(value: unknown): ConfigValue['type'] {
     if (typeof value === 'string') return 'string';
     if (typeof value === 'number') return 'number';
     if (typeof value === 'boolean') return 'boolean';
@@ -143,7 +143,7 @@ export class CloudConfigManager {
   /**
    * Parse configuration value based on type
    */
-  private parseConfigValue(value: string, type: ConfigValue['type']): any {
+  private parseConfigValue(value: string, type: ConfigValue['type']): unknown {
     try {
       switch (type) {
         case 'string':
@@ -167,7 +167,7 @@ export class CloudConfigManager {
   /**
    * Serialize configuration value to string
    */
-  private serializeConfigValue(value: any, type: ConfigValue['type']): string {
+  private serializeConfigValue(value: unknown, type: ConfigValue['type']): string {
     switch (type) {
       case 'string':
       case 'number':
@@ -238,7 +238,7 @@ export class CloudConfigManager {
   /**
    * Get configuration value
    */
-  public get(key: string, defaultValue?: any): any {
+  public get(key: string, defaultValue?: unknown): unknown {
     const configValue = this.localConfig.get(key);
     return configValue ? configValue.value : defaultValue;
   }
@@ -246,7 +246,7 @@ export class CloudConfigManager {
   /**
    * Set configuration value
    */
-  public set(key: string, value: any, description?: string): void {
+  public set(key: string, value: unknown, description?: string): void {
     const configValue: ConfigValue = {
       key,
       value,
@@ -320,7 +320,7 @@ export class CloudConfigManager {
    * Export configuration to JSON
    */
   public export(): string {
-    const config: Record<string, any> = {};
+    const config: Record<string, unknown> = {};
     this.localConfig.forEach((configValue, key) => {
       config[key] = configValue.value;
     });

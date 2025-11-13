@@ -7,7 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import DatabasePersistence from './database-persistence.js';
-import { createLogger } from './logger.js';
+import { createLogger, LogLevel } from './logger.js';
+import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo } from './git-utils.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -23,12 +24,18 @@ export interface Secret {
 export class SecretsManager {
   private persistence: DatabasePersistence;
   private encryptionKey: string;
+  private gitInfo?: GitRepoInfo;
 
-  constructor(userId?: string, encryptionKey?: string) {
+  constructor(userId?: string, encryptionKey?: string, detectGit: boolean = true) {
     this.persistence = new DatabasePersistence(userId);
 
     // Use provided key or generate from machine ID + user
     this.encryptionKey = encryptionKey || this.getDefaultEncryptionKey();
+
+    // Auto-detect git repo context
+    if (detectGit) {
+      this.gitInfo = getGitRepoInfo();
+    }
   }
 
   /**
@@ -83,18 +90,19 @@ export class SecretsManager {
       decrypted += decipher.final('utf8');
 
       return decrypted;
-    } catch (error: any) {
-      if (error.message.includes('bad decrypt') || error.message.includes('wrong final block length')) {
+    } catch (error) {
+      const err = error as Error;
+      if (err.message.includes('bad decrypt') || err.message.includes('wrong final block length')) {
         throw new Error(
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
           '  3. Generate a shared key with: lsh secrets key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + error.message
+          '\nOriginal error: ' + err.message
         );
       }
-      throw error;
+      throw err;
     }
   }
 
@@ -145,11 +153,68 @@ export class SecretsManager {
   }
 
   /**
+   * Detect destructive changes (filled secrets becoming empty)
+   */
+  private detectDestructiveChanges(
+    cloudSecrets: Record<string, string>,
+    localSecrets: Record<string, string>
+  ): Array<{ key: string; cloudValue: string; localValue: string }> {
+    const destructive: Array<{ key: string; cloudValue: string; localValue: string }> = [];
+
+    for (const [key, cloudValue] of Object.entries(cloudSecrets)) {
+      // Only check if key exists in local AND cloud has a non-empty value
+      if (key in localSecrets && cloudValue.trim() !== '') {
+        const localValue = localSecrets[key];
+        // If cloud had value but local is now empty/whitespace - this is destructive
+        if (localValue.trim() === '') {
+          destructive.push({ key, cloudValue, localValue });
+        }
+      }
+    }
+
+    return destructive;
+  }
+
+  /**
+   * Format error message for destructive changes
+   */
+  private formatDestructiveChangesError(
+    destructive: Array<{ key: string; cloudValue: string; localValue: string }>
+  ): string {
+    const count = destructive.length;
+    const plural = count === 1 ? 'secret' : 'secrets';
+
+    let message = `⚠️  Destructive change detected!\n\n`;
+    message += `${count} ${plural} would go from filled → empty:\n\n`;
+
+    for (const { key, cloudValue } of destructive) {
+      // Mask the value for security (show first 4-5 chars)
+      const preview = cloudValue.length > 5
+        ? cloudValue.substring(0, 5) + '****'
+        : '****';
+      message += `  • ${key}: "${preview}" → "" (empty)\n`;
+    }
+
+    message += `\nThis is likely unintentional and could break your application.\n\n`;
+    message += `To proceed anyway, use the --force flag:\n`;
+    message += `  lsh lib secrets push --force\n`;
+    message += `  lsh lib secrets sync --force\n`;
+
+    return message;
+  }
+
+  /**
    * Push local .env to Supabase
    */
-  async push(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
+  async push(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     if (!fs.existsSync(envFilePath)) {
       throw new Error(`File not found: ${envFilePath}`);
+    }
+
+    // Validate filename pattern for custom files
+    const filename = path.basename(envFilePath);
+    if (filename !== '.env' && !filename.startsWith('.env.')) {
+      throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
     }
 
     // Warn if using default key
@@ -165,12 +230,59 @@ export class SecretsManager {
     const content = fs.readFileSync(envFilePath, 'utf8');
     const env = this.parseEnvFile(content);
 
+    // Check for destructive changes unless force is true
+    if (!force) {
+      try {
+        const jobs = await this.persistence.getActiveJobs();
+        const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const secretsJobs = jobs
+          .filter(j => {
+            return j.command === 'secrets_sync' &&
+                   j.job_id.includes(environment) &&
+                   j.job_id.includes(safeFilename);
+          })
+          .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+
+        if (secretsJobs.length > 0) {
+          const latestSecret = secretsJobs[0];
+          if (latestSecret.output) {
+            try {
+              const decrypted = this.decrypt(latestSecret.output);
+              const cloudEnv = this.parseEnvFile(decrypted);
+
+              const destructive = this.detectDestructiveChanges(cloudEnv, env);
+              if (destructive.length > 0) {
+                throw new Error(this.formatDestructiveChangesError(destructive));
+              }
+            } catch (error) {
+      const err = error as Error;
+              // If decryption fails, it's a key mismatch - let it proceed
+              // (will fail later with proper error)
+              if (!err.message.includes('Destructive change')) {
+                // Only ignore decryption errors, re-throw destructive change errors
+                throw err;
+              }
+              throw err;
+            }
+          }
+        }
+      } catch (error) {
+      const err = error as Error;
+        // Re-throw any errors (including destructive change errors)
+        if (err.message.includes('Destructive change') || err.message.includes('Decryption failed')) {
+          throw err;
+        }
+        // Ignore other errors (like connection issues) and proceed
+      }
+    }
+
     // Encrypt entire .env content
     const encrypted = this.encrypt(content);
 
-    // Store in Supabase (using job system for now)
+    // Include filename in job_id for tracking multiple .env files
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const secretData = {
-      job_id: `secrets_${environment}_${Date.now()}`,
+      job_id: `secrets_${environment}_${safeFilename}_${Date.now()}`,
       command: 'secrets_sync',
       status: 'completed',
       output: encrypted,
@@ -179,25 +291,37 @@ export class SecretsManager {
       working_directory: process.cwd(),
     };
 
-    await this.persistence.saveJob(secretData as any);
+    await this.persistence.saveJob(secretData as Parameters<typeof this.persistence.saveJob>[0]);
 
-    logger.info(`✅ Pushed ${Object.keys(env).length} secrets to Supabase`);
+    logger.info(`✅ Pushed ${Object.keys(env).length} secrets from ${filename} to Supabase`);
   }
 
   /**
    * Pull .env from Supabase
    */
   async pull(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
-    logger.info(`Pulling ${environment} secrets from Supabase...`);
+    // Validate filename pattern for custom files
+    const filename = path.basename(envFilePath);
+    if (filename !== '.env' && !filename.startsWith('.env.')) {
+      throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
+    }
 
-    // Get latest secrets
+    logger.info(`Pulling ${filename} (${environment}) from Supabase...`);
+
+    // Get latest secrets for this specific file
     const jobs = await this.persistence.getActiveJobs();
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const secretsJobs = jobs
-      .filter(j => j.command === 'secrets_sync' && j.job_id.includes(environment))
+      .filter(j => {
+        // Match secrets for this environment and filename
+        return j.command === 'secrets_sync' &&
+               j.job_id.includes(environment) &&
+               j.job_id.includes(safeFilename);
+      })
       .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
 
     if (secretsJobs.length === 0) {
-      throw new Error(`No secrets found for environment: ${environment}`);
+      throw new Error(`No secrets found for file '${filename}' in environment: ${environment}`);
     }
 
     const latestSecret = secretsJobs[0];
@@ -229,13 +353,66 @@ export class SecretsManager {
 
     const envs = new Set<string>();
     for (const job of secretsJobs) {
-      const match = job.job_id.match(/secrets_(.+?)_\d+/);
+      // Updated regex to handle new format with filename
+      const match = job.job_id.match(/secrets_([^_]+)_/);
       if (match) {
         envs.add(match[1]);
       }
     }
 
     return Array.from(envs).sort();
+  }
+
+  /**
+   * List all tracked .env files
+   */
+  async listAllFiles(): Promise<Array<{ filename: string; environment: string; updated: string }>> {
+    const jobs = await this.persistence.getActiveJobs();
+    const secretsJobs = jobs.filter(j => j.command === 'secrets_sync');
+
+    // Group by environment and filename to get latest of each
+    const fileMap = new Map<string, { filename: string; environment: string; updated: string }>();
+
+    for (const job of secretsJobs) {
+      // Parse job_id: secrets_${environment}_${safeFilename}_${timestamp}
+      const parts = job.job_id.split('_');
+      if (parts.length >= 3 && parts[0] === 'secrets') {
+        const environment = parts[1];
+
+        // Handle both old and new format
+        let filename = '.env';
+        if (parts.length >= 4) {
+          // New format with filename
+          const _timestamp = parts[parts.length - 1];
+          // Reconstruct filename from middle parts
+          const filenameParts = parts.slice(2, -1);
+          if (filenameParts.length > 0) {
+            // Convert underscores back to dots for the extension
+            filename = filenameParts.join('_');
+            // Fix the extension dots that were replaced
+            filename = filename.replace(/^env_/, '.env.');
+            if (filename === 'env') {
+              filename = '.env';
+            }
+          }
+        }
+
+        const key = `${environment}_${filename}`;
+        const existing = fileMap.get(key);
+
+        if (!existing || new Date(job.completed_at || job.started_at) > new Date(existing.updated)) {
+          fileMap.set(key, {
+            filename,
+            environment,
+            updated: new Date(job.completed_at || job.started_at).toLocaleString()
+          });
+        }
+      }
+    }
+
+    return Array.from(fileMap.values()).sort((a, b) =>
+      a.filename.localeCompare(b.filename) || a.environment.localeCompare(b.environment)
+    );
   }
 
   /**
@@ -325,12 +502,12 @@ export class SecretsManager {
             const env = this.parseEnvFile(decrypted);
             status.cloudKeys = Object.keys(env).length;
             status.keyMatches = true;
-          } catch (error: any) {
+          } catch (_error) {
             status.keyMatches = false;
           }
         }
       }
-    } catch (error: any) {
+    } catch (_error) {
       // Cloud check failed, likely no connection
     }
 
@@ -338,7 +515,396 @@ export class SecretsManager {
   }
 
   /**
-   * Sync command - check status and suggest actions
+   * Get repo-aware environment namespace
+   * Returns environment name with repo context if in a git repo
+   */
+  private getRepoAwareEnvironment(environment: string): string {
+    if (this.gitInfo?.repoName) {
+      return `${this.gitInfo.repoName}_${environment}`;
+    }
+    return environment;
+  }
+
+  /**
+   * Generate encryption key if not set
+   */
+  private async ensureEncryptionKey(): Promise<boolean> {
+    if (process.env.LSH_SECRETS_KEY) {
+      return true; // Key already set
+    }
+
+    logger.warn('⚠️  No encryption key found. Generating a new key...');
+
+    const key = crypto.randomBytes(32).toString('hex');
+
+    // Try to add to .env file
+    const envPath = path.join(process.cwd(), '.env');
+
+    try {
+      let content = '';
+
+      if (fs.existsSync(envPath)) {
+        content = fs.readFileSync(envPath, 'utf8');
+        if (!content.endsWith('\n')) {
+          content += '\n';
+        }
+      }
+
+      // Check if LSH_SECRETS_KEY already exists (but empty)
+      if (content.includes('LSH_SECRETS_KEY=')) {
+        content = content.replace(/LSH_SECRETS_KEY=.*$/m, `LSH_SECRETS_KEY=${key}`);
+      } else {
+        content += `\n# LSH Secrets Encryption Key (do not commit!)\nLSH_SECRETS_KEY=${key}\n`;
+      }
+
+      fs.writeFileSync(envPath, content, 'utf8');
+
+      // Set in current process
+      process.env.LSH_SECRETS_KEY = key;
+      this.encryptionKey = key;
+
+      logger.info('✅ Generated and saved encryption key to .env');
+      logger.info('💡 Load it now: export LSH_SECRETS_KEY=' + key.substring(0, 8) + '...');
+
+      return true;
+    } catch (error) {
+      const _err = error as Error;
+      logger.error(`Failed to save encryption key: ${_err.message}`);
+      logger.info('Please set it manually:');
+      logger.info(`export LSH_SECRETS_KEY=${key}`);
+      return false;
+    }
+  }
+
+  /**
+   * Create .env from .env.example if available
+   */
+  private async createEnvFromExample(envFilePath: string): Promise<boolean> {
+    const examplePath = hasEnvExample(process.cwd());
+
+    if (!examplePath) {
+      // Create minimal template
+      const template = `# Environment Configuration
+# Generated by LSH Secrets Manager
+
+# Application
+NODE_ENV=development
+
+# Database
+DATABASE_URL=
+
+# API Keys
+API_KEY=
+
+# LSH Secrets Encryption Key (auto-generated)
+LSH_SECRETS_KEY=${this.encryptionKey}
+
+# Add your environment variables below
+`;
+
+      try {
+        fs.writeFileSync(envFilePath, template, 'utf8');
+        logger.info(`✅ Created ${envFilePath} from template`);
+        return true;
+      } catch (error) {
+        const _err = error as Error;
+        logger.error(`Failed to create ${envFilePath}: ${_err.message}`);
+        return false;
+      }
+    }
+
+    // Copy from example
+    try {
+      const content = fs.readFileSync(examplePath, 'utf8');
+      let newContent = content;
+
+      // Add encryption key if not present
+      if (!content.includes('LSH_SECRETS_KEY')) {
+        newContent += `\n# LSH Secrets Encryption Key (auto-generated)\nLSH_SECRETS_KEY=${this.encryptionKey}\n`;
+      }
+
+      fs.writeFileSync(envFilePath, newContent, 'utf8');
+      logger.info(`✅ Created ${envFilePath} from ${path.basename(examplePath)}`);
+      return true;
+    } catch (error) {
+      const _err = error as Error;
+      logger.error(`Failed to create ${envFilePath}: ${_err.message}`);
+      return false;
+    }
+  }
+
+  /**
+   * Generate shell export commands for loading .env file
+   */
+  private generateExportCommands(envFilePath: string): string {
+    if (!fs.existsSync(envFilePath)) {
+      return '# No .env file found\n';
+    }
+
+    const content = fs.readFileSync(envFilePath, 'utf8');
+    const lines = content.split('\n');
+    const exports: string[] = [];
+
+    for (const line of lines) {
+      // Skip comments and empty lines
+      if (line.trim().startsWith('#') || !line.trim()) {
+        continue;
+      }
+
+      // Parse KEY=VALUE
+      const match = line.match(/^([^=]+)=(.*)$/);
+      if (match) {
+        const key = match[1].trim();
+        let value = match[2].trim();
+
+        // Remove quotes if present (we'll add them back for the export)
+        if ((value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+
+        // Escape special characters for shell
+        const escapedValue = value
+          .replace(/\\/g, '\\\\')
+          .replace(/"/g, '\\"')
+          .replace(/\$/g, '\\$')
+          .replace(/`/g, '\\`');
+
+        exports.push(`export ${key}="${escapedValue}"`);
+      }
+    }
+
+    return exports.join('\n') + '\n';
+  }
+
+  /**
+   * Smart sync command - automatically set up and synchronize secrets
+   * This is the new enhanced sync that does everything automatically
+   */
+  async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false, force: boolean = false): Promise<void> {
+    // In load mode, suppress all logger output to prevent zsh glob interpretation
+    // Save original level and restore at the end
+    const originalLogLevel = loadMode ? logger['config'].level : undefined;
+    if (loadMode) {
+      logger.setLevel(LogLevel.NONE);
+    }
+
+    try {
+      // Use repo-aware environment if in git repo
+      const effectiveEnv = this.getRepoAwareEnvironment(environment);
+      const displayEnv = this.gitInfo?.repoName ? `${this.gitInfo.repoName}/${environment}` : environment;
+
+      // In load mode, suppress all output except the final export commands
+      const out = loadMode ? () => {} : console.log;
+
+      out(`\n🔍 Smart sync for: ${displayEnv}\n`);
+
+    // Show git repo context if detected
+    if (this.gitInfo?.isGitRepo) {
+      out('📁 Git Repository:');
+      out(`   Repo: ${this.gitInfo.repoName || 'unknown'}`);
+      if (this.gitInfo.currentBranch) {
+        out(`   Branch: ${this.gitInfo.currentBranch}`);
+      }
+      out();
+    }
+
+    // Step 1: Ensure encryption key exists
+    if (!process.env.LSH_SECRETS_KEY) {
+      logger.info('🔑 No encryption key found...');
+      await this.ensureEncryptionKey();
+      out();
+    }
+
+    // Step 2: Ensure .gitignore includes .env
+    if (this.gitInfo?.isGitRepo) {
+      ensureEnvInGitignore(process.cwd());
+    }
+
+    // Step 3: Check current status
+    const status = await this.status(envFilePath, effectiveEnv);
+
+    out('📊 Current Status:');
+    out(`   Encryption key: ${status.keySet ? '✅' : '❌'}`);
+    out(`   Local ${envFilePath}: ${status.localExists ? `✅ (${status.localKeys} keys)` : '❌'}`);
+    out(`   Cloud storage: ${status.cloudExists ? `✅ (${status.cloudKeys} keys)` : '❌'}`);
+
+    if (status.cloudExists && status.keyMatches !== undefined) {
+      out(`   Key matches: ${status.keyMatches ? '✅' : '❌'}`);
+    }
+
+    out();
+
+    // Step 4: Determine action and execute if auto mode
+    let _action: 'push' | 'pull' | 'create-and-push' | 'in-sync' | 'key-mismatch' = 'in-sync';
+
+    if (status.cloudExists && status.keyMatches === false) {
+      _action = 'key-mismatch';
+      out('⚠️  Encryption key mismatch!');
+      out('   The local key does not match the cloud storage.');
+      out('   Please use the original key or push new secrets with:');
+      out(`   lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+      out();
+      return;
+    }
+
+    if (!status.localExists && !status.cloudExists) {
+      _action = 'create-and-push';
+      out('🆕 No secrets found locally or in cloud');
+      out('   Creating new .env file...');
+
+      if (autoExecute) {
+        await this.createEnvFromExample(envFilePath);
+        out('   Pushing to cloud...');
+        await this.push(envFilePath, effectiveEnv, force);
+        out();
+        out('✅ Setup complete! Edit your .env and run sync again to update.');
+      } else {
+        out('💡 Run: lsh lib secrets create && lsh lib secrets push');
+      }
+      out();
+
+      // Output export commands in load mode
+      if (loadMode && fs.existsSync(envFilePath)) {
+        console.log(this.generateExportCommands(envFilePath));
+      }
+      return;
+    }
+
+    if (status.localExists && !status.cloudExists) {
+      _action = 'push';
+      out('⬆️  Local .env exists but not in cloud');
+
+      if (autoExecute) {
+        out('   Pushing to cloud...');
+        await this.push(envFilePath, effectiveEnv, force);
+        out('✅ Secrets pushed to cloud!');
+      } else {
+        out(`💡 Run: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+      }
+      out();
+
+      // Output export commands in load mode
+      if (loadMode && fs.existsSync(envFilePath)) {
+        console.log(this.generateExportCommands(envFilePath));
+      }
+      return;
+    }
+
+    if (!status.localExists && status.cloudExists && status.keyMatches) {
+      _action = 'pull';
+      out('⬇️  Cloud secrets available but no local file');
+
+      if (autoExecute) {
+        out('   Pulling from cloud...');
+        await this.pull(envFilePath, effectiveEnv, false);
+        out('✅ Secrets pulled from cloud!');
+      } else {
+        out(`💡 Run: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+      }
+      out();
+
+      // Output export commands in load mode
+      if (loadMode && fs.existsSync(envFilePath)) {
+        console.log(this.generateExportCommands(envFilePath));
+      }
+      return;
+    }
+
+    if (status.localExists && status.cloudExists && status.keyMatches) {
+      if (status.localModified && status.cloudModified) {
+        const localNewer = status.localModified > status.cloudModified;
+        const timeDiff = Math.abs(status.localModified.getTime() - status.cloudModified.getTime());
+        const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+
+        // If difference is less than 1 minute, consider in sync
+        if (minutesDiff < 1) {
+          out('✅ Local and cloud are in sync!');
+          out();
+
+          if (!loadMode) {
+            this.showLoadInstructions(envFilePath);
+          } else if (fs.existsSync(envFilePath)) {
+            console.log(this.generateExportCommands(envFilePath));
+          }
+          return;
+        }
+
+        if (localNewer) {
+          _action = 'push';
+          out('⬆️  Local file is newer than cloud');
+          out(`   Local: ${status.localModified.toLocaleString()}`);
+          out(`   Cloud: ${status.cloudModified.toLocaleString()}`);
+
+          if (autoExecute) {
+            out('   Pushing to cloud...');
+            await this.push(envFilePath, effectiveEnv, force);
+            out('✅ Secrets synced to cloud!');
+          } else {
+            out(`💡 Run: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+          }
+        } else {
+          _action = 'pull';
+          out('⬇️  Cloud is newer than local file');
+          out(`   Local: ${status.localModified.toLocaleString()}`);
+          out(`   Cloud: ${status.cloudModified.toLocaleString()}`);
+
+          if (autoExecute) {
+            out('   Pulling from cloud (backup created)...');
+            await this.pull(envFilePath, effectiveEnv, false);
+            out('✅ Secrets synced from cloud!');
+          } else {
+            out(`💡 Run: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+          }
+        }
+
+        out();
+
+        if (!loadMode) {
+          this.showLoadInstructions(envFilePath);
+        } else if (fs.existsSync(envFilePath)) {
+          console.log(this.generateExportCommands(envFilePath));
+        }
+        return;
+      }
+    }
+
+      // Default: everything is in sync
+      out('✅ Secrets are synchronized!');
+      out();
+
+      if (!loadMode) {
+        this.showLoadInstructions(envFilePath);
+      } else if (fs.existsSync(envFilePath)) {
+        console.log(this.generateExportCommands(envFilePath));
+      }
+    } finally {
+      // Restore original logger level if it was changed
+      if (loadMode && originalLogLevel !== undefined) {
+        logger.setLevel(originalLogLevel);
+      }
+    }
+  }
+
+  /**
+   * Show instructions for loading secrets
+   */
+  private showLoadInstructions(envFilePath: string): void {
+    console.log('📝 To load secrets in your current shell:');
+    console.log();
+    console.log('   bash/zsh:');
+    console.log(`   set -a && source ${envFilePath} && set +a`);
+    console.log();
+    console.log('   fish:');
+    console.log(`   export (cat ${envFilePath} | grep -v '^#')`);
+    console.log();
+    console.log('   Or use lsh to load:');
+    console.log(`   eval "$(lsh get --all --export)"`);
+    console.log();
+  }
+
+  /**
+   * Sync command - check status and suggest actions (legacy, kept for compatibility)
    */
   async sync(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
     console.log(`\n🔍 Checking secrets status for environment: ${environment}\n`);
@@ -405,13 +971,15 @@ export class SecretsManager {
     if (status.localExists && status.keySet) {
       suggestions.push('');
       suggestions.push('📝 To load secrets in your current shell:');
-      suggestions.push(`   export $(cat ${envFilePath} | grep -v '^#' | xargs)`);
       suggestions.push('');
-      suggestions.push('   Or for safer loading (with quotes):');
-      suggestions.push(`   set -a; source ${envFilePath}; set +a`);
+      suggestions.push('   bash/zsh:');
+      suggestions.push(`   set -a && source ${envFilePath} && set +a`);
+      suggestions.push('');
+      suggestions.push('   fish:');
+      suggestions.push(`   export (cat ${envFilePath} | grep -v '^#')`);
       suggestions.push('');
       suggestions.push('💡 Add to your shell profile for auto-loading:');
-      suggestions.push(`   echo "set -a; source ${path.resolve(envFilePath)}; set +a" >> ~/.zshrc`);
+      suggestions.push(`   echo "set -a && source ${path.resolve(envFilePath)} && set +a" >> ~/.zshrc`);
     }
 
     // Display suggestions

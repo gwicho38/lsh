@@ -65,8 +65,9 @@ export class LshrcManager {
       console.log(`✅ Created ${this.lshrcPath}`);
 
       return true;
-    } catch (error: any) {
-      console.error(`Failed to initialize .lshrc: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`Failed to initialize .lshrc: ${err.message}`);
       return false;
     }
   }
@@ -99,6 +100,7 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
   /**
    * Source .lshrc commands
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public async source(_executor?: any): Promise<string[]> {
     if (!this.exists()) {
       return [];
@@ -120,8 +122,9 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
       }
 
       return commands;
-    } catch (error: any) {
-      console.error(`Failed to source .lshrc: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`Failed to source .lshrc: ${err.message}`);
       return [];
     }
   }
@@ -164,8 +167,9 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
       fs.writeFileSync(this.lshrcPath, content, 'utf8');
       console.log('✅ Auto-import enabled in .lshrc');
       return true;
-    } catch (error: any) {
-      console.error(`Failed to enable auto-import: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`Failed to enable auto-import: ${err.message}`);
       return false;
     }
   }
@@ -190,8 +194,9 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
       fs.writeFileSync(this.lshrcPath, content, 'utf8');
       console.log('✅ Auto-import disabled in .lshrc');
       return true;
-    } catch (error: any) {
-      console.error(`Failed to disable auto-import: ${error.message}`);
+    } catch (error) {
+      const err = error as Error;
+      console.error(`Failed to disable auto-import: ${err.message}`);
       return false;
     }
   }

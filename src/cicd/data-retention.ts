@@ -307,9 +307,9 @@ export class DataRetentionService {
       table: string;
       retentionDays: number;
       totalRecords: number;
-      oldestRecord: any;
-      newestRecord: any;
-      tableSize: any;
+      oldestRecord: string;
+      newestRecord: string;
+      tableSize: string;
       estimatedDeletions: number
     }> = [];
 

@@ -80,7 +80,9 @@ interface PipelineEvent {
   event_type: string;
   workflow_url: string;
   logs_url?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   artifacts?: any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata: any;
 }
 
@@ -109,6 +111,7 @@ function verifyGitHubSignature(payload: string, signature: string): boolean {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseGitHubWorkflowEvent(body: any): PipelineEvent | null {
   const { workflow_run, workflow_job, action } = body;
 
@@ -188,6 +191,7 @@ function verifyGitLabSignature(payload: string, signature: string): boolean {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseGitLabPipelineEvent(body: any): PipelineEvent | null {
   const { object_kind, object_attributes, project, user } = body;
 
@@ -262,6 +266,7 @@ function mapGitLabConclusion(status: string): PipelineEvent['conclusion'] {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseJenkinsEvent(body: any): PipelineEvent | null {
   const { name, url, build, timestamp } = body;
 
@@ -693,8 +698,9 @@ app.post('/auth/register', async (req: Request, res: Response) => {
     const user = await authService.register(email, password, name, role);
     const token = authService.generateToken(user);
     res.json({ user, token });
-  } catch (error: any) {
-    res.status(400).json({ error: error.message });
+  } catch (error) {
+    const err = error as Error;
+    res.status(400).json({ error: err.message });
   }
 });
 
@@ -703,8 +709,9 @@ app.post('/auth/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
     const result = await authService.login(email, password);
     res.json(result);
-  } catch (error: any) {
-    res.status(401).json({ error: error.message });
+  } catch (error) {
+    const err = error as Error;
+    res.status(401).json({ error: err.message });
   }
 });
 
@@ -716,8 +723,9 @@ app.post('/auth/api-key',
       const { name, permissions } = req.body;
       const apiKey = await authService.generateApiKey(req.user!.userId, name, permissions);
       res.json({ apiKey });
-    } catch (error: any) {
-      res.status(400).json({ error: error.message });
+    } catch (error) {
+      const err = error as Error;
+      res.status(400).json({ error: err.message });
     }
   }
 );

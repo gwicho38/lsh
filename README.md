@@ -19,12 +19,47 @@ Traditional secret management tools are either too complex, too expensive, or re
 
 ## Quick Start (30 seconds)
 
+### New in v0.8.2+: Smart Sync (Easiest Way!)
+
 ```bash
 # 1. Install
-npm install -g gwicho38-lsh
+npm install -g lsh-framework
+
+# 2. Configure Supabase (free tier works!)
+# Add to .env:
+# SUPABASE_URL=https://your-project.supabase.co
+# SUPABASE_ANON_KEY=<your-anon-key>
+
+# 3. ONE command does everything!
+cd ~/repos/your-project
+lsh sync
+
+# That's it! Smart Sync:
+# ✅ Auto-generates encryption key
+# ✅ Creates .env from .env.example
+# ✅ Adds .env to .gitignore
+# ✅ Pushes to cloud
+# ✅ Namespaces by repo name
+```
+
+### Sync AND Load in One Command
+
+```bash
+# Sync and load secrets into current shell
+eval "$(lsh sync --load)"
+
+# Your secrets are now available!
+echo $DATABASE_URL
+```
+
+### Traditional Method (Still Works)
+
+```bash
+# 1. Install
+npm install -g lsh-framework
 
 # 2. Generate encryption key
-lsh lib secrets key
+lsh key
 # Add the output to your .env:
 # LSH_SECRETS_KEY=<your-key>
 
@@ -34,15 +69,72 @@ lsh lib secrets key
 # SUPABASE_ANON_KEY=<your-anon-key>
 
 # 4. Push your secrets
-lsh lib secrets push
+lsh push
 
 # 5. Pull on any other machine
-lsh lib secrets pull
+lsh pull
 
 # Done! Your secrets are synced.
 ```
 
 ## Core Features
+
+### 🚀 Smart Sync (New in v0.8.2!)
+
+**One command. Zero configuration. Automatic everything.**
+
+```bash
+cd ~/repos/my-app
+lsh sync              # Auto-setup and sync
+eval "$(lsh sync --load)"  # Sync AND load into shell
+```
+
+What Smart Sync does automatically:
+- ✅ **Detects git repos** - Namespaces secrets by project name
+- ✅ **Generates keys** - Creates encryption key if missing
+- ✅ **Creates .env** - From .env.example or template
+- ✅ **Updates .gitignore** - Ensures .env is never committed
+- ✅ **Intelligent sync** - Pushes/pulls based on what's newer
+- ✅ **Load mode** - Sync and load with `eval` in one command
+
+**Repository Isolation:**
+```bash
+cd ~/repos/app1
+lsh sync  # Stored as: app1_dev
+
+cd ~/repos/app2
+lsh sync  # Stored as: app2_dev (separate!)
+
+# See what's tracked in the current directory
+lsh info
+```
+
+**Example `lsh info` output:**
+```
+📍 Current Directory Context
+
+📁 Git Repository:
+   Name: myapp
+   Branch: main
+
+🔐 Environment Tracking:
+   Base environment: dev
+   Cloud storage name: myapp_dev
+   Namespace: myapp
+   ℹ️  Repo-based isolation enabled
+
+📄 Local .env File:
+   Keys: 12
+   Has encryption key: ✅
+
+☁️  Cloud Storage:
+   Environment: myapp_dev
+   Keys stored: 12
+   Last updated: 11/6/2025, 10:15:23 PM
+   Key matches: ✅
+```
+
+No more conflicts between projects using the same environment names!
 
 ### 🔐 Secrets Management
 
@@ -52,6 +144,7 @@ lsh lib secrets pull
 - **Masked Viewing** - View secrets safely without exposing full values
 - **Automatic Backup** - Never lose your `.env` files
 - **Version Control** - Track changes to your secrets over time
+- **Smart Sync** - Auto-setup with git repo detection (v0.8.2+)
 
 ### 🔄 Automatic Rotation (Unique Feature!)
 
@@ -59,16 +152,16 @@ Use the built-in daemon to automatically rotate secrets on a schedule:
 
 ```bash
 # Schedule API key rotation every 30 days
-lsh lib cron add \
+lsh cron add \
   --name "rotate-api-keys" \
   --schedule "0 0 1 * *" \
-  --command "./scripts/rotate-keys.sh && lsh lib secrets push"
+  --command "./scripts/rotate-keys.sh && lsh push"
 
 # Or use interval-based scheduling
-lsh lib cron add \
+lsh cron add \
   --name "sync-secrets" \
   --interval 3600 \
-  --command "lsh lib secrets pull && ./scripts/reload-app.sh"
+  --command "lsh pull && ./scripts/reload-app.sh"
 ```
 
 **No other secrets manager has this built-in!** Most require complex integrations with cron or external tools.
@@ -78,8 +171,8 @@ lsh lib cron add \
 **Setup (One Time):**
 ```bash
 # Project lead:
-lsh lib secrets key                    # Generate shared key
-lsh lib secrets push --env prod        # Push team secrets
+lsh key                    # Generate shared key
+lsh push --env prod        # Push team secrets
 # Share LSH_SECRETS_KEY via 1Password
 ```
 
@@ -90,7 +183,7 @@ lsh lib secrets push --env prod        # Push team secrets
 echo "LSH_SECRETS_KEY=<shared-key>" > .env
 
 # 3. Pull secrets
-lsh lib secrets pull --env prod
+lsh pull --env prod
 
 # 4. Start coding!
 npm start
@@ -100,33 +193,72 @@ npm start
 
 ```bash
 # Development
-lsh lib secrets push --env dev
+lsh push --env dev
 
 # Staging (different values)
-lsh lib secrets push --file .env.staging --env staging
+lsh push --file .env.staging --env staging
 
 # Production (super secret)
-lsh lib secrets push --file .env.production --env prod
+lsh push --file .env.production --env prod
 
 # Pull whatever you need
-lsh lib secrets pull --env dev      # for local dev
-lsh lib secrets pull --env staging  # for testing
-lsh lib secrets pull --env prod     # for production debugging
+lsh pull --env dev      # for local dev
+lsh pull --env staging  # for testing
+lsh pull --env prod     # for production debugging
 ```
+
+### 📝 Batch Upsert Secrets
+
+**New in v1.1.0:** Pipe environment variables directly into your `.env` file!
+
+```bash
+# Copy all current environment variables
+printenv | lsh set
+
+# Import from another .env file
+cat .env.backup | lsh set
+
+# Import specific variables
+printenv | grep "^AWS_" | lsh set
+
+# Merge multiple sources
+cat .env.base .env.local | lsh set
+
+# From file with --stdin flag
+lsh set --stdin < .env.production
+
+# Single key-value still works
+lsh set API_KEY sk_live_12345
+lsh set DATABASE_URL postgres://localhost/db
+```
+
+**Features:**
+- ✅ Automatic upsert (updates existing, adds new)
+- ✅ Preserves comments and formatting
+- ✅ Handles quoted values
+- ✅ Validates key names
+- ✅ Shows summary of changes
 
 ## Secrets Commands
 
 | Command | Description |
 |---------|-------------|
-| `lsh lib secrets push` | Upload .env to encrypted cloud storage |
-| `lsh lib secrets pull` | Download .env from cloud storage |
-| `lsh lib secrets list` | List all stored environments |
-| `lsh lib secrets show` | View secrets (masked) |
-| `lsh lib secrets key` | Generate encryption key |
-| `lsh lib secrets create` | Create new .env file |
-| `lsh lib secrets delete` | Delete .env file (with confirmation) |
+| `lsh push` | Upload .env to encrypted cloud storage |
+| `lsh pull` | Download .env from cloud storage |
+| `lsh list` | List secrets in current .env file |
+| `lsh env` | List all stored environments |
+| `lsh key` | Generate encryption key |
+| `lsh create` | Create new .env file |
+| `lsh delete` | Delete .env file (with confirmation) |
+| `lsh sync` | Smart sync (auto-setup and sync) |
+| `lsh status` | Get detailed secrets status (JSON) |
+| `lsh info` | Show current context and tracked environment |
+| `lsh get <key>` | Get a specific secret value |
+| `lsh set <key> <value>` | Set a single secret value |
+| `printenv \| lsh set` | Batch upsert from stdin (pipe) |
+| `lsh set --stdin < file` | Batch upsert from file |
 
-See the complete guide: [SECRETS_GUIDE.md](SECRETS_GUIDE.md)
+See the complete guide: [SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)
 
 ## Installation
 
@@ -152,7 +284,7 @@ lsh self version
 
 ```bash
 # 1. Generate encryption key
-lsh lib secrets key
+lsh key
 
 # 2. Create .env file
 cat > .env <<EOF
@@ -169,7 +301,7 @@ API_KEY=your-api-key
 EOF
 
 # 3. Push to cloud
-lsh lib secrets push --env dev
+lsh push --env dev
 ```
 
 ## Advanced Features (Bonus!)
@@ -182,13 +314,13 @@ Run jobs reliably in the background:
 
 ```bash
 # Start daemon
-lsh lib daemon start
+lsh daemon start
 
 # Check status
-lsh lib daemon status
+lsh daemon status
 
 # Stop daemon
-lsh lib daemon stop
+lsh daemon stop
 ```
 
 ### Cron-Style Scheduling
@@ -197,20 +329,20 @@ Schedule any task with cron expressions:
 
 ```bash
 # Daily backup at midnight
-lsh lib cron add --name "backup" \
+lsh cron add --name "backup" \
   --schedule "0 0 * * *" \
   --command "./backup.sh"
 
 # Every 6 hours
-lsh lib cron add --name "sync" \
+lsh cron add --name "sync" \
   --schedule "0 */6 * * *" \
-  --command "lsh lib secrets pull && ./reload.sh"
+  --command "lsh pull && ./reload.sh"
 
 # List all jobs
-lsh lib cron list
+lsh cron list
 
 # Trigger manually
-lsh lib cron trigger backup
+lsh cron trigger backup
 ```
 
 ### RESTful API
@@ -219,7 +351,7 @@ Control everything via HTTP API:
 
 ```bash
 # Start API server
-LSH_API_KEY=your-key lsh lib api start --port 3030
+LSH_API_KEY=your-key lsh api start --port 3030
 
 # Use the API
 curl -H "X-API-Key: your-key" http://localhost:3030/api/jobs
@@ -303,13 +435,13 @@ LSH validates all environment variables at startup and fails fast if:
 **Solution:**
 ```bash
 # Laptop
-lsh lib secrets push --env dev
+lsh push --env dev
 
 # Desktop
-lsh lib secrets pull --env dev
+lsh pull --env dev
 
 # Cloud server
-lsh lib secrets pull --env dev
+lsh pull --env dev
 
 # All synced!
 ```
@@ -321,11 +453,11 @@ lsh lib secrets pull --env dev
 **Solution:**
 ```bash
 # New team member (after getting LSH_SECRETS_KEY from 1Password)
-cd ~/projects/service-1 && lsh lib secrets pull --env dev
-cd ~/projects/service-2 && lsh lib secrets pull --env dev
-cd ~/projects/service-3 && lsh lib secrets pull --env dev
-cd ~/projects/service-4 && lsh lib secrets pull --env dev
-cd ~/projects/service-5 && lsh lib secrets pull --env dev
+cd ~/projects/service-1 && lsh pull --env dev
+cd ~/projects/service-2 && lsh pull --env dev
+cd ~/projects/service-3 && lsh pull --env dev
+cd ~/projects/service-4 && lsh pull --env dev
+cd ~/projects/service-5 && lsh pull --env dev
 
 # Done in 30 seconds instead of 30 minutes
 ```
@@ -346,7 +478,7 @@ NEW_KEY=$(curl -X POST https://api.provider.com/keys/rotate)
 sed -i "s/API_KEY=.*/API_KEY=$NEW_KEY/" .env
 
 # Push to cloud
-lsh lib secrets push --env prod
+lsh push --env prod
 
 # Notify team
 echo "API keys rotated at $(date)" | mail -s "Key Rotation" team@company.com
@@ -365,18 +497,18 @@ lsh lib cron add --name "rotate-keys" \
 **Solution:**
 ```bash
 # Push from local dev
-lsh lib secrets push --file .env.development --env dev
+lsh push --file .env.development --env dev
 
 # Push staging config
-lsh lib secrets push --file .env.staging --env staging
+lsh push --file .env.staging --env staging
 
 # Push production config (from secure machine only)
-lsh lib secrets push --file .env.production --env prod
+lsh push --file .env.production --env prod
 
 # CI/CD pulls the right one
 # In .github/workflows/deploy.yml:
 - name: Get secrets
-  run: lsh lib secrets pull --env ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
+  run: lsh pull --env ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }}
 ```
 
 ## Comparison with Other Tools
@@ -439,7 +571,7 @@ LSH_ALLOW_DANGEROUS_COMMANDS=false  # Keep false in production
 
 ```bash
 # Encryption key for secrets
-lsh lib secrets key
+lsh key
 
 # API key for HTTP API
 openssl rand -hex 32
@@ -496,10 +628,10 @@ lsh --version
 
 ```bash
 # Check stored environments
-lsh lib secrets list
+lsh list
 
 # Push if missing
-lsh lib secrets push --env dev
+lsh push --env dev
 ```
 
 ### "Decryption failed"
@@ -509,8 +641,8 @@ lsh lib secrets push --env dev
 # Make sure LSH_SECRETS_KEY matches the one used to encrypt
 
 # Generate new key and re-push
-lsh lib secrets key
-lsh lib secrets push
+lsh key
+lsh push
 ```
 
 ### "Supabase not configured"
@@ -536,11 +668,20 @@ lsh lib daemon start
 
 ## Documentation
 
-- **[SECRETS_GUIDE.md](SECRETS_GUIDE.md)** - Complete secrets management guide
-- **[SECRETS_QUICK_REFERENCE.md](SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
+### Secrets Management
+- **[SMART_SYNC_GUIDE.md](docs/features/secrets/SMART_SYNC_GUIDE.md)** - 🆕 Smart Sync complete guide (v0.8.2+)
+- **[SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)** - Complete secrets management guide
+- **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
 - **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
-- **[INSTALL.md](INSTALL.md)** - Detailed installation instructions
+
+### Installation & Development
+- **[INSTALL.md](docs/deployment/INSTALL.md)** - Detailed installation instructions
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for contributors
+
+### Release Notes
+- **[v0.8.3](docs/releases/0.8.3.md)** - Hotfix: Logger output in load mode
+- **[v0.8.2](docs/releases/0.8.2.md)** - Smart Sync feature release
+- **[v0.8.1](docs/releases/0.8.1.md)** - Previous releases
 
 ## Architecture
 
@@ -601,7 +742,7 @@ See API endpoints documentation in the Advanced Features section.
 
 ## Roadmap
 
-- [ ] CLI command shortcuts (`lsh push` instead of `lsh lib secrets push`)
+- [ ] CLI command shortcuts (`lsh push` instead of `lsh push`)
 - [ ] Built-in secret rotation templates (AWS, GCP, Azure)
 - [ ] Web dashboard for team secret management
 - [ ] Audit logging for secret access

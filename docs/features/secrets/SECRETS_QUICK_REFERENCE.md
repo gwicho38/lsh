@@ -47,7 +47,21 @@ EOF
 
 ---
 
-## 📥 Pull Secrets (Daily Use)
+## 🚀 Smart Sync (Recommended - New!)
+
+```bash
+# Smart sync - automatically handles everything!
+cd ~/repos/my-project
+lsh sync
+
+# Smart sync AND load in one command!
+eval "$(lsh sync --load)"
+
+# Now your secrets are synced AND loaded in your shell
+echo $DATABASE_URL
+```
+
+## 📥 Pull Secrets (Manual Method)
 
 ```bash
 # MCLI Project
@@ -177,6 +191,8 @@ lsh secrets push --env myenv
 
 | Command | Description |
 |---------|-------------|
+| `lsh sync` | 🆕 Smart sync (auto push/pull) |
+| `lsh sync --load` | 🆕 Sync AND load into shell |
 | `lsh secrets list` | Show all environments |
 | `lsh secrets push` | Upload .env to cloud |
 | `lsh secrets pull` | Download .env from cloud |

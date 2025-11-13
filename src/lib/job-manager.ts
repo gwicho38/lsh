@@ -205,10 +205,11 @@ export class JobManager extends BaseJobManager {
 
       return updatedJob;
 
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error;
       await this.updateJobStatus(job.id, 'failed', {
         completedAt: new Date(),
-        stderr: error.message,
+        stderr: err.message,
       });
       this.emit('jobFailed', job, error);
       throw error;
@@ -243,7 +244,7 @@ export class JobManager extends BaseJobManager {
     // Kill the process
     try {
       job.process.kill(signal as NodeJS.Signals);
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(`Failed to kill job ${jobId}`, error);
     }
 
@@ -383,6 +384,7 @@ export class JobManager extends BaseJobManager {
   /**
    * Get job statistics
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getJobStats(): any {
     const jobs = Array.from(this.jobs.values()) as JobSpec[];
     const stats = {

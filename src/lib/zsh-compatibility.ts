@@ -215,6 +215,7 @@ export class ZshCompatibility {
   /**
    * Apply parsed ZSH configuration to LSH
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async applyZshConfig(config: any): Promise<void> {
     // Apply aliases
     for (const alias of config.aliases) {
@@ -398,6 +399,7 @@ export class ZshCompatibility {
   /**
    * Generate completions based on patterns
    */
+   
   private async generateCompletions(
     context: any,
     patterns: Array<{ type: string; pattern: string }>

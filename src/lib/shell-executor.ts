@@ -36,6 +36,7 @@ import ExtendedGlobber from './extended-globbing.js';
 import ZshOptionsManager from './zsh-options.js';
 import PromptSystem from './prompt-system.js';
 import FloatingPointArithmetic from './floating-point-arithmetic.js';
+import ZshCompatibility from './zsh-compatibility.js';
 import {
   ExecutionResult,
   Job,
@@ -98,7 +99,7 @@ export class ShellExecutor {
       zshOptions: new ZshOptionsManager(),
       prompt: new PromptSystem(),
       floatingPoint: new FloatingPointArithmetic(),
-      zshCompatibility: null as any, // Will be initialized after constructor
+      zshCompatibility: null as unknown as ZshCompatibility, // Will be initialized after constructor
       ...initialContext,
     };
 
@@ -1815,7 +1816,7 @@ export class ShellExecutor {
 
   private async executeWithRedirectionHandling(cmd: SimpleCommand): Promise<ExecutionResult> {
     const fs = await import('fs');
-    const originalFiles: { [fd: number]: any } = {};
+    const originalFiles: { [fd: number]: number } = {};
     const redirectionFiles: { [fd: number]: number } = {};
 
     try {
@@ -1864,9 +1865,9 @@ export class ShellExecutor {
 
   private async processRedirection(
     redir: Redirection,
-    originalFiles: any,
-    redirectionFiles: any,
-    fs: any
+    originalFiles: { [fd: number]: number },
+    redirectionFiles: { [fd: number]: number },
+    fs: typeof import('fs')
   ): Promise<void> {
     const target = await this.expander.expandString(redir.target);
 
@@ -1925,8 +1926,8 @@ export class ShellExecutor {
     name: string,
     args: string[],
     result: ExecutionResult,
-    redirectionFiles: any,
-    fs: any
+    redirectionFiles: { [fd: number]: number },
+    fs: typeof import('fs')
   ): Promise<ExecutionResult> {
     // For built-ins, we need to manually handle output redirection
     if (redirectionFiles[1] !== undefined) {
@@ -1948,10 +1949,10 @@ export class ShellExecutor {
 
   private async executeExternalCommandWithRedirection(
     cmd: SimpleCommand,
-    redirectionFiles: any
+    redirectionFiles: { [fd: number]: number }
   ): Promise<ExecutionResult> {
     return new Promise((resolve) => {
-      const stdio: any[] = ['inherit', 'pipe', 'pipe'];
+      const stdio: ('inherit' | 'pipe' | number)[] = ['inherit', 'pipe', 'pipe'];
 
       // Configure stdio based on redirections
       if (redirectionFiles[0] !== undefined) {
@@ -2005,7 +2006,7 @@ export class ShellExecutor {
     });
   }
 
-  private cleanupRedirections(originalFiles: any, redirectionFiles: any, fs: any): void {
+  private cleanupRedirections(originalFiles: { [fd: number]: number }, redirectionFiles: { [fd: number]: number }, fs: typeof import('fs')): void {
     // Close redirection files
     for (const fd of Object.values(redirectionFiles)) {
       try {
@@ -2358,7 +2359,7 @@ export class ShellExecutor {
   }
 
   // Get ZSH compatibility instance
-  public getZshCompatibility(): any {
+  public getZshCompatibility(): ZshCompatibility {
     return this.context.zshCompatibility;
   }
 
@@ -2508,10 +2509,10 @@ export class ShellExecutor {
    */
   private async builtin_readonly(args: string[]): Promise<ExecutionResult> {
     // Initialize readonly set if not exists
-    if (!(this.context as any).readonlyVariables) {
-      (this.context as any).readonlyVariables = new Set<string>();
+    if (!(this.context as unknown as { readonlyVariables?: Set<string> }).readonlyVariables) {
+      (this.context as unknown as { readonlyVariables: Set<string> }).readonlyVariables = new Set<string>();
     }
-    const readonlyVars = (this.context as any).readonlyVariables as Set<string>;
+    const readonlyVars = (this.context as unknown as { readonlyVariables: Set<string> }).readonlyVariables;
 
     if (args.length === 0) {
       // List all readonly variables
@@ -2627,10 +2628,10 @@ export class ShellExecutor {
    */
   private async builtin_hash(args: string[]): Promise<ExecutionResult> {
     // Initialize command hash table if not exists
-    if (!(this.context as any).commandHash) {
-      (this.context as any).commandHash = new Map<string, string>();
+    if (!(this.context as unknown as { commandHash?: Map<string, string> }).commandHash) {
+      (this.context as unknown as { commandHash: Map<string, string> }).commandHash = new Map<string, string>();
     }
-    const commandHash = (this.context as any).commandHash as Map<string, string>;
+    const commandHash = (this.context as unknown as { commandHash: Map<string, string> }).commandHash;
 
     // Parse options
     let listAll = false;

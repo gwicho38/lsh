@@ -75,29 +75,33 @@ program
         console.log('LSH - Encrypted Secrets Manager with Automatic Rotation');
         console.log('');
         console.log('🔐 Secrets Management (Primary Features):');
-        console.log('  secrets sync            Check sync status & get recommendations');
-        console.log('  secrets push            Upload .env to encrypted cloud storage');
-        console.log('  secrets pull            Download .env from cloud storage');
-        console.log('  secrets list            List all stored environments');
-        console.log('  secrets show            View secrets (masked)');
-        console.log('  secrets key             Generate encryption key');
-        console.log('  secrets create          Create new .env file');
+        console.log('  sync                    Check sync status & get recommendations');
+        console.log('  push                    Upload .env to encrypted cloud storage');
+        console.log('  pull                    Download .env from cloud storage');
+        console.log('  list                    List secrets in current local .env file');
+        console.log('  env [name]              List/view cloud environments');
+        console.log('  key                     Generate encryption key');
+        console.log('  create                  Create new .env file');
+        console.log('  get <key>               Get a specific secret value (--all for all)');
+        console.log('  set <key> <value>       Set a specific secret value');
+        console.log('  delete                  Delete .env file');
+        console.log('  status                  Get detailed secrets status');
         console.log('');
         console.log('🔄 Automation (Schedule secret rotation):');
-        console.log('  lib cron add            Schedule automatic tasks');
-        console.log('  lib cron list           List scheduled jobs');
-        console.log('  lib daemon start        Start persistent daemon');
+        console.log('  cron add                Schedule automatic tasks');
+        console.log('  cron list               List scheduled jobs');
+        console.log('  daemon start            Start persistent daemon');
         console.log('');
         console.log('🚀 Quick Start:');
-        console.log('  lsh secrets key                   # Generate encryption key');
-        console.log('  lsh secrets push --env dev        # Push your secrets');
-        console.log('  lsh secrets pull --env dev        # Pull on another machine');
+        console.log('  lsh key                           # Generate encryption key');
+        console.log('  lsh push --env dev                # Push your secrets');
+        console.log('  lsh pull --env dev                # Pull on another machine');
         console.log('');
         console.log('📚 More Commands:');
-        console.log('  lib api                 API server management');
-        console.log('  lib supabase            Supabase database management');
-        console.log('  lib daemon              Daemon management');
-        console.log('  lib cron                Cron job management');
+        console.log('  api                     API server management');
+        console.log('  supabase                Supabase database management');
+        console.log('  daemon                  Daemon management');
+        console.log('  cron                    Cron job management');
         console.log('  self                    Self-management commands');
         console.log('  self zsh                ZSH compatibility commands');
         console.log('  -i, --interactive       Start interactive shell');
@@ -222,10 +226,14 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   // REPL interactive shell
   await init_ishell(program);
 
-  // Library commands (parent for service commands)
-  const libCommand = await init_lib(program);
+  // Flatten all service commands to top-level (no more 'lib' parent)
+  await init_supabase(program);
+  await init_daemon(program);
+  await init_cron(program);
+  registerApiCommands(program);
 
-  // Nest service commands under lib
+  // Legacy 'lib' command group with deprecation warnings
+  const libCommand = await init_lib(program);
   await init_supabase(libCommand);
   await init_daemon(libCommand);
   await init_cron(libCommand);
@@ -313,8 +321,8 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 /**
  * Start interactive shell
  */
-async function startInteractiveShell(options: any): Promise<void> {
-  const shellOptions: any = {
+async function startInteractiveShell(options: Record<string, unknown>): Promise<void> {
+  const shellOptions: Record<string, unknown> = {
     verbose: options.verbose,
     debug: options.debug,
   };
@@ -331,13 +339,13 @@ async function startInteractiveShell(options: any): Promise<void> {
 /**
  * Execute single command
  */
-async function executeCommand(command: string, options: any): Promise<void> {
+async function executeCommand(command: string, options: Record<string, unknown>): Promise<void> {
   const { ShellExecutor } = await import('./lib/shell-executor.js');
   const executor = new ShellExecutor();
 
   // Load configuration if rc file specified
   if (options.rc) {
-    await loadRcFile(executor, options.rc);
+    await loadRcFile(executor, options.rc as string);
   }
 
   try {
@@ -361,19 +369,19 @@ async function executeCommand(command: string, options: any): Promise<void> {
 /**
  * Execute script file
  */
-async function executeScript(scriptPath: string, options: any): Promise<void> {
+async function executeScript(scriptPath: string, options: Record<string, unknown>): Promise<void> {
   if (!fs.existsSync(scriptPath)) {
     console.error(`Script file not found: ${scriptPath}`);
     process.exit(1);
   }
 
   const runner = new ScriptRunner({
-    cwd: options.cwd,
-    env: parseEnvOptions(options.env),
+    cwd: options.cwd as string | undefined,
+    env: parseEnvOptions(options.env as string[]),
   });
 
   const result = await runner.executeScript(scriptPath, {
-    args: options.args || [],
+    args: (options.args as string[]) || [],
   });
 
   if (result.output) {
@@ -389,7 +397,7 @@ async function executeScript(scriptPath: string, options: any): Promise<void> {
 /**
  * Handle configuration commands
  */
-async function handleConfig(options: any): Promise<void> {
+async function handleConfig(options: Record<string, unknown>): Promise<void> {
   const rcFile = path.join(process.env.HOME || '/', '.lshrc');
 
   if (options.init) {
@@ -520,6 +528,7 @@ async function validateConfig(rcFile: string): Promise<void> {
 /**
  * Load rc file
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function loadRcFile(executor: any, rcFile: string): Promise<void> {
   if (!fs.existsSync(rcFile)) {
     console.error(`Configuration file not found: ${rcFile}`);
@@ -570,7 +579,7 @@ function parseEnvOptions(envOptions: string[]): Record<string, string> {
 /**
  * Handle ZSH compatibility commands
  */
-async function handleZshCompatibility(options: any): Promise<void> {
+async function handleZshCompatibility(options: Record<string, unknown>): Promise<void> {
   const { ShellExecutor } = await import('./lib/shell-executor.js');
   const executor = new ShellExecutor();
 
@@ -637,13 +646,13 @@ function showDetailedHelp(): void {
   console.log('  self zsh                ZSH compatibility commands');
   console.log('  self zsh-import         Import ZSH configs (aliases, functions, exports)');
   console.log('');
-  console.log('Library Commands (lsh lib <command>):');
-  console.log('  lib api                 API server management');
-  console.log('  lib supabase            Supabase database management');
-  console.log('  lib daemon              Daemon management');
-  console.log('  lib daemon job          Job management');
-  console.log('  lib daemon db           Database integration');
-  console.log('  lib cron                Cron job management');
+  console.log('Service Commands:');
+  console.log('  api                     API server management');
+  console.log('  supabase                Supabase database management');
+  console.log('  daemon                  Daemon management');
+  console.log('  daemon job              Job management');
+  console.log('  daemon db               Database integration');
+  console.log('  cron                    Cron job management');
   console.log('');
   console.log('Examples:');
   console.log('');
@@ -673,13 +682,13 @@ function showDetailedHelp(): void {
   console.log('    lsh secrets pull                    # Pull secrets from cloud');
   console.log('    lsh secrets list                    # List environments');
   console.log('');
-  console.log('  Library Services:');
-  console.log('    lsh lib daemon start                # Start daemon');
-  console.log('    lsh lib daemon status               # Check daemon status');
-  console.log('    lsh lib daemon job list             # List all jobs');
-  console.log('    lsh lib cron list                   # List cron jobs');
-  console.log('    lsh lib api start                   # Start API server');
-  console.log('    lsh lib api key                     # Generate API key');
+  console.log('  Service Operations:');
+  console.log('    lsh daemon start                    # Start daemon');
+  console.log('    lsh daemon status                   # Check daemon status');
+  console.log('    lsh daemon job list                 # List all jobs');
+  console.log('    lsh cron list                       # List cron jobs');
+  console.log('    lsh api start                       # Start API server');
+  console.log('    lsh api key                         # Generate API key');
   console.log('');
   console.log('Features:');
   console.log('  ✅ POSIX Shell Compliance (85-95%)');

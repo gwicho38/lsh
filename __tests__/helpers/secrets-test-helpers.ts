@@ -10,9 +10,10 @@ import { glob } from 'glob';
 
 /**
  * Create a temporary .env file with given content
+ * Creates files like .env.test-prefix-timestamp-random
  */
 export function createTempEnvFile(content: string, prefix: string = 'test-env'): string {
-  const tempPath = path.join(os.tmpdir(), `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}.env`);
+  const tempPath = path.join(os.tmpdir(), `.env.${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
   fs.writeFileSync(tempPath, content, 'utf8');
   return tempPath;
 }

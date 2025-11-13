@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import axios, { AxiosInstance } from 'axios';
-import { JobTracker, PipelineJob, JobStatus, JobExecution } from './job-tracker.js';
+import { JobTracker, PipelineJob, JobStatus, JobExecution, Dataset } from './job-tracker.js';
 
 export interface MCLIConfig {
   baseUrl: string;
@@ -13,22 +13,22 @@ export interface MCLIJob {
   id: string;
   name: string;
   type: string;
-  config: any;
+  config: Record<string, unknown>;
   status: string;
   created_at: string;
   started_at?: string;
   completed_at?: string;
-  result?: any;
+  result?: unknown;
   error?: string;
 }
 
 export interface MCLISubmitRequest {
   name: string;
   type: string;
-  config: any;
-  parameters?: any;
+  config: Record<string, unknown>;
+  parameters?: Record<string, unknown>;
   callback_url?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface MCLISubmitResponse {
@@ -188,16 +188,18 @@ export class MCLIBridge extends EventEmitter {
   }
 
   // Webhook handler for MCLI callbacks
-  async handleWebhook(payload: any): Promise<void> {
+  async handleWebhook(payload: Record<string, unknown>): Promise<void> {
     const { job_id, status, result, error, metrics, artifacts } = payload;
+    const jobIdStr = job_id as string;
 
     // Get pipeline job ID
-    let pipelineJobId = this.jobMapping.get(job_id);
+    let pipelineJobId = this.jobMapping.get(jobIdStr);
 
-    if (!pipelineJobId && payload.metadata?.pipeline_job_id) {
-      pipelineJobId = payload.metadata.pipeline_job_id;
+    const metadata = payload.metadata as Record<string, unknown> | undefined;
+    if (!pipelineJobId && metadata?.pipeline_job_id) {
+      pipelineJobId = metadata.pipeline_job_id as string;
       if (pipelineJobId) {
-        this.jobMapping.set(job_id, pipelineJobId);
+        this.jobMapping.set(jobIdStr, pipelineJobId);
       }
     }
 
@@ -223,20 +225,22 @@ export class MCLIBridge extends EventEmitter {
       case 'success':
         await this.jobTracker.completeExecution(
           execution.id!,
-          result,
-          metrics,
-          artifacts
+          result as Record<string, unknown>,
+          metrics as Record<string, number> | undefined,
+          artifacts as Dataset[] | undefined
         );
         break;
 
       case 'failed':
-      case 'error':
+      case 'error': {
+        const errorObj = error as { message?: string } | undefined;
         await this.jobTracker.failExecution(
           execution.id!,
-          error?.message || 'Job failed in MCLI',
-          error
+          errorObj?.message || 'Job failed in MCLI',
+          error as Record<string, unknown> | undefined
         );
         break;
+      }
 
       case 'cancelled':
         await this.jobTracker.updateJobStatus(pipelineJobId, JobStatus.CANCELLED);
@@ -296,7 +300,7 @@ export class MCLIBridge extends EventEmitter {
         if (execution) {
           await this.jobTracker.completeExecution(
             execution.id!,
-            mcliJob.result,
+            mcliJob.result as Record<string, unknown>,
             undefined,
             undefined
           );
@@ -350,6 +354,7 @@ export class MCLIBridge extends EventEmitter {
   // Helper methods
   private async updateJobExternalId(jobId: string, externalId: string): Promise<void> {
     // This would be implemented in JobTracker, but for now we'll use raw SQL
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pool = (this.jobTracker as any).pool;
     await pool.query(
       'UPDATE pipeline_jobs SET external_id = $1 WHERE id = $2',
@@ -359,6 +364,7 @@ export class MCLIBridge extends EventEmitter {
 
   private async getLatestExecution(jobId: string): Promise<JobExecution | null> {
     // This would be implemented in JobTracker
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pool = (this.jobTracker as any).pool;
     const result = await pool.query(
       `SELECT * FROM job_executions
@@ -372,6 +378,7 @@ export class MCLIBridge extends EventEmitter {
       return null;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (this.jobTracker as any).parseExecutionRow(result.rows[0]);
   }
 
@@ -386,10 +393,10 @@ export class MCLIBridge extends EventEmitter {
   }
 
   // Get MCLI statistics
-  async getStatistics(): Promise<any> {
+  async getStatistics(): Promise<Record<string, unknown> | null> {
     try {
       const response = await this.client.get('/api/statistics');
-      return response.data;
+      return response.data as Record<string, unknown>;
     } catch (error) {
       console.error('Failed to get MCLI statistics:', error);
       return null;

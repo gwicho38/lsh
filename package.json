@@ -1,6 +1,6 @@
 {
   "name": "lsh-framework",
-  "version": "0.8.0",
+  "version": "1.2.0",
   "description": "Encrypted secrets manager with automatic rotation, team sync, and multi-environment support. Built on a powerful shell with daemon scheduling and CI/CD integration.",
   "main": "dist/app.js",
   "bin": {
@@ -106,6 +106,7 @@
     "ioredis": "^5.8.0",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
+    "lsh-framework": "^0.8.2",
     "node-cron": "^3.0.3",
     "node-fetch": "^3.3.2",
     "ora": "^8.0.1",
