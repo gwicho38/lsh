@@ -77,7 +77,12 @@
       "Bash(npm view:*)",
       "Bash(for file in src/services/lib/lib.ts src/lib/supabase-client.ts src/lib/daemon-client-helper.ts src/lib/base-api-server.ts src/daemon/job-registry.ts src/commands/self.ts)",
       "Bash(node:*)",
-      "Bash(printenv:*)"
+      "Bash(printenv:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(/tmp/secrets_qr_fixed.md)",
+      "Bash(/tmp/release_fixed.md)",
+      "Bash(npm install:*)",
+      "Bash(/tmp/test.env)"
     ],
     "deny": [],
     "ask": []

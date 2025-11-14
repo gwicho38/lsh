@@ -239,6 +239,43 @@ lsh set DATABASE_URL postgres://localhost/db
 - ✅ Validates key names
 - ✅ Shows summary of changes
 
+### 🔄 Multi-Format Export
+
+**New in v1.2.1:** Export secrets in multiple formats for easy integration with other tools!
+
+```bash
+# JSON format (perfect for APIs and config files)
+lsh list --format json
+
+# YAML format (for Docker Compose, Kubernetes, etc.)
+lsh list --format yaml
+
+# TOML format (auto-detects namespaces!)
+lsh list --format toml
+
+# Shell export format (for sourcing in scripts)
+lsh list --format export
+eval "$(lsh list --format export)"
+
+# Works with get command too
+lsh get --all --format yaml > config.yaml
+
+# And with env command for cloud secrets
+lsh env prod --format json
+```
+
+**Supported Formats:**
+- ✅ `env` - Standard KEY=value format (default, masked)
+- ✅ `json` - JSON object format
+- ✅ `yaml` - YAML format
+- ✅ `toml` - TOML with smart namespace detection
+- ✅ `export` - Shell export statements
+
+**Smart Features:**
+- Auto-detects namespaces in TOML (e.g., `DATABASE_*` → `[database]`)
+- Auto-disables masking for structured formats (JSON/YAML/TOML)
+- Use `--no-mask` to show full values in any format
+
 ## Secrets Commands
 
 | Command | Description |
@@ -270,7 +307,7 @@ See the complete guide: [SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.m
 ### Install from npm
 
 ```bash
-npm install -g gwicho38-lsh
+npm install -g lsh-framework
 ```
 
 ### Verify installation
@@ -485,7 +522,7 @@ echo "API keys rotated at $(date)" | mail -s "Key Rotation" team@company.com
 EOF
 
 # Schedule it
-lsh lib cron add --name "rotate-keys" \
+lsh cron add --name "rotate-keys" \
   --schedule "0 0 1 * *" \
   --command "./rotate-keys.sh"
 ```
@@ -663,7 +700,7 @@ ps aux | grep lshd
 rm /tmp/lsh-job-daemon-$USER.pid
 
 # Restart
-lsh lib daemon start
+lsh daemon start
 ```
 
 ## Documentation

@@ -54,6 +54,8 @@ export async function init_secrets(program: Command) {
     .description('List secrets in the current local .env file')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('--keys-only', 'Show only keys, not values')
+    .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
+    .option('--no-mask', 'Show full values (default: auto based on format)')
     .action(async (options) => {
       try {
         const envPath = path.resolve(options.file);
@@ -88,22 +90,43 @@ export async function init_secrets(program: Command) {
           return;
         }
 
-        console.log(`\n📋 Secrets in ${options.file}:\n`);
-        for (const { key, value } of secrets) {
-          if (options.keysOnly) {
+        // Handle keys-only mode
+        if (options.keysOnly) {
+          console.log(`\n📋 Keys in ${options.file}:\n`);
+          for (const { key } of secrets) {
             console.log(`  ${key}`);
-          } else {
-            // Mask the value but show first/last 3 chars if long enough
-            let maskedValue = value;
-            if (value.length > 8) {
-              maskedValue = `${value.substring(0, 3)}${'*'.repeat(value.length - 6)}${value.substring(value.length - 3)}`;
-            } else if (value.length > 0) {
-              maskedValue = '*'.repeat(value.length);
-            }
-            console.log(`  ${key}=${maskedValue}`);
           }
+          console.log(`\n  Total: ${secrets.length} keys\n`);
+          return;
         }
-        console.log(`\n  Total: ${secrets.length} secrets\n`);
+
+        // Handle format output
+        const format = options.format.toLowerCase();
+        const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
+
+        if (!validFormats.includes(format)) {
+          console.error(`❌ Invalid format: ${format}`);
+          console.log(`Valid formats: ${validFormats.join(', ')}`);
+          process.exit(1);
+        }
+
+        // Import format utilities dynamically
+        const { formatSecrets } = await import('../../lib/format-utils.js');
+
+        // Determine masking behavior
+        const shouldMask = options.mask !== false ? undefined : false;
+
+        const output = formatSecrets(secrets, format as any, shouldMask);
+
+        // Only show header for default env format
+        if (format === 'env') {
+          console.log(`\n📋 Secrets in ${options.file}:\n`);
+          console.log(output);
+          console.log(`\n  Total: ${secrets.length} secrets\n`);
+        } else {
+          // For structured formats, output directly (no decoration)
+          console.log(output);
+        }
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to list secrets:', err.message);
@@ -116,6 +139,7 @@ export async function init_secrets(program: Command) {
     .command('env [environment]')
     .description('List all stored environments or show secrets for specific environment')
     .option('--all-files', 'List all tracked .env files across environments')
+    .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
     .action(async (environment, options) => {
       try {
         const manager = new SecretsManager();
@@ -139,7 +163,16 @@ export async function init_secrets(program: Command) {
 
         // If environment specified, show secrets for that environment
         if (environment) {
-          await manager.show(environment);
+          const format = options.format.toLowerCase();
+          const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
+
+          if (!validFormats.includes(format)) {
+            console.error(`❌ Invalid format: ${format}`);
+            console.log(`Valid formats: ${validFormats.join(', ')}`);
+            process.exit(1);
+          }
+
+          await manager.show(environment, format as any);
           return;
         }
 
@@ -408,7 +441,8 @@ API_KEY=
     .description('Get a specific secret value from .env file, or all secrets with --all')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('--all', 'Get all secrets from the file')
-    .option('--export', 'Output in export format for shell evaluation')
+    .option('--export', 'Output in export format for shell evaluation (alias for --format export)')
+    .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
     .action(async (key, options) => {
       try {
         const envPath = path.resolve(options.file);
@@ -440,19 +474,22 @@ API_KEY=
             }
           }
 
-          if (options.export) {
-            // Output in export format for shell evaluation
-            for (const { key, value } of secrets) {
-              // Escape single quotes in value and wrap in single quotes
-              const escapedValue = value.replace(/'/g, "'\\''");
-              console.log(`export ${key}='${escapedValue}'`);
-            }
-          } else {
-            // Output in KEY=VALUE format
-            for (const { key, value } of secrets) {
-              console.log(`${key}=${value}`);
-            }
+          // Handle format output
+          const format = options.export ? 'export' : options.format.toLowerCase();
+          const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
+
+          if (!validFormats.includes(format)) {
+            console.error(`❌ Invalid format: ${format}`);
+            console.log(`Valid formats: ${validFormats.join(', ')}`);
+            process.exit(1);
           }
+
+          // Import format utilities dynamically
+          const { formatSecrets } = await import('../../lib/format-utils.js');
+
+          // For get --all, always show full values (no masking)
+          const output = formatSecrets(secrets, format as any, false);
+          console.log(output);
           return;
         }
 

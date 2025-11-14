@@ -418,7 +418,7 @@ export class SecretsManager {
   /**
    * Show secrets (masked)
    */
-  async show(environment: string = 'dev'): Promise<void> {
+  async show(environment: string = 'dev', format: 'env' | 'json' | 'yaml' | 'toml' | 'export' = 'env'): Promise<void> {
     const jobs = await this.persistence.getActiveJobs();
     const secretsJobs = jobs
       .filter(j => j.command === 'secrets_sync' && j.job_id.includes(environment))
@@ -436,6 +436,18 @@ export class SecretsManager {
     const decrypted = this.decrypt(latestSecret.output);
     const env = this.parseEnvFile(decrypted);
 
+    // Convert to array format for formatSecrets
+    const secrets = Object.entries(env).map(([key, value]) => ({ key, value }));
+
+    // Use format utilities if not default env format
+    if (format !== 'env') {
+      const { formatSecrets } = await import('./format-utils.js');
+      const output = formatSecrets(secrets, format, false); // No masking for structured formats
+      console.log(output);
+      return;
+    }
+
+    // Default env format with masking (legacy behavior)
     console.log(`\n📦 Secrets for ${environment} (${Object.keys(env).length} total):\n`);
 
     for (const [key, value] of Object.entries(env)) {
