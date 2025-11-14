@@ -66,7 +66,7 @@ export declare class SecretsManager {
     /**
      * Show secrets (masked)
      */
-    show(environment?: string): Promise<void>;
+    show(environment?: string, format?: 'env' | 'json' | 'yaml' | 'toml' | 'export'): Promise<void>;
     /**
      * Get status of secrets for an environment
      */

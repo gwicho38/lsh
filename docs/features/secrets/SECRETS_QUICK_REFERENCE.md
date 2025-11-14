@@ -66,21 +66,21 @@ echo $DATABASE_URL
 ```bash
 # MCLI Project
 cd ~/repos/mcli
-lsh secrets pull --env mcli-dev
+lsh pull --env mcli-dev
 
 # MyRPG Project
 cd ~/repos/myRPG
-lsh secrets pull --env myrpg-dev
+lsh pull --env myrpg-dev
 
 # MyAI Projects
 cd ~/repos/myAi
-lsh secrets pull --env myai-dev        # Development
-lsh secrets pull --env myai-staging    # Staging
-lsh secrets pull --env myai-prod       # Production
+lsh pull --env myai-dev        # Development
+lsh pull --env myai-staging    # Staging
+lsh pull --env myai-prod       # Production
 
 # LSH Shell
 cd ~/repos/lsh
-lsh secrets pull --env lsh-dev
+lsh pull --env lsh-dev
 ```
 
 ---
@@ -89,13 +89,13 @@ lsh secrets pull --env lsh-dev
 
 ```bash
 # Push from current directory
-lsh secrets push --env mcli-dev
+lsh push --env mcli-dev
 
 # Push specific file
-lsh secrets push --file .env.production --env myai-prod
+lsh push --file .env.production --env myai-prod
 
 # Push with absolute path
-lsh secrets push --file /path/to/.env --env custom-env
+lsh push --file /path/to/.env --env custom-env
 ```
 
 ---
@@ -104,13 +104,13 @@ lsh secrets push --file /path/to/.env --env custom-env
 
 ```bash
 # List all environments
-lsh secrets list
+lsh list
 
 # Show secrets (masked)
-lsh secrets show --env mcli-dev
+lsh show --env mcli-dev
 
 # Generate new encryption key
-lsh secrets key
+lsh key
 ```
 
 ---
@@ -120,7 +120,7 @@ lsh secrets key
 ### Starting Work on New Machine
 ```bash
 cd ~/repos/mcli
-lsh secrets pull --env mcli-dev
+lsh pull --env mcli-dev
 npm install
 npm start
 ```
@@ -131,10 +131,10 @@ npm start
 nano ~/repos/mcli/.env
 
 # 2. Push changes
-lsh secrets push --env mcli-dev
+lsh push --env mcli-dev
 
 # 3. Pull on other machines
-lsh secrets pull --env mcli-dev
+lsh pull --env mcli-dev
 ```
 
 ### Setting Up New Project
@@ -142,10 +142,10 @@ lsh secrets pull --env mcli-dev
 cd ~/repos/new-project
 
 # Push first time
-lsh secrets push --env new-project-dev
+lsh push --env new-project-dev
 
 # Pull on other machines
-lsh secrets pull --env new-project-dev
+lsh pull --env new-project-dev
 ```
 
 ---
@@ -155,10 +155,10 @@ lsh secrets pull --env new-project-dev
 ### "No secrets found"
 ```bash
 # Make sure environment exists
-lsh secrets list
+lsh list
 
 # Push if missing
-lsh secrets push --env myenv
+lsh push --env myenv
 ```
 
 ### "Decryption failed"
@@ -178,11 +178,11 @@ SUPABASE_ANON_KEY=eyJh...
 ### "File not found"
 ```bash
 # Use absolute path
-lsh secrets push --file /home/user/project/.env --env myenv
+lsh push --file /home/user/project/.env --env myenv
 
 # Or cd to directory first
 cd ~/repos/project
-lsh secrets push --env myenv
+lsh push --env myenv
 ```
 
 ---
@@ -193,11 +193,11 @@ lsh secrets push --env myenv
 |---------|-------------|
 | `lsh sync` | 🆕 Smart sync (auto push/pull) |
 | `lsh sync --load` | 🆕 Sync AND load into shell |
-| `lsh secrets list` | Show all environments |
-| `lsh secrets push` | Upload .env to cloud |
-| `lsh secrets pull` | Download .env from cloud |
-| `lsh secrets show` | View secrets (masked) |
-| `lsh secrets key` | Generate encryption key |
+| `lsh list` | Show all environments |
+| `lsh push` | Upload .env to cloud |
+| `lsh pull` | Download .env from cloud |
+| `lsh show` | View secrets (masked) |
+| `lsh key` | Generate encryption key |
 
 ---
 
@@ -235,9 +235,9 @@ LSH_SECRETS_KEY=fdc6fca3488483b15315e9512083c26de2e973671f3211cb6015bb86ba09fe02
 
 **Need help?**
 ```bash
-lsh secrets --help
-lsh secrets push --help
-lsh secrets pull --help
+lsh --help
+lsh push --help
+lsh pull --help
 ```
 
 **Full documentation:**

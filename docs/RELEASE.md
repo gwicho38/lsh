@@ -73,7 +73,7 @@ Monitor: https://github.com/gwicho38/lsh/actions
 
 ```bash
 # Check npm registry
-npm view gwicho38-lsh version
+npm view lsh-framework version
 
 # Should show 0.5.2
 ```
@@ -107,7 +107,7 @@ npm run build
 npm publish
 
 # 4. Verify
-npm view gwicho38-lsh version
+npm view lsh-framework version
 ```
 
 ---
@@ -150,12 +150,12 @@ If a release has issues:
 
 ### 1. Deprecate on npm
 ```bash
-npm deprecate gwicho38-lsh@0.5.2 "This version has issues, use 0.5.1"
+npm deprecate lsh-framework@0.5.2 "This version has issues, use 0.5.1"
 ```
 
 ### 2. Unpublish (within 72 hours)
 ```bash
-npm unpublish gwicho38-lsh@0.5.2
+npm unpublish lsh-framework@0.5.2
 ```
 
 ### 3. Delete Git Tag
@@ -178,9 +178,9 @@ git push origin :refs/tags/v0.5.2
 - Ensure version doesn't already exist
 
 ### Users Can't Update
-- Verify: `npm view gwicho38-lsh version`
+- Verify: `npm view lsh-framework version`
 - Check CI passed: `lsh self update --skip-ci-check`
-- Manual install: `npm install -g gwicho38-lsh@latest`
+- Manual install: `npm install -g lsh-framework@latest`
 
 ---
 
@@ -220,7 +220,7 @@ git push origin main --tags
 npm publish
 
 # Verify
-npm view gwicho38-lsh version
+npm view lsh-framework version
 lsh self update
 lsh self version
 ```

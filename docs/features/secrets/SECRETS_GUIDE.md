@@ -9,7 +9,7 @@ Never copy .env files again! Sync your secrets across all development environmen
 ### 1. Generate an Encryption Key
 
 ```bash
-lsh secrets key
+lsh key
 ```
 
 This generates a key like:
@@ -35,11 +35,11 @@ code .env
 
 ```bash
 # Push your dev environment secrets
-lsh secrets push
+lsh push
 
 # Or specify environment
-lsh secrets push --env staging
-lsh secrets push --env prod
+lsh push --env staging
+lsh push --env prod
 ```
 
 This encrypts and uploads your .env to Supabase.
@@ -54,7 +54,7 @@ On your other dev machines (laptop, desktop, server):
 echo "LSH_SECRETS_KEY=your_key_here" > .env
 
 # Pull your secrets
-lsh secrets pull
+lsh pull
 
 # Boom! Your .env is now synced
 ```
@@ -64,30 +64,30 @@ lsh secrets pull
 ### Push Secrets
 ```bash
 # Push current .env (defaults to 'dev' environment)
-lsh secrets push
+lsh push
 
 # Push specific environment
-lsh secrets push --env prod
+lsh push --env prod
 
 # Push different file
-lsh secrets push --file .env.staging --env staging
+lsh push --file .env.staging --env staging
 ```
 
 ### Pull Secrets
 ```bash
 # Pull dev secrets
-lsh secrets pull
+lsh pull
 
 # Pull prod secrets
-lsh secrets pull --env prod
+lsh pull --env prod
 
 # Pull to specific file
-lsh secrets pull --file .env.prod --env prod
+lsh pull --file .env.prod --env prod
 ```
 
 ### List Environments
 ```bash
-lsh secrets list
+lsh list
 
 # Output:
 # 📦 Available environments:
@@ -98,7 +98,7 @@ lsh secrets list
 
 ### Show Secrets (Masked)
 ```bash
-lsh secrets show
+lsh show
 
 # Output:
 # 📦 Secrets for dev (15 total):
@@ -134,25 +134,25 @@ lsh secrets show
 
 ```bash
 # Development
-lsh secrets push --env dev
+lsh push --env dev
 
 # Staging (different values)
-lsh secrets push --file .env.staging --env staging
+lsh push --file .env.staging --env staging
 
 # Production (super secret)
-lsh secrets push --file .env.production --env prod
+lsh push --file .env.production --env prod
 
 # Pull whatever you need
-lsh secrets pull --env dev      # for local dev
-lsh secrets pull --env staging  # for testing
-lsh secrets pull --env prod     # for production debugging
+lsh pull --env dev      # for local dev
+lsh pull --env staging  # for testing
+lsh pull --env prod     # for production debugging
 ```
 
 ## Team Collaboration
 
 **Setup (One Time):**
-1. Project lead generates key: `lsh secrets key`
-2. Lead pushes team secrets: `lsh secrets push`
+1. Project lead generates key: `lsh key`
+2. Lead pushes team secrets: `lsh push`
 3. Lead shares `LSH_SECRETS_KEY` via 1Password shared vault
 
 **Team Members:**
@@ -162,7 +162,7 @@ lsh secrets pull --env prod     # for production debugging
 echo "LSH_SECRETS_KEY=<shared_key>" > .env
 
 # 3. Pull secrets
-lsh secrets pull
+lsh pull
 
 # 4. Start coding!
 npm start
@@ -185,10 +185,10 @@ npm start
 ### "No secrets found"
 ```bash
 # Make sure you pushed first
-lsh secrets push
+lsh push
 
 # Check what's stored
-lsh secrets list
+lsh list
 ```
 
 ### "Decryption failed"
@@ -197,8 +197,8 @@ lsh secrets list
 # the key used to encrypt
 
 # Generate new key and re-push
-lsh secrets key
-lsh secrets push
+lsh key
+lsh push
 ```
 
 ### "Supabase not configured"
@@ -214,19 +214,19 @@ By default, LSH generates a key from your machine + username. For better securit
 
 ```bash
 # Generate a strong key
-lsh secrets key
+lsh key
 
 # Add to .env
 LSH_SECRETS_KEY=<your_key>
 
 # Now push/pull will use this key
-lsh secrets push
+lsh push
 ```
 
 ## Pro Tips
 
 1. **Git Ignore**: Make sure `.env*` is in your `.gitignore`
-2. **Backup**: Keep encrypted backups: `lsh secrets show > secrets-backup.txt`
+2. **Backup**: Keep encrypted backups: `lsh show > secrets-backup.txt`
 3. **Audit**: List environments regularly to see what's stored
 4. **Clean**: Delete old environments from Supabase manually if needed
 5. **Keys**: Use different keys for personal vs team projects
@@ -236,16 +236,16 @@ lsh secrets push
 ```bash
 # Monday morning on laptop
 cd ~/project
-lsh secrets pull
+lsh pull
 npm start
 
 # Tuesday on desktop
 cd ~/project
-lsh secrets pull  # Gets latest from laptop!
+lsh pull  # Gets latest from laptop!
 npm start
 
 # Friday deploy to prod
-lsh secrets pull --env prod
+lsh pull --env prod
 ./deploy.sh
 ```
 
