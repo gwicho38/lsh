@@ -4,14 +4,14 @@ import { describe, it, expect } from '@jest/globals';
 describe('CLI Command Suggestions', () => {
   const cliPath = 'node dist/cli.js';
 
-  it('should suggest "lib" when user types "liub"', () => {
+  it('should suggest "list" when user types "listt"', () => {
     try {
-      execSync(`${cliPath} liub`, { encoding: 'utf8', stdio: 'pipe' });
+      execSync(`${cliPath} listt`, { encoding: 'utf8', stdio: 'pipe' });
     } catch (error: any) {
       const stderr = error.stderr || error.stdout;
-      expect(stderr).toContain("error: unknown command 'liub'");
+      expect(stderr).toContain("error: unknown command 'listt'");
       expect(stderr).toContain('Did you mean one of these?');
-      expect(stderr).toContain('lib');
+      expect(stderr).toContain('list');
     }
   });
 
@@ -26,13 +26,13 @@ describe('CLI Command Suggestions', () => {
     }
   });
 
-  it('should suggest "lib" when user types "lib" with arguments', () => {
+  it('should suggest "push" when user types "pish"', () => {
     try {
-      execSync(`${cliPath} liub secrets push`, { encoding: 'utf8', stdio: 'pipe' });
+      execSync(`${cliPath} pish`, { encoding: 'utf8', stdio: 'pipe' });
     } catch (error: any) {
       const stderr = error.stderr || error.stdout;
-      expect(stderr).toContain("error: unknown command 'liub'");
-      expect(stderr).toContain('lib');
+      expect(stderr).toContain("error: unknown command 'pish'");
+      expect(stderr).toContain('push');
     }
   });
 
@@ -48,7 +48,7 @@ describe('CLI Command Suggestions', () => {
 
   it('should show help message with suggestions', () => {
     try {
-      execSync(`${cliPath} liub`, { encoding: 'utf8', stdio: 'pipe' });
+      execSync(`${cliPath} listt`, { encoding: 'utf8', stdio: 'pipe' });
     } catch (error: any) {
       const stderr = error.stderr || error.stdout;
       expect(stderr).toContain("Run 'lsh --help' to see available commands");
@@ -56,8 +56,8 @@ describe('CLI Command Suggestions', () => {
   });
 
   it('should still allow valid commands to work', () => {
-    const result = execSync(`${cliPath} lib --help`, { encoding: 'utf8', stdio: 'pipe' });
-    expect(result).toContain('LSH library and service commands');
+    const result = execSync(`${cliPath} list --help`, { encoding: 'utf8', stdio: 'pipe' });
+    expect(result).toContain('List secrets in the current local .env file');
   });
 
   it('should work correctly with options flags', () => {
