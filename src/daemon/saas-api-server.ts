@@ -157,7 +157,7 @@ export class SaaSApiServer {
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        this.server = this.app.listen(this.config.port, this.config.host, () => {
+        this.server = this.app.listen(this.config.port, this.config.host as string, () => {
           console.log(`
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║

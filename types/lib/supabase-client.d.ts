@@ -29,4 +29,9 @@ export declare class SupabaseClient {
     };
 }
 export declare const supabaseClient: SupabaseClient;
+/**
+ * Get Supabase client for SaaS platform
+ * Uses environment variables for configuration
+ */
+export declare function getSupabaseClient(): import("@supabase/supabase-js").SupabaseClient<any, "public", "public", any, any>;
 export default SupabaseClient;

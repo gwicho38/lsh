@@ -73,4 +73,15 @@ export class SupabaseClient {
 // Default client instance
 export const supabaseClient = new SupabaseClient();
 
+/**
+ * Get Supabase client for SaaS platform
+ * Uses environment variables for configuration
+ */
+export function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL || 'https://uljsqvwkomdrlnofmlad.supabase.co';
+  const key = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsanNxdndrb21kcmxub2ZtbGFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNDQsImV4cCI6MjA3MjM3ODI0NH0.QCpfcEpxGX_5Wn8ljf_J2KWjJLGdF8zRsV_7OatxmHI';
+
+  return createClient(url, key);
+}
+
 export default SupabaseClient;
