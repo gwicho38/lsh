@@ -17,26 +17,7 @@
 
 import path from 'path';
 
-The rule has grown quite large—consider extracting the “allowed patterns”, file‐skip logic and AST helpers into small modules. That will keep this file focused on “reporting” and improve readability.
-
-1) utils/allowedStrings.ts  
-```ts
-export const DEFAULT_ALLOWED_PATTERNS = [
-  /^[\s\n\r\t]$/, /^[.,;:!?]$/, /^[-_/\\]$/, /^[\[\]{}()]$/,
-  /^[\s.,;:!?\-_/\\]+$/, /^$/, /^\.\w{1,5}$/, /^(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)$/,
-  /^(true|false|null|undefined)$/, /^[@\w\-./]+$/, /^(utf8|utf-8|ascii|base64|hex|binary)$/i
-];
-
-export function isAllowedString(
-  value: string,
-  allowedStrings: Set<string>,
-  minLength: number
-): boolean {
-  if (allowedStrings.has(value) || value.length < minLength) {
-    return true;
-  }
-  return DEFAULT_ALLOWED_PATTERNS.some((pat) => pat.test(value));
-}
+export default {
   meta: {
     type: 'problem',
     docs: {
