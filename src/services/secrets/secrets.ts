@@ -600,6 +600,50 @@ API_KEY=
     });
 
   /**
+   * Detect if file should use 'export' prefix based on file type
+   */
+  function shouldUseExport(filePath: string): boolean {
+    const filename = path.basename(filePath);
+    const ext = path.extname(filePath);
+
+    // Shell script files - use export
+    if (['.sh', '.bash', '.zsh'].includes(ext)) {
+      return true;
+    }
+
+    // Shell profile/rc files - use export
+    if (['.bashrc', '.zshrc', '.profile', '.bash_profile', '.zprofile'].includes(filename)) {
+      return true;
+    }
+
+    // .envrc files (direnv) - use export
+    if (filename === '.envrc' || filename.endsWith('.envrc')) {
+      return true;
+    }
+
+    // .env files - do NOT use export
+    if (filename === '.env' || filename.startsWith('.env.')) {
+      return false;
+    }
+
+    // Default: no export (safest for most env files)
+    return false;
+  }
+
+  /**
+   * Format a line based on file type
+   */
+  function formatEnvLine(key: string, value: string, filePath: string): string {
+    const needsQuotes = /[\s#]/.test(value);
+    const quotedValue = needsQuotes ? `"${value}"` : value;
+    const useExport = shouldUseExport(filePath);
+
+    return useExport
+      ? `export ${key}=${quotedValue}`
+      : `${key}=${quotedValue}`;
+  }
+
+  /**
    * Set a single secret value
    */
   async function setSingleSecret(envPath: string, key: string, value: string): Promise<void> {
@@ -623,12 +667,11 @@ API_KEY=
           continue;
         }
 
-        const match = line.match(/^([^=]+)=(.*)$/);
+        // Match both with and without export
+        const match = line.match(/^(?:export\s+)?([^=]+)=(.*)$/);
         if (match && match[1].trim() === key) {
-          // Quote values with spaces or special characters
-          const needsQuotes = /[\s#]/.test(value);
-          const quotedValue = needsQuotes ? `"${value}"` : value;
-          newLines.push(`${key}=${quotedValue}`);
+          // Use appropriate format for this file type
+          newLines.push(formatEnvLine(key, value, envPath));
           found = true;
         } else {
           newLines.push(line);
@@ -640,9 +683,8 @@ API_KEY=
 
     // If key wasn't found, append it
     if (!found) {
-      const needsQuotes = /[\s#]/.test(value);
-      const quotedValue = needsQuotes ? `"${value}"` : value;
-      content = content.trimRight() + `\n${key}=${quotedValue}\n`;
+      const formattedLine = formatEnvLine(key, value, envPath);
+      content = content.trimRight() + `\n${formattedLine}\n`;
     }
 
     fs.writeFileSync(envPath, content, 'utf8');
@@ -711,8 +753,8 @@ API_KEY=
             // Skip comments and empty lines
             if (trimmed.startsWith('#') || !trimmed) continue;
 
-            // Parse KEY=VALUE format
-            const match = trimmed.match(/^([^=]+)=(.*)$/);
+            // Parse KEY=VALUE format (with or without export)
+            const match = trimmed.match(/^(?:export\s+)?([^=]+)=(.*)$/);
             if (!match) {
               errors.push(`Invalid format: ${trimmed}`);
               continue;
@@ -752,15 +794,14 @@ API_KEY=
                 continue;
               }
 
-              const match = line.match(/^([^=]+)=(.*)$/);
+              // Match both with and without export
+              const match = line.match(/^(?:export\s+)?([^=]+)=(.*)$/);
               if (match) {
                 const key = match[1].trim();
                 if (newKeys.has(key)) {
-                  // Update existing key
+                  // Update existing key with appropriate format
                   const value = newKeys.get(key)!;
-                  const needsQuotes = /[\s#]/.test(value);
-                  const quotedValue = needsQuotes ? `"${value}"` : value;
-                  newLines.push(`${key}=${quotedValue}`);
+                  newLines.push(formatEnvLine(key, value, envPath));
                   newKeys.delete(key); // Mark as processed
                   hasContent = true;
                 } else {
@@ -776,12 +817,11 @@ API_KEY=
 
           // Add new keys that weren't in the existing file
           for (const [key, value] of newKeys.entries()) {
-            const needsQuotes = /[\s#]/.test(value);
-            const quotedValue = needsQuotes ? `"${value}"` : value;
+            const formattedLine = formatEnvLine(key, value, envPath);
             if (hasContent) {
-              newLines.push(`${key}=${quotedValue}`);
+              newLines.push(formattedLine);
             } else {
-              newLines.push(`${key}=${quotedValue}`);
+              newLines.push(formattedLine);
               hasContent = true;
             }
           }
