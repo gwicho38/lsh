@@ -9,6 +9,7 @@ import { Command } from 'commander';
 import selfCommand from './commands/self.js';
 import { registerInitCommands } from './commands/init.js';
 import { registerDoctorCommands } from './commands/doctor.js';
+import { registerCompletionCommands } from './commands/completion.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_supabase } from './services/supabase/supabase.js';
 import { init_cron } from './services/cron/cron.js';
@@ -154,6 +155,9 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   await init_supabase(program);
   await init_daemon(program);
   await init_cron(program);
+
+  // Shell completion
+  registerCompletionCommands(program);
 
   // Self-management commands
   program.addCommand(selfCommand);
