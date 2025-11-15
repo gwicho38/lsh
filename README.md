@@ -317,6 +317,35 @@ lsh --version
 lsh self version
 ```
 
+### Shell Completion (Optional but Recommended)
+
+**New in v1.3.2:** Enable intelligent Tab completion for bash/zsh!
+
+**Bash:**
+```bash
+# Add to ~/.bashrc
+echo 'source <(lsh completion bash)' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Zsh:**
+```bash
+# Quick setup
+mkdir -p ~/.zsh/completions
+lsh completion zsh > ~/.zsh/completions/_lsh
+echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+echo 'autoload -Uz compinit && compinit' >> ~/.zshrc
+source ~/.zshrc
+```
+
+Now you can use Tab to:
+- Complete command names: `lsh pu<Tab>` → `lsh push`
+- Discover options: `lsh push <Tab>` → `-f --file -e --env --force -h --help`
+- Complete environments: `lsh push --env <Tab>` → `dev staging production`
+- Complete formats: `lsh list --format <Tab>` → `env json yaml toml export`
+
+See [Shell Completion Guide](docs/features/SHELL_COMPLETION.md) for more details.
+
 ### Initial Setup
 
 ```bash
