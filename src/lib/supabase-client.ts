@@ -73,4 +73,15 @@ export class SupabaseClient {
 // Default client instance
 export const supabaseClient = new SupabaseClient();
 
+/**
+ * Get Supabase client for SaaS platform
+ * Uses environment variables for configuration
+ */
+export function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL || 'https://uljsqvwkomdrlnofmlad.supabase.co';
+  const key = process.env.SUPABASE_ANON_KEY || 'REDACTED';
+
+  return createClient(url, key);
+}
+
 export default SupabaseClient;

@@ -382,9 +382,13 @@ export type AuditAction =
   | 'member.role_change'
   | 'api_key.create'
   | 'api_key.revoke'
+  | 'organization.create'
+  | 'organization.update'
+  | 'organization.delete'
   | 'billing.subscription_created'
   | 'billing.subscription_updated'
-  | 'billing.subscription_canceled';
+  | 'billing.subscription_canceled'
+  | 'billing.payment_failed';
 
 export type ResourceType = 'secret' | 'team' | 'user' | 'organization' | 'api_key' | 'subscription';
 
