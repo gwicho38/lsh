@@ -443,6 +443,7 @@ API_KEY=
     .option('--all', 'Get all secrets from the file')
     .option('--export', 'Output in export format for shell evaluation (alias for --format export)')
     .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
+    .option('--exact', 'Require exact key match (disable fuzzy matching)')
     .action(async (key, options) => {
       try {
         const envPath = path.resolve(options.file);
@@ -455,25 +456,25 @@ API_KEY=
         const content = fs.readFileSync(envPath, 'utf8');
         const lines = content.split('\n');
 
+        // Parse all secrets from file
+        const secrets: Array<{ key: string; value: string }> = [];
+        for (const line of lines) {
+          if (line.trim().startsWith('#') || !line.trim()) continue;
+          const match = line.match(/^([^=]+)=(.*)$/);
+          if (match) {
+            const key = match[1].trim();
+            let value = match[2].trim();
+            // Remove quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.slice(1, -1);
+            }
+            secrets.push({ key, value });
+          }
+        }
+
         // Handle --all flag
         if (options.all) {
-          const secrets: Array<{ key: string; value: string }> = [];
-
-          for (const line of lines) {
-            if (line.trim().startsWith('#') || !line.trim()) continue;
-            const match = line.match(/^([^=]+)=(.*)$/);
-            if (match) {
-              const key = match[1].trim();
-              let value = match[2].trim();
-              // Remove quotes if present
-              if ((value.startsWith('"') && value.endsWith('"')) ||
-                  (value.startsWith("'") && value.endsWith("'"))) {
-                value = value.slice(1, -1);
-              }
-              secrets.push({ key, value });
-            }
-          }
-
           // Handle format output
           const format = options.export ? 'export' : options.format.toLowerCase();
           const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
@@ -499,22 +500,63 @@ API_KEY=
           process.exit(1);
         }
 
-        for (const line of lines) {
-          if (line.trim().startsWith('#') || !line.trim()) continue;
-          const match = line.match(/^([^=]+)=(.*)$/);
-          if (match && match[1].trim() === key) {
-            let value = match[2].trim();
-            // Remove quotes if present
-            if ((value.startsWith('"') && value.endsWith('"')) ||
-                (value.startsWith("'") && value.endsWith("'"))) {
-              value = value.slice(1, -1);
-            }
-            console.log(value);
+        // Try exact match first
+        const exactMatch = secrets.find(s => s.key === key);
+        if (exactMatch) {
+          console.log(exactMatch.value);
+          return;
+        }
+
+        // If exact match enabled, don't do fuzzy matching
+        if (options.exact) {
+          console.error(`❌ Key '${key}' not found in ${options.file}`);
+          process.exit(1);
+        }
+
+        // Use fuzzy matching
+        const { findFuzzyMatches } = await import('../../lib/fuzzy-match.js');
+        const matches = findFuzzyMatches(key, secrets);
+
+        if (matches.length === 0) {
+          console.error(`❌ No matches found for '${key}' in ${options.file}`);
+          console.error('💡 Tip: Use --exact flag for exact matching only');
+          process.exit(1);
+        }
+
+        // If single match, return it
+        if (matches.length === 1) {
+          console.log(matches[0].value);
+          return;
+        }
+
+        // If best match score is significantly higher than second best (clear winner)
+        // then auto-select it
+        if (matches.length > 1) {
+          const bestScore = matches[0].score;
+          const secondBestScore = matches[1].score;
+
+          // If best match scores 700+ and is at least 2x better than second best,
+          // consider it a clear match
+          if (bestScore >= 700 && bestScore >= secondBestScore * 2) {
+            console.log(matches[0].value);
             return;
           }
         }
 
-        console.error(`❌ Key '${key}' not found in ${options.file}`);
+        // Multiple matches - show all matches for user to choose
+        console.error(`🔍 Found ${matches.length} matches for '${key}':\n`);
+        for (const match of matches) {
+          // Mask value for display
+          const maskedValue = match.value.length > 4
+            ? match.value.substring(0, 4) + '*'.repeat(Math.min(match.value.length - 4, 10))
+            : '****';
+          console.error(`  ${match.key}=${maskedValue}`);
+        }
+        console.error('');
+        console.error('💡 Please specify the exact key name or use one of:');
+        for (const match of matches) {
+          console.error(`   lsh get ${match.key}`);
+        }
         process.exit(1);
       } catch (error) {
         const err = error as Error;
