@@ -49,7 +49,7 @@ export class SaaSApiServer {
         origin: this.config.corsOrigins,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Decrypt-Secret'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
       })
     );
 
