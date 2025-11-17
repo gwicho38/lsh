@@ -94,8 +94,11 @@ export class SaaSApiServer {
       const start = Date.now();
       res.on('finish', () => {
         const duration = Date.now() - start;
+        // Sanitize path to prevent log injection attacks
+        const sanitizedPath = req.path.replace(/[\r\n]/g, '');
+        const sanitizedIp = (req.ip || 'unknown').replace(/[\r\n]/g, '');
         console.log(
-          `${req.method} ${req.path} ${res.statusCode} - ${duration}ms - ${req.ip}`
+          `${req.method} ${sanitizedPath} ${res.statusCode} - ${duration}ms - ${sanitizedIp}`
         );
       });
       next();

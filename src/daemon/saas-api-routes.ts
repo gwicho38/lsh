@@ -52,7 +52,9 @@ const writeLimiter = rateLimit({
 export async function authenticateUser(req: any, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+
+    // Strict validation: ensure authorization header is a string and properly formatted
+    if (typeof authHeader !== 'string' || authHeader.length < 8 || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
         error: {
@@ -62,7 +64,19 @@ export async function authenticateUser(req: any, res: Response, next: NextFuncti
       });
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader.substring(7).trim();
+
+    // Validate token format (JWT should have 3 parts separated by dots)
+    if (!token || token.split('.').length !== 3) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Invalid token format',
+        },
+      });
+    }
+
     const { userId } = verifyToken(token);
 
     const user = await authService.getUserById(userId);
@@ -138,10 +152,21 @@ export function setupSaaSApiRoutes(app: any) {
     try {
       const { email, password, firstName, lastName } = req.body;
 
-      if (!email || !password) {
+      // Strict input validation: ensure email and password are non-empty strings
+      if (typeof email !== 'string' || typeof password !== 'string' ||
+          email.trim().length === 0 || password.length < 8) {
         return res.status(400).json({
           success: false,
-          error: { code: 'INVALID_INPUT', message: 'Email and password required' },
+          error: { code: 'INVALID_INPUT', message: 'Valid email and password (min 8 chars) required' },
+        });
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_INPUT', message: 'Invalid email format' },
         });
       }
 
@@ -184,7 +209,9 @@ export function setupSaaSApiRoutes(app: any) {
     try {
       const { email, password } = req.body;
 
-      if (!email || !password) {
+      // Strict input validation: ensure email and password are non-empty strings
+      if (typeof email !== 'string' || typeof password !== 'string' ||
+          email.trim().length === 0 || password.length === 0) {
         return res.status(400).json({
           success: false,
           error: { code: 'INVALID_INPUT', message: 'Email and password required' },
@@ -215,10 +242,11 @@ export function setupSaaSApiRoutes(app: any) {
     try {
       const { token } = req.body;
 
-      if (!token) {
+      // Strict validation: ensure token is a non-empty string
+      if (typeof token !== 'string' || token.trim().length === 0) {
         return res.status(400).json({
           success: false,
-          error: { code: 'INVALID_INPUT', message: 'Token required' },
+          error: { code: 'INVALID_INPUT', message: 'Valid token required' },
         });
       }
 
