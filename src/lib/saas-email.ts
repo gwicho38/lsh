@@ -52,9 +52,13 @@ export class EmailService {
     text: string;
   }): Promise<void> {
     if (!this.config.apiKey) {
-      console.log('Email would be sent to:', params.to);
-      console.log('Subject:', params.subject);
-      console.log('Text:', params.text);
+      // Sanitize email parameters to prevent log injection
+      const sanitizedTo = params.to.replace(/[\r\n]/g, '');
+      const sanitizedSubject = params.subject.replace(/[\r\n]/g, '');
+      const sanitizedText = params.text.replace(/[\r\n]/g, ' ');
+      console.log('Email would be sent to:', sanitizedTo);
+      console.log('Subject:', sanitizedSubject);
+      console.log('Text:', sanitizedText);
       return;
     }
 
