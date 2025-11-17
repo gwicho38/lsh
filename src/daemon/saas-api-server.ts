@@ -5,6 +5,7 @@
 
 import express, { type Express } from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import { setupSaaSApiRoutes } from './saas-api-routes.js';
 
 export interface SaaSApiServerConfig {
@@ -48,9 +49,25 @@ export class SaaSApiServer {
         origin: this.config.corsOrigins,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-Decrypt-Secret'],
       })
     );
+
+    // Rate limiting - global limit for all requests
+    const limiter = rateLimit({
+      windowMs: this.config.rateLimitWindowMs,
+      max: this.config.rateLimitMax,
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMIT_EXCEEDED',
+          message: 'Too many requests, please try again later',
+        },
+      },
+      standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
+      legacyHeaders: false, // Disable `X-RateLimit-*` headers
+    });
+    this.app.use(limiter);
 
     // Body parsers
     this.app.use(express.json({ limit: '10mb' }));
