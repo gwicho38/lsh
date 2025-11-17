@@ -76,8 +76,27 @@ export class SupabaseClient {
   }
 }
 
-// Default client instance
-export const supabaseClient = new SupabaseClient();
+// Default client instance - lazily initialized to avoid errors at module load
+let _supabaseClient: SupabaseClient | null = null;
+
+function getDefaultClient(): SupabaseClient {
+  if (!_supabaseClient) {
+    _supabaseClient = new SupabaseClient();
+  }
+  return _supabaseClient;
+}
+
+export const supabaseClient = {
+  getClient() {
+    return getDefaultClient().getClient();
+  },
+  async testConnection() {
+    return getDefaultClient().testConnection();
+  },
+  getConnectionInfo() {
+    return getDefaultClient().getConnectionInfo();
+  }
+};
 
 /**
  * Get Supabase client for SaaS platform
