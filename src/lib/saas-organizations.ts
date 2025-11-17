@@ -25,12 +25,21 @@ import { auditLogger } from './saas-audit.js';
  * Generate URL-friendly slug from name
  */
 function slugify(name: string): string {
-  return name
+  let result = name
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[\s_-]+/g, '-');
+
+  // Remove leading and trailing dashes without vulnerable regex
+  while (result.startsWith('-')) {
+    result = result.slice(1);
+  }
+  while (result.endsWith('-')) {
+    result = result.slice(0, -1);
+  }
+
+  return result;
 }
 
 /**

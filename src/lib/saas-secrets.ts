@@ -292,9 +292,9 @@ export class SecretsService {
     const secrets = await this.getTeamSecrets(teamId, environment, true);
 
     const envLines = secrets.map((secret) => {
-      // Escape special characters in values
+      // Escape special characters in values (backslashes first, then quotes)
       const value = secret.encryptedValue.includes(' ')
-        ? `"${secret.encryptedValue.replace(/"/g, '\\"')}"`
+        ? `"${secret.encryptedValue.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
         : secret.encryptedValue;
 
       const comment = secret.description ? `# ${secret.description}\n` : '';

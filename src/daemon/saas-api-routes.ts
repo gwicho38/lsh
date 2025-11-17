@@ -4,6 +4,7 @@
  */
 
 import type { Request, Response, NextFunction } from 'express';
+import rateLimit from 'express-rate-limit';
 import { authService, verifyToken } from '../lib/saas-auth.js';
 import { organizationService, teamService } from '../lib/saas-organizations.js';
 import { billingService } from '../lib/saas-billing.js';
@@ -11,6 +12,39 @@ import { auditLogger, getIpFromRequest, getUserAgentFromRequest } from '../lib/s
 import { emailService } from '../lib/saas-email.js';
 import { secretsService } from '../lib/saas-secrets.js';
 import type { ApiResponse } from '../lib/saas-types.js';
+
+/**
+ * Rate Limiters for different endpoint types
+ */
+// Strict rate limiter for authentication endpoints (5 requests per 15 minutes)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many authentication attempts, please try again later',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Moderate rate limiter for write operations (30 requests per 15 minutes)
+const writeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: {
+    success: false,
+    error: {
+      code: 'RATE_LIMIT_EXCEEDED',
+      message: 'Too many write requests, please try again later',
+    },
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 /**
  * Middleware: Authenticate user from JWT token
@@ -61,7 +95,8 @@ export async function authenticateUser(req: any, res: Response, next: NextFuncti
  */
 export async function requireOrganizationMembership(req: any, res: Response, next: NextFunction) {
   try {
-    const organizationId = req.params.organizationId || req.body.organizationId;
+    // Only use organizationId from URL params to prevent bypass attacks
+    const organizationId = req.params.organizationId;
     if (!organizationId) {
       return res.status(400).json({
         success: false,
@@ -99,7 +134,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/auth/signup
    * Sign up a new user
    */
-  app.post('/api/v1/auth/signup', async (req: Request, res: Response) => {
+  app.post('/api/v1/auth/signup', authLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password, firstName, lastName } = req.body;
 
@@ -145,7 +180,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/auth/login
    * Login with email and password
    */
-  app.post('/api/v1/auth/login', async (req: Request, res: Response) => {
+  app.post('/api/v1/auth/login', authLimiter, async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
 
@@ -176,7 +211,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/auth/verify-email
    * Verify email address
    */
-  app.post('/api/v1/auth/verify-email', async (req: Request, res: Response) => {
+  app.post('/api/v1/auth/verify-email', authLimiter, async (req: Request, res: Response) => {
     try {
       const { token } = req.body;
 
@@ -208,7 +243,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/auth/resend-verification
    * Resend verification email
    */
-  app.post('/api/v1/auth/resend-verification', async (req: Request, res: Response) => {
+  app.post('/api/v1/auth/resend-verification', authLimiter, async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
 
@@ -235,7 +270,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/auth/refresh
    * Refresh access token
    */
-  app.post('/api/v1/auth/refresh', async (req: Request, res: Response) => {
+  app.post('/api/v1/auth/refresh', authLimiter, async (req: Request, res: Response) => {
     try {
       const { refreshToken } = req.body;
 
@@ -279,7 +314,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/organizations
    * Create a new organization
    */
-  app.post('/api/v1/organizations', authenticateUser, async (req: any, res: Response) => {
+  app.post('/api/v1/organizations', writeLimiter, authenticateUser, async (req: any, res: Response) => {
     try {
       const { name, slug } = req.body;
 
@@ -378,6 +413,7 @@ export function setupSaaSApiRoutes(app: any) {
    */
   app.post(
     '/api/v1/organizations/:organizationId/members',
+    writeLimiter,
     authenticateUser,
     requireOrganizationMembership,
     async (req: any, res: Response) => {
@@ -428,6 +464,7 @@ export function setupSaaSApiRoutes(app: any) {
    */
   app.post(
     '/api/v1/organizations/:organizationId/teams',
+    writeLimiter,
     authenticateUser,
     requireOrganizationMembership,
     async (req: any, res: Response) => {
@@ -497,7 +534,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/teams/:teamId/secrets
    * Create a new secret
    */
-  app.post('/api/v1/teams/:teamId/secrets', authenticateUser, async (req: any, res: Response) => {
+  app.post('/api/v1/teams/:teamId/secrets', writeLimiter, authenticateUser, async (req: any, res: Response) => {
     try {
       const { environment, key, value, description, tags, rotationIntervalDays } = req.body;
 
@@ -567,17 +604,19 @@ export function setupSaaSApiRoutes(app: any) {
   /**
    * GET /api/v1/teams/:teamId/secrets/:secretId
    * Get secret by ID
+   * Use header 'X-Decrypt-Secret: true' to retrieve decrypted value
    */
   app.get(
     '/api/v1/teams/:teamId/secrets/:secretId',
     authenticateUser,
     async (req: any, res: Response) => {
       try {
-        const { decrypt } = req.query;
+        // Use header instead of query param to avoid logging sensitive flags
+        const decrypt = req.headers['x-decrypt-secret'] === 'true';
 
         const secret = await secretsService.getSecretById(
           req.params.secretId,
-          decrypt === 'true'
+          decrypt
         );
 
         if (!secret) {
@@ -592,7 +631,7 @@ export function setupSaaSApiRoutes(app: any) {
           data: {
             secret: {
               ...secret,
-              encryptedValue: decrypt === 'true' ? secret.encryptedValue : '***REDACTED***',
+              encryptedValue: decrypt ? secret.encryptedValue : '***REDACTED***',
             },
           },
         });
@@ -611,6 +650,7 @@ export function setupSaaSApiRoutes(app: any) {
    */
   app.put(
     '/api/v1/teams/:teamId/secrets/:secretId',
+    writeLimiter,
     authenticateUser,
     async (req: any, res: Response) => {
       try {
@@ -643,6 +683,7 @@ export function setupSaaSApiRoutes(app: any) {
    */
   app.delete(
     '/api/v1/teams/:teamId/secrets/:secretId',
+    writeLimiter,
     authenticateUser,
     async (req: any, res: Response) => {
       try {
@@ -705,6 +746,7 @@ export function setupSaaSApiRoutes(app: any) {
    */
   app.post(
     '/api/v1/teams/:teamId/secrets/import/env',
+    writeLimiter,
     authenticateUser,
     async (req: any, res: Response) => {
       try {
@@ -800,6 +842,7 @@ export function setupSaaSApiRoutes(app: any) {
    */
   app.post(
     '/api/v1/organizations/:organizationId/billing/checkout',
+    writeLimiter,
     authenticateUser,
     requireOrganizationMembership,
     async (req: any, res: Response) => {
