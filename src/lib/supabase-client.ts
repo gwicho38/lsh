@@ -5,12 +5,9 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-const SUPABASE_URL = 'https://uljsqvwkomdrlnofmlad.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsanNxdndrb21kcmxub2ZtbGFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY4MDIyNDQsImV4cCI6MjA3MjM3ODI0NH0.QCpfcEpxGX_5Wn8ljf_J2KWjJLGdF8zRsV_7OatxmHI';
-
-// Database connection string (for direct PostgreSQL access if needed)
-const DATABASE_URL = 'postgresql://postgres:[YOUR-PASSWORD]@db.uljsqvwkomdrlnofmlad.supabase.co:5432/postgres';
+// Supabase configuration from environment variables
+// IMPORTANT: These must be set in .env or environment
+// See .env.example for configuration details
 
 export interface SupabaseConfig {
   url: string;
@@ -24,11 +21,20 @@ export class SupabaseClient {
   private config: SupabaseConfig;
 
   constructor(config?: Partial<SupabaseConfig>) {
+    const url = config?.url || process.env.SUPABASE_URL;
+    const anonKey = config?.anonKey || process.env.SUPABASE_ANON_KEY;
+    const databaseUrl = config?.databaseUrl || process.env.DATABASE_URL;
+
+    if (!url || !anonKey) {
+      throw new Error(
+        'Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+      );
+    }
+
     this.config = {
-      url: SUPABASE_URL,
-      anonKey: SUPABASE_ANON_KEY,
-      databaseUrl: DATABASE_URL,
-      ...config,
+      url,
+      anonKey,
+      databaseUrl,
     };
 
     this.client = createClient(this.config.url, this.config.anonKey);
@@ -70,7 +76,44 @@ export class SupabaseClient {
   }
 }
 
-// Default client instance
-export const supabaseClient = new SupabaseClient();
+// Default client instance - lazily initialized to avoid errors at module load
+let _supabaseClient: SupabaseClient | null = null;
+
+function getDefaultClient(): SupabaseClient {
+  if (!_supabaseClient) {
+    _supabaseClient = new SupabaseClient();
+  }
+  return _supabaseClient;
+}
+
+export const supabaseClient = {
+  getClient() {
+    return getDefaultClient().getClient();
+  },
+  async testConnection() {
+    return getDefaultClient().testConnection();
+  },
+  getConnectionInfo() {
+    return getDefaultClient().getConnectionInfo();
+  }
+};
+
+/**
+ * Get Supabase client for SaaS platform
+ * Uses environment variables for configuration
+ * @throws {Error} If SUPABASE_URL or SUPABASE_ANON_KEY are not set
+ */
+export function getSupabaseClient() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_ANON_KEY;
+
+  if (!url || !key) {
+    throw new Error(
+      'Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+    );
+  }
+
+  return createClient(url, key);
+}
 
 export default SupabaseClient;
