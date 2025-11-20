@@ -256,10 +256,11 @@ async function testSupabaseConnection(
   try {
     const supabase = createClient(url, key);
 
-    // Try to query (404 for missing table is fine - means connection works)
+    // Try to query
     const { error } = await supabase.from('lsh_secrets').select('count').limit(0);
 
-    if (!error || error.code === 'PGRST116' || error.message.includes('relation')) {
+    // No error means table exists and connection works
+    if (!error) {
       return {
         name: 'Supabase Connection',
         status: 'pass',
@@ -268,6 +269,17 @@ async function testSupabaseConnection(
       };
     }
 
+    // Check if table doesn't exist (PGRST116 or relation not found errors)
+    if (error.code === 'PGRST116' || error.message.includes('relation') || error.message.includes('table') || error.message.includes('schema cache')) {
+      return {
+        name: 'Storage Mode',
+        status: 'pass',
+        message: 'Using local storage (Supabase table not found)',
+        details: 'Secrets are stored locally at ~/.lsh/data/storage.json',
+      };
+    }
+
+    // Other connection errors
     return {
       name: 'Supabase Connection',
       status: 'warn',
