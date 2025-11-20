@@ -209,14 +209,35 @@ lsh config reload
 LSH loads configuration in this order (later sources override earlier ones):
 
 1. **Built-in defaults** (hardcoded in LSH)
-2. **`~/.config/lsh/lshrc`** (configuration file)
-3. **Environment variables** (current shell)
+2. **`~/.config/lsh/lshrc`** (configuration file) ← **Recommended for LSH config**
+3. **Environment variables** (current shell) ← **Highest priority**
 4. **`.env` file** (project-specific, for secrets only)
 
 This means:
-- Configuration file values override defaults
-- Environment variables override configuration file
-- `.env` is only used for secrets management, not LSH config
+- `lshrc` provides persistent defaults for LSH configuration
+- Environment variables override lshrc (useful for temporary overrides)
+- `.env` is only used for application secrets managed by `lsh push/pull`, NOT for LSH configuration
+
+### Example: Database Configuration
+
+**Recommended approach (use lshrc):**
+```bash
+lsh config set SUPABASE_URL https://myproject.supabase.co
+lsh config set SUPABASE_ANON_KEY eyJhbG...
+# Now works everywhere without setting env vars
+```
+
+**Override temporarily:**
+```bash
+# Use different database for one command
+SUPABASE_URL=https://test-project.supabase.co lsh push
+```
+
+**Not recommended:**
+```bash
+# DON'T put LSH config in .env - use lshrc instead!
+# .env should only contain application secrets
+```
 
 ## Migration from .env
 
