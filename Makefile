@@ -24,7 +24,7 @@ NPM := npm
 NODE := node
 TSC := npx tsc
 JEST := $(NODE) --experimental-vm-modules ./$(NODE_MODULES)/.bin/jest
-NEXE := $(NODE) build.js
+NEXE := $(NODE) scripts/build.js
 
 # Build outputs
 MAIN_OUTPUT := $(DIST_DIR)/app.js
