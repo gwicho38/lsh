@@ -7,7 +7,7 @@
 #   docker build -t lsh-daemon .
 #   docker run -p 3030:3030 --env-file .env lsh-daemon
 #
-# For fly.io deployment, see fly.toml
+# For fly.io deployment, see config/fly.toml
 
 FROM node:20.18.0-slim
 

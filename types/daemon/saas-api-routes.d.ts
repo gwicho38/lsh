@@ -8,11 +8,11 @@ import type { Response, NextFunction } from 'express';
  * Security is enforced by cryptographic JWT verification and database lookup,
  * not by input validation alone.
  */
-export declare function authenticateUser(req: any, res: Response, next: NextFunction): Promise<any>;
+export declare function authenticateUser(req: any, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 /**
  * Middleware: Check organization membership
  */
-export declare function requireOrganizationMembership(req: any, res: Response, next: NextFunction): Promise<any>;
+export declare function requireOrganizationMembership(req: any, res: Response, next: NextFunction): Promise<Response<any, Record<string, any>> | undefined>;
 /**
  * Setup SaaS API routes
  */

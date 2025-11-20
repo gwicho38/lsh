@@ -178,7 +178,7 @@ REDIS_URL=redis://... (if using Redis)
 
 ### fly.toml Configuration
 
-Edit `fly.toml` to customize:
+Edit `config/fly.toml` to customize:
 
 ```toml
 # Change region
@@ -295,7 +295,7 @@ tail -f /app/logs/*.log
 **"Connection refused"**
 - Verify app is running: `fly status -a mcli-lsh-daemon`
 - Check firewall rules
-- Verify HTTPS is enabled in fly.toml
+- Verify HTTPS is enabled in config/fly.toml
 
 **"Out of memory"**
 - Increase memory: `fly scale memory 1024 -a mcli-lsh-daemon`
@@ -306,7 +306,7 @@ tail -f /app/logs/*.log
 ### Development Setup (Minimal Cost)
 
 ```toml
-# In fly.toml
+# In config/fly.toml
 [http_service]
   auto_stop_machines = true
   min_machines_running = 0

@@ -133,11 +133,11 @@ check_prerequisites() {
     print_success "Dockerfile found"
 
     # Check if fly.toml exists
-    if [ ! -f "fly.toml" ]; then
-        print_error "fly.toml not found"
+    if [ ! -f "config/fly.toml" ]; then
+        print_error "config/fly.toml not found"
         exit 1
     fi
-    print_success "fly.toml found"
+    print_success "config/fly.toml found"
 }
 
 # Build TypeScript locally to verify
