@@ -312,6 +312,9 @@ describe('Destructive Change Detection', () => {
       const futureTime = Date.now() + (2 * 60 * 1000); // 2 minutes in the future
       fs.utimesSync(envFile, new Date(futureTime), new Date(futureTime));
 
+      // Small delay to ensure filesystem has updated timestamps
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // SmartSync should detect this and block
       await expect(async () => {
         await manager.smartSync(envFile, 'test', true, false, false);
