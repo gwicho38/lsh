@@ -1,7 +1,7 @@
 {
   "name": "lsh-framework",
   "version": "1.5.0",
-  "description": "Simple, cross-platform encrypted secrets manager with automatic sync and multi-environment support. Just run lsh sync and start managing your secrets.",
+  "description": "Simple, cross-platform encrypted secrets manager with automatic sync, IPFS audit logs, and multi-environment support. Just run lsh sync and start managing your secrets.",
   "main": "dist/app.js",
   "bin": {
     "lsh": "./dist/cli.js"
@@ -38,6 +38,9 @@
     "multi-environment",
     "devops",
     "security",
+    "audit-log",
+    "ipfs",
+    "immutable-records",
     "cli",
     "cross-platform"
   ],
