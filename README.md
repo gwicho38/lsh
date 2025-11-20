@@ -117,6 +117,7 @@ What Smart Sync does automatically:
 - ✅ **Updates .gitignore** - Ensures .env is never committed
 - ✅ **Intelligent sync** - Pushes/pulls based on what's newer
 - ✅ **Load mode** - Sync and load with `eval` in one command
+- ✅ **Immutable audit log** - Records all operations to IPFS (local) **(NEW in v1.5.0)**
 
 **Repository Isolation:**
 ```bash
@@ -156,6 +157,51 @@ lsh info
 ```
 
 No more conflicts between projects using the same environment names!
+
+### 📝 Immutable Audit Log (New in v1.5.0!)
+
+**Every sync operation is automatically recorded to an immutable IPFS-compatible audit log.**
+
+```bash
+# Push secrets - automatically creates audit record
+lsh push
+✅ Pushed 60 secrets from .env to Supabase
+📝 Recorded on IPFS: ipfs://bafkreiabc123...
+   View: https://ipfs.io/ipfs/bafkreiabc123...
+
+# View sync history
+lsh sync-history show
+
+📊 Sync History for: myproject/dev
+
+2025-11-20 21:00:00  push    60 keys  myproject/dev
+2025-11-20 20:45:00  pull    60 keys  myproject/dev
+2025-11-20 20:30:00  push    58 keys  myproject/dev
+
+📦 Total: 3 records
+🔒 All records are permanently stored on IPFS
+```
+
+**Features:**
+- ✅ **Zero Config** - Works automatically, no setup required
+- ✅ **Content-Addressed** - IPFS-style CIDs for each record
+- ✅ **Privacy-First** - Only metadata, never secret values
+- ✅ **Immutable** - Content cannot change without changing CID
+- ✅ **Opt-Out** - Disable with `lsh config set DISABLE_IPFS_SYNC true`
+
+**What's Recorded:**
+- Timestamp, command, action type (push/pull)
+- Number of keys synced
+- Git repo, branch, environment name
+- Key fingerprint (hash only, not actual key)
+- Machine ID (anonymized hash)
+
+**What's NOT Recorded:**
+- ❌ Secret values (never stored)
+- ❌ Encryption keys (only fingerprints)
+- ❌ File contents or variable names
+
+See [IPFS Sync Records Documentation](docs/features/IPFS_SYNC_RECORDS.md) for complete details.
 
 ### 🔐 Secrets Management
 

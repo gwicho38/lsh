@@ -116,5 +116,9 @@ export declare class SecretsManager {
      * Sync command - check status and suggest actions (legacy, kept for compatibility)
      */
     sync(envFilePath?: string, environment?: string): Promise<void>;
+    /**
+     * Log sync operation to IPFS for immutable record
+     */
+    private logToIPFS;
 }
 export default SecretsManager;

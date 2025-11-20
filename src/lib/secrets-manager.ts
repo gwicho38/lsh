@@ -9,6 +9,7 @@ import * as crypto from 'crypto';
 import DatabasePersistence from './database-persistence.js';
 import { createLogger, LogLevel } from './logger.js';
 import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo } from './git-utils.js';
+import { IPFSSyncLogger } from './ipfs-sync-logger.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -302,6 +303,9 @@ export class SecretsManager {
     await this.persistence.saveJob(secretData as Parameters<typeof this.persistence.saveJob>[0]);
 
     logger.info(`✅ Pushed ${Object.keys(env).length} secrets from ${filename} to Supabase`);
+
+    // Log to IPFS for immutable record
+    await this.logToIPFS('push', environment, Object.keys(env).length);
   }
 
   /**
@@ -350,6 +354,9 @@ export class SecretsManager {
 
     const env = this.parseEnvFile(decrypted);
     logger.info(`✅ Pulled ${Object.keys(env).length} secrets from Supabase`);
+
+    // Log to IPFS for immutable record
+    await this.logToIPFS('pull', environment, Object.keys(env).length);
   }
 
   /**
@@ -1007,6 +1014,34 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       console.log('📋 Recommendations:\n');
       suggestions.forEach(s => console.log(s));
       console.log();
+    }
+  }
+
+  /**
+   * Log sync operation to IPFS for immutable record
+   */
+  private async logToIPFS(action: 'push' | 'pull' | 'sync' | 'create', environment: string, keysCount: number): Promise<void> {
+    try {
+      const ipfsLogger = new IPFSSyncLogger();
+
+      if (!ipfsLogger.isEnabled()) {
+        return;
+      }
+
+      const cid = await ipfsLogger.recordSync({
+        action,
+        environment: this.getRepoAwareEnvironment(environment),
+        keys_count: keysCount,
+      });
+
+      if (cid) {
+        console.log(`📝 Recorded on IPFS: ipfs://${cid}`);
+        console.log(`   View: https://ipfs.io/ipfs/${cid}`);
+      }
+    } catch (error) {
+      // Don't fail operation if IPFS logging fails
+      const err = error as Error;
+      logger.warn(`⚠️  Could not log to IPFS: ${err.message}`);
     }
   }
 }

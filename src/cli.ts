@@ -11,6 +11,7 @@ import { registerInitCommands } from './commands/init.js';
 import { registerDoctorCommands } from './commands/doctor.js';
 import { registerCompletionCommands } from './commands/completion.js';
 import { registerConfigCommands } from './commands/config.js';
+import { registerSyncHistoryCommands } from './commands/sync-history.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_supabase } from './services/supabase/supabase.js';
 import { init_cron } from './services/cron/cron.js';
@@ -154,6 +155,7 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   registerInitCommands(program);
   registerDoctorCommands(program);
   registerConfigCommands(program);
+  registerSyncHistoryCommands(program);
 
   // Secrets management (primary feature)
   await init_secrets(program);
