@@ -698,6 +698,21 @@ npm run lint
 npm run lint:fix
 ```
 
+### Git Hooks
+
+Install git hooks for automatic linting before commits:
+
+```bash
+# Install hooks
+./scripts/install-git-hooks.sh
+
+# Hooks will run automatically on git commit
+# To skip hooks on a specific commit:
+git commit --no-verify
+```
+
+The pre-commit hook runs `npm run lint` and blocks commits if linting fails.
+
 ### From Source
 
 ```bash
