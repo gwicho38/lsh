@@ -82,7 +82,8 @@
       "Bash(/tmp/secrets_qr_fixed.md)",
       "Bash(/tmp/release_fixed.md)",
       "Bash(npm install:*)",
-      "Bash(/tmp/test.env)"
+      "Bash(/tmp/test.env)",
+      "Bash(gh issue create:*)"
     ],
     "deny": [],
     "ask": []

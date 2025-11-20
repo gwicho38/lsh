@@ -78,23 +78,60 @@ export class SupabaseClient {
 
 // Default client instance - lazily initialized to avoid errors at module load
 let _supabaseClient: SupabaseClient | null = null;
+let _clientInitializationFailed = false;
 
-function getDefaultClient(): SupabaseClient {
+function getDefaultClient(): SupabaseClient | null {
+  if (_clientInitializationFailed) {
+    return null;
+  }
+
   if (!_supabaseClient) {
-    _supabaseClient = new SupabaseClient();
+    try {
+      _supabaseClient = new SupabaseClient();
+    } catch (_error) {
+      // Supabase not configured - will fall back to local storage
+      _clientInitializationFailed = true;
+      return null;
+    }
   }
   return _supabaseClient;
 }
 
+/**
+ * Check if Supabase is configured and available
+ */
+export function isSupabaseConfigured(): boolean {
+  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+}
+
 export const supabaseClient = {
   getClient() {
-    return getDefaultClient().getClient();
+    const client = getDefaultClient();
+    if (!client) {
+      throw new Error('Supabase client not initialized. Using local storage fallback.');
+    }
+    return client.getClient();
   },
   async testConnection() {
-    return getDefaultClient().testConnection();
+    const client = getDefaultClient();
+    if (!client) {
+      return false;
+    }
+    return client.testConnection();
   },
   getConnectionInfo() {
-    return getDefaultClient().getConnectionInfo();
+    const client = getDefaultClient();
+    if (!client) {
+      return {
+        url: undefined,
+        databaseUrl: undefined,
+        isConnected: false,
+      };
+    }
+    return client.getConnectionInfo();
+  },
+  isAvailable() {
+    return getDefaultClient() !== null;
   }
 };
 
