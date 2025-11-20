@@ -26,7 +26,11 @@ export class DatabasePersistence {
     this.useLocalStorage = !isSupabaseConfigured();
 
     if (this.useLocalStorage) {
-      console.log('⚠️  Supabase not configured - using local storage fallback');
+      // Using local storage is normal when Supabase is not configured
+      // Only show this message once per session to avoid noise
+      if (!process.env.LSH_LOCAL_STORAGE_QUIET) {
+        console.log('ℹ️  Using local storage (Supabase not configured)');
+      }
       this.localStorage = new LocalStorageAdapter(userId);
       this.localStorage.initialize().catch(err => {
         console.error('Failed to initialize local storage:', err);
@@ -256,6 +260,8 @@ export class DatabasePersistence {
    */
   public async getActiveJobs(): Promise<ShellJob[]> {
     if (this.useLocalStorage && this.localStorage) {
+      // Reload from disk to get latest data (in case written by another SecretsManager instance)
+      await this.localStorage.reload();
       return this.localStorage.getActiveJobs();
     }
 
