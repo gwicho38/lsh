@@ -84,6 +84,17 @@ export class DatabasePersistence {
   }
 
   /**
+   * Cleanup resources (stop timers, close connections)
+   * Call this when done to allow process to exit
+   */
+  public async cleanup(): Promise<void> {
+    if (this.localStorage) {
+      await this.localStorage.cleanup();
+    }
+    // Supabase client doesn't need cleanup (no persistent connections)
+  }
+
+  /**
    * Save shell history entry
    */
   public async saveHistoryEntry(entry: Omit<ShellHistoryEntry, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {

@@ -16,6 +16,11 @@ export declare class SecretsManager {
     private gitInfo?;
     constructor(userId?: string, encryptionKey?: string, detectGit?: boolean);
     /**
+     * Cleanup resources (stop timers, close connections)
+     * Call this when done to allow process to exit
+     */
+    cleanup(): Promise<void>;
+    /**
      * Get default encryption key from environment or machine
      */
     private getDefaultEncryptionKey;

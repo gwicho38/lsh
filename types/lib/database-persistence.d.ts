@@ -23,6 +23,11 @@ export declare class DatabasePersistence {
      */
     initializeSchema(): Promise<boolean>;
     /**
+     * Cleanup resources (stop timers, close connections)
+     * Call this when done to allow process to exit
+     */
+    cleanup(): Promise<void>;
+    /**
      * Save shell history entry
      */
     saveHistoryEntry(entry: Omit<ShellHistoryEntry, 'id' | 'created_at' | 'updated_at'>): Promise<boolean>;
