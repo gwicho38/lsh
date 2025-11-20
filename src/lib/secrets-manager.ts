@@ -39,6 +39,14 @@ export class SecretsManager {
   }
 
   /**
+   * Cleanup resources (stop timers, close connections)
+   * Call this when done to allow process to exit
+   */
+  async cleanup(): Promise<void> {
+    await this.persistence.cleanup();
+  }
+
+  /**
    * Get default encryption key from environment or machine
    */
   private getDefaultEncryptionKey(): string {
