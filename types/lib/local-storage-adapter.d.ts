@@ -1,27 +1,52 @@
 /**
- * Database Persistence Layer for LSH
- * Handles data synchronization with Supabase PostgreSQL or local storage fallback
+ * Local File-Based Storage Adapter
+ * Provides persistence when Supabase/PostgreSQL is not available
+ * Uses JSON files for storage - suitable for development and single-user deployments
  */
 import { ShellHistoryEntry, ShellJob, ShellConfiguration, ShellAlias, ShellFunction } from './database-schema.js';
-export declare class DatabasePersistence {
-    private client?;
-    private localStorage?;
+export interface LocalStorageConfig {
+    dataDir?: string;
+    autoFlush?: boolean;
+    flushInterval?: number;
+}
+/**
+ * Local file-based storage adapter
+ * Implements same interface as DatabasePersistence but uses local JSON files
+ */
+export declare class LocalStorageAdapter {
+    private dataDir;
+    private dataFile;
+    private data;
     private userId?;
     private sessionId;
-    private useLocalStorage;
-    constructor(userId?: string);
+    private autoFlush;
+    private flushInterval?;
+    private isDirty;
+    constructor(userId?: string, config?: LocalStorageConfig);
     /**
-     * Generate a deterministic UUID from username
+     * Initialize storage directory and load existing data
      */
-    private generateUserUUID;
+    initialize(): Promise<void>;
+    /**
+     * Flush in-memory data to disk
+     */
+    flush(): Promise<void>;
+    /**
+     * Mark data as dirty (needs flush)
+     */
+    private markDirty;
+    /**
+     * Cleanup and flush on exit
+     */
+    cleanup(): Promise<void>;
     /**
      * Generate a unique session ID
      */
     private generateSessionId;
     /**
-     * Initialize database schema
+     * Generate a unique ID
      */
-    initializeSchema(): Promise<boolean>;
+    private generateId;
     /**
      * Save shell history entry
      */
@@ -75,7 +100,7 @@ export declare class DatabasePersistence {
      */
     endSession(): Promise<boolean>;
     /**
-     * Test database connectivity
+     * Test storage connectivity (always succeeds for local storage)
      */
     testConnection(): Promise<boolean>;
     /**
@@ -83,7 +108,7 @@ export declare class DatabasePersistence {
      */
     getSessionId(): string;
     /**
-     * Get latest rows from all database tables
+     * Get latest rows from all tables
      */
     getLatestRows(limit?: number): Promise<{
         [tableName: string]: Record<string, unknown>[];
@@ -93,4 +118,4 @@ export declare class DatabasePersistence {
      */
     getLatestRowsFromTable(tableName: string, limit?: number): Promise<Record<string, unknown>[]>;
 }
-export default DatabasePersistence;
+export default LocalStorageAdapter;

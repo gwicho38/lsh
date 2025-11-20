@@ -1,9 +1,9 @@
 /**
  * Database Persistence Layer for LSH
- * Handles data synchronization with Supabase PostgreSQL
+ * Handles data synchronization with Supabase PostgreSQL or local storage fallback
  */
 
-import { supabaseClient } from './supabase-client.js';
+import { supabaseClient, isSupabaseConfigured } from './supabase-client.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import * as os from 'os';
 import {
@@ -13,14 +13,35 @@ import {
   ShellAlias,
   ShellFunction,
 } from './database-schema.js';
+import { LocalStorageAdapter } from './local-storage-adapter.js';
 
 export class DatabasePersistence {
-  private client: SupabaseClient;
+  private client?: SupabaseClient;
+  private localStorage?: LocalStorageAdapter;
   private userId?: string;
   private sessionId: string;
+  private useLocalStorage: boolean;
 
   constructor(userId?: string) {
-    this.client = supabaseClient.getClient();
+    this.useLocalStorage = !isSupabaseConfigured();
+
+    if (this.useLocalStorage) {
+      console.log('⚠️  Supabase not configured - using local storage fallback');
+      this.localStorage = new LocalStorageAdapter(userId);
+      this.localStorage.initialize().catch(err => {
+        console.error('Failed to initialize local storage:', err);
+      });
+    } else {
+      // Supabase is configured, use it exclusively
+      try {
+        this.client = supabaseClient.getClient();
+      } catch (error) {
+        // If Supabase is configured but fails, throw error instead of falling back
+        console.error('⚠️  Supabase is configured but connection failed:', error);
+        throw new Error('Supabase connection failed. Check your SUPABASE_URL and SUPABASE_ANON_KEY configuration.');
+      }
+    }
+
     this.userId = userId ? this.generateUserUUID(userId) : undefined;
     this.sessionId = this.generateSessionId();
   }
@@ -66,6 +87,10 @@ export class DatabasePersistence {
    * Save shell history entry
    */
   public async saveHistoryEntry(entry: Omit<ShellHistoryEntry, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.saveHistoryEntry(entry);
+    }
+
     try {
       const insertData: Record<string, unknown> = {
         ...entry,
@@ -79,7 +104,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { error } = await this.client
+      const { error } = await this.client!
         .from('shell_history')
         .insert([insertData]);
 
@@ -99,8 +124,12 @@ export class DatabasePersistence {
    * Get shell history entries
    */
   public async getHistoryEntries(limit: number = 100, offset: number = 0): Promise<ShellHistoryEntry[]> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getHistoryEntries(limit, offset);
+    }
+
     try {
-      let query = this.client
+      let query = this.client!
         .from('shell_history')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -131,6 +160,10 @@ export class DatabasePersistence {
    * Save shell job
    */
   public async saveJob(job: Omit<ShellJob, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.saveJob(job);
+    }
+
     try {
       const insertData: Record<string, unknown> = {
         ...job,
@@ -144,7 +177,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { error } = await this.client
+      const { error } = await this.client!
         .from('shell_jobs')
         .insert([insertData]);
 
@@ -164,6 +197,10 @@ export class DatabasePersistence {
    * Update shell job status
    */
   public async updateJobStatus(jobId: string, status: ShellJob['status'], exitCode?: number): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.updateJobStatus(jobId, status, exitCode);
+    }
+
     try {
       const updateData: Record<string, unknown> = {
         status,
@@ -177,7 +214,7 @@ export class DatabasePersistence {
         }
       }
 
-      let query = this.client
+      let query = this.client!
         .from('shell_jobs')
         .update(updateData)
         .eq('job_id', jobId);
@@ -207,8 +244,12 @@ export class DatabasePersistence {
    * Get active jobs
    */
   public async getActiveJobs(): Promise<ShellJob[]> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getActiveJobs();
+    }
+
     try {
-      let query = this.client
+      let query = this.client!
         .from('shell_jobs')
         .select('*')
         .in('status', ['running', 'stopped', 'completed', 'failed'])
@@ -239,6 +280,10 @@ export class DatabasePersistence {
    * Save shell configuration
    */
   public async saveConfiguration(config: Omit<ShellConfiguration, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.saveConfiguration(config);
+    }
+
     try {
       const upsertData: Record<string, unknown> = {
         ...config,
@@ -251,7 +296,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { error } = await this.client
+      const { error } = await this.client!
         .from('shell_configuration')
         .upsert([upsertData], {
           onConflict: 'user_id,config_key'
@@ -273,8 +318,12 @@ export class DatabasePersistence {
    * Get shell configuration
    */
   public async getConfiguration(key?: string): Promise<ShellConfiguration[]> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getConfiguration(key);
+    }
+
     try {
-      let query = this.client
+      let query = this.client!
         .from('shell_configuration')
         .select('*');
 
@@ -308,6 +357,10 @@ export class DatabasePersistence {
    * Save shell alias
    */
   public async saveAlias(alias: Omit<ShellAlias, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.saveAlias(alias);
+    }
+
     try {
       const upsertData: Record<string, unknown> = {
         ...alias,
@@ -320,7 +373,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { error } = await this.client
+      const { error } = await this.client!
         .from('shell_aliases')
         .upsert([upsertData], {
           onConflict: 'user_id,alias_name'
@@ -342,8 +395,12 @@ export class DatabasePersistence {
    * Get shell aliases
    */
   public async getAliases(): Promise<ShellAlias[]> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getAliases();
+    }
+
     try {
-      let query = this.client
+      let query = this.client!
         .from('shell_aliases')
         .select('*')
         .eq('is_active', true);
@@ -373,6 +430,10 @@ export class DatabasePersistence {
    * Save shell function
    */
   public async saveFunction(func: Omit<ShellFunction, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.saveFunction(func);
+    }
+
     try {
       const upsertData: Record<string, unknown> = {
         ...func,
@@ -385,7 +446,7 @@ export class DatabasePersistence {
         upsertData.user_id = this.userId;
       }
 
-      const { error } = await this.client
+      const { error } = await this.client!
         .from('shell_functions')
         .upsert([upsertData], {
           onConflict: 'user_id,function_name'
@@ -407,8 +468,12 @@ export class DatabasePersistence {
    * Get shell functions
    */
   public async getFunctions(): Promise<ShellFunction[]> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getFunctions();
+    }
+
     try {
-      let query = this.client
+      let query = this.client!
         .from('shell_functions')
         .select('*')
         .eq('is_active', true);
@@ -438,6 +503,10 @@ export class DatabasePersistence {
    * Start a new shell session
    */
   public async startSession(workingDirectory: string, environmentVariables: Record<string, string>): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.startSession(workingDirectory, environmentVariables);
+    }
+
     try {
       const insertData: Record<string, unknown> = {
         session_id: this.sessionId,
@@ -455,7 +524,7 @@ export class DatabasePersistence {
         insertData.user_id = this.userId;
       }
 
-      const { error } = await this.client
+      const { error } = await this.client!
         .from('shell_sessions')
         .insert([insertData]);
 
@@ -475,8 +544,12 @@ export class DatabasePersistence {
    * End the current shell session
    */
   public async endSession(): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.endSession();
+    }
+
     try {
-      let query = this.client
+      let query = this.client!
         .from('shell_sessions')
         .update({
           ended_at: new Date().toISOString(),
@@ -510,6 +583,9 @@ export class DatabasePersistence {
    * Test database connectivity
    */
   public async testConnection(): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.testConnection();
+    }
     return await supabaseClient.testConnection();
   }
 
@@ -517,6 +593,10 @@ export class DatabasePersistence {
    * Get session ID
    */
   public getSessionId(): string {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getSessionId();
+    }
+
     return this.sessionId;
   }
 
@@ -526,11 +606,15 @@ export class DatabasePersistence {
   public async getLatestRows(limit: number = 5): Promise<{
     [tableName: string]: Record<string, unknown>[]
   }> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getLatestRows(limit);
+    }
+
     const result: { [tableName: string]: Record<string, unknown>[] } = {};
 
     try {
       // Get latest shell history entries
-      const historyQuery = this.client
+      const historyQuery = this.client!
         .from('shell_history')
         .select('*')
         .order('created_at', { ascending: false })
@@ -546,7 +630,7 @@ export class DatabasePersistence {
       result.shell_history = historyData || [];
 
       // Get latest shell jobs
-      const jobsQuery = this.client
+      const jobsQuery = this.client!
         .from('shell_jobs')
         .select('*')
         .order('created_at', { ascending: false })
@@ -562,7 +646,7 @@ export class DatabasePersistence {
       result.shell_jobs = jobsData || [];
 
       // Get latest shell configuration
-      const configQuery = this.client
+      const configQuery = this.client!
         .from('shell_configuration')
         .select('*')
         .order('created_at', { ascending: false })
@@ -578,7 +662,7 @@ export class DatabasePersistence {
       result.shell_configuration = configData || [];
 
       // Get latest shell sessions
-      const sessionsQuery = this.client
+      const sessionsQuery = this.client!
         .from('shell_sessions')
         .select('*')
         .order('created_at', { ascending: false })
@@ -594,7 +678,7 @@ export class DatabasePersistence {
       result.shell_sessions = sessionsData || [];
 
       // Get latest shell aliases
-      const aliasesQuery = this.client
+      const aliasesQuery = this.client!
         .from('shell_aliases')
         .select('*')
         .order('created_at', { ascending: false })
@@ -610,7 +694,7 @@ export class DatabasePersistence {
       result.shell_aliases = aliasesData || [];
 
       // Get latest shell functions
-      const functionsQuery = this.client
+      const functionsQuery = this.client!
         .from('shell_functions')
         .select('*')
         .order('created_at', { ascending: false })
@@ -626,7 +710,7 @@ export class DatabasePersistence {
       result.shell_functions = functionsData || [];
 
       // Get latest shell completions
-      const completionsQuery = this.client
+      const completionsQuery = this.client!
         .from('shell_completions')
         .select('*')
         .order('created_at', { ascending: false })
@@ -642,7 +726,7 @@ export class DatabasePersistence {
       result.shell_completions = completionsData || [];
 
       // Get latest politician trading disclosures (global data, no user filtering)
-      const { data: tradingData } = await this.client
+      const { data: tradingData } = await this.client!
         .from('trading_disclosures')
         .select('*')
         .order('created_at', { ascending: false })
@@ -650,7 +734,7 @@ export class DatabasePersistence {
       result.trading_disclosures = tradingData || [];
 
       // Get latest politicians (global data, no user filtering)
-      const { data: politiciansData } = await this.client
+      const { data: politiciansData } = await this.client!
         .from('politicians')
         .select('*')
         .order('created_at', { ascending: false })
@@ -658,7 +742,7 @@ export class DatabasePersistence {
       result.politicians = politiciansData || [];
 
       // Get latest data pull jobs (global data, no user filtering)
-      const { data: dataPullJobsData } = await this.client
+      const { data: dataPullJobsData } = await this.client!
         .from('data_pull_jobs')
         .select('*')
         .order('created_at', { ascending: false })
@@ -676,6 +760,10 @@ export class DatabasePersistence {
    * Get latest rows from a specific table
    */
   public async getLatestRowsFromTable(tableName: string, limit: number = 5): Promise<Record<string, unknown>[]> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getLatestRowsFromTable(tableName, limit);
+    }
+
     try {
       const validTables = [
         'shell_history',
@@ -694,7 +782,7 @@ export class DatabasePersistence {
         throw new Error(`Invalid table name: ${tableName}`);
       }
 
-      let query = this.client
+      let query = this.client!
         .from(tableName)
         .select('*')
         .order('created_at', { ascending: false })

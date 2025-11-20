@@ -17,15 +17,36 @@ Traditional secret management tools are either too complex, too expensive, or re
 
 **Plus, you get a complete shell automation platform as a bonus.**
 
-## Quick Start (30 seconds)
+## Quick Start
 
-### New in v0.8.2+: Smart Sync (Easiest Way!)
+**New to LSH?** See our [Quick Start Guide](docs/QUICK_START.md) for three easy onboarding options:
+1. **Local-Only Mode** - Zero configuration, works immediately (no database needed)
+2. **Local PostgreSQL** - Docker-based setup for local development
+3. **Supabase Cloud** - Full team collaboration features
+
+### Quick Install (Works Immediately!)
+
+```bash
+# Install LSH
+npm install -g lsh-framework
+
+# That's it! LSH works without any database configuration
+# Config: ~/.config/lsh/lshrc (auto-created)
+# Data: ~/.lsh/data/storage.json (local storage)
+
+# Start using it right away
+lsh --version
+lsh config  # Edit configuration (optional)
+lsh daemon start
+```
+
+### Smart Sync (Easiest Way for Cloud!)
 
 ```bash
 # 1. Install
 npm install -g lsh-framework
 
-# 2. Configure Supabase (free tier works!)
+# 2. Configure Supabase (optional - free tier works!)
 # Add to .env:
 # SUPABASE_URL=https://your-project.supabase.co
 # SUPABASE_ANON_KEY=<your-anon-key>
@@ -38,7 +59,7 @@ lsh sync
 # ✅ Auto-generates encryption key
 # ✅ Creates .env from .env.example
 # ✅ Adds .env to .gitignore
-# ✅ Pushes to cloud
+# ✅ Pushes to cloud (if configured) or local storage
 # ✅ Namespaces by repo name
 ```
 

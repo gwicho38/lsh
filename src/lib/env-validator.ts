@@ -248,6 +248,30 @@ export function validateEnvironment(
     }
   }
 
+  // Storage mode detection and informational messaging
+  const hasSupabase = !!(env.SUPABASE_URL && env.SUPABASE_ANON_KEY);
+  const hasPostgres = !!env.DATABASE_URL;
+
+  if (!hasSupabase && !hasPostgres) {
+    result.recommendations.push(
+      'No database configured - using local file storage (~/.lsh/data/storage.json)'
+    );
+    result.recommendations.push(
+      'For team collaboration, configure SUPABASE_URL and SUPABASE_ANON_KEY'
+    );
+    result.recommendations.push(
+      'For local PostgreSQL, run: docker-compose up -d'
+    );
+  } else if (hasPostgres && !hasSupabase) {
+    result.recommendations.push(
+      'Using local PostgreSQL database'
+    );
+  } else if (hasSupabase) {
+    result.recommendations.push(
+      'Using Supabase cloud database - team sync enabled'
+    );
+  }
+
   // Additional security checks
   if (isProduction) {
     if (env.LSH_ALLOW_DANGEROUS_COMMANDS === 'true') {
@@ -268,6 +292,12 @@ export function validateEnvironment(
         'LSH_JWT_SECRET must be at least 32 characters in production'
       );
       result.isValid = false;
+    }
+
+    if (!hasSupabase && !hasPostgres) {
+      result.warnings.push(
+        'Running in production without a database - local storage is not recommended for production'
+      );
     }
   }
 
