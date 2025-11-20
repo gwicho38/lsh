@@ -275,7 +275,7 @@ async function testSupabaseConnection(
         name: 'Storage Mode',
         status: 'pass',
         message: 'Using local storage (Supabase table not found)',
-        details: 'Secrets are stored locally at ~/.lsh/data/storage.json',
+        details: 'Secrets: ~/.lsh/data/storage.json | IPFS audit logs: ~/.lsh/ipfs/',
       };
     }
 
