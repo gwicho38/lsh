@@ -83,7 +83,8 @@
       "Bash(/tmp/release_fixed.md)",
       "Bash(npm install:*)",
       "Bash(/tmp/test.env)",
-      "Bash(gh issue create:*)"
+      "Bash(gh issue create:*)",
+      "Bash(gh release create:*)"
     ],
     "deny": [],
     "ask": []

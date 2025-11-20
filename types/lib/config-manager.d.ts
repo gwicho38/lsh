@@ -95,7 +95,8 @@ export declare class ConfigManager {
     getAll(): LSHConfig;
     /**
      * Merge config with process.env
-     * Config file values take precedence over environment variables
+     * Config file values are loaded into process.env, but existing environment
+     * variables take precedence (config provides defaults)
      */
     mergeWithEnv(): void;
 }

@@ -357,12 +357,16 @@ export class ConfigManager {
 
   /**
    * Merge config with process.env
-   * Config file values take precedence over environment variables
+   * Config file values are loaded into process.env, but existing environment
+   * variables take precedence (config provides defaults)
    */
   mergeWithEnv(): void {
     for (const [key, value] of Object.entries(this.config)) {
       if (value !== undefined && value !== '') {
-        process.env[key] = value;
+        // Only set if not already in environment (env vars take precedence)
+        if (!process.env[key]) {
+          process.env[key] = value;
+        }
       }
     }
   }
