@@ -36,6 +36,10 @@ export declare class LocalStorageAdapter {
      */
     private markDirty;
     /**
+     * Reload data from disk (useful to get latest data from other processes)
+     */
+    reload(): Promise<void>;
+    /**
      * Cleanup and flush on exit
      */
     cleanup(): Promise<void>;

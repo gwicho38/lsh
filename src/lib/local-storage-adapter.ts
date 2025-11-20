@@ -141,6 +141,20 @@ export class LocalStorageAdapter {
   }
 
   /**
+   * Reload data from disk (useful to get latest data from other processes)
+   */
+  async reload(): Promise<void> {
+    try {
+      const content = await fs.readFile(this.dataFile, 'utf-8');
+      this.data = JSON.parse(content);
+      this.isDirty = false;
+    } catch (_error) {
+      // File doesn't exist or can't be read - use current in-memory data
+      // Don't throw here, as this is expected on first run
+    }
+  }
+
+  /**
    * Cleanup and flush on exit
    */
   async cleanup(): Promise<void> {
