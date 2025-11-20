@@ -28,10 +28,28 @@ export declare class SupabaseClient {
         isConnected: boolean;
     };
 }
-export declare const supabaseClient: SupabaseClient;
+/**
+ * Check if Supabase is configured and available
+ */
+export declare function isSupabaseConfigured(): boolean;
+export declare const supabaseClient: {
+    getClient(): any;
+    testConnection(): Promise<boolean>;
+    getConnectionInfo(): {
+        url: string;
+        databaseUrl: string | undefined;
+        isConnected: boolean;
+    } | {
+        url: undefined;
+        databaseUrl: undefined;
+        isConnected: boolean;
+    };
+    isAvailable(): boolean;
+};
 /**
  * Get Supabase client for SaaS platform
  * Uses environment variables for configuration
+ * @throws {Error} If SUPABASE_URL or SUPABASE_ANON_KEY are not set
  */
 export declare function getSupabaseClient(): import("@supabase/supabase-js").SupabaseClient<any, "public", "public", any, any>;
 export default SupabaseClient;

@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Local PostgreSQL database for LSH
+  # Use this when you want a local database instead of Supabase cloud
+  postgres:
+    image: postgres:16-alpine
+    container_name: lsh-postgres
+    environment:
+      POSTGRES_DB: lsh
+      POSTGRES_USER: lsh_user
+      POSTGRES_PASSWORD: lsh_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - lsh-postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lsh_user -d lsh"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: lsh-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@lsh.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - lsh-pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    profiles:
+      - tools
+
+volumes:
+  lsh-postgres-data:
+    driver: local
+  lsh-pgadmin-data:
+    driver: local
+
+networks:
+  default:
+    name: lsh-network

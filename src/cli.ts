@@ -10,10 +10,12 @@ import selfCommand from './commands/self.js';
 import { registerInitCommands } from './commands/init.js';
 import { registerDoctorCommands } from './commands/doctor.js';
 import { registerCompletionCommands } from './commands/completion.js';
+import { registerConfigCommands } from './commands/config.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_supabase } from './services/supabase/supabase.js';
 import { init_cron } from './services/cron/cron.js';
 import { init_secrets } from './services/secrets/secrets.js';
+import { loadGlobalConfigSync } from './lib/config-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -78,6 +80,7 @@ program
     console.log('  lsh pull --env dev                # Pull on another machine');
     console.log('');
     console.log('📚 More Commands:');
+    console.log('  config                  Manage LSH configuration (~/.config/lsh/lshrc)');
     console.log('  supabase                Supabase database management');
     console.log('  daemon                  Daemon management');
     console.log('  cron                    Cron job management');
@@ -145,8 +148,12 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 // Register async command modules
 (async () => {
   // Essential onboarding commands
+  // Load global configuration before anything else
+  loadGlobalConfigSync();
+
   registerInitCommands(program);
   registerDoctorCommands(program);
+  registerConfigCommands(program);
 
   // Secrets management (primary feature)
   await init_secrets(program);
