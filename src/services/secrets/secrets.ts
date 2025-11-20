@@ -19,13 +19,16 @@ export async function init_secrets(program: Command) {
     .option('-e, --env <name>', 'Environment name (dev/staging/prod)', 'dev')
     .option('--force', 'Force push even if destructive changes detected')
     .action(async (options) => {
+      const manager = new SecretsManager();
       try {
-        const manager = new SecretsManager();
         await manager.push(options.file, options.env, options.force);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to push secrets:', err.message);
+        await manager.cleanup();
         process.exit(1);
+      } finally {
+        await manager.cleanup();
       }
     });
 
@@ -37,13 +40,16 @@ export async function init_secrets(program: Command) {
     .option('-e, --env <name>', 'Environment name (dev/staging/prod)', 'dev')
     .option('--force', 'Overwrite without creating backup')
     .action(async (options) => {
+      const manager = new SecretsManager();
       try {
-        const manager = new SecretsManager();
         await manager.pull(options.file, options.env, options.force);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to pull secrets:', err.message);
+        await manager.cleanup();
         process.exit(1);
+      } finally {
+        await manager.cleanup();
       }
     });
 
@@ -288,9 +294,8 @@ API_KEY=
     .option('--load', 'Output eval-able export commands for loading secrets')
     .option('--force', 'Force sync even if destructive changes detected')
     .action(async (options) => {
+      const manager = new SecretsManager();
       try {
-        const manager = new SecretsManager();
-
         if (options.legacy) {
           // Use legacy sync (suggestions only)
           await manager.sync(options.file, options.env);
@@ -301,7 +306,10 @@ API_KEY=
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to sync:', err.message);
+        await manager.cleanup();
         process.exit(1);
+      } finally {
+        await manager.cleanup();
       }
     });
 
