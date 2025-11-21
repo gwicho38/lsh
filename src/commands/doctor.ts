@@ -274,8 +274,8 @@ async function testSupabaseConnection(
       return {
         name: 'Storage Mode',
         status: 'pass',
-        message: 'Using local storage (Supabase table not found)',
-        details: 'Secrets: ~/.lsh/data/storage.json | IPFS audit logs: ~/.lsh/ipfs/',
+        message: 'Using IPFS storage (Supabase table not found)',
+        details: 'Secrets: ~/.lsh/secrets-cache/ | Metadata: ~/.lsh/secrets-metadata.json | IPFS audit logs: ~/.lsh/ipfs/',
       };
     }
 

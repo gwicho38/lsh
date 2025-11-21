@@ -6,10 +6,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import DatabasePersistence from './database-persistence.js';
 import { createLogger, LogLevel } from './logger.js';
 import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo } from './git-utils.js';
 import { IPFSSyncLogger } from './ipfs-sync-logger.js';
+import { IPFSSecretsStorage } from './ipfs-secrets-storage.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -23,12 +23,12 @@ export interface Secret {
 }
 
 export class SecretsManager {
-  private persistence: DatabasePersistence;
+  private storage: IPFSSecretsStorage;
   private encryptionKey: string;
   private gitInfo?: GitRepoInfo;
 
   constructor(userId?: string, encryptionKey?: string, detectGit: boolean = true) {
-    this.persistence = new DatabasePersistence(userId);
+    this.storage = new IPFSSecretsStorage();
 
     // Use provided key or generate from machine ID + user
     this.encryptionKey = encryptionKey || this.getDefaultEncryptionKey();
@@ -44,7 +44,7 @@ export class SecretsManager {
    * Call this when done to allow process to exit
    */
   async cleanup(): Promise<void> {
-    await this.persistence.cleanup();
+    // IPFS storage doesn't need cleanup
   }
 
   /**
@@ -229,12 +229,12 @@ export class SecretsManager {
     // Warn if using default key
     if (!process.env.LSH_SECRETS_KEY) {
       logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
-      logger.warn('   To share secrets across machines, generate a key with: lsh secrets key');
+      logger.warn('   To share secrets across machines, generate a key with: lsh key');
       logger.warn('   Then add LSH_SECRETS_KEY=<key> to your .env on all machines');
       console.log();
     }
 
-    logger.info(`Pushing ${envFilePath} to Supabase (${environment})...`);
+    logger.info(`Pushing ${envFilePath} to IPFS (${this.getRepoAwareEnvironment(environment)})...`);
 
     const content = fs.readFileSync(envFilePath, 'utf8');
     const env = this.parseEnvFile(content);
@@ -242,74 +242,61 @@ export class SecretsManager {
     // Check for destructive changes unless force is true
     if (!force) {
       try {
-        const jobs = await this.persistence.getActiveJobs();
-        const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const secretsJobs = jobs
-          .filter(j => {
-            return j.command === 'secrets_sync' &&
-                   j.job_id.includes(environment) &&
-                   j.job_id.includes(safeFilename);
-          })
-          .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+        // Check if secrets already exist for this environment
+        if (this.storage.exists(environment, this.gitInfo?.repoName)) {
+          const existingSecrets = await this.storage.pull(
+            environment,
+            this.encryptionKey,
+            this.gitInfo?.repoName
+          );
 
-        if (secretsJobs.length > 0) {
-          const latestSecret = secretsJobs[0];
-          if (latestSecret.output) {
-            try {
-              const decrypted = this.decrypt(latestSecret.output);
-              const cloudEnv = this.parseEnvFile(decrypted);
+          const cloudEnv: Record<string, string> = {};
+          existingSecrets.forEach(s => {
+            cloudEnv[s.key] = s.value;
+          });
 
-              const destructive = this.detectDestructiveChanges(cloudEnv, env);
-              if (destructive.length > 0) {
-                throw new Error(this.formatDestructiveChangesError(destructive));
-              }
-            } catch (error) {
-      const err = error as Error;
-              // If decryption fails, it's a key mismatch - let it proceed
-              // (will fail later with proper error)
-              if (!err.message.includes('Destructive change')) {
-                // Only ignore decryption errors, re-throw destructive change errors
-                throw err;
-              }
-              throw err;
-            }
+          const destructive = this.detectDestructiveChanges(cloudEnv, env);
+          if (destructive.length > 0) {
+            throw new Error(this.formatDestructiveChangesError(destructive));
           }
         }
       } catch (error) {
-      const err = error as Error;
-        // Re-throw any errors (including destructive change errors)
-        if (err.message.includes('Destructive change') || err.message.includes('Decryption failed')) {
+        const err = error as Error;
+        // Re-throw destructive change errors
+        if (err.message.includes('Destructive change')) {
           throw err;
         }
-        // Ignore other errors (like connection issues) and proceed
+        // Ignore other errors (like missing secrets) and proceed
       }
     }
 
-    // Encrypt entire .env content
-    const encrypted = this.encrypt(content);
+    // Convert to Secret objects
+    const secrets: Secret[] = Object.entries(env).map(([key, value]) => ({
+      key,
+      value,
+      environment,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }));
 
-    // Include filename in job_id for tracking multiple .env files
-    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const secretData = {
-      job_id: `secrets_${environment}_${safeFilename}_${Date.now()}`,
-      command: 'secrets_sync',
-      status: 'completed',
-      output: encrypted,
-      started_at: new Date().toISOString(),
-      completed_at: new Date().toISOString(),
-      working_directory: process.cwd(),
-    };
+    // Store on IPFS
+    const cid = await this.storage.push(
+      secrets,
+      environment,
+      this.encryptionKey,
+      this.gitInfo?.repoName,
+      this.gitInfo?.currentBranch
+    );
 
-    await this.persistence.saveJob(secretData as Parameters<typeof this.persistence.saveJob>[0]);
+    logger.info(`✅ Pushed ${secrets.length} secrets from ${filename} to IPFS`);
+    console.log(`📦 IPFS CID: ${cid}`);
 
-    logger.info(`✅ Pushed ${Object.keys(env).length} secrets from ${filename} to Supabase`);
-
-    // Log to IPFS for immutable record
-    await this.logToIPFS('push', environment, Object.keys(env).length);
+    // Log to IPFS for immutable audit record
+    await this.logToIPFS('push', environment, secrets.length);
   }
 
   /**
-   * Pull .env from Supabase
+   * Pull .env from IPFS
    */
   async pull(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     // Validate filename pattern for custom files
@@ -318,29 +305,18 @@ export class SecretsManager {
       throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
     }
 
-    logger.info(`Pulling ${filename} (${environment}) from Supabase...`);
+    logger.info(`Pulling ${filename} (${environment}) from IPFS...`);
 
-    // Get latest secrets for this specific file
-    const jobs = await this.persistence.getActiveJobs();
-    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const secretsJobs = jobs
-      .filter(j => {
-        // Match secrets for this environment and filename
-        return j.command === 'secrets_sync' &&
-               j.job_id.includes(environment) &&
-               j.job_id.includes(safeFilename);
-      })
-      .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+    // Get secrets from IPFS storage
+    const secrets = await this.storage.pull(
+      environment,
+      this.encryptionKey,
+      this.gitInfo?.repoName
+    );
 
-    if (secretsJobs.length === 0) {
-      throw new Error(`No secrets found for file '${filename}' in environment: ${environment}`);
+    if (secrets.length === 0) {
+      throw new Error(`No secrets found for environment: ${environment}`);
     }
-
-    const latestSecret = secretsJobs[0];
-    if (!latestSecret.output) {
-      throw new Error(`No encrypted data found for environment: ${environment}`);
-    }
-    const decrypted = this.decrypt(latestSecret.output);
 
     // Backup existing .env if it exists (unless force is true)
     if (fs.existsSync(envFilePath) && !force) {
@@ -349,30 +325,35 @@ export class SecretsManager {
       logger.info(`Backed up existing .env to ${backup}`);
     }
 
-    // Write new .env
-    fs.writeFileSync(envFilePath, decrypted, 'utf8');
+    // Convert secrets back to .env format
+    const envContent = secrets
+      .map(s => `${s.key}=${s.value}`)
+      .join('\n') + '\n';
 
-    const env = this.parseEnvFile(decrypted);
-    logger.info(`✅ Pulled ${Object.keys(env).length} secrets from Supabase`);
+    // Write new .env
+    fs.writeFileSync(envFilePath, envContent, 'utf8');
+
+    logger.info(`✅ Pulled ${secrets.length} secrets from IPFS`);
+
+    // Get metadata for CID display
+    const metadata = this.storage.getMetadata(environment, this.gitInfo?.repoName);
+    if (metadata) {
+      console.log(`📦 IPFS CID: ${metadata.cid}`);
+    }
 
     // Log to IPFS for immutable record
-    await this.logToIPFS('pull', environment, Object.keys(env).length);
+    await this.logToIPFS('pull', environment, secrets.length);
   }
 
   /**
    * List all stored environments
    */
   async listEnvironments(): Promise<string[]> {
-    const jobs = await this.persistence.getActiveJobs();
-    const secretsJobs = jobs.filter(j => j.command === 'secrets_sync');
-
+    const allMetadata = this.storage.listEnvironments();
     const envs = new Set<string>();
-    for (const job of secretsJobs) {
-      // Updated regex to handle new format with filename
-      const match = job.job_id.match(/secrets_([^_]+)_/);
-      if (match) {
-        envs.add(match[1]);
-      }
+
+    for (const metadata of allMetadata) {
+      envs.add(metadata.environment);
     }
 
     return Array.from(envs).sort();
@@ -382,50 +363,13 @@ export class SecretsManager {
    * List all tracked .env files
    */
   async listAllFiles(): Promise<Array<{ filename: string; environment: string; updated: string }>> {
-    const jobs = await this.persistence.getActiveJobs();
-    const secretsJobs = jobs.filter(j => j.command === 'secrets_sync');
+    const allMetadata = this.storage.listEnvironments();
 
-    // Group by environment and filename to get latest of each
-    const fileMap = new Map<string, { filename: string; environment: string; updated: string }>();
-
-    for (const job of secretsJobs) {
-      // Parse job_id: secrets_${environment}_${safeFilename}_${timestamp}
-      const parts = job.job_id.split('_');
-      if (parts.length >= 3 && parts[0] === 'secrets') {
-        const environment = parts[1];
-
-        // Handle both old and new format
-        let filename = '.env';
-        if (parts.length >= 4) {
-          // New format with filename
-          const _timestamp = parts[parts.length - 1];
-          // Reconstruct filename from middle parts
-          const filenameParts = parts.slice(2, -1);
-          if (filenameParts.length > 0) {
-            // Convert underscores back to dots for the extension
-            filename = filenameParts.join('_');
-            // Fix the extension dots that were replaced
-            filename = filename.replace(/^env_/, '.env.');
-            if (filename === 'env') {
-              filename = '.env';
-            }
-          }
-        }
-
-        const key = `${environment}_${filename}`;
-        const existing = fileMap.get(key);
-
-        if (!existing || new Date(job.completed_at || job.started_at) > new Date(existing.updated)) {
-          fileMap.set(key, {
-            filename,
-            environment,
-            updated: new Date(job.completed_at || job.started_at).toLocaleString()
-          });
-        }
-      }
-    }
-
-    return Array.from(fileMap.values()).sort((a, b) =>
+    return allMetadata.map(metadata => ({
+      filename: '.env', // Currently IPFS storage tracks only .env files
+      environment: metadata.environment,
+      updated: new Date(metadata.timestamp).toLocaleString()
+    })).sort((a, b) =>
       a.filename.localeCompare(b.filename) || a.environment.localeCompare(b.environment)
     );
   }
@@ -434,42 +378,37 @@ export class SecretsManager {
    * Show secrets (masked)
    */
   async show(environment: string = 'dev', format: 'env' | 'json' | 'yaml' | 'toml' | 'export' = 'env'): Promise<void> {
-    const jobs = await this.persistence.getActiveJobs();
-    const secretsJobs = jobs
-      .filter(j => j.command === 'secrets_sync' && j.job_id.includes(environment))
-      .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
+    // Get secrets from IPFS storage
+    const secrets = await this.storage.pull(
+      environment,
+      this.encryptionKey,
+      this.gitInfo?.repoName
+    );
 
-    if (secretsJobs.length === 0) {
+    if (secrets.length === 0) {
       console.log(`No secrets found for environment: ${environment}`);
       return;
     }
 
-    const latestSecret = secretsJobs[0];
-    if (!latestSecret.output) {
-      throw new Error(`No encrypted data found for environment: ${environment}`);
-    }
-    const decrypted = this.decrypt(latestSecret.output);
-    const env = this.parseEnvFile(decrypted);
-
-    // Convert to array format for formatSecrets
-    const secrets = Object.entries(env).map(([key, value]) => ({ key, value }));
+    // Convert to simple key-value format for formatSecrets
+    const secretsFormatted = secrets.map(s => ({ key: s.key, value: s.value }));
 
     // Use format utilities if not default env format
     if (format !== 'env') {
       const { formatSecrets } = await import('./format-utils.js');
-      const output = formatSecrets(secrets, format, false); // No masking for structured formats
+      const output = formatSecrets(secretsFormatted, format, false); // No masking for structured formats
       console.log(output);
       return;
     }
 
     // Default env format with masking (legacy behavior)
-    console.log(`\n📦 Secrets for ${environment} (${Object.keys(env).length} total):\n`);
+    console.log(`\n📦 Secrets for ${environment} (${secrets.length} total):\n`);
 
-    for (const [key, value] of Object.entries(env)) {
-      const masked = value.length > 4
-        ? value.substring(0, 4) + '*'.repeat(Math.min(value.length - 4, 20))
+    for (const secret of secrets) {
+      const masked = secret.value.length > 4
+        ? secret.value.substring(0, 4) + '*'.repeat(Math.min(secret.value.length - 4, 20))
         : '****';
-      console.log(`  ${key}=${masked}`);
+      console.log(`  ${secret.key}=${masked}`);
     }
     console.log();
   }
@@ -510,24 +449,23 @@ export class SecretsManager {
       status.localKeys = Object.keys(env).length;
     }
 
-    // Check cloud storage
+    // Check IPFS storage
     try {
-      const jobs = await this.persistence.getActiveJobs();
-      const secretsJobs = jobs
-        .filter(j => j.command === 'secrets_sync' && j.job_id.includes(environment))
-        .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime());
-
-      if (secretsJobs.length > 0) {
+      if (this.storage.exists(environment, this.gitInfo?.repoName)) {
         status.cloudExists = true;
-        const latestSecret = secretsJobs[0];
-        status.cloudModified = new Date(latestSecret.completed_at || latestSecret.started_at);
+        const metadata = this.storage.getMetadata(environment, this.gitInfo?.repoName);
 
-        // Try to decrypt to check if key matches
-        if (latestSecret.output) {
+        if (metadata) {
+          status.cloudModified = new Date(metadata.timestamp);
+          status.cloudKeys = metadata.keys_count;
+
+          // Try to decrypt to check if key matches
           try {
-            const decrypted = this.decrypt(latestSecret.output);
-            const env = this.parseEnvFile(decrypted);
-            status.cloudKeys = Object.keys(env).length;
+            await this.storage.pull(
+              environment,
+              this.encryptionKey,
+              this.gitInfo?.repoName
+            );
             status.keyMatches = true;
           } catch (_error) {
             status.keyMatches = false;
@@ -535,7 +473,7 @@ export class SecretsManager {
         }
       }
     } catch (_error) {
-      // Cloud check failed, likely no connection
+      // IPFS check failed
     }
 
     return status;
