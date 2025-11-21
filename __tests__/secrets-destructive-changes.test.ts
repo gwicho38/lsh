@@ -304,18 +304,24 @@ describe('Destructive Change Detection', () => {
       );
       await manager.push(envFile, 'test');
 
+      // Wait to ensure cloud timestamp is set
+      await new Promise(resolve => setTimeout(resolve, 200));
+
       // Modify the SAME file to have destructive change
       const destructiveContent = 'API_KEY=\nDATABASE_URL=postgres://user:pass@host/db\n';
       fs.writeFileSync(envFile, destructiveContent, 'utf8');
 
-      // Touch the file to make it 2 minutes newer (past the 1-minute sync threshold)
-      const futureTime = Date.now() + (2 * 60 * 1000); // 2 minutes in the future
-      fs.utimesSync(envFile, new Date(futureTime), new Date(futureTime));
+      // Set file timestamp to be 5 minutes in the future to ensure it's newer
+      const futureTime = Date.now() + (5 * 60 * 1000);
+      const futureDate = new Date(futureTime);
+      fs.utimesSync(envFile, futureDate, futureDate);
 
-      // Small delay to ensure filesystem has updated timestamps
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Verify the timestamp was set correctly
+      const stats = fs.statSync(envFile);
+      const timeDiff = stats.mtime.getTime() - Date.now();
+      expect(timeDiff).toBeGreaterThan(4 * 60 * 1000); // At least 4 minutes in future
 
-      // SmartSync should detect this and block
+      // SmartSync should detect destructive change and block
       await expect(async () => {
         await manager.smartSync(envFile, 'test', true, false, false);
       }).rejects.toThrow(/destructive change/i);
