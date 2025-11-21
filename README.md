@@ -815,6 +815,9 @@ lsh daemon start
 - **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
 - **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
 
+### IPFS Integration
+- **[IPFS_CLIENT_GUIDE.md](docs/features/ipfs/IPFS_CLIENT_GUIDE.md)** - 🆕 IPFS client installation and management (v1.6.0+)
+
 ### Installation & Development
 - **[INSTALL.md](docs/deployment/INSTALL.md)** - Detailed installation instructions
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for contributors

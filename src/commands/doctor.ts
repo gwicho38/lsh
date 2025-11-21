@@ -10,6 +10,7 @@ import * as path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import ora from 'ora';
 import { getPlatformPaths, getPlatformInfo } from '../lib/platform-utils.js';
+import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 
 interface HealthCheck {
   name: string;
@@ -65,6 +66,9 @@ async function runHealthCheck(options: { verbose?: boolean; json?: boolean }): P
 
   // Git repository check
   checks.push(await checkGitRepository(options.verbose));
+
+  // IPFS client check
+  checks.push(await checkIPFSClient(options.verbose));
 
   // Permissions check
   checks.push(await checkPermissions(options.verbose));
@@ -330,6 +334,40 @@ async function checkGitRepository(verbose?: boolean): Promise<HealthCheck> {
       name: 'Git Repository',
       status: 'skip',
       message: 'Not in a git repository',
+    };
+  }
+}
+
+/**
+ * Check IPFS client installation
+ */
+async function checkIPFSClient(verbose?: boolean): Promise<HealthCheck> {
+  try {
+    const manager = new IPFSClientManager();
+    const info = await manager.detect();
+
+    if (info.installed) {
+      return {
+        name: 'IPFS Client',
+        status: 'pass',
+        message: `${info.type} v${info.version} installed`,
+        details: verbose ? `Path: ${info.path}` : undefined,
+      };
+    }
+
+    return {
+      name: 'IPFS Client',
+      status: 'warn',
+      message: 'Not installed (optional for local storage)',
+      details: 'Install with: lsh ipfs install',
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      name: 'IPFS Client',
+      status: 'warn',
+      message: 'Could not check IPFS client',
+      details: err.message,
     };
   }
 }
