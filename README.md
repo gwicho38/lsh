@@ -8,21 +8,21 @@
 
 Traditional secret management tools are either too complex, too expensive, or require vendor lock-in. LSH gives you:
 
-- **Encrypted sync** across all your machines using Supabase/PostgreSQL
+- **Encrypted sync** across all your machines using IPFS content-addressed storage
 - **Automatic rotation** with built-in daemon scheduling
 - **Team collaboration** with shared encryption keys
 - **Multi-environment** support (dev/staging/prod)
-- **Self-hosted** - your data, your infrastructure
-- **Free & Open Source** - no per-seat pricing
+- **Local-first** - works offline, your data stays on your machine
+- **Free & Open Source** - no per-seat pricing, no cloud dependencies
 
 **Plus, you get a complete shell automation platform as a bonus.**
 
 ## Quick Start
 
-**New to LSH?** See our [Quick Start Guide](docs/QUICK_START.md) for three easy onboarding options:
-1. **Local-Only Mode** - Zero configuration, works immediately (no database needed)
-2. **Local PostgreSQL** - Docker-based setup for local development
-3. **Supabase Cloud** - Full team collaboration features
+**New to LSH?** LSH uses IPFS-based local storage - zero configuration needed!
+- **Local-first** - All secrets stored encrypted on your machine at `~/.lsh/secrets-cache/`
+- **No cloud required** - Works completely offline
+- **Team sync** - Share encryption key to sync across team members
 
 ### Quick Install (Works Immediately!)
 
@@ -30,9 +30,10 @@ Traditional secret management tools are either too complex, too expensive, or re
 # Install LSH
 npm install -g lsh-framework
 
-# That's it! LSH works without any database configuration
+# That's it! LSH works immediately with IPFS storage
 # Config: ~/.config/lsh/lshrc (auto-created)
-# Data: ~/.lsh/data/storage.json (local storage)
+# Secrets: ~/.lsh/secrets-cache/ (encrypted IPFS storage)
+# Metadata: ~/.lsh/secrets-metadata.json
 
 # Start using it right away
 lsh --version
@@ -40,18 +41,13 @@ lsh config  # Edit configuration (optional)
 lsh daemon start
 ```
 
-### Smart Sync (Easiest Way for Cloud!)
+### Smart Sync (Easiest Way!)
 
 ```bash
 # 1. Install
 npm install -g lsh-framework
 
-# 2. Configure Supabase (optional - free tier works!)
-# Add to .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_ANON_KEY=<your-anon-key>
-
-# 3. ONE command does everything!
+# 2. ONE command does everything!
 cd ~/repos/your-project
 lsh sync
 
@@ -59,8 +55,9 @@ lsh sync
 # ✅ Auto-generates encryption key
 # ✅ Creates .env from .env.example
 # ✅ Adds .env to .gitignore
-# ✅ Pushes to cloud (if configured) or local storage
+# ✅ Stores encrypted secrets locally via IPFS
 # ✅ Namespaces by repo name
+# ✅ Works completely offline
 ```
 
 ### Sync AND Load in One Command
@@ -73,29 +70,25 @@ eval "$(lsh sync --load)"
 echo $DATABASE_URL
 ```
 
-### Traditional Method (Still Works)
+### Traditional Method (Manual Control)
 
 ```bash
 # 1. Install
 npm install -g lsh-framework
 
-# 2. Generate encryption key
+# 2. Generate encryption key (for team sharing)
 lsh key
 # Add the output to your .env:
 # LSH_SECRETS_KEY=<your-key>
 
-# 3. Configure Supabase (free tier works!)
-# Add to .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_ANON_KEY=<your-anon-key>
-
-# 4. Push your secrets
+# 3. Push your secrets (encrypted locally via IPFS)
 lsh push
 
-# 5. Pull on any other machine
+# 4. Pull on any other machine (with same encryption key)
 lsh pull
 
-# Done! Your secrets are synced.
+# Done! Your secrets are synced via encrypted IPFS storage.
+# Share the LSH_SECRETS_KEY with team members for collaboration.
 ```
 
 ## Core Features

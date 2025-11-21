@@ -1,6 +1,6 @@
 # LSH Secrets Manager 🔐
 
-Never copy .env files again! Sync your secrets across all development environments using encrypted Supabase storage.
+Never copy .env files again! Sync your secrets across all development environments using encrypted IPFS content-addressed storage.
 
 > **🆕 New in v0.8.2+:** [Smart Sync](./SMART_SYNC_GUIDE.md) is now available! It automatically handles setup, encryption keys, and synchronization with one command. This guide covers the traditional manual approach, which still works great if you need more control.
 
@@ -31,7 +31,7 @@ nano .env
 code .env
 ```
 
-### 3. Push Secrets to Cloud
+### 3. Push Secrets to Local IPFS Storage
 
 ```bash
 # Push your dev environment secrets
@@ -42,21 +42,21 @@ lsh push --env staging
 lsh push --env prod
 ```
 
-This encrypts and uploads your .env to Supabase.
+This encrypts and stores your .env locally using IPFS content-addressed storage at `~/.lsh/secrets-cache/`.
 
 ### 4. Pull Secrets on Another Machine
 
 On your other dev machines (laptop, desktop, server):
 
 ```bash
-# First, make sure LSH is installed and Supabase is configured
+# First, make sure LSH is installed
 # Then add the LSH_SECRETS_KEY to a minimal .env:
 echo "LSH_SECRETS_KEY=your_key_here" > .env
 
-# Pull your secrets
+# Pull your secrets from IPFS storage
 lsh pull
 
-# Boom! Your .env is now synced
+# Boom! Your .env is now synced from encrypted local storage
 ```
 
 ## Usage
@@ -111,9 +111,10 @@ lsh show
 ## How It Works
 
 1. **Encryption**: Your .env is encrypted using AES-256-CBC with your `LSH_SECRETS_KEY`
-2. **Storage**: Encrypted data is stored in your Supabase database
-3. **Sync**: Pull from any machine that has the encryption key
+2. **Storage**: Encrypted data is stored locally using IPFS content-addressed storage at `~/.lsh/secrets-cache/`
+3. **Sync**: Copy the `~/.lsh/` directory (or share via network drive) to sync across machines
 4. **Security**: Only you (and your team with the key) can decrypt
+5. **Offline-first**: Works completely offline, no cloud dependencies
 
 ## Security Best Practices
 
@@ -173,12 +174,13 @@ npm start
 | Feature | LSH Secrets | dotenv-vault | 1Password | Doppler |
 |---------|-------------|--------------|-----------|---------|
 | Cost | Free | Free tier | $3-8/mo | Free tier |
-| Cloud Storage | Supabase | Their cloud | 1Password | Their cloud |
+| Storage | Local IPFS | Their cloud | 1Password | Their cloud |
 | Encryption | AES-256 | ✓ | ✓ | ✓ |
-| Team Sharing | Manual key | Built-in | Built-in | Built-in |
-| Self-Hosted | ✓ (Supabase) | ✗ | ✗ | ✗ |
+| Team Sharing | Shared key | Built-in | Built-in | Built-in |
+| Offline Mode | ✓ | ✗ | ✗ | ✗ |
+| Self-Hosted | ✓ (Local) | ✗ | ✗ | ✗ |
 | Integration | LSH native | dotenv | CLI | CLI |
-| Setup Time | 2 min | 5 min | 10 min | 10 min |
+| Setup Time | 30 sec | 5 min | 10 min | 10 min |
 
 ## Troubleshooting
 
@@ -201,11 +203,14 @@ lsh key
 lsh push
 ```
 
-### "Supabase not configured"
+### "Secrets not in cache"
 ```bash
-# Add to your .env:
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
+# IPFS storage is local - copy ~/.lsh/ from another machine
+# Or use network drive to share the directory
+
+# Check what's in your local cache:
+ls -la ~/.lsh/secrets-cache/
+cat ~/.lsh/secrets-metadata.json
 ```
 
 ## Advanced: Custom Encryption Key
@@ -226,10 +231,11 @@ lsh push
 ## Pro Tips
 
 1. **Git Ignore**: Make sure `.env*` is in your `.gitignore`
-2. **Backup**: Keep encrypted backups: `lsh show > secrets-backup.txt`
-3. **Audit**: List environments regularly to see what's stored
-4. **Clean**: Delete old environments from Supabase manually if needed
+2. **Backup**: Keep encrypted backups of `~/.lsh/` directory or use `lsh show > secrets-backup.txt`
+3. **Audit**: List environments regularly to see what's stored locally
+4. **Clean**: Delete old environments with `lsh delete --env <env-name>` if needed
 5. **Keys**: Use different keys for personal vs team projects
+6. **Sync**: Share `~/.lsh/` directory via network drive or rsync for team sync
 
 ## Example Workflow
 
