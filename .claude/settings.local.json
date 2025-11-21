@@ -84,7 +84,20 @@
       "Bash(npm install:*)",
       "Bash(/tmp/test.env)",
       "Bash(gh issue create:*)",
-      "Bash(gh release create:*)"
+      "Bash(gh release create:*)",
+      "Bash(gh release view:*)",
+      "Bash(gh api:*)",
+      "Bash(for i in {1..5})",
+      "Bash(do echo \"=== Run $i ===\")",
+      "Bash(make build:*)",
+      "Bash(make clean:*)",
+      "Bash(./lsh doctor:*)",
+      "Bash(./lsh supabase init:*)",
+      "Bash(/Users/lefv/repos/lsh/lsh lib secrets push:*)",
+      "Bash(/Users/lefv/repos/lsh/lsh secrets:*)",
+      "Bash(/Users/lefv/repos/lsh/lsh push:*)",
+      "Bash(/Users/lefv/repos/lsh/lsh env:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
