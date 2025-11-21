@@ -11,7 +11,7 @@ export interface Secret {
     updatedAt: Date;
 }
 export declare class SecretsManager {
-    private persistence;
+    private storage;
     private encryptionKey;
     private gitInfo?;
     constructor(userId?: string, encryptionKey?: string, detectGit?: boolean);
@@ -53,7 +53,7 @@ export declare class SecretsManager {
      */
     push(envFilePath?: string, environment?: string, force?: boolean): Promise<void>;
     /**
-     * Pull .env from Supabase
+     * Pull .env from IPFS
      */
     pull(envFilePath?: string, environment?: string, force?: boolean): Promise<void>;
     /**
