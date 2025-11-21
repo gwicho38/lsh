@@ -39,7 +39,8 @@ export class IPFSSecretsStorage {
   private metadata: Record<string, IPFSSecretsMetadata>;
 
   constructor() {
-    const lshDir = path.join(os.homedir(), '.lsh');
+    const homeDir = process.env.HOME || os.homedir();
+    const lshDir = path.join(homeDir, '.lsh');
     this.cacheDir = path.join(lshDir, 'secrets-cache');
     this.metadataPath = path.join(lshDir, 'secrets-metadata.json');
 
