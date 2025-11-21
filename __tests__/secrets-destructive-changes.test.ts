@@ -231,6 +231,9 @@ describe('Destructive Change Detection', () => {
       );
       await manager.push(envFile, 'test');
 
+      // Small delay to ensure cloud metadata is persisted
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Modify the SAME file to have empty value (destructive)
       fs.writeFileSync(envFile, 'API_KEY=\nDATABASE_URL=postgres://user:pass@host/db\n', 'utf8');
 
