@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*.*.*'  # Trigger on version tags like v0.5.2
 
+permissions:
+  contents: write  # Required to create releases
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -17,7 +20,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20.9.0'
+        node-version: '20.18.0'
         registry-url: 'https://registry.npmjs.org'
 
     - name: Install dependencies
@@ -35,22 +38,19 @@ jobs:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Create GitHub Release
-      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        body: |
-          ## Changes in this Release
+      run: |
+        TAG_NAME="${GITHUB_REF#refs/tags/}"
+        gh release create "$TAG_NAME" \
+          --title "Release $TAG_NAME" \
+          --notes "## Changes in this Release
 
-          See [CHANGELOG.md](https://github.com/gwicho38/lsh/blob/main/CHANGELOG.md) for details.
+        See [CHANGELOG.md](https://github.com/gwicho38/lsh/blob/main/CHANGELOG.md) for details.
 
-          ### Installation
-          ```bash
-          npm install -g gwicho38-lsh@latest
-          # or
-          lsh self update
-          ```
-        draft: false
-        prerelease: false
+        ### Installation
+        \`\`\`bash
+        npm install -g gwicho38-lsh@latest
+        # or
+        lsh self update
+        \`\`\`"
