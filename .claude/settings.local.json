@@ -101,7 +101,8 @@
       "Bash(npm whoami:*)",
       "Bash(npm info:*)",
       "Bash(gh run watch:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(/tmp/lsh-1.8.0-changes.diff)"
     ],
     "deny": [],
     "ask": []
