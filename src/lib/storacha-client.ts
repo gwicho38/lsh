@@ -353,7 +353,9 @@ export class StorachaClient {
         size: pageSize,
       });
 
-      // Check recent uploads for registry file
+      // Collect all registry files for this repo
+      const registries: Array<{ cid: string; timestamp: string; secretsCid: string }> = [];
+
       for (const upload of results.results) {
         try {
           const cid = upload.root.toString();
@@ -375,14 +377,25 @@ export class StorachaClient {
           const json = JSON.parse(content.toString('utf-8'));
 
           // Check if it's an LSH registry file for our repo
-          if (json.repoName === repoName && json.version && json.cid) {
-            logger.debug(`✅ Found latest CID for ${repoName}: ${json.cid}`);
-            return json.cid;
+          if (json.repoName === repoName && json.version && json.cid && json.timestamp) {
+            registries.push({
+              cid: cid,
+              timestamp: json.timestamp,
+              secretsCid: json.cid,
+            });
           }
         } catch {
           // Not an LSH registry file or failed to download
           continue;
         }
+      }
+
+      // Sort by timestamp (newest first) and return the most recent secrets CID
+      if (registries.length > 0) {
+        registries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        const latest = registries[0];
+        logger.debug(`✅ Found latest CID for ${repoName}: ${latest.secretsCid} (timestamp: ${latest.timestamp})`);
+        return latest.secretsCid;
       }
 
       // No registry found
