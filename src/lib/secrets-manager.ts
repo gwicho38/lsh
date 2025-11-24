@@ -785,7 +785,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       if (autoExecute) {
         await this.createEnvFromExample(envFilePath);
         out('   Pushing to cloud...');
-        await this.push(envFilePath, effectiveEnv, force);
+        await this.push(envFilePath, environment, force); // Use raw environment, not effectiveEnv
         out();
         out('✅ Setup complete! Edit your .env and run sync again to update.');
       } else {
@@ -806,7 +806,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
       if (autoExecute) {
         out('   Pushing to cloud...');
-        await this.push(envFilePath, effectiveEnv, force);
+        await this.push(envFilePath, environment, force); // Use raw environment, not effectiveEnv
         out('✅ Secrets pushed to cloud!');
       } else {
         out(`💡 Run: lsh push -f ${envFilePath} -e ${environment}`);
@@ -867,7 +867,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
           if (autoExecute) {
             out('   Pushing to cloud...');
-            await this.push(envFilePath, effectiveEnv, force);
+            await this.push(envFilePath, environment, force); // Use raw environment, not effectiveEnv
             out('✅ Secrets synced to cloud!');
           } else {
             out(`💡 Run: lsh push -f ${envFilePath} -e ${environment}`);
