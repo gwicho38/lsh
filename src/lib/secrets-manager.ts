@@ -717,7 +717,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
           }
 
           out('   Pushing to cloud with new key...');
-          await this.push(envFilePath, effectiveEnv, true); // Force push
+          await this.push(envFilePath, environment, true); // Force push (use original environment, not effectiveEnv)
           out();
           out('✅ Re-keying complete! Cloud secrets now encrypted with current key.');
         } else {
