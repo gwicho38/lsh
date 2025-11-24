@@ -285,8 +285,9 @@ async function saveConfiguration(config: InitConfig): Promise<void> {
     }
 
     // Update or add configuration
-    // SECURITY: DO NOT save LSH_SECRETS_KEY to .env (circular encryption vulnerability)
-    const updates: Record<string, string> = {};
+    const updates: Record<string, string> = {
+      LSH_SECRETS_KEY: config.encryptionKey,
+    };
 
     if (config.storageType === 'supabase' && config.supabaseUrl && config.supabaseKey) {
       updates.SUPABASE_URL = config.supabaseUrl;
@@ -362,23 +363,12 @@ function showSuccessMessage(config: InitConfig): void {
   console.log(chalk.gray('━'.repeat(50)));
   console.log('');
 
-  // Show encryption key with shell profile instructions
-  console.log(chalk.yellow('🔑 Your encryption key (save this securely):'));
+  // Show encryption key
+  console.log(chalk.yellow('📝 Your encryption key (save this securely):'));
   console.log(chalk.cyan(`   ${config.encryptionKey}`));
   console.log('');
-  console.log(chalk.bold('⚠️  IMPORTANT: Add this to your shell profile, NOT to .env'));
-  console.log('');
-  console.log(chalk.gray('   Add to your shell profile:'));
-  console.log(chalk.cyan(`   echo 'export LSH_SECRETS_KEY="${config.encryptionKey}"' >> ~/.zshrc`));
-  console.log(chalk.cyan('   source ~/.zshrc'));
-  console.log('');
-  console.log(chalk.gray('   Then verify it\'s set:'));
-  console.log(chalk.cyan('   echo $LSH_SECRETS_KEY'));
-  console.log('');
-  console.log(chalk.gray('   Share this key securely with your team:'));
-  console.log(chalk.gray('   - Use 1Password, LastPass, or Bitwarden'));
-  console.log(chalk.gray('   - Send via encrypted email or Signal'));
-  console.log(chalk.gray('   - Never commit to git or post in public channels'));
+  console.log(chalk.gray('   This key is saved in your .env file.'));
+  console.log(chalk.gray('   Share it with your team to sync secrets.'));
   console.log('');
 
   // Storage info
