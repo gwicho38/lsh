@@ -105,10 +105,11 @@ export class IPFSSecretsStorage {
 
           // Upload registry file if this is a git repo
           // This allows detection on new machines without local metadata
+          // Include the secrets CID so other hosts can fetch the latest version
           if (gitRepo) {
             try {
-              await storacha.uploadRegistry(gitRepo, environment);
-              logger.debug(`   📝 Registry uploaded for ${gitRepo}`);
+              await storacha.uploadRegistry(gitRepo, environment, cid);
+              logger.debug(`   📝 Registry uploaded for ${gitRepo} (CID: ${cid})`);
             } catch (regError) {
               // Registry upload failed, but secrets are still uploaded
               const _regErr = regError as Error;
@@ -140,10 +141,35 @@ export class IPFSSecretsStorage {
   ): Promise<Secret[]> {
     try {
       const metadataKey = this.getMetadataKey(gitRepo, environment);
-      const metadata = this.metadata[metadataKey];
+      let metadata = this.metadata[metadataKey];
 
       if (!metadata) {
         throw new Error(`No secrets found for environment: ${environment}`);
+      }
+
+      // Check if there's a newer version in the registry (for git repos)
+      if (gitRepo) {
+        try {
+          const storacha = getStorachaClient();
+          if (storacha.isEnabled() && await storacha.isAuthenticated()) {
+            const latestCid = await storacha.getLatestCID(gitRepo);
+            if (latestCid && latestCid !== metadata.cid) {
+              logger.info(`   🔄 Found newer version in registry (CID: ${latestCid})`);
+              // Update metadata with latest CID
+              metadata = {
+                ...metadata,
+                cid: latestCid,
+                timestamp: new Date().toISOString(),
+              };
+              this.metadata[metadataKey] = metadata;
+              this.saveMetadata();
+            }
+          }
+        } catch (error) {
+          // Registry check failed, continue with local metadata
+          const err = error as Error;
+          logger.debug(`   Registry check failed: ${err.message}`);
+        }
       }
 
       // Try to load from local cache
