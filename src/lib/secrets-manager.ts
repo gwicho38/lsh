@@ -206,8 +206,8 @@ export class SecretsManager {
 
     message += `\nThis is likely unintentional and could break your application.\n\n`;
     message += `To proceed anyway, use the --force flag:\n`;
-    message += `  lsh lib secrets push --force\n`;
-    message += `  lsh lib secrets sync --force\n`;
+    message += `  lsh push --force\n`;
+    message += `  lsh sync --force\n`;
 
     return message;
   }
@@ -646,7 +646,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
    * Smart sync command - automatically set up and synchronize secrets
    * This is the new enhanced sync that does everything automatically
    */
-  async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false, force: boolean = false): Promise<void> {
+  async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false, force: boolean = false, forceRekey: boolean = false): Promise<void> {
     // In load mode, suppress all logger output to prevent zsh glob interpretation
     // Save original level and restore at the end
     const originalLogLevel = loadMode ? logger['config'].level : undefined;
@@ -704,11 +704,43 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     let _action: 'push' | 'pull' | 'create-and-push' | 'in-sync' | 'key-mismatch' = 'in-sync';
 
     if (status.cloudExists && status.keyMatches === false) {
+      if (forceRekey) {
+        // Force re-keying: push local secrets with current key
+        _action = 'push';
+        out('🔄 Force re-keying: Re-encrypting cloud secrets with current key...');
+
+        if (autoExecute) {
+          if (!status.localExists) {
+            out('❌ Cannot re-key: No local .env file found');
+            out(`💡 Pull with original key first, or create new .env`);
+            return;
+          }
+
+          out('   Pushing to cloud with new key...');
+          await this.push(envFilePath, effectiveEnv, true); // Force push
+          out();
+          out('✅ Re-keying complete! Cloud secrets now encrypted with current key.');
+        } else {
+          out('💡 Run: lsh push -f ${envFilePath} -e ${environment}');
+        }
+        out();
+
+        // Output export commands in load mode
+        if (loadMode && fs.existsSync(envFilePath)) {
+          console.log(this.generateExportCommands(envFilePath));
+        }
+        return;
+      }
+
+      // No force-rekey: show error and options
       _action = 'key-mismatch';
       out('⚠️  Encryption key mismatch!');
       out('   The local key does not match the cloud storage.');
-      out('   Please use the original key or push new secrets with:');
-      out(`   lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+      out();
+      out('   Options:');
+      out(`   1. Use the original key (recommended if you have it)`);
+      out(`   2. Re-encrypt with current key: lsh push -f ${envFilePath} -e ${environment}`);
+      out(`   3. Re-key during sync: lsh sync --force-rekey -f ${envFilePath} -e ${environment}`);
       out();
       return;
     }
@@ -725,7 +757,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         out();
         out('✅ Setup complete! Edit your .env and run sync again to update.');
       } else {
-        out('💡 Run: lsh lib secrets create && lsh lib secrets push');
+        out('💡 Run: lsh create && lsh push');
       }
       out();
 
@@ -745,7 +777,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         await this.push(envFilePath, effectiveEnv, force);
         out('✅ Secrets pushed to cloud!');
       } else {
-        out(`💡 Run: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+        out(`💡 Run: lsh push -f ${envFilePath} -e ${environment}`);
       }
       out();
 
@@ -765,7 +797,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         await this.pull(envFilePath, effectiveEnv, false);
         out('✅ Secrets pulled from cloud!');
       } else {
-        out(`💡 Run: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+        out(`💡 Run: lsh pull -f ${envFilePath} -e ${environment}`);
       }
       out();
 
@@ -806,7 +838,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
             await this.push(envFilePath, effectiveEnv, force);
             out('✅ Secrets synced to cloud!');
           } else {
-            out(`💡 Run: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+            out(`💡 Run: lsh push -f ${envFilePath} -e ${environment}`);
           }
         } else {
           _action = 'pull';
@@ -819,7 +851,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
             await this.pull(envFilePath, effectiveEnv, false);
             out('✅ Secrets synced from cloud!');
           } else {
-            out(`💡 Run: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+            out(`💡 Run: lsh pull -f ${envFilePath} -e ${environment}`);
           }
         }
 
@@ -893,7 +925,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
     if (!status.keySet) {
       suggestions.push('⚠️  No encryption key set!');
-      suggestions.push('   Generate a key: lsh lib secrets key');
+      suggestions.push('   Generate a key: lsh key');
       suggestions.push('   Add it to .env: LSH_SECRETS_KEY=<your-key>');
       suggestions.push('   Load it: export $(cat .env | xargs)');
     }
@@ -901,17 +933,17 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     if (status.cloudExists && status.keyMatches === false) {
       suggestions.push('⚠️  Encryption key does not match cloud storage!');
       suggestions.push('   Either use the original key, or push new secrets:');
-      suggestions.push(`   lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+      suggestions.push(`   lsh push -f ${envFilePath} -e ${environment}`);
     }
 
     if (!status.localExists && status.cloudExists && status.keyMatches) {
       suggestions.push('💡 Cloud secrets available but no local file');
-      suggestions.push(`   Pull from cloud: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+      suggestions.push(`   Pull from cloud: lsh pull -f ${envFilePath} -e ${environment}`);
     }
 
     if (status.localExists && !status.cloudExists) {
       suggestions.push('💡 Local .env exists but not in cloud');
-      suggestions.push(`   Push to cloud: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+      suggestions.push(`   Push to cloud: lsh push -f ${envFilePath} -e ${environment}`);
     }
 
     if (status.localExists && status.cloudExists && status.keyMatches) {
@@ -922,10 +954,10 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
         if (localNewer && daysDiff > 0) {
           suggestions.push('💡 Local file is newer than cloud');
-          suggestions.push(`   Push to cloud: lsh lib secrets push -f ${envFilePath} -e ${environment}`);
+          suggestions.push(`   Push to cloud: lsh push -f ${envFilePath} -e ${environment}`);
         } else if (!localNewer && daysDiff > 0) {
           suggestions.push('💡 Cloud is newer than local file');
-          suggestions.push(`   Pull from cloud: lsh lib secrets pull -f ${envFilePath} -e ${environment}`);
+          suggestions.push(`   Pull from cloud: lsh pull -f ${envFilePath} -e ${environment}`);
         } else {
           suggestions.push('✅ Local and cloud are in sync!');
         }

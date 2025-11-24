@@ -274,7 +274,7 @@ API_KEY=
         console.log('');
         console.log('Next steps:');
         console.log(`  1. Edit the file: ${options.file}`);
-        console.log(`  2. Push to cloud: lsh lib secrets push -f ${options.file}`);
+        console.log(`  2. Push to cloud: lsh push -f ${options.file}`);
         console.log('');
       } catch (error) {
         const err = error as Error;
@@ -293,6 +293,7 @@ API_KEY=
     .option('--legacy', 'Use legacy sync mode (suggestions only)')
     .option('--load', 'Output eval-able export commands for loading secrets')
     .option('--force', 'Force sync even if destructive changes detected')
+    .option('--force-rekey', 'Re-encrypt cloud secrets with current local key (use when key mismatch)')
     .action(async (options) => {
       const manager = new SecretsManager();
       try {
@@ -301,7 +302,7 @@ API_KEY=
           await manager.sync(options.file, options.env);
         } else {
           // Use new smart sync (auto-execute)
-          await manager.smartSync(options.file, options.env, !options.dryRun, options.load, options.force);
+          await manager.smartSync(options.file, options.env, !options.dryRun, options.load, options.force, options.forceRekey);
         }
       } catch (error) {
         const err = error as Error;

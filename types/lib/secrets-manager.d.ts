@@ -107,7 +107,7 @@ export declare class SecretsManager {
      * Smart sync command - automatically set up and synchronize secrets
      * This is the new enhanced sync that does everything automatically
      */
-    smartSync(envFilePath?: string, environment?: string, autoExecute?: boolean, loadMode?: boolean, force?: boolean): Promise<void>;
+    smartSync(envFilePath?: string, environment?: string, autoExecute?: boolean, loadMode?: boolean, force?: boolean, forceRekey?: boolean): Promise<void>;
     /**
      * Show instructions for loading secrets
      */
