@@ -14,10 +14,11 @@ import ora from 'ora';
 import { getPlatformPaths } from '../lib/platform-utils.js';
 
 interface InitConfig {
-  storageType: 'supabase' | 'local' | 'postgres';
+  storageType: 'supabase' | 'local' | 'postgres' | 'storacha';
   supabaseUrl?: string;
   supabaseKey?: string;
   postgresUrl?: string;
+  storachaEmail?: string;
   encryptionKey: string;
 }
 
@@ -29,6 +30,7 @@ export function registerInitCommands(program: Command): void {
     .command('init')
     .description('Interactive setup wizard (first-time configuration)')
     .option('--local', 'Use local-only encryption (no cloud sync)')
+    .option('--storacha', 'Use Storacha IPFS network sync (recommended)')
     .option('--supabase', 'Use Supabase cloud storage')
     .option('--postgres', 'Use self-hosted PostgreSQL')
     .option('--skip-test', 'Skip connection testing')
@@ -48,6 +50,7 @@ export function registerInitCommands(program: Command): void {
  */
 async function runSetupWizard(options: {
   local?: boolean;
+  storacha?: boolean;
   supabase?: boolean;
   postgres?: boolean;
   skipTest?: boolean;
@@ -76,9 +79,11 @@ async function runSetupWizard(options: {
   }
 
   // Determine storage type
-  let storageType: 'supabase' | 'local' | 'postgres';
+  let storageType: 'supabase' | 'local' | 'postgres' | 'storacha';
 
-  if (options.local) {
+  if (options.storacha) {
+    storageType = 'storacha';
+  } else if (options.local) {
     storageType = 'local';
   } else if (options.postgres) {
     storageType = 'postgres';
@@ -93,19 +98,23 @@ async function runSetupWizard(options: {
         message: 'Choose storage backend:',
         choices: [
           {
-            name: 'Supabase (free, cloud-hosted, recommended)',
+            name: '🌐 Storacha (IPFS network, zero-config, recommended)',
+            value: 'storacha',
+          },
+          {
+            name: '☁️  Supabase (cloud-hosted, team collaboration)',
             value: 'supabase',
           },
           {
-            name: 'Local encryption (file-based, no cloud sync)',
+            name: '💾 Local encryption (file-based, no cloud sync)',
             value: 'local',
           },
           {
-            name: 'Self-hosted PostgreSQL',
+            name: '🐘 Self-hosted PostgreSQL',
             value: 'postgres',
           },
         ],
-        default: 'supabase',
+        default: 'storacha',
       },
     ]);
     storageType = storage;
@@ -117,7 +126,9 @@ async function runSetupWizard(options: {
   };
 
   // Configure based on storage type
-  if (storageType === 'supabase') {
+  if (storageType === 'storacha') {
+    await configureStoracha(config);
+  } else if (storageType === 'supabase') {
     await configureSupabase(config, options.skipTest);
   } else if (storageType === 'postgres') {
     await configurePostgres(config, options.skipTest);
@@ -217,6 +228,36 @@ async function testSupabaseConnection(url: string, key: string): Promise<void> {
 }
 
 /**
+ * Configure Storacha IPFS network sync
+ */
+async function configureStoracha(config: InitConfig): Promise<void> {
+  console.log(chalk.cyan('\n🌐 Storacha IPFS Network Sync'));
+  console.log(chalk.gray('Zero-config multi-host secrets sync via IPFS network'));
+  console.log('');
+
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'email',
+      message: 'Enter your email for Storacha authentication:',
+      validate: (input) => {
+        if (!input.trim()) return 'Email is required';
+        if (!input.includes('@')) return 'Must be a valid email address';
+        return true;
+      },
+    },
+  ]);
+
+  config.storachaEmail = answers.email.trim();
+
+  console.log('');
+  console.log(chalk.yellow('📧 Please check your email to complete authentication.'));
+  console.log(chalk.gray('   After setup completes, run:'));
+  console.log(chalk.cyan('   lsh storacha login ' + config.storachaEmail));
+  console.log('');
+}
+
+/**
  * Configure self-hosted PostgreSQL
  */
 async function configurePostgres(config: InitConfig, skipTest?: boolean): Promise<void> {
@@ -302,6 +343,10 @@ async function saveConfiguration(config: InitConfig): Promise<void> {
       updates.LSH_STORAGE_MODE = 'local';
     }
 
+    if (config.storageType === 'storacha') {
+      updates.LSH_STORACHA_ENABLED = 'true';
+    }
+
     // Update .env content
     for (const [key, value] of Object.entries(updates)) {
       const regex = new RegExp(`^${key}=.*$`, 'm');
@@ -372,7 +417,9 @@ function showSuccessMessage(config: InitConfig): void {
   console.log('');
 
   // Storage info
-  if (config.storageType === 'supabase') {
+  if (config.storageType === 'storacha') {
+    console.log(chalk.cyan('🌐 Using Storacha IPFS network sync'));
+  } else if (config.storageType === 'supabase') {
     console.log(chalk.cyan('☁️  Using Supabase cloud storage'));
   } else if (config.storageType === 'postgres') {
     console.log(chalk.cyan('🐘 Using PostgreSQL storage'));
@@ -384,21 +431,37 @@ function showSuccessMessage(config: InitConfig): void {
   // Next steps
   console.log(chalk.bold('🚀 Next steps:'));
   console.log('');
-  console.log(chalk.gray('   1. Verify your setup:'));
-  console.log(chalk.cyan('      lsh doctor'));
-  console.log('');
 
-  if (config.storageType !== 'local') {
+  if (config.storageType === 'storacha') {
+    console.log(chalk.gray('   1. Authenticate with Storacha:'));
+    console.log(chalk.cyan(`      lsh storacha login ${config.storachaEmail || 'your@email.com'}`));
+    console.log('');
     console.log(chalk.gray('   2. Push your secrets:'));
     console.log(chalk.cyan('      lsh push --env dev'));
+    console.log(chalk.gray('      (Automatically uploads to IPFS network)'));
     console.log('');
     console.log(chalk.gray('   3. On another machine:'));
-    console.log(chalk.cyan('      lsh init          ') + chalk.gray('# Use the same credentials'));
+    console.log(chalk.cyan('      lsh init --storacha'));
+    console.log(chalk.cyan('      lsh storacha login your@email.com'));
     console.log(chalk.cyan('      lsh pull --env dev'));
+    console.log(chalk.gray('      (Automatically downloads from IPFS network)'));
   } else {
-    console.log(chalk.gray('   2. Start managing secrets:'));
-    console.log(chalk.cyan('      lsh set API_KEY myvalue'));
-    console.log(chalk.cyan('      lsh list'));
+    console.log(chalk.gray('   1. Verify your setup:'));
+    console.log(chalk.cyan('      lsh doctor'));
+    console.log('');
+
+    if (config.storageType !== 'local') {
+      console.log(chalk.gray('   2. Push your secrets:'));
+      console.log(chalk.cyan('      lsh push --env dev'));
+      console.log('');
+      console.log(chalk.gray('   3. On another machine:'));
+      console.log(chalk.cyan('      lsh init          ') + chalk.gray('# Use the same credentials'));
+      console.log(chalk.cyan('      lsh pull --env dev'));
+    } else {
+      console.log(chalk.gray('   2. Start managing secrets:'));
+      console.log(chalk.cyan('      lsh set API_KEY myvalue'));
+      console.log(chalk.cyan('      lsh list'));
+    }
   }
 
   console.log('');
