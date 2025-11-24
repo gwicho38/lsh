@@ -294,9 +294,9 @@ export class StorachaClient {
 
   /**
    * Upload registry file for a repo
-   * Registry files mark that secrets exist for a repo without exposing the secrets themselves
+   * Registry files mark that secrets exist and include the latest secrets CID
    */
-  async uploadRegistry(repoName: string, environment: string): Promise<string> {
+  async uploadRegistry(repoName: string, environment: string, secretsCid: string): Promise<string> {
     if (!this.isEnabled()) {
       throw new Error('Storacha is not enabled');
     }
@@ -308,8 +308,9 @@ export class StorachaClient {
     const registry = {
       repoName,
       environment,
+      cid: secretsCid,  // Include the secrets CID
       timestamp: new Date().toISOString(),
-      version: '2.2.1',
+      version: '2.2.2',
     };
 
     const content = JSON.stringify(registry, null, 2);
@@ -322,9 +323,75 @@ export class StorachaClient {
     const file = new File([uint8Array as any], filename, { type: 'application/json' });
 
     const cid = await client.uploadFile(file);
-    logger.debug(`📝 Uploaded registry for ${repoName}: ${cid}`);
+    logger.debug(`📝 Uploaded registry for ${repoName} (secrets CID: ${secretsCid}): ${cid}`);
 
     return cid.toString();
+  }
+
+  /**
+   * Get the latest secrets CID from registry
+   * Returns the CID of the latest secrets if registry exists, null otherwise
+   */
+  async getLatestCID(repoName: string): Promise<string | null> {
+    if (!this.isEnabled()) {
+      return null;
+    }
+
+    if (!await this.isAuthenticated()) {
+      return null;
+    }
+
+    try {
+      const client = await this.getClient();
+
+      // Only check recent uploads (limit to 20 for performance)
+      const pageSize = 20;
+
+      // Get first page of uploads
+      const results = await client.capability.upload.list({
+        cursor: '',
+        size: pageSize,
+      });
+
+      // Check recent uploads for registry file
+      for (const upload of results.results) {
+        try {
+          const cid = upload.root.toString();
+
+          // Download with timeout
+          const downloadPromise = this.download(cid);
+          const timeoutPromise = new Promise<Buffer>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000)
+          );
+
+          const content = await Promise.race([downloadPromise, timeoutPromise]);
+
+          // Skip large files (registry should be < 1KB)
+          if (content.length > 1024) {
+            continue;
+          }
+
+          // Try to parse as JSON
+          const json = JSON.parse(content.toString('utf-8'));
+
+          // Check if it's an LSH registry file for our repo
+          if (json.repoName === repoName && json.version && json.cid) {
+            logger.debug(`✅ Found latest CID for ${repoName}: ${json.cid}`);
+            return json.cid;
+          }
+        } catch {
+          // Not an LSH registry file or failed to download
+          continue;
+        }
+      }
+
+      // No registry found
+      return null;
+    } catch (error) {
+      const err = error as Error;
+      logger.debug(`Failed to get latest CID: ${err.message}`);
+      return null;
+    }
   }
 
   /**
