@@ -100,7 +100,8 @@
       "Bash(git stash:*)",
       "Bash(npm whoami:*)",
       "Bash(npm info:*)",
-      "Bash(gh run watch:*)"
+      "Bash(gh run watch:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

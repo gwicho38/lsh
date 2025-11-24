@@ -9,7 +9,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { getGitRepoInfo } from '../../lib/git-utils.js';
-import chalk from 'chalk';
 
 export async function init_secrets(program: Command) {
   // Push secrets to cloud
@@ -217,27 +216,11 @@ export async function init_secrets(program: Command) {
         console.log(`export LSH_SECRETS_KEY='${key}'`);
       } else {
         // Interactive output with tips
-        console.log('');
-        console.log('🔑 New encryption key generated!\n');
-        console.log(chalk.cyan(`   ${key}`));
-        console.log('');
-        console.log(chalk.bold('⚠️  IMPORTANT: Add to your shell profile, NOT to .env'));
-        console.log('');
-        console.log(chalk.gray('   1. Add to your shell profile:'));
-        console.log(chalk.cyan(`      echo 'export LSH_SECRETS_KEY="${key}"' >> ~/.zshrc`));
-        console.log(chalk.cyan('      source ~/.zshrc'));
-        console.log('');
-        console.log(chalk.gray('   2. Verify it\'s set:'));
-        console.log(chalk.cyan('      echo $LSH_SECRETS_KEY'));
-        console.log('');
-        console.log(chalk.gray('   3. Share securely with your team:'));
-        console.log(chalk.gray('      - Use 1Password, LastPass, or Bitwarden'));
-        console.log(chalk.gray('      - Send via encrypted email or Signal'));
-        console.log(chalk.gray('      - NEVER commit to git or .env file'));
-        console.log('');
-        console.log(chalk.gray('💡 Quick load: eval "$(lsh key --export)"'));
-        console.log(chalk.gray('📖 Details: See SECURITY.md'));
-        console.log('');
+        console.log('\n🔑 New encryption key (add to your .env):\n');
+        console.log(`export LSH_SECRETS_KEY='${key}'\n`);
+        console.log('💡 Tip: Share this key securely with your team to sync secrets.');
+        console.log('    Never commit it to git!\n');
+        console.log('💡 To load immediately: eval "$(lsh key --export)"\n');
       }
     });
 

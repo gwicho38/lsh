@@ -92,15 +92,9 @@ export declare class SecretsManager {
      */
     private getRepoAwareEnvironment;
     /**
-     * Ensure encryption key is set in environment
-     * SECURITY: Key must be in shell profile, NEVER in project .env
+     * Generate encryption key if not set
      */
     private ensureEncryptionKey;
-    /**
-     * Check if LSH_SECRETS_KEY is in .env file (security violation)
-     * SECURITY: Keys in .env files create circular encryption and expose secrets
-     */
-    private checkForKeyInEnvFile;
     /**
      * Create .env from .env.example if available
      */
