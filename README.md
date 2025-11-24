@@ -8,21 +8,22 @@
 
 Traditional secret management tools are either too complex, too expensive, or require vendor lock-in. LSH gives you:
 
-- **Encrypted sync** across all your machines using IPFS content-addressed storage
+- **True multi-host sync** via IPFS network (Storacha) - enabled by default in v2.1.0!
+- **Encrypted sync** with AES-256 encryption before upload
 - **Automatic rotation** with built-in daemon scheduling
 - **Team collaboration** with shared encryption keys
 - **Multi-environment** support (dev/staging/prod)
-- **Local-first** - works offline, your data stays on your machine
-- **Free & Open Source** - no per-seat pricing, no cloud dependencies
+- **Local-first** - works offline, graceful fallback to local cache
+- **Free & Open Source** - no per-seat pricing, 5GB free tier on Storacha
 
 **Plus, you get a complete shell automation platform as a bonus.**
 
 ## Quick Start
 
-**New to LSH?** LSH uses IPFS-based local storage - zero configuration needed!
-- **Local-first** - All secrets stored encrypted on your machine at `~/.lsh/secrets-cache/`
-- **No cloud required** - Works completely offline
-- **Team sync** - Share encryption key to sync across team members
+**New to LSH?** Choose your sync method:
+- **Storacha (IPFS network)** - One-time email auth, automatic multi-host sync (NEW in v2.1.0!)
+- **Local storage** - Zero config, works offline, encrypted at `~/.lsh/secrets-cache/`
+- **Supabase** - Team collaboration with audit logs and role-based access
 
 ### Quick Install (Works Immediately!)
 
@@ -195,6 +196,63 @@ lsh sync-history show
 - ❌ File contents or variable names
 
 See [IPFS Sync Records Documentation](docs/features/IPFS_SYNC_RECORDS.md) for complete details.
+
+### 🌐 Multi-Host IPFS Network Sync (New in v2.1.0!)
+
+**True multi-host sync via Storacha (IPFS network) - enabled by default!**
+
+LSH now syncs secrets across all your machines via the IPFS network with zero configuration after one-time email authentication.
+
+```bash
+# On Host A (MacBook) - One-time setup
+lsh storacha login [email protected]
+# ✅ Email verification → payment plan → space created automatically
+
+# Push secrets (automatic network sync)
+cd ~/repos/my-project
+lsh push --env dev
+# 📤 Uploaded to Storacha: bafkrei...
+#    ☁️  Synced to IPFS network
+
+# On Host B (Linux server) - One-time setup
+lsh storacha login [email protected]
+
+# Pull secrets (automatic network download)
+cd ~/repos/my-project
+lsh pull --env dev
+# 📥 Downloading from Storacha: bafkrei...
+# ✅ Downloaded from IPFS network
+```
+
+**Features:**
+- ✅ **Default enabled** - Works automatically after authentication
+- ✅ **One-time setup** - Just authenticate with email per machine
+- ✅ **Encrypted before upload** - AES-256 encryption (secrets never leave your machine unencrypted)
+- ✅ **Graceful fallback** - Uses local cache if network unavailable
+- ✅ **Content-addressed** - IPFS CIDs ensure tamper-proof integrity
+- ✅ **Free tier** - 5GB storage on Storacha's free plan
+
+**How it works:**
+1. Your secrets are encrypted locally with `LSH_SECRETS_KEY`
+2. Encrypted data is uploaded to IPFS via Storacha
+3. On another machine, LSH downloads from IPFS using the content ID (CID)
+4. Secrets are decrypted locally with the same encryption key
+5. Local cache speeds up offline access
+
+**Check status:**
+```bash
+lsh storacha status
+# 🔐 Authentication: ✅ Authenticated
+# 🌐 Network Sync: ✅ Enabled
+# 📦 Spaces: lsh-secrets (current)
+```
+
+**Disable network sync (local cache only):**
+```bash
+lsh storacha disable
+# Or set environment variable:
+export LSH_STORACHA_ENABLED=false
+```
 
 ### 🔐 Secrets Management
 

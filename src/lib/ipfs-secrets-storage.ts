@@ -9,6 +9,7 @@ import * as os from 'os';
 import * as crypto from 'crypto';
 import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
+import { getStorachaClient } from './storacha-client.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -93,8 +94,20 @@ export class IPFSSecretsStorage {
         logger.info(`   Repository: ${gitRepo}/${gitBranch || 'main'}`);
       }
 
-      // TODO: In future, upload to real IPFS network via Storacha
-      // For now, using local storage with IPFS-compatible CIDs
+      // Upload to Storacha network if enabled
+      const storacha = getStorachaClient();
+      if (storacha.isEnabled()) {
+        try {
+          const filename = `lsh-secrets-${environment}-${cid}.encrypted`;
+          // encryptedData is already a Buffer, pass it directly
+          await storacha.upload(Buffer.from(encryptedData), filename);
+          logger.info(`   ☁️  Synced to Storacha network`);
+        } catch (error) {
+          const err = error as Error;
+          logger.warn(`   ⚠️  Storacha upload failed: ${err.message}`);
+          logger.warn(`   Secrets are still cached locally`);
+        }
+      }
 
       return cid;
     } catch (error) {
@@ -121,9 +134,34 @@ export class IPFSSecretsStorage {
       }
 
       // Try to load from local cache
-      const cachedData = await this.loadLocally(metadata.cid);
+      let cachedData = await this.loadLocally(metadata.cid);
+
+      // If not in cache, try downloading from Storacha
       if (!cachedData) {
-        throw new Error(`Secrets not found in cache. CID: ${metadata.cid}`);
+        const storacha = getStorachaClient();
+        if (storacha.isEnabled()) {
+          try {
+            logger.info(`   ☁️  Downloading from Storacha network...`);
+            const downloadedData = await storacha.download(metadata.cid);
+            // Store in local cache for future use
+            await this.storeLocally(metadata.cid, downloadedData.toString('utf-8'), environment);
+            cachedData = downloadedData.toString('utf-8');
+            logger.info(`   ✅ Downloaded and cached from Storacha`);
+          } catch (error) {
+            const err = error as Error;
+            throw new Error(`Secrets not in cache and Storacha download failed: ${err.message}`);
+          }
+        } else {
+          throw new Error(`Secrets not found in cache. CID: ${metadata.cid}\n\n` +
+            `💡 Tip: Enable Storacha network sync:\n` +
+            `   export LSH_STORACHA_ENABLED=true\n` +
+            `   Or set up Supabase: lsh supabase init`);
+        }
+      }
+
+      // At this point cachedData is guaranteed to be a string
+      if (!cachedData) {
+        throw new Error(`Failed to retrieve secrets for environment: ${environment}`);
       }
 
       // Decrypt secrets
