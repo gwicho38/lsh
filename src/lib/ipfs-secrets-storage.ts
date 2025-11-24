@@ -102,6 +102,19 @@ export class IPFSSecretsStorage {
           // encryptedData is already a Buffer, pass it directly
           await storacha.upload(Buffer.from(encryptedData), filename);
           logger.info(`   ☁️  Synced to Storacha network`);
+
+          // Upload registry file if this is a git repo
+          // This allows detection on new machines without local metadata
+          if (gitRepo) {
+            try {
+              await storacha.uploadRegistry(gitRepo, environment);
+              logger.debug(`   📝 Registry uploaded for ${gitRepo}`);
+            } catch (regError) {
+              // Registry upload failed, but secrets are still uploaded
+              const _regErr = regError as Error;
+              logger.debug(`   Registry upload failed: ${_regErr.message}`);
+            }
+          }
         } catch (error) {
           const err = error as Error;
           logger.warn(`   ⚠️  Storacha upload failed: ${err.message}`);

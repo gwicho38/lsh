@@ -68,6 +68,19 @@ export declare class StorachaClient {
      */
     download(cid: string): Promise<Buffer>;
     /**
+     * Upload registry file for a repo
+     * Registry files mark that secrets exist for a repo without exposing the secrets themselves
+     */
+    uploadRegistry(repoName: string, environment: string): Promise<string>;
+    /**
+     * Check if registry exists for a repo by listing uploads
+     * Returns true if a registry file for this repo exists in Storacha
+     *
+     * NOTE: This is optimized to check only recent small files (likely registry files)
+     * to avoid downloading large encrypted secret files.
+     */
+    checkRegistry(repoName: string): Promise<boolean>;
+    /**
      * Enable Storacha network sync
      */
     enable(): void;
