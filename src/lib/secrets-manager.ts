@@ -226,6 +226,9 @@ export class SecretsManager {
       throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
     }
 
+    // Get the effective environment name (repo-aware)
+    const effectiveEnv = this.getRepoAwareEnvironment(environment);
+
     // Warn if using default key
     if (!process.env.LSH_SECRETS_KEY) {
       logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
@@ -234,7 +237,7 @@ export class SecretsManager {
       console.log();
     }
 
-    logger.info(`Pushing ${envFilePath} to IPFS (${this.getRepoAwareEnvironment(environment)})...`);
+    logger.info(`Pushing ${envFilePath} to IPFS (${effectiveEnv})...`);
 
     const content = fs.readFileSync(envFilePath, 'utf8');
     const env = this.parseEnvFile(content);
@@ -243,9 +246,9 @@ export class SecretsManager {
     if (!force) {
       try {
         // Check if secrets already exist for this environment
-        if (this.storage.exists(environment, this.gitInfo?.repoName)) {
+        if (this.storage.exists(effectiveEnv, this.gitInfo?.repoName)) {
           const existingSecrets = await this.storage.pull(
-            environment,
+            effectiveEnv,
             this.encryptionKey,
             this.gitInfo?.repoName
           );
@@ -274,7 +277,7 @@ export class SecretsManager {
     const secrets: Secret[] = Object.entries(env).map(([key, value]) => ({
       key,
       value,
-      environment,
+      environment: effectiveEnv,
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
@@ -282,7 +285,7 @@ export class SecretsManager {
     // Store on IPFS
     const cid = await this.storage.push(
       secrets,
-      environment,
+      effectiveEnv,
       this.encryptionKey,
       this.gitInfo?.repoName,
       this.gitInfo?.currentBranch
@@ -292,7 +295,7 @@ export class SecretsManager {
     console.log(`📦 IPFS CID: ${cid}`);
 
     // Log to IPFS for immutable audit record
-    await this.logToIPFS('push', environment, secrets.length);
+    await this.logToIPFS('push', effectiveEnv, secrets.length);
   }
 
   /**
