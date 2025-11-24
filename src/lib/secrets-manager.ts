@@ -483,14 +483,40 @@ export class SecretsManager {
   }
 
   /**
+   * Get the default environment name based on context
+   * v2.0: In git repo, default is repo name; otherwise 'dev'
+   */
+  public getDefaultEnvironment(): string {
+    // Check for v1 compatibility mode
+    if (process.env.LSH_V1_COMPAT === 'true') {
+      return 'dev'; // v1.x behavior
+    }
+
+    // v2.0 behavior: use repo name as default in git repos
+    if (this.gitInfo?.repoName) {
+      return ''; // Empty string signals "use repo name only"
+    }
+    return 'dev';
+  }
+
+  /**
    * Get repo-aware environment namespace
-   * Returns environment name with repo context if in a git repo
+   * v2.0: Returns environment name with repo context if in a git repo
+   *
+   * Behavior:
+   * - Empty env in repo: returns just repo name (v2.0 default)
+   * - Named env in repo: returns repo_env (e.g., repo_staging)
+   * - Any env outside repo: returns env as-is
    */
   private getRepoAwareEnvironment(environment: string): string {
     if (this.gitInfo?.repoName) {
+      // v2.0: Empty environment means "use repo name only"
+      if (environment === '' || environment === 'default') {
+        return this.gitInfo.repoName;
+      }
       return `${this.gitInfo.repoName}_${environment}`;
     }
-    return environment;
+    return environment || 'dev'; // Default to 'dev' outside git repos
   }
 
   /**

@@ -87,8 +87,18 @@ export declare class SecretsManager {
         suggestions: string[];
     }>;
     /**
+     * Get the default environment name based on context
+     * v2.0: In git repo, default is repo name; otherwise 'dev'
+     */
+    getDefaultEnvironment(): string;
+    /**
      * Get repo-aware environment namespace
-     * Returns environment name with repo context if in a git repo
+     * v2.0: Returns environment name with repo context if in a git repo
+     *
+     * Behavior:
+     * - Empty env in repo: returns just repo name (v2.0 default)
+     * - Named env in repo: returns repo_env (e.g., repo_staging)
+     * - Any env outside repo: returns env as-is
      */
     private getRepoAwareEnvironment;
     /**

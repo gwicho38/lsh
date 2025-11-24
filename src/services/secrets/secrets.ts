@@ -21,7 +21,9 @@ export async function init_secrets(program: Command) {
     .action(async (options) => {
       const manager = new SecretsManager();
       try {
-        await manager.push(options.file, options.env, options.force);
+        // v2.0: Use context-aware default environment
+        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
+        await manager.push(options.file, env, options.force);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to push secrets:', err.message);
@@ -42,7 +44,9 @@ export async function init_secrets(program: Command) {
     .action(async (options) => {
       const manager = new SecretsManager();
       try {
-        await manager.pull(options.file, options.env, options.force);
+        // v2.0: Use context-aware default environment
+        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
+        await manager.pull(options.file, env, options.force);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to pull secrets:', err.message);
@@ -297,12 +301,15 @@ API_KEY=
     .action(async (options) => {
       const manager = new SecretsManager();
       try {
+        // v2.0: Use context-aware default environment
+        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
+
         if (options.legacy) {
           // Use legacy sync (suggestions only)
-          await manager.sync(options.file, options.env);
+          await manager.sync(options.file, env);
         } else {
           // Use new smart sync (auto-execute)
-          await manager.smartSync(options.file, options.env, !options.dryRun, options.load, options.force, options.forceRekey);
+          await manager.smartSync(options.file, env, !options.dryRun, options.load, options.force, options.forceRekey);
         }
       } catch (error) {
         const err = error as Error;
