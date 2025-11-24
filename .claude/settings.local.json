@@ -97,7 +97,10 @@
       "Bash(/Users/lefv/repos/lsh/lsh secrets:*)",
       "Bash(/Users/lefv/repos/lsh/lsh push:*)",
       "Bash(/Users/lefv/repos/lsh/lsh env:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(npm whoami:*)",
+      "Bash(npm info:*)",
+      "Bash(gh run watch:*)"
     ],
     "deny": [],
     "ask": []
