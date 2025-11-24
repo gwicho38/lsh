@@ -495,8 +495,8 @@ export class SecretsManager {
    * SECURITY: Key must be in shell profile, NEVER in project .env
    */
   private async ensureEncryptionKey(): Promise<boolean> {
-    if (process.env.LSH_SECRETS_KEY) {
-      return true; // Key already set
+    if (process.env.LSH_SECRETS_KEY || this.encryptionKey) {
+      return true; // Key already set (env or constructor)
     }
 
     // DO NOT AUTO-GENERATE - This is a security violation
