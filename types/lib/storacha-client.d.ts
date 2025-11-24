@@ -69,9 +69,14 @@ export declare class StorachaClient {
     download(cid: string): Promise<Buffer>;
     /**
      * Upload registry file for a repo
-     * Registry files mark that secrets exist for a repo without exposing the secrets themselves
+     * Registry files mark that secrets exist and include the latest secrets CID
      */
-    uploadRegistry(repoName: string, environment: string): Promise<string>;
+    uploadRegistry(repoName: string, environment: string, secretsCid: string): Promise<string>;
+    /**
+     * Get the latest secrets CID from registry
+     * Returns the CID of the latest secrets if registry exists, null otherwise
+     */
+    getLatestCID(repoName: string): Promise<string | null>;
     /**
      * Check if registry exists for a repo by listing uploads
      * Returns true if a registry file for this repo exists in Storacha
