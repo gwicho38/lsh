@@ -512,6 +512,11 @@ lsh -s script.sh
 
 ## Security
 
+> **⚠️ CRITICAL: Read [SECURITY.md](SECURITY.md) for complete security guidelines**
+>
+> The security of your secrets depends entirely on how you store your `LSH_SECRETS_KEY`.
+> **Never store it in your project's `.env` file** - use your shell profile instead.
+
 ### Encryption
 
 - **Algorithm**: AES-256-CBC
@@ -522,16 +527,18 @@ lsh -s script.sh
 ### Best Practices
 
 **✅ DO:**
-- Generate unique keys per project
-- Share keys via 1Password/LastPass
-- Use different keys for personal vs team projects
+- Store `LSH_SECRETS_KEY` in your shell profile (`~/.zshrc`, `~/.bashrc`)
+- Generate unique keys per project/team
+- Share keys securely via 1Password/LastPass/Bitwarden
+- Use different keys for dev/staging/production environments
 - Rotate keys periodically
-- Keep backups of your .env files
+- Keep encrypted backups of your encryption key
 
 **❌ DON'T:**
+- Store `LSH_SECRETS_KEY` in your project's `.env` file
 - Commit `LSH_SECRETS_KEY` to git
 - Share keys in plain text (Slack, email, etc.)
-- Reuse keys across projects
+- Reuse keys across different teams/projects
 - Store production secrets in dev environment
 
 ### Command Validation
