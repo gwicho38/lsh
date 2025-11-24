@@ -491,53 +491,91 @@ export class SecretsManager {
   }
 
   /**
-   * Generate encryption key if not set
+   * Ensure encryption key is set in environment
+   * SECURITY: Key must be in shell profile, NEVER in project .env
    */
   private async ensureEncryptionKey(): Promise<boolean> {
     if (process.env.LSH_SECRETS_KEY) {
       return true; // Key already set
     }
 
-    logger.warn('⚠️  No encryption key found. Generating a new key...');
+    // DO NOT AUTO-GENERATE - This is a security violation
+    console.log('');
+    logger.error('❌ LSH_SECRETS_KEY environment variable not set');
+    console.log('');
+    logger.error('🔒 For security, this key must be stored in your shell profile,');
+    logger.error('   NOT in your project\'s .env file.');
+    console.log('');
+    logger.error('📝 Quick setup:');
+    console.log('');
+    logger.error('   1. Generate a key:');
+    logger.error('      lsh key');
+    console.log('');
+    logger.error('   2. Add to your shell profile:');
+    logger.error('      echo "export LSH_SECRETS_KEY=\'your-key-here\'" >> ~/.zshrc');
+    logger.error('      source ~/.zshrc');
+    console.log('');
+    logger.error('   3. Verify it\'s set:');
+    logger.error('      echo $LSH_SECRETS_KEY');
+    console.log('');
+    logger.error('📖 See SECURITY.md for complete details and team sharing.');
+    console.log('');
 
-    const key = crypto.randomBytes(32).toString('hex');
+    throw new Error('LSH_SECRETS_KEY not set in environment');
+  }
 
-    // Try to add to .env file
+  /**
+   * Check if LSH_SECRETS_KEY is in .env file (security violation)
+   * SECURITY: Keys in .env files create circular encryption and expose secrets
+   */
+  private checkForKeyInEnvFile(): void {
+    // Skip check in test environment
+    if (process.env.NODE_ENV === 'test' || process.env.JEST_WORKER_ID) {
+      return;
+    }
+
     const envPath = path.join(process.cwd(), '.env');
 
+    if (!fs.existsSync(envPath)) {
+      return; // No .env file, nothing to check
+    }
+
     try {
-      let content = '';
+      const content = fs.readFileSync(envPath, 'utf8');
 
-      if (fs.existsSync(envPath)) {
-        content = fs.readFileSync(envPath, 'utf8');
-        if (!content.endsWith('\n')) {
-          content += '\n';
-        }
-      }
-
-      // Check if LSH_SECRETS_KEY already exists (but empty)
       if (content.includes('LSH_SECRETS_KEY=')) {
-        content = content.replace(/LSH_SECRETS_KEY=.*$/m, `LSH_SECRETS_KEY=${key}`);
-      } else {
-        content += `\n# LSH Secrets Encryption Key (do not commit!)\nLSH_SECRETS_KEY=${key}\n`;
+        console.log('');
+        logger.error('🚨 SECURITY ISSUE: LSH_SECRETS_KEY found in .env file!');
+        console.log('');
+        logger.error('⚠️  This is a critical security vulnerability:');
+        logger.error('   - Creates circular encryption (key encrypts itself)');
+        logger.error('   - Exposes key if .env is accidentally committed');
+        logger.error('   - Makes IPFS storage completely insecure');
+        console.log('');
+        logger.error('🔧 Fix this immediately:');
+        console.log('');
+        logger.error('   1. Copy the key value from .env');
+        logger.error('   2. Add to your shell profile:');
+        logger.error('      echo "export LSH_SECRETS_KEY=\'your-key\'" >> ~/.zshrc');
+        logger.error('      source ~/.zshrc');
+        console.log('');
+        logger.error('   3. Remove LSH_SECRETS_KEY line from .env:');
+        logger.error('      # Edit .env and DELETE the LSH_SECRETS_KEY= line');
+        console.log('');
+        logger.error('   4. Verify it\'s set correctly:');
+        logger.error('      echo $LSH_SECRETS_KEY');
+        console.log('');
+        logger.error('📖 See SECURITY.md for complete details.');
+        console.log('');
+
+        throw new Error('LSH_SECRETS_KEY must not be in .env file');
       }
-
-      fs.writeFileSync(envPath, content, 'utf8');
-
-      // Set in current process
-      process.env.LSH_SECRETS_KEY = key;
-      this.encryptionKey = key;
-
-      logger.info('✅ Generated and saved encryption key to .env');
-      logger.info('💡 Load it now: export LSH_SECRETS_KEY=' + key.substring(0, 8) + '...');
-
-      return true;
     } catch (error) {
-      const _err = error as Error;
-      logger.error(`Failed to save encryption key: ${_err.message}`);
-      logger.info('Please set it manually:');
-      logger.info(`export LSH_SECRETS_KEY=${key}`);
-      return false;
+      // If we already threw our error, re-throw it
+      if ((error as Error).message === 'LSH_SECRETS_KEY must not be in .env file') {
+        throw error;
+      }
+      // Otherwise, ignore read errors
     }
   }
 
@@ -674,19 +712,22 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       out();
     }
 
-    // Step 1: Ensure encryption key exists
+    // Step 1: Check for security violations
+    this.checkForKeyInEnvFile(); // Must be BEFORE ensureEncryptionKey
+
+    // Step 2: Ensure encryption key exists
     if (!process.env.LSH_SECRETS_KEY) {
       logger.info('🔑 No encryption key found...');
       await this.ensureEncryptionKey();
       out();
     }
 
-    // Step 2: Ensure .gitignore includes .env
+    // Step 3: Ensure .gitignore includes .env
     if (this.gitInfo?.isGitRepo) {
       ensureEnvInGitignore(process.cwd());
     }
 
-    // Step 3: Check current status
+    // Step 4: Check current status
     const status = await this.status(envFilePath, effectiveEnv);
 
     out('📊 Current Status:');
@@ -700,7 +741,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
     out();
 
-    // Step 4: Determine action and execute if auto mode
+    // Step 5: Determine action and execute if auto mode
     let _action: 'push' | 'pull' | 'create-and-push' | 'in-sync' | 'key-mismatch' = 'in-sync';
 
     if (status.cloudExists && status.keyMatches === false) {
