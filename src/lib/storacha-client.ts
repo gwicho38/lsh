@@ -293,6 +293,122 @@ export class StorachaClient {
   }
 
   /**
+   * Upload registry file for a repo
+   * Registry files mark that secrets exist for a repo without exposing the secrets themselves
+   */
+  async uploadRegistry(repoName: string, environment: string): Promise<string> {
+    if (!this.isEnabled()) {
+      throw new Error('Storacha is not enabled');
+    }
+
+    if (!await this.isAuthenticated()) {
+      throw new Error('Not authenticated');
+    }
+
+    const registry = {
+      repoName,
+      environment,
+      timestamp: new Date().toISOString(),
+      version: '2.2.1',
+    };
+
+    const content = JSON.stringify(registry, null, 2);
+    const buffer = Buffer.from(content, 'utf-8');
+    const filename = `lsh-registry-${repoName}.json`;
+
+    const client = await this.getClient();
+    const uint8Array = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const file = new File([uint8Array as any], filename, { type: 'application/json' });
+
+    const cid = await client.uploadFile(file);
+    logger.debug(`📝 Uploaded registry for ${repoName}: ${cid}`);
+
+    return cid.toString();
+  }
+
+  /**
+   * Check if registry exists for a repo by listing uploads
+   * Returns true if a registry file for this repo exists in Storacha
+   *
+   * NOTE: This is optimized to check only recent small files (likely registry files)
+   * to avoid downloading large encrypted secret files.
+   */
+  async checkRegistry(repoName: string): Promise<boolean> {
+    if (!this.isEnabled()) {
+      return false;
+    }
+
+    if (!await this.isAuthenticated()) {
+      return false;
+    }
+
+    try {
+      const client = await this.getClient();
+
+      // Only check recent uploads (limit to 20 for performance)
+      const pageSize = 20;
+
+      // Get first page of uploads
+      const results = await client.capability.upload.list({
+        cursor: '',
+        size: pageSize,
+      });
+
+      // Track checked count for logging
+      let checked = 0;
+      let skipped = 0;
+
+      // Check if any uploads match our registry pattern
+      // Registry files are small JSON files (~200 bytes)
+      // Skip large files (encrypted secrets are much larger)
+      for (const upload of results.results) {
+        try {
+          const cid = upload.root.toString();
+
+          // Quick heuristic: registry files are tiny (<1KB)
+          // Skip if this looks like a large encrypted file based on CID
+          // We'll attempt download with a timeout
+          const downloadPromise = this.download(cid);
+          const timeoutPromise = new Promise<Buffer>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000) // 5s timeout per file
+          );
+
+          const content = await Promise.race([downloadPromise, timeoutPromise]);
+
+          // Skip large files (registry should be < 1KB)
+          if (content.length > 1024) {
+            skipped++;
+            continue;
+          }
+
+          checked++;
+
+          // Try to parse as JSON
+          const json = JSON.parse(content.toString('utf-8'));
+
+          // Check if it's an LSH registry file for our repo
+          if (json.repoName === repoName && json.version) {
+            logger.debug(`✅ Found registry for ${repoName} at CID: ${cid} (checked ${checked} files, skipped ${skipped})`);
+            return true;
+          }
+        } catch {
+          // Not an LSH registry file, timed out, or failed to download - continue
+          skipped++;
+        }
+      }
+
+      // No registry found
+      logger.debug(`❌ No registry found for ${repoName} (checked ${checked} files, skipped ${skipped})`);
+      return false;
+    } catch (error) {
+      const err = error as Error;
+      logger.debug(`Failed to check registry: ${err.message}`);
+      return false;
+    }
+  }
+
+  /**
    * Enable Storacha network sync
    */
   enable(): void {

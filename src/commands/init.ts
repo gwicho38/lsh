@@ -259,7 +259,7 @@ async function checkCloudSecretsExist(): Promise<{ exists: boolean; repoName?: s
     const repoName = gitInfo.repoName;
     const environment = repoName; // Default environment for repo
 
-    // Check if metadata file exists with this repo's secrets
+    // First check local metadata (fast path)
     const paths = getPlatformPaths();
     const metadataPath = path.join(paths.dataDir, 'secrets-metadata.json');
 
@@ -276,7 +276,30 @@ async function checkCloudSecretsExist(): Promise<{ exists: boolean; repoName?: s
         return { exists: true, repoName, environment };
       }
     } catch {
-      // Metadata file doesn't exist or can't be read
+      // Metadata file doesn't exist or can't be read - continue to network check
+    }
+
+    // Check Storacha network for registry file (works on new machines)
+    try {
+      const { getStorachaClient } = await import('../lib/storacha-client.js');
+      const storacha = getStorachaClient();
+
+      // Only check network if Storacha is enabled and authenticated
+      if (storacha.isEnabled() && await storacha.isAuthenticated()) {
+        const spinner = ora('Checking Storacha network for existing secrets...').start();
+
+        const registryExists = await storacha.checkRegistry(repoName);
+
+        spinner.stop();
+
+        if (registryExists) {
+          return { exists: true, repoName, environment };
+        }
+      }
+    } catch (error) {
+      // Network check failed, but that's okay - just means no secrets found
+      const err = error as Error;
+      console.log(chalk.gray(`   (Network check skipped: ${err.message})`));
     }
 
     return { exists: false, repoName, environment };
