@@ -14,6 +14,7 @@ import { registerConfigCommands } from './commands/config.js';
 import { registerSyncHistoryCommands } from './commands/sync-history.js';
 import { registerIPFSCommands } from './commands/ipfs.js';
 import { registerMigrateCommand } from './commands/migrate.js';
+import { registerStorachaCommands } from './commands/storacha.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_supabase } from './services/supabase/supabase.js';
 import { init_cron } from './services/cron/cron.js';
@@ -160,6 +161,7 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   registerSyncHistoryCommands(program);
   registerIPFSCommands(program);
   registerMigrateCommand(program);
+  registerStorachaCommands(program);
 
   // Secrets management (primary feature)
   await init_secrets(program);

@@ -47,6 +47,40 @@ EOF
 
 ---
 
+## 🌐 Multi-Host Sync with Storacha (v2.1.0+)
+
+**🆕 Automatic IPFS network sync - enabled by default!**
+
+```bash
+# One-time setup per machine
+lsh storacha login [email protected]
+# ✅ Email verification → space created
+
+# Check status
+lsh storacha status
+# 🔐 Authentication: ✅ Authenticated
+# 🌐 Network Sync: ✅ Enabled
+
+# Push on Host A
+cd ~/repos/my-project
+lsh push --env dev
+# 📤 Uploaded to IPFS network
+
+# Pull on Host B
+cd ~/repos/my-project
+lsh pull --env dev
+# 📥 Downloaded from IPFS network
+```
+
+**Commands:**
+- `lsh storacha login <email>` - Authenticate (one-time)
+- `lsh storacha status` - Check authentication & sync status
+- `lsh storacha space create <name>` - Create new space
+- `lsh storacha space list` - List all spaces
+- `lsh storacha enable/disable` - Control network sync
+
+---
+
 ## 🚀 Smart Sync (Recommended - New!)
 
 ```bash
@@ -193,9 +227,11 @@ lsh push --env myenv
 |---------|-------------|
 | `lsh sync` | 🆕 Smart sync (auto push/pull) |
 | `lsh sync --load` | 🆕 Sync AND load into shell |
+| `lsh storacha login <email>` | 🆕 Authenticate for network sync |
+| `lsh storacha status` | 🆕 Check Storacha status |
 | `lsh list` | Show all environments |
-| `lsh push` | Upload .env to cloud |
-| `lsh pull` | Download .env from cloud |
+| `lsh push` | Upload .env to cloud/IPFS |
+| `lsh pull` | Download .env from cloud/IPFS |
 | `lsh show` | View secrets (masked) |
 | `lsh key` | Generate encryption key |
 
