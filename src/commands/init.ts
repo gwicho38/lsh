@@ -12,6 +12,7 @@ import * as crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import ora from 'ora';
 import { getPlatformPaths } from '../lib/platform-utils.js';
+import { getGitRepoInfo } from '../lib/git-utils.js';
 
 interface InitConfig {
   storageType: 'supabase' | 'local' | 'postgres' | 'storacha';
@@ -120,9 +121,55 @@ async function runSetupWizard(options: {
     storageType = storage;
   }
 
+  // Check if secrets already exist for this repo in the cloud
+  const cloudCheck = await checkCloudSecretsExist();
+  let encryptionKey: string;
+
+  if (cloudCheck.exists && cloudCheck.repoName) {
+    // Secrets found! This is an existing project
+    console.log(chalk.cyan(`\n✨ Found existing secrets for "${cloudCheck.repoName}" in cloud!`));
+    console.log(chalk.gray('This appears to be an existing project.'));
+    console.log('');
+
+    const { useExisting } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'useExisting',
+        message: 'Pull existing secrets from another machine?',
+        default: true,
+      },
+    ]);
+
+    if (useExisting) {
+      // Prompt for existing encryption key
+      const { existingKey } = await inquirer.prompt([
+        {
+          type: 'password',
+          name: 'existingKey',
+          message: 'Enter the encryption key from your other machine:',
+          mask: '*',
+          validate: (input) => {
+            if (!input.trim()) return 'Encryption key is required';
+            if (input.length !== 64) return 'Key should be 64 characters (32 bytes hex)';
+            if (!/^[0-9a-f]+$/i.test(input)) return 'Key should be hexadecimal';
+            return true;
+          },
+        },
+      ]);
+      encryptionKey = existingKey.trim();
+    } else {
+      // Generate new key (will overwrite existing)
+      console.log(chalk.yellow('\n⚠️  Generating new key will overwrite existing secrets!'));
+      encryptionKey = generateEncryptionKey();
+    }
+  } else {
+    // No existing secrets - generate new key
+    encryptionKey = generateEncryptionKey();
+  }
+
   const config: InitConfig = {
     storageType,
-    encryptionKey: generateEncryptionKey(),
+    encryptionKey,
   };
 
   // Configure based on storage type
@@ -134,6 +181,22 @@ async function runSetupWizard(options: {
     await configurePostgres(config, options.skipTest);
   } else {
     await configureLocal(config);
+  }
+
+  // If using existing key and secrets exist, offer to pull them now
+  if (cloudCheck.exists && config.encryptionKey && cloudCheck.repoName) {
+    const { pullNow } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'pullNow',
+        message: 'Pull secrets now?',
+        default: true,
+      },
+    ]);
+
+    if (pullNow) {
+      await pullSecretsAfterInit(config.encryptionKey, cloudCheck.repoName);
+    }
   }
 
   // Save configuration
@@ -156,6 +219,69 @@ async function checkExistingConfig(): Promise<boolean> {
            content.includes('DATABASE_URL');
   } catch {
     return false;
+  }
+}
+
+/**
+ * Pull secrets after init is complete
+ */
+async function pullSecretsAfterInit(encryptionKey: string, repoName: string): Promise<void> {
+  const spinner = ora('Pulling secrets from cloud...').start();
+
+  try {
+    // Dynamically import SecretsManager to avoid circular dependencies
+    const { SecretsManager } = await import('../lib/secrets-manager.js');
+    const secretsManager = new SecretsManager();
+
+    // Pull secrets for this repo
+    await secretsManager.pull('.env', '', false);
+
+    spinner.succeed(chalk.green('✅ Secrets pulled successfully!'));
+  } catch (error) {
+    spinner.fail(chalk.red('❌ Failed to pull secrets'));
+    const err = error as Error;
+    console.log(chalk.yellow(`\n⚠️  ${err.message}`));
+    console.log(chalk.gray('\nYou can try pulling manually later with:'));
+    console.log(chalk.cyan(`   lsh pull`));
+  }
+}
+
+/**
+ * Check if secrets already exist in cloud for current repo
+ */
+async function checkCloudSecretsExist(): Promise<{ exists: boolean; repoName?: string; environment?: string }> {
+  try {
+    const gitInfo = getGitRepoInfo();
+    if (!gitInfo?.repoName) {
+      return { exists: false };
+    }
+
+    const repoName = gitInfo.repoName;
+    const environment = repoName; // Default environment for repo
+
+    // Check if metadata file exists with this repo's secrets
+    const paths = getPlatformPaths();
+    const metadataPath = path.join(paths.dataDir, 'secrets-metadata.json');
+
+    try {
+      const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+      const metadata = JSON.parse(metadataContent);
+
+      // Check if any environment matches this repo name
+      const hasSecrets = Object.keys(metadata).some(env =>
+        env === repoName || env.startsWith(`${repoName}_`)
+      );
+
+      if (hasSecrets) {
+        return { exists: true, repoName, environment };
+      }
+    } catch {
+      // Metadata file doesn't exist or can't be read
+    }
+
+    return { exists: false, repoName, environment };
+  } catch {
+    return { exists: false };
   }
 }
 
