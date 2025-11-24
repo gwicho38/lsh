@@ -308,17 +308,17 @@ export class SecretsManager {
       throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
     }
 
-    logger.info(`Pulling ${filename} (${this.getRepoAwareEnvironment(environment)}) from IPFS...`);
+    const effectiveEnv = this.getRepoAwareEnvironment(environment);
+    logger.info(`Pulling ${filename} (${effectiveEnv}) from IPFS...`);
 
     // Get secrets from IPFS storage
     const secrets = await this.storage.pull(
-      environment,
+      effectiveEnv,
       this.encryptionKey,
       this.gitInfo?.repoName
     );
 
     if (secrets.length === 0) {
-      const effectiveEnv = this.getRepoAwareEnvironment(environment);
       throw new Error(`No secrets found for environment: ${effectiveEnv}\n\n` +
         `💡 Tip: Check available environments with: lsh env\n` +
         `   Or push secrets first with: lsh push --env ${environment}`);
