@@ -102,7 +102,15 @@
       "Bash(npm info:*)",
       "Bash(gh run watch:*)",
       "Bash(git checkout:*)",
-      "Bash(/tmp/lsh-1.8.0-changes.diff)"
+      "Bash(/tmp/lsh-1.8.0-changes.diff)",
+      "WebSearch",
+      "WebFetch(domain:docs.storacha.network)",
+      "Bash(LSH_STORACHA_ENABLED=false node:*)",
+      "Bash(timeout 5 node:*)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(export LSH_SECRETS_KEY=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\")",
+      "Bash(.env)",
+      "Bash(timeout 120 node:*)"
     ],
     "deny": [],
     "ask": []
