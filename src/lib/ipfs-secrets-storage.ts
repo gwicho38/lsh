@@ -143,8 +143,44 @@ export class IPFSSecretsStorage {
       const metadataKey = this.getMetadataKey(gitRepo, environment);
       let metadata = this.metadata[metadataKey];
 
+      // Construct display name for error messages
+      const displayEnv = gitRepo
+        ? (environment ? `${gitRepo}_${environment}` : gitRepo)
+        : (environment || 'default');
+
+      // If no local metadata, try to fetch from Storacha registry first (for git repos)
+      if (!metadata && gitRepo) {
+        try {
+          const storacha = getStorachaClient();
+          if (storacha.isEnabled() && await storacha.isAuthenticated()) {
+            logger.info(`   🔍 No local metadata found, checking Storacha registry...`);
+            const latestCid = await storacha.getLatestCID(gitRepo);
+            if (latestCid) {
+              logger.info(`   ✅ Found secrets in registry (CID: ${latestCid})`);
+              // Create metadata from registry
+              metadata = {
+                environment,
+                git_repo: gitRepo,
+                cid: latestCid,
+                timestamp: new Date().toISOString(),
+                keys_count: 0, // Unknown until decrypted
+                encrypted: true,
+              };
+              this.metadata[metadataKey] = metadata;
+              this.saveMetadata();
+            }
+          }
+        } catch (error) {
+          // Registry check failed, continue to error
+          const err = error as Error;
+          logger.debug(`   Registry check failed: ${err.message}`);
+        }
+      }
+
       if (!metadata) {
-        throw new Error(`No secrets found for environment: ${environment}`);
+        throw new Error(`No secrets found for environment: ${displayEnv}\n\n` +
+          `💡 Tip: Check available environments with: lsh env\n` +
+          `   Or push secrets first with: lsh push`);
       }
 
       // Check if there's a newer version in the registry (for git repos)
@@ -306,7 +342,7 @@ export class IPFSSecretsStorage {
   /**
    * Store encrypted data locally
    */
-  private async storeLocally(cid: string, encryptedData: string, environment: string): Promise<void> {
+  private async storeLocally(cid: string, encryptedData: string, _environment: string): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
     fs.writeFileSync(cachePath, encryptedData, 'utf8');
 
