@@ -118,7 +118,11 @@
       "Bash(export LSH_SECRETS_KEY='ca6149ba225cc1ddadbea6d246beadd0deb1de90a2c738ca0e58421464769e6c':*)",
       "Bash(export LSH_SECRETS_KEY='fa17bd2771ba958682895aea73678e60a34da005bd21c072a473362a970bfc4f')",
       "Bash(lsh:*)",
-      "Bash(LSH_LOG_LEVEL=debug node:*)"
+      "Bash(LSH_LOG_LEVEL=debug node:*)",
+      "Bash(timeout 60 npm test:*)",
+      "Bash(timeout 90 npm test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(gh issue close:*)"
     ],
     "deny": [],
     "ask": []

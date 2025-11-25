@@ -1,371 +1,361 @@
-# LSH Secrets Manager 🔐
+# LSH Secrets Manager v3.0.0
 
-Never copy .env files again! Sync your secrets across all development environments using encrypted IPFS content-addressed storage.
-
-> **🆕 New in v0.8.2+:** [Smart Sync](./SMART_SYNC_GUIDE.md) is now available! It automatically handles setup, encryption keys, and synchronization with one command. This guide covers the traditional manual approach, which still works great if you need more control.
+Sync your `.env` files across all development machines with AES-256 encryption via the IPFS network.
 
 ## Quick Start
 
-### 1. Generate an Encryption Key
+```bash
+# Install
+npm install -g lsh-framework
+
+# Interactive setup (recommended)
+lsh init
+
+# Or manual setup
+lsh key                      # Generate encryption key
+lsh push                     # Push to cloud
+```
+
+## Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `lsh init` | Interactive setup wizard |
+| `lsh push` | Upload encrypted .env to cloud |
+| `lsh pull` | Download .env from cloud |
+| `lsh sync` | Smart sync (auto push/pull) |
+| `lsh list` | List secrets in local .env |
+| `lsh env` | List cloud environments |
+| `lsh key` | Generate encryption key |
+| `lsh get <key>` | Get a specific secret |
+| `lsh set <key> <value>` | Set a specific secret |
+| `lsh info` | Show current context |
+| `lsh status` | Get detailed status (JSON) |
+| `lsh clear` | Clear local metadata |
+
+## Setup Options
+
+### Option 1: Interactive Setup (Recommended)
 
 ```bash
+lsh init
+```
+
+This wizard will:
+1. Ask for your storage backend preference (Storacha/Supabase/Local)
+2. Generate or import an encryption key
+3. Authenticate with Storacha (email verification)
+4. Pull existing secrets if found
+
+### Option 2: Manual Setup
+
+```bash
+# 1. Generate encryption key
 lsh key
-```
+# Output: LSH_SECRETS_KEY=abc123...
 
-This generates a key like:
-```
-LSH_SECRETS_KEY=45918bb30a8a34f7e34a171b4b3eee649cc6fc332517e42719c5dbad7de22bb8
-```
+# 2. Add to your .env
+echo "LSH_SECRETS_KEY=abc123..." >> .env
 
-**Add this to your .env file** (and share it securely with your team via 1Password, LastPass, etc.)
-
-### 2. Fill Out Your .env File
-
-You already have `.env` created from the template. Now fill it with your actual values:
-
-```bash
-# Edit your .env with your real credentials
-nano .env
-
-# Or use your preferred editor
-code .env
-```
-
-### 3. Push Secrets to Local IPFS Storage
-
-```bash
-# Push your dev environment secrets
+# 3. Push your secrets
 lsh push
-
-# Or specify environment
-lsh push --env staging
-lsh push --env prod
 ```
 
-This encrypts and stores your .env locally using IPFS content-addressed storage at `~/.lsh/secrets-cache/`.
-
-### 4. Pull Secrets on Another Machine
-
-On your other dev machines (laptop, desktop, server):
-
-```bash
-# First, make sure LSH is installed
-# Then add the LSH_SECRETS_KEY to a minimal .env:
-echo "LSH_SECRETS_KEY=your_key_here" > .env
-
-# Pull your secrets from IPFS storage
-lsh pull
-
-# Boom! Your .env is now synced from encrypted local storage
-```
-
-## Usage
+## Push and Pull
 
 ### Push Secrets
+
 ```bash
-# Push current .env (defaults to 'dev' environment)
+# Push current .env (default environment: dev)
 lsh push
 
 # Push specific environment
 lsh push --env prod
+lsh push --env staging
 
 # Push different file
 lsh push --file .env.staging --env staging
+
+# Force push (skip safety checks)
+lsh push --force
 ```
 
 ### Pull Secrets
+
 ```bash
 # Pull dev secrets
 lsh pull
 
-# Pull prod secrets
+# Pull specific environment
 lsh pull --env prod
 
 # Pull to specific file
 lsh pull --file .env.prod --env prod
+
+# Force overwrite (skip backup)
+lsh pull --force
 ```
 
-### List Environments
+### v3.0.0: Registry Fallback
+
+Pull now automatically checks the Storacha registry when local metadata is missing:
+
 ```bash
-lsh list
-
-# Output:
-# 📦 Available environments:
-#   • dev
-#   • staging
-#   • prod
+# Even after clearing metadata, pull auto-recovers from registry
+lsh clear --all
+lsh pull  # Finds secrets in registry automatically
 ```
 
-### Show Secrets (Masked)
-```bash
-lsh show
-
-# Output:
-# 📦 Secrets for dev (15 total):
-#   SUPABASE_URL=http****
-#   SUPABASE_ANON_KEY=eyJh****
-#   DATABASE_URL=post****
-#   ...
-```
-
-## How It Works
-
-1. **Encryption**: Your .env is encrypted using AES-256-CBC with your `LSH_SECRETS_KEY`
-2. **Storage**: Encrypted data is stored locally using IPFS content-addressed storage at `~/.lsh/secrets-cache/`
-3. **Sync**: Copy the `~/.lsh/` directory (or share via network drive) to sync across machines
-4. **Security**: Only you (and your team with the key) can decrypt
-5. **Offline-first**: Works completely offline, no cloud dependencies
-
-## Security Best Practices
-
-### ✅ DO:
-- Generate a unique key per project
-- Share keys via 1Password/LastPass/secure channel
-- Use different keys for personal vs team projects
-- Rotate keys periodically
-- Keep backups of your .env files
-
-### ❌ DON'T:
-- Commit `LSH_SECRETS_KEY` to git
-- Share keys in plain text (Slack, email, etc.)
-- Reuse keys across projects
-- Store production secrets in dev environment
-
-## Multiple Environments Workflow
+## Multi-Environment Workflow
 
 ```bash
 # Development
 lsh push --env dev
 
-# Staging (different values)
+# Staging
 lsh push --file .env.staging --env staging
 
-# Production (super secret)
-lsh push --file .env.production --env prod
+# Production
+lsh push --file .env.prod --env prod
 
-# Pull whatever you need
-lsh pull --env dev      # for local dev
-lsh pull --env staging  # for testing
-lsh pull --env prod     # for production debugging
+# Pull any environment
+lsh pull --env staging
 ```
 
-## Team Collaboration
+### Repository Isolation
 
-**Setup (One Time):**
-1. Project lead generates key: `lsh key`
-2. Lead pushes team secrets: `lsh push`
-3. Lead shares `LSH_SECRETS_KEY` via 1Password shared vault
+LSH automatically namespaces secrets by git repository:
 
-**Team Members:**
 ```bash
-# 1. Get the key from 1Password
-# 2. Add to .env
-echo "LSH_SECRETS_KEY=<shared_key>" > .env
+cd ~/repos/app1
+lsh push  # Stored as: app1_dev
 
-# 3. Pull secrets
-lsh pull
+cd ~/repos/app2
+lsh push  # Stored as: app2_dev (separate!)
 
-# 4. Start coding!
-npm start
+# Check current context
+lsh info
 ```
 
-## Comparison with Other Tools
+## Managing Individual Secrets
 
-| Feature | LSH Secrets | dotenv-vault | 1Password | Doppler |
-|---------|-------------|--------------|-----------|---------|
-| Cost | Free | Free tier | $3-8/mo | Free tier |
-| Storage | Local IPFS | Their cloud | 1Password | Their cloud |
-| Encryption | AES-256 | ✓ | ✓ | ✓ |
-| Team Sharing | Shared key | Built-in | Built-in | Built-in |
-| Offline Mode | ✓ | ✗ | ✗ | ✗ |
-| Self-Hosted | ✓ (Local) | ✗ | ✗ | ✗ |
-| Integration | LSH native | dotenv | CLI | CLI |
-| Setup Time | 30 sec | 5 min | 10 min | 10 min |
+### Get a Secret
+
+```bash
+# Get by exact name
+lsh get API_KEY
+
+# Fuzzy matching
+lsh get api  # Finds API_KEY, API_SECRET, etc.
+
+# Get all secrets
+lsh get --all
+lsh get --all --format json
+```
+
+### Set a Secret
+
+```bash
+# Set single value
+lsh set API_KEY sk_live_12345
+
+# Batch import from stdin
+printenv | lsh set
+cat .env.backup | lsh set
+
+# Import specific variables
+printenv | grep "^AWS_" | lsh set
+```
+
+## Export Formats
+
+```bash
+# Default (masked)
+lsh list
+
+# JSON
+lsh list --format json
+
+# YAML
+lsh list --format yaml
+
+# TOML (auto-detects namespaces)
+lsh list --format toml
+
+# Shell export (for sourcing)
+lsh list --format export
+eval "$(lsh list --format export)"
+
+# Show full values (no masking)
+lsh list --no-mask
+```
+
+## Multi-Host Sync
+
+### First Machine (Push)
+
+```bash
+cd ~/repos/my-project
+lsh push
+# Secrets encrypted and uploaded to IPFS network
+```
+
+### New Machine (Pull)
+
+```bash
+# 1. Install LSH
+npm install -g lsh-framework
+
+# 2. Authenticate with Storacha
+lsh storacha login your@email.com
+
+# 3. Add encryption key
+echo "LSH_SECRETS_KEY=same-key-as-first-machine" > .env
+
+# 4. Pull
+cd ~/repos/my-project
+lsh pull
+```
+
+## Storage Backends
+
+### Storacha (IPFS Network) - Default
+
+Zero-config after email authentication:
+
+```bash
+lsh storacha login your@email.com
+lsh storacha status
+```
+
+### Supabase
+
+Team collaboration with audit logs:
+
+```bash
+# Add to .env
+SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_ANON_KEY=your-key
+```
+
+### Local Only
+
+For offline-only use:
+
+```bash
+# Disable network sync
+export LSH_STORACHA_ENABLED=false
+lsh push  # Stored locally at ~/.lsh/secrets-cache/
+```
 
 ## Troubleshooting
 
-### "No secrets found"
+### No secrets found
+
 ```bash
-# Make sure you pushed first
+# Check available environments
+lsh env
+
+# Push if missing
 lsh push
 
-# Check what's stored
-lsh list
+# Check current context
+lsh info
 ```
 
-### "Decryption failed"
-```bash
-# Wrong key! Make sure LSH_SECRETS_KEY matches
-# the key used to encrypt
+### Decryption failed
 
-# Generate new key and re-push
+Wrong encryption key:
+
+```bash
+# Check key
+cat .env | grep LSH_SECRETS_KEY
+
+# Generate new and re-push
 lsh key
-lsh push
+lsh push --force
 ```
 
-### "Secrets not in cache"
+### Registry not found
 
-**🆕 New in v2.1.0:** Use Storacha for automatic multi-host sync!
-
-```bash
-# Option 1: Use Storacha (IPFS network) - Automatic sync (v2.1.0+)
-lsh storacha login [email protected]
-lsh pull  # Automatically downloads from IPFS network
-
-# Option 2: Local storage only (legacy)
-# Copy ~/.lsh/ from another machine
-# Or use network drive to share the directory
-
-# Check what's in your local cache:
-ls -la ~/.lsh/secrets-cache/
-cat ~/.lsh/secrets-metadata.json
-```
-
-## Multi-Host Sync with Storacha (v2.1.0+)
-
-**🆕 True multi-host sync via IPFS network - enabled by default!**
-
-LSH now automatically syncs secrets across all your machines using Storacha (IPFS network).
-
-### Quick Setup
+Storacha not authenticated:
 
 ```bash
-# One-time setup per machine
-lsh storacha login [email protected]
-# ✅ Email verification → payment plan → space created
-
-# Check status
+lsh storacha login your@email.com
 lsh storacha status
-# 🔐 Authentication: ✅ Authenticated
-# 🌐 Network Sync: ✅ Enabled
-# 📦 Spaces: lsh-secrets (current)
 ```
 
-### How It Works
-
-1. **Push** (Host A):
-   ```bash
-   cd ~/repos/my-project
-   lsh push --env dev
-   # ✅ Encrypted locally with LSH_SECRETS_KEY
-   # ✅ Cached in ~/.lsh/secrets-cache/
-   # 📤 Uploaded to IPFS network (Storacha)
-   #    CID: bafkrei...
-   ```
-
-2. **Pull** (Host B):
-   ```bash
-   cd ~/repos/my-project
-   lsh pull --env dev
-   # ✅ Checks local cache first
-   # 📥 Downloads from IPFS network if cache miss
-   # ✅ Decrypts with LSH_SECRETS_KEY
-   # ✅ Writes to .env
-   ```
-
-### Features
-
-- **Default enabled**: Works automatically after one-time authentication
-- **Encrypted before upload**: AES-256 encryption (secrets never leave your machine unencrypted)
-- **Content-addressed**: IPFS CIDs ensure tamper-proof integrity
-- **Graceful fallback**: Uses local cache if network unavailable
-- **Free tier**: 5GB storage on Storacha
-
-### Commands
+### Clear stale metadata
 
 ```bash
-# Authentication
-lsh storacha login [email protected]
-lsh storacha status
+# Clear all local metadata
+lsh clear --all
 
-# Space management
-lsh storacha space create my-project-secrets
-lsh storacha space list
+# Clear specific repo
+lsh clear --repo my-project
 
-# Control sync
-lsh storacha enable   # Enable network sync (default)
-lsh storacha disable  # Local cache only
-```
-
-### Disable Network Sync
-
-```bash
-# Option 1: Via CLI
-lsh storacha disable
-
-# Option 2: Via environment variable
-export LSH_STORACHA_ENABLED=false
-
-# Verify
-lsh storacha status
-# 🌐 Network Sync: ❌ No
-```
-
-### Comparison: Storacha vs Supabase
-
-| Feature | Storacha | Supabase |
-|---------|----------|----------|
-| **Setup** | One-time email auth | Manual DB + credentials |
-| **Cost** | Free (5GB) → paid | Free → paid |
-| **Network** | IPFS (decentralized) | PostgreSQL (centralized) |
-| **Use Case** | Simple multi-host sync | Team collaboration + audit |
-
-**Recommendation**:
-- **Storacha**: Best for 2-5 machines, personal projects
-- **Supabase**: Best for teams (10+ users), audit logs needed
-
-## Advanced: Custom Encryption Key
-
-By default, LSH generates a key from your machine + username. For better security:
-
-```bash
-# Generate a strong key
-lsh key
-
-# Add to .env
-LSH_SECRETS_KEY=<your_key>
-
-# Now push/pull will use this key
-lsh push
-```
-
-## Pro Tips
-
-1. **Git Ignore**: Make sure `.env*` is in your `.gitignore`
-2. **Multi-Host Sync (v2.1.0+)**: Use `lsh storacha login` for automatic IPFS network sync across all machines
-3. **Backup**: Keep encrypted backups of `~/.lsh/` directory or use `lsh show > secrets-backup.txt`
-4. **Audit**: List environments regularly to see what's stored locally
-5. **Clean**: Delete old environments with `lsh delete --env <env-name>` if needed
-6. **Keys**: Use different keys for personal vs team projects
-7. **Status**: Check Storacha sync status with `lsh storacha status`
-8. **Offline Mode**: Disable network sync with `lsh storacha disable` if you prefer local cache only
-
-## Example Workflow
-
-```bash
-# Monday morning on laptop
-cd ~/project
+# Pull will auto-recover from registry
 lsh pull
-npm start
-
-# Tuesday on desktop
-cd ~/project
-lsh pull  # Gets latest from laptop!
-npm start
-
-# Friday deploy to prod
-lsh pull --env prod
-./deploy.sh
 ```
 
-No more "wait, what was that env var again?" 🎉
+## Security Best Practices
 
-## Next Steps
+**DO:**
+- Store `LSH_SECRETS_KEY` in shell profile (`~/.zshrc`)
+- Share keys via password manager (1Password, LastPass)
+- Use different keys per project
+- Rotate keys periodically
 
-- Consider using this with `lsh daemon` for auto-sync
-- Integrate with your CI/CD pipeline
-- Set up alerts for secret changes (coming soon)
+**DON'T:**
+- Commit `LSH_SECRETS_KEY` to git
+- Share keys in plain text
+- Store production secrets in dev environment
 
----
+## Smart Sync
 
-Made with ❤️ by the LSH team
+One command that does everything:
+
+```bash
+cd ~/repos/my-project
+lsh sync
+```
+
+What it does:
+1. Detects git repo (namespaces by project)
+2. Generates key if missing
+3. Creates .env from template
+4. Updates .gitignore
+5. Pushes or pulls based on what's newer
+
+### Load and Sync
+
+```bash
+# Sync AND load into current shell
+eval "$(lsh sync --load)"
+
+# Your secrets are now environment variables
+echo $DATABASE_URL
+```
+
+## API Usage
+
+```typescript
+import SecretsManager from 'lsh-framework/dist/lib/secrets-manager.js';
+
+const manager = new SecretsManager();
+
+// Push secrets
+await manager.push('.env', 'production');
+
+// Pull secrets
+await manager.pull('.env', 'production');
+
+// List environments
+const envs = await manager.listEnvironments();
+```
+
+## Related Documentation
+
+- [Smart Sync Guide](./SMART_SYNC_GUIDE.md) - Detailed smart sync documentation
+- [Quick Reference](./SECRETS_QUICK_REFERENCE.md) - Daily use cheatsheet
+- [Main README](../../../README.md) - Project overview
