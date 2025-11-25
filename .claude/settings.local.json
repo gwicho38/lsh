@@ -110,7 +110,8 @@
       "WebFetch(domain:www.npmjs.com)",
       "Bash(export LSH_SECRETS_KEY=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\")",
       "Bash(.env)",
-      "Bash(timeout 120 node:*)"
+      "Bash(timeout 120 node:*)",
+      "Bash(export LSH_STORACHA_ENABLED=false:*)"
     ],
     "deny": [],
     "ask": []
