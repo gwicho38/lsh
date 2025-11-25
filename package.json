@@ -1,6 +1,6 @@
 {
   "name": "lsh-framework",
-  "version": "2.3.2",
+  "version": "3.0.0",
   "description": "Simple, cross-platform encrypted secrets manager with automatic sync, IPFS audit logs, and multi-environment support. Just run lsh sync and start managing your secrets.",
   "main": "dist/app.js",
   "bin": {

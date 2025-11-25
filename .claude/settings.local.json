@@ -118,7 +118,11 @@
       "Bash(export LSH_SECRETS_KEY='REDACTED':*)",
       "Bash(export LSH_SECRETS_KEY='REDACTED')",
       "Bash(lsh:*)",
-      "Bash(LSH_LOG_LEVEL=debug node:*)"
+      "Bash(LSH_LOG_LEVEL=debug node:*)",
+      "Bash(timeout 60 npm test:*)",
+      "Bash(timeout 90 npm test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(gh issue close:*)"
     ],
     "deny": [],
     "ask": []
