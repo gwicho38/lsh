@@ -1,289 +1,182 @@
-# LSH Secrets Manager - Quick Reference 🔐
+# LSH Quick Reference v3.0.0
 
-## 🚀 Your Credentials
+Daily commands for managing secrets with LSH.
 
-```bash
-SUPABASE_URL=https://uljsqvwkomdrlnofmlad.supabase.co
-SUPABASE_ANON_KEY=REDACTED
-LSH_SECRETS_KEY=REDACTED
-```
-
-⚠️ **Keep these safe!** Store in 1Password/LastPass
-
----
-
-## 📦 Your Environments
-
-| Environment | Project | Secrets |
-|-------------|---------|---------|
-| `lsh-dev` | LSH Shell | 25 vars |
-| `mcli-dev` | MCLI | 25 vars |
-| `myrpg-dev` | MyRPG | 25 vars |
-| `myai-dev` | MyAI Dev | 23 vars |
-| `myai-prod` | MyAI Production | 49 vars |
-| `myai-staging` | MyAI Staging | 44 vars |
-| `myai-test` | MyAI Test | 42 vars |
-
----
-
-## 💻 New Machine Setup (One-Time)
+## Installation
 
 ```bash
-# 1. Install LSH
-npm install -g gwicho38-lsh
-
-# 2. Create config directory
-mkdir -p ~/.lsh-config
-
-# 3. Add your credentials
-cat > ~/.lsh-config/.env <<EOF
-SUPABASE_URL=https://uljsqvwkomdrlnofmlad.supabase.co
-SUPABASE_ANON_KEY=REDACTED
-LSH_SECRETS_KEY=REDACTED
-EOF
-
-# 4. Done! Start pulling secrets
+npm install -g lsh-framework
+lsh init
 ```
 
----
-
-## 🌐 Multi-Host Sync with Storacha (v2.1.0+)
-
-**🆕 Automatic IPFS network sync - enabled by default!**
-
-```bash
-# One-time setup per machine
-lsh storacha login [email protected]
-# ✅ Email verification → space created
-
-# Check status
-lsh storacha status
-# 🔐 Authentication: ✅ Authenticated
-# 🌐 Network Sync: ✅ Enabled
-
-# Push on Host A
-cd ~/repos/my-project
-lsh push --env dev
-# 📤 Uploaded to IPFS network
-
-# Pull on Host B
-cd ~/repos/my-project
-lsh pull --env dev
-# 📥 Downloaded from IPFS network
-```
-
-**Commands:**
-- `lsh storacha login <email>` - Authenticate (one-time)
-- `lsh storacha status` - Check authentication & sync status
-- `lsh storacha space create <name>` - Create new space
-- `lsh storacha space list` - List all spaces
-- `lsh storacha enable/disable` - Control network sync
-
----
-
-## 🚀 Smart Sync (Recommended - New!)
-
-```bash
-# Smart sync - automatically handles everything!
-cd ~/repos/my-project
-lsh sync
-
-# Smart sync AND load in one command!
-eval "$(lsh sync --load)"
-
-# Now your secrets are synced AND loaded in your shell
-echo $DATABASE_URL
-```
-
-## 📥 Pull Secrets (Manual Method)
-
-```bash
-# MCLI Project
-cd ~/repos/mcli
-lsh pull --env mcli-dev
-
-# MyRPG Project
-cd ~/repos/myRPG
-lsh pull --env myrpg-dev
-
-# MyAI Projects
-cd ~/repos/myAi
-lsh pull --env myai-dev        # Development
-lsh pull --env myai-staging    # Staging
-lsh pull --env myai-prod       # Production
-
-# LSH Shell
-cd ~/repos/lsh
-lsh pull --env lsh-dev
-```
-
----
-
-## 📤 Push Secrets (After Updates)
-
-```bash
-# Push from current directory
-lsh push --env mcli-dev
-
-# Push specific file
-lsh push --file .env.production --env myai-prod
-
-# Push with absolute path
-lsh push --file /path/to/.env --env custom-env
-```
-
----
-
-## 🔍 View & Manage
-
-```bash
-# List all environments
-lsh list
-
-# Show secrets (masked)
-lsh show --env mcli-dev
-
-# Generate new encryption key
-lsh key
-```
-
----
-
-## 🛠️ Common Workflows
-
-### Starting Work on New Machine
-```bash
-cd ~/repos/mcli
-lsh pull --env mcli-dev
-npm install
-npm start
-```
-
-### Updating API Keys
-```bash
-# 1. Edit .env
-nano ~/repos/mcli/.env
-
-# 2. Push changes
-lsh push --env mcli-dev
-
-# 3. Pull on other machines
-lsh pull --env mcli-dev
-```
-
-### Setting Up New Project
-```bash
-cd ~/repos/new-project
-
-# Push first time
-lsh push --env new-project-dev
-
-# Pull on other machines
-lsh pull --env new-project-dev
-```
-
----
-
-## 🚨 Troubleshooting
-
-### "No secrets found"
-```bash
-# Make sure environment exists
-lsh list
-
-# Push if missing
-lsh push --env myenv
-```
-
-### "Decryption failed"
-```bash
-# Wrong encryption key!
-# Check LSH_SECRETS_KEY matches the one used to encrypt
-echo $LSH_SECRETS_KEY
-```
-
-### "Supabase not configured"
-```bash
-# Add to .env or ~/.lsh-config/.env:
-SUPABASE_URL=https://uljsqvwkomdrlnofmlad.supabase.co
-SUPABASE_ANON_KEY=eyJh...
-```
-
-### "File not found"
-```bash
-# Use absolute path
-lsh push --file /home/user/project/.env --env myenv
-
-# Or cd to directory first
-cd ~/repos/project
-lsh push --env myenv
-```
-
----
-
-## 📋 Cheat Sheet
+## Core Commands
 
 | Command | Description |
 |---------|-------------|
-| `lsh sync` | 🆕 Smart sync (auto push/pull) |
-| `lsh sync --load` | 🆕 Sync AND load into shell |
-| `lsh storacha login <email>` | 🆕 Authenticate for network sync |
-| `lsh storacha status` | 🆕 Check Storacha status |
-| `lsh list` | Show all environments |
-| `lsh push` | Upload .env to cloud/IPFS |
-| `lsh pull` | Download .env from cloud/IPFS |
-| `lsh show` | View secrets (masked) |
-| `lsh key` | Generate encryption key |
+| `lsh init` | Interactive setup wizard |
+| `lsh push` | Push .env to cloud |
+| `lsh pull` | Pull .env from cloud |
+| `lsh sync` | Smart sync (auto) |
+| `lsh list` | List local secrets |
+| `lsh env` | List cloud environments |
+| `lsh info` | Show current context |
 
----
+## Push & Pull
 
-## 🎯 Pro Tips
+```bash
+# Push current .env
+lsh push
 
-1. **Backup your keys** - Save credentials in 1Password
-2. **Team sharing** - Share `LSH_SECRETS_KEY` securely via 1Password shared vault
-3. **Git ignore** - Never commit `.env` files (already in .gitignore)
-4. **Multiple envs** - Use dev/staging/prod for different configs
-5. **Quick setup** - Keep this file handy for new machines
+# Push specific environment
+lsh push --env prod
 
----
-
-## 📱 Mobile Quick Copy
-
-```
-SUPABASE_URL=https://uljsqvwkomdrlnofmlad.supabase.co
-SUPABASE_ANON_KEY=REDACTED
-LSH_SECRETS_KEY=REDACTED
+# Pull secrets
+lsh pull
+lsh pull --env staging
 ```
 
----
+## Get & Set
 
-## 🔒 Security Checklist
+```bash
+# Get single secret
+lsh get API_KEY
 
-- [ ] Credentials saved in 1Password
+# Get all secrets
+lsh get --all
+lsh get --all --format json
+
+# Set secret
+lsh set API_KEY sk_live_xxx
+
+# Batch import
+printenv | lsh set
+```
+
+## Multi-Environment
+
+```bash
+lsh push --env dev
+lsh push --env staging
+lsh push --env prod
+
+lsh pull --env prod
+```
+
+## Export Formats
+
+```bash
+lsh list --format json
+lsh list --format yaml
+lsh list --format toml
+lsh list --format export
+
+# Load into shell
+eval "$(lsh list --format export)"
+```
+
+## Storacha (IPFS Sync)
+
+```bash
+# One-time auth
+lsh storacha login you@email.com
+
+# Check status
+lsh storacha status
+
+# Disable network sync
+lsh storacha disable
+```
+
+## Smart Sync
+
+```bash
+# Auto push/pull
+lsh sync
+
+# Sync and load
+eval "$(lsh sync --load)"
+```
+
+## Troubleshooting
+
+```bash
+# Check context
+lsh info
+
+# List environments
+lsh env
+
+# Clear metadata
+lsh clear --all
+
+# Diagnostics
+lsh doctor
+```
+
+## Key Management
+
+```bash
+# Generate key
+lsh key
+
+# Export format
+lsh key --export
+```
+
+## Daemon & Cron
+
+```bash
+lsh daemon start
+lsh daemon status
+lsh cron list
+lsh cron add --name "job" --schedule "0 * * * *" --command "cmd"
+```
+
+## Configuration Files
+
+```
+~/.lsh/secrets-cache/        # Encrypted cache
+~/.lsh/secrets-metadata.json # Metadata
+~/.config/lsh/lshrc          # Config
+```
+
+## Environment Variables
+
+```bash
+LSH_SECRETS_KEY=xxx          # Encryption key (required)
+LSH_STORACHA_ENABLED=true    # Enable IPFS sync
+```
+
+## New Machine Setup
+
+```bash
+# 1. Install
+npm install -g lsh-framework
+
+# 2. Auth with Storacha
+lsh storacha login you@email.com
+
+# 3. Add encryption key (get from 1Password)
+echo "LSH_SECRETS_KEY=xxx" > .env
+
+# 4. Pull secrets
+cd ~/repos/my-project
+lsh pull
+```
+
+## Security Checklist
+
+- [ ] `LSH_SECRETS_KEY` stored in shell profile
+- [ ] Key shared via password manager only
 - [ ] `.env` in `.gitignore`
-- [ ] `LSH_SECRETS_KEY` never committed to git
-- [ ] Supabase 2FA enabled (recommended)
-- [ ] Team members have secure key access
+- [ ] Different keys per project
 
----
+## Help
 
-## 📞 Quick Help
-
-**Need help?**
 ```bash
 lsh --help
 lsh push --help
 lsh pull --help
 ```
 
-**Full documentation:**
-- `SECRETS_GUIDE.md` - Complete guide
-- `SECRETS_QUICK_REFERENCE.md` - This file
-
----
-
-**Last Updated:** October 2025
-**Total Environments:** 7
-**Total Secrets:** 233 variables
-
-🎉 **You're all set!** No more copying .env files!
+**Full docs:** [SECRETS_GUIDE.md](./SECRETS_GUIDE.md)
