@@ -116,7 +116,9 @@
       "Bash(ssh lefvpc@192.168.8.239 \"cd ~/repos/lsh && git pull && npm run build && echo ''LSH built on Host B''\")",
       "Bash(ssh lefvpc@192.168.8.239:*)",
       "Bash(export LSH_SECRETS_KEY='REDACTED':*)",
-      "Bash(export LSH_SECRETS_KEY='REDACTED')"
+      "Bash(export LSH_SECRETS_KEY='REDACTED')",
+      "Bash(lsh:*)",
+      "Bash(LSH_LOG_LEVEL=debug node:*)"
     ],
     "deny": [],
     "ask": []
