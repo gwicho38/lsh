@@ -37,6 +37,11 @@ export declare class SecretsManager {
      */
     private parseEnvFile;
     /**
+     * Filter out LSH-internal keys that should not be synced
+     * These keys are host-specific and syncing them would cause conflicts
+     */
+    private filterLshInternalKeys;
+    /**
      * Format env vars as .env file content
      */
     private formatEnvFile;
