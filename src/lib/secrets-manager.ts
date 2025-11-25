@@ -826,7 +826,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
       if (autoExecute) {
         out('   Pulling from cloud...');
-        await this.pull(envFilePath, effectiveEnv, false);
+        await this.pull(envFilePath, environment, false); // Use raw environment, not effectiveEnv
         out('✅ Secrets pulled from cloud!');
       } else {
         out(`💡 Run: lsh pull -f ${envFilePath} -e ${environment}`);
@@ -880,7 +880,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
           if (autoExecute) {
             out('   Pulling from cloud (backup created)...');
-            await this.pull(envFilePath, effectiveEnv, false);
+            await this.pull(envFilePath, environment, false); // Use raw environment, not effectiveEnv
             out('✅ Secrets synced from cloud!');
           } else {
             out(`💡 Run: lsh pull -f ${envFilePath} -e ${environment}`);
