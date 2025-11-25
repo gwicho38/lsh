@@ -305,12 +305,24 @@ export class StorachaClient {
       throw new Error('Not authenticated');
     }
 
+    // Get the latest registry version and increment it
+    let registryVersion = 1;
+    try {
+      const latestRegistry = await this.getLatestRegistry(repoName);
+      if (latestRegistry && latestRegistry.registryVersion) {
+        registryVersion = latestRegistry.registryVersion + 1;
+      }
+    } catch (err) {
+      logger.debug(`Could not fetch latest registry version, using version 1: ${(err as Error).message}`);
+    }
+
     const registry = {
       repoName,
       environment,
       cid: secretsCid,  // Include the secrets CID
       timestamp: new Date().toISOString(),
-      version: '2.2.2',
+      version: '2.3.0',  // LSH version
+      registryVersion,    // Incremental version counter
     };
 
     const content = JSON.stringify(registry, null, 2);
@@ -323,7 +335,7 @@ export class StorachaClient {
     const file = new File([uint8Array as any], filename, { type: 'application/json' });
 
     const cid = await client.uploadFile(file);
-    logger.debug(`📝 Uploaded registry for ${repoName} (secrets CID: ${secretsCid}): ${cid}`);
+    logger.debug(`📝 Uploaded registry v${registryVersion} for ${repoName} (secrets CID: ${secretsCid}): ${cid}`);
 
     return cid.toString();
   }
@@ -354,7 +366,7 @@ export class StorachaClient {
       });
 
       // Collect all registry files for this repo
-      const registries: Array<{ cid: string; timestamp: string; secretsCid: string }> = [];
+      const registries: Array<{ cid: string; timestamp: string; secretsCid: string; registryVersion: number }> = [];
 
       for (const upload of results.results) {
         try {
@@ -382,6 +394,7 @@ export class StorachaClient {
               cid: cid,
               timestamp: json.timestamp,
               secretsCid: json.cid,
+              registryVersion: json.registryVersion || 0, // Default to 0 for old registries without version
             });
           }
         } catch {
@@ -390,11 +403,18 @@ export class StorachaClient {
         }
       }
 
-      // Sort by timestamp (newest first) and return the most recent secrets CID
+      // Sort by registryVersion (highest first), then timestamp as tie-breaker
       if (registries.length > 0) {
-        registries.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        registries.sort((a, b) => {
+          // First compare by registryVersion (higher is newer)
+          if (b.registryVersion !== a.registryVersion) {
+            return b.registryVersion - a.registryVersion;
+          }
+          // If versions match, use timestamp as tie-breaker
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        });
         const latest = registries[0];
-        logger.debug(`✅ Found latest CID for ${repoName}: ${latest.secretsCid} (timestamp: ${latest.timestamp})`);
+        logger.debug(`✅ Found latest CID for ${repoName}: ${latest.secretsCid} (v${latest.registryVersion}, timestamp: ${latest.timestamp})`);
         return latest.secretsCid;
       }
 
@@ -403,6 +423,104 @@ export class StorachaClient {
     } catch (error) {
       const err = error as Error;
       logger.debug(`Failed to get latest CID: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Get the latest registry object for a repo
+   * Returns the full registry object including registryVersion
+   */
+  async getLatestRegistry(repoName: string): Promise<{
+    repoName: string;
+    environment: string;
+    cid: string;
+    timestamp: string;
+    version: string;
+    registryVersion: number;
+  } | null> {
+    if (!this.isEnabled()) {
+      return null;
+    }
+
+    if (!await this.isAuthenticated()) {
+      return null;
+    }
+
+    try {
+      const client = await this.getClient();
+
+      // Only check recent uploads (limit to 20 for performance)
+      const pageSize = 20;
+
+      // Get first page of uploads
+      const results = await client.capability.upload.list({
+        cursor: '',
+        size: pageSize,
+      });
+
+      // Collect all registry files for this repo
+      const registries: Array<{
+        repoName: string;
+        environment: string;
+        cid: string;
+        timestamp: string;
+        version: string;
+        registryVersion: number;
+      }> = [];
+
+      for (const upload of results.results) {
+        try {
+          const cid = upload.root.toString();
+
+          // Download with timeout
+          const downloadPromise = this.download(cid);
+          const timeoutPromise = new Promise<Buffer>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 5000)
+          );
+
+          const content = await Promise.race([downloadPromise, timeoutPromise]);
+
+          // Skip large files (registry should be < 1KB)
+          if (content.length > 1024) {
+            continue;
+          }
+
+          // Try to parse as JSON
+          const json = JSON.parse(content.toString('utf-8'));
+
+          // Check if it's an LSH registry file for our repo
+          if (json.repoName === repoName && json.version && json.cid && json.timestamp) {
+            registries.push({
+              repoName: json.repoName,
+              environment: json.environment,
+              cid: json.cid,
+              timestamp: json.timestamp,
+              version: json.version,
+              registryVersion: json.registryVersion || 0,
+            });
+          }
+        } catch {
+          // Not an LSH registry file or failed to download
+          continue;
+        }
+      }
+
+      // Sort by registryVersion (highest first), then timestamp as tie-breaker
+      if (registries.length > 0) {
+        registries.sort((a, b) => {
+          if (b.registryVersion !== a.registryVersion) {
+            return b.registryVersion - a.registryVersion;
+          }
+          return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+        });
+        return registries[0];
+      }
+
+      return null;
+    } catch (error) {
+      const err = error as Error;
+      logger.debug(`Failed to get latest registry: ${err.message}`);
       return null;
     }
   }

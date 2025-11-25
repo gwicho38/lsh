@@ -938,6 +938,230 @@ API_KEY=
         process.exit(1);
       }
     });
+
+  // Clear stuck registries and local metadata
+  program
+    .command('clear')
+    .description('Clear local metadata and cache to resolve stuck registries')
+    .option('--repo <name>', 'Clear metadata for specific repo only')
+    .option('--cache', 'Also clear local encrypted secrets cache')
+    .option('--storacha', 'Also delete old Storacha uploads (registries and secrets)')
+    .option('--all', 'Clear all metadata and cache (requires confirmation)')
+    .option('-y, --yes', 'Skip confirmation prompts')
+    .action(async (options) => {
+      try {
+        const lshDir = path.join(process.env.HOME || process.env.USERPROFILE || '', '.lsh');
+        const metadataPath = path.join(lshDir, 'secrets-metadata.json');
+        const cacheDir = path.join(lshDir, 'secrets-cache');
+
+        // Determine what we're clearing
+        if (!options.repo && !options.all) {
+          console.error('❌ Please specify either --repo <name> or --all');
+          console.log('');
+          console.log('Examples:');
+          console.log('  lsh clear --repo lsh_test_repo    # Clear metadata for specific repo');
+          console.log('  lsh clear --all                    # Clear all metadata');
+          console.log('  lsh clear --all --cache            # Clear metadata and cache');
+          process.exit(1);
+        }
+
+        // Load metadata
+        if (!fs.existsSync(metadataPath)) {
+          console.log('ℹ️  No metadata file found - nothing to clear');
+          return;
+        }
+
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'));
+        const keys = Object.keys(metadata);
+
+        if (keys.length === 0) {
+          console.log('ℹ️  Metadata is already empty');
+          return;
+        }
+
+        // Show what will be cleared
+        console.log('📋 Current metadata entries:');
+        console.log('');
+
+        if (options.repo) {
+          const repoKeys = keys.filter(k => metadata[k].git_repo === options.repo);
+          if (repoKeys.length === 0) {
+            console.log(`ℹ️  No metadata found for repo: ${options.repo}`);
+            return;
+          }
+          console.log(`Repo: ${options.repo}`);
+          repoKeys.forEach(key => {
+            console.log(`  - ${key} (CID: ${metadata[key].cid.substring(0, 12)}...)`);
+          });
+          console.log('');
+          console.log(`Will clear ${repoKeys.length} ${repoKeys.length === 1 ? 'entry' : 'entries'}`);
+        } else {
+          const repoCount = new Set(keys.map(k => metadata[k].git_repo)).size;
+          console.log(`Total entries: ${keys.length} across ${repoCount} ${repoCount === 1 ? 'repo' : 'repos'}`);
+        }
+
+        if (options.cache) {
+          if (fs.existsSync(cacheDir)) {
+            const cacheFiles = fs.readdirSync(cacheDir);
+            console.log(`Cache files: ${cacheFiles.length}`);
+          }
+        }
+
+        console.log('');
+
+        // Confirmation
+        if (!options.yes) {
+          console.log('⚠️  WARNING: This will clear local metadata!');
+          console.log('');
+          console.log('This is useful when:');
+          console.log('  • Registry is returning stale/old CIDs');
+          console.log('  • Pull fails with "bad decrypt" errors');
+          console.log('  • You need to force a fresh sync');
+          console.log('');
+          console.log('After clearing, you will need to push secrets again.');
+          console.log('');
+
+          const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+          });
+
+          const answer = await new Promise<string>((resolve) => {
+            rl.question('Continue? (yes/no): ', (ans) => {
+              rl.close();
+              resolve(ans.trim().toLowerCase());
+            });
+          });
+
+          if (answer !== 'yes' && answer !== 'y') {
+            console.log('');
+            console.log('❌ Cancelled');
+            return;
+          }
+        }
+
+        console.log('');
+
+        // Clear metadata
+        if (options.repo) {
+          const repoKeys = keys.filter(k => metadata[k].git_repo === options.repo);
+          repoKeys.forEach(key => delete metadata[key]);
+          fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2));
+          console.log(`✅ Cleared ${repoKeys.length} metadata ${repoKeys.length === 1 ? 'entry' : 'entries'} for ${options.repo}`);
+        } else {
+          fs.writeFileSync(metadataPath, '{}');
+          console.log(`✅ Cleared all ${keys.length} metadata ${keys.length === 1 ? 'entry' : 'entries'}`);
+        }
+
+        // Clear cache if requested
+        if (options.cache && fs.existsSync(cacheDir)) {
+          const cacheFiles = fs.readdirSync(cacheDir);
+          let cleared = 0;
+          for (const file of cacheFiles) {
+            const filePath = path.join(cacheDir, file);
+            if (fs.statSync(filePath).isFile()) {
+              fs.unlinkSync(filePath);
+              cleared++;
+            }
+          }
+          console.log(`✅ Cleared ${cleared} cache ${cleared === 1 ? 'file' : 'files'}`);
+        }
+
+        // Clear Storacha uploads if requested
+        if (options.storacha && options.repo) {
+          console.log('');
+          console.log('🌐 Clearing Storacha uploads...');
+
+          try {
+            const { StorachaClient } = await import('../../lib/storacha-client.js');
+            const storacha = new StorachaClient();
+
+            if (!storacha.isEnabled()) {
+              console.log('ℹ️  Storacha is not enabled - skipping cloud cleanup');
+            } else if (!(await storacha.isAuthenticated())) {
+              console.log('ℹ️  Not authenticated with Storacha - skipping cloud cleanup');
+            } else {
+              // Get all uploads
+              const client = await storacha.getClient();
+              const pageSize = 50;
+              const results = await client.capability.upload.list({
+                cursor: '',
+                size: pageSize,
+              });
+
+              // Find LSH-related uploads for this repo
+              const toDelete: Array<{ cid: string; type: string; size: number }> = [];
+
+              for (const upload of results.results) {
+                try {
+                  const cid = upload.root.toString();
+
+                  // Download with timeout
+                  const downloadPromise = storacha.download(cid);
+                  const timeoutPromise = new Promise<Buffer>((_, reject) =>
+                    setTimeout(() => reject(new Error('timeout')), 5000)
+                  );
+
+                  const content = await Promise.race([downloadPromise, timeoutPromise]);
+
+                  // Check if it's a registry file for this repo
+                  if (content.length < 2048) {
+                    try {
+                      const json = JSON.parse(content.toString('utf-8'));
+                      if (json.repoName === options.repo) {
+                        toDelete.push({ cid, type: 'registry', size: content.length });
+                      }
+                    } catch {
+                      // Not JSON, might be encrypted secrets
+                      // Check filename pattern
+                      const _filename = `lsh-secrets-${options.repo}`;
+                      if (cid.includes(options.repo) || content.toString().includes(options.repo)) {
+                        toDelete.push({ cid, type: 'secrets', size: content.length });
+                      }
+                    }
+                  }
+                } catch {
+                  // Failed to download or parse, skip
+                  continue;
+                }
+              }
+
+              if (toDelete.length > 0) {
+                console.log(`Found ${toDelete.length} Storacha ${toDelete.length === 1 ? 'upload' : 'uploads'} for ${options.repo}:`);
+                toDelete.forEach((item) => {
+                  console.log(`  - ${item.type}: ${item.cid.substring(0, 16)}... (${item.size} bytes)`);
+                });
+
+                // Note: Storacha doesn't currently support deletion via SDK
+                // The uploads will remain but won't be used after metadata is cleared
+                console.log('');
+                console.log('⚠️  Note: Storacha uploads cannot be deleted programmatically.');
+                console.log('   These files will remain in Storacha but won\'t be used after metadata is cleared.');
+                console.log('   To fully remove them, use the Storacha web console:');
+                console.log('   https://console.storacha.network/');
+              } else {
+                console.log(`ℹ️  No Storacha uploads found for ${options.repo}`);
+              }
+            }
+          } catch (storageError) {
+            const storErr = storageError as Error;
+            console.error(`⚠️  Failed to check Storacha uploads: ${storErr.message}`);
+            console.log('   Local metadata has been cleared, but cloud uploads may remain.');
+          }
+        }
+
+        console.log('');
+        console.log('💡 Next steps:');
+        console.log('   1. lsh push .env     # Push secrets with current key');
+        console.log('   2. lsh pull .env     # Verify pull works');
+        console.log('');
+
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to clear metadata:', err.message);
+        process.exit(1);
+      }
+    });
 }
 
 export default init_secrets;
