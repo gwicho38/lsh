@@ -285,7 +285,7 @@ export class SecretsManager {
     // Store on IPFS
     const cid = await this.storage.push(
       secrets,
-      effectiveEnv,
+      environment, // Use raw environment, storage will apply repo-aware naming
       this.encryptionKey,
       this.gitInfo?.repoName,
       this.gitInfo?.currentBranch
