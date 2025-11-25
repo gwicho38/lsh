@@ -37,6 +37,9 @@ export default {
     // The test environment that will be used for testing
     testEnvironment: 'node',
 
+    // Setup files to run before tests
+    setupFiles: ['<rootDir>/__tests__/setup.ts'],
+
     // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
     // TODO: Fix and re-enable these tests (require comprehensive refactoring for strict mode)
     testPathIgnorePatterns: [
