@@ -148,6 +148,37 @@ export class SecretsManager {
   }
 
   /**
+   * Filter out LSH-internal keys that should not be synced
+   * These keys are host-specific and syncing them would cause conflicts
+   */
+  private filterLshInternalKeys(env: Record<string, string>): Record<string, string> {
+    const filtered: Record<string, string> = {};
+    const excludedKeys = new Set([
+      'LSH_SECRETS_KEY',      // Encryption key - host-specific, managed separately
+      'LSH_MASTER_KEY',       // Alternative encryption key name
+      'LSH_INTERNAL_',        // Any other LSH internal keys
+    ]);
+
+    for (const [key, value] of Object.entries(env)) {
+      // Skip exact matches
+      if (excludedKeys.has(key)) {
+        logger.debug(`Filtering out LSH-internal key: ${key}`);
+        continue;
+      }
+
+      // Skip keys starting with LSH_INTERNAL_
+      if (key.startsWith('LSH_INTERNAL_')) {
+        logger.debug(`Filtering out LSH-internal key: ${key}`);
+        continue;
+      }
+
+      filtered[key] = value;
+    }
+
+    return filtered;
+  }
+
+  /**
    * Format env vars as .env file content
    */
   private formatEnvFile(vars: Record<string, string>): string {
@@ -240,15 +271,24 @@ export class SecretsManager {
     logger.info(`Pushing ${envFilePath} to IPFS (${effectiveEnv})...`);
 
     const content = fs.readFileSync(envFilePath, 'utf8');
-    const env = this.parseEnvFile(content);
+    const envParsed = this.parseEnvFile(content);
+
+    // Filter out LSH-internal keys (encryption keys, etc.) that should not be synced
+    const env = this.filterLshInternalKeys(envParsed);
+
+    const filteredCount = Object.keys(envParsed).length - Object.keys(env).length;
+    if (filteredCount > 0) {
+      logger.debug(`Filtered out ${filteredCount} LSH-internal key(s) from sync`);
+    }
 
     // Check for destructive changes unless force is true
     if (!force) {
       try {
         // Check if secrets already exist for this environment
-        if (this.storage.exists(effectiveEnv, this.gitInfo?.repoName)) {
+        // Use raw environment to match storage.push() behavior
+        if (this.storage.exists(environment, this.gitInfo?.repoName)) {
           const existingSecrets = await this.storage.pull(
-            effectiveEnv,
+            environment,
             this.encryptionKey,
             this.gitInfo?.repoName
           );
@@ -312,8 +352,9 @@ export class SecretsManager {
     logger.info(`Pulling ${filename} (${effectiveEnv}) from IPFS...`);
 
     // Get secrets from IPFS storage
+    // Use raw environment parameter to match how push() stores them
     const secrets = await this.storage.pull(
-      effectiveEnv,
+      environment,  // Use raw environment, not effectiveEnv
       this.encryptionKey,
       this.gitInfo?.repoName
     );
@@ -324,17 +365,47 @@ export class SecretsManager {
         `   Or push secrets first with: lsh push --env ${environment}`);
     }
 
-    // Backup existing .env if it exists (unless force is true)
-    if (fs.existsSync(envFilePath) && !force) {
-      const backup = `${envFilePath}.backup.${Date.now()}`;
-      fs.copyFileSync(envFilePath, backup);
-      logger.info(`Backed up existing .env to ${backup}`);
+    // Preserve local LSH-internal keys before overwriting
+    let localLshKeys: Record<string, string> = {};
+    if (fs.existsSync(envFilePath)) {
+      const existingContent = fs.readFileSync(envFilePath, 'utf8');
+      const existingEnv = this.parseEnvFile(existingContent);
+
+      // Extract LSH-internal keys to preserve
+      const lshKeyNames = ['LSH_SECRETS_KEY', 'LSH_MASTER_KEY'];
+      for (const keyName of lshKeyNames) {
+        if (existingEnv[keyName]) {
+          localLshKeys[keyName] = existingEnv[keyName];
+          logger.debug(`Preserving local ${keyName}`);
+        }
+      }
+      // Also preserve any LSH_INTERNAL_* keys
+      for (const [key, value] of Object.entries(existingEnv)) {
+        if (key.startsWith('LSH_INTERNAL_')) {
+          localLshKeys[key] = value;
+          logger.debug(`Preserving local ${key}`);
+        }
+      }
+
+      // Backup existing .env (unless force is true)
+      if (!force) {
+        const backup = `${envFilePath}.backup.${Date.now()}`;
+        fs.copyFileSync(envFilePath, backup);
+        logger.info(`Backed up existing ${filename} to ${backup}`);
+      }
     }
 
-    // Convert secrets back to .env format
-    const envContent = secrets
-      .map(s => `${s.key}=${s.value}`)
-      .join('\n') + '\n';
+    // Convert secrets back to env object
+    const pulledEnv: Record<string, string> = {};
+    secrets.forEach(s => {
+      pulledEnv[s.key] = s.value;
+    });
+
+    // Merge pulled secrets with preserved local LSH keys
+    const finalEnv = { ...pulledEnv, ...localLshKeys };
+
+    // Convert to .env format
+    const envContent = this.formatEnvFile(finalEnv);
 
     // Write new .env
     fs.writeFileSync(envFilePath, envContent, 'utf8');
