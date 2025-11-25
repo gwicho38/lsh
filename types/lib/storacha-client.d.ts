@@ -78,6 +78,18 @@ export declare class StorachaClient {
      */
     getLatestCID(repoName: string): Promise<string | null>;
     /**
+     * Get the latest registry object for a repo
+     * Returns the full registry object including registryVersion
+     */
+    getLatestRegistry(repoName: string): Promise<{
+        repoName: string;
+        environment: string;
+        cid: string;
+        timestamp: string;
+        version: string;
+        registryVersion: number;
+    } | null>;
+    /**
      * Check if registry exists for a repo by listing uploads
      * Returns true if a registry file for this repo exists in Storacha
      *

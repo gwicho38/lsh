@@ -366,7 +366,7 @@ export class SecretsManager {
     }
 
     // Preserve local LSH-internal keys before overwriting
-    let localLshKeys: Record<string, string> = {};
+    const localLshKeys: Record<string, string> = {};
     if (fs.existsSync(envFilePath)) {
       const existingContent = fs.readFileSync(envFilePath, 'utf8');
       const existingEnv = this.parseEnvFile(existingContent);
