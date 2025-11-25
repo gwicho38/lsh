@@ -111,7 +111,9 @@
       "Bash(export LSH_SECRETS_KEY=\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\")",
       "Bash(.env)",
       "Bash(timeout 120 node:*)",
-      "Bash(export LSH_STORACHA_ENABLED=false:*)"
+      "Bash(export LSH_STORACHA_ENABLED=false:*)",
+      "Bash(ssh lefvpc@192.168.8.239 \"cd ~/repos && rm -rf lsh_test_repo && mkdir -p lsh_test_repo/test_multihost && cd lsh_test_repo/test_multihost && git init && git config user.name ''Test User'' && git config user.email ''test@example.com'' && echo ''Host B test repo created''\")",
+      "Bash(ssh lefvpc@192.168.8.239 \"cd ~/repos/lsh && git pull && npm run build && echo ''LSH built on Host B''\")"
     ],
     "deny": [],
     "ask": []
