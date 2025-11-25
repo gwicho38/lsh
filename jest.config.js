@@ -45,6 +45,8 @@ export default {
     testPathIgnorePatterns: [
       '/node_modules/',
       '/build/',
+      '__tests__/setup.ts',                 // Setup file, not a test suite
+      '__tests__/integration/storacha-multihost-sync.test.ts', // Requires Storacha network access (disabled in tests)
       '__tests__/daemon.test.ts',           // TODO: Rewrite tests to match actual LSHJobDaemon API (uses wrong method names)
       '__tests__/posix-builtins.test.ts',   // TODO: Investigate memory/timeout issue
       '__tests__/api-server.test.ts',       // TODO: Update mocks to match JobSpec interface
