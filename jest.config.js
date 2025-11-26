@@ -41,30 +41,18 @@ export default {
     setupFiles: ['<rootDir>/__tests__/setup.ts'],
 
     // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-    // TODO: Fix and re-enable these tests (require comprehensive refactoring for strict mode)
     testPathIgnorePatterns: [
       '/node_modules/',
       '/build/',
       '__tests__/setup.ts',                 // Setup file, not a test suite
       '__tests__/integration/storacha-multihost-sync.test.ts', // Requires Storacha network access (disabled in tests)
-      '__tests__/daemon.test.ts',           // TODO: Rewrite tests to match actual LSHJobDaemon API (uses wrong method names)
-      '__tests__/posix-builtins.test.ts',   // TODO: Investigate memory/timeout issue
+      '__tests__/daemon.test.ts',           // TODO: Rewrite tests to match actual LSHJobDaemon API
       '__tests__/api-server.test.ts',       // TODO: Update mocks to match JobSpec interface
       '__tests__/pipeline-service.test.ts', // TODO: Fix after reviewing failures
       '__tests__/secrets-manager.test.ts',  // TODO: Update tests after sync/status feature changes
-      '__tests__/interactive-shell.test.ts', // TODO: Fix test failures
-      '__tests__/variable-expansion-new.test.ts', // TODO: Module not implemented
-      '__tests__/brace-expansion.test.ts',  // TODO: Module not implemented
-      '__tests__/shell-parser-posix.test.ts', // TODO: Module not implemented
-      '__tests__/associative-arrays.test.ts', // TODO: Module not implemented
       '__tests__/helpers/',                 // Helper files, not test suites
       '__tests__/fixtures/',                // Fixture files, not test suites
       '__tests__/mocks/',                   // Mock files, not test suites
-      'tests/commands/theme.test.ts',      // TODO: Fix test failures
-      'tests/commands/zsh-import.test.ts', // TODO: Fix test failures
-      'tests/lib/theme-manager.test.ts',   // TODO: Fix test failures
-      'tests/lib/zsh-import-manager.test.ts', // TODO: Fix test failures
-      'tests/lib/lshrc-init.test.ts',      // TODO: Fix test failures
     ],
 
     // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
