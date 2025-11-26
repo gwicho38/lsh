@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createClient } from '@supabase/supabase-js';
-import ora from 'ora';
+import _ora from 'ora';
 import { getPlatformPaths, getPlatformInfo } from '../lib/platform-utils.js';
 import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 
@@ -303,7 +303,7 @@ async function testSupabaseConnection(
 /**
  * Check if in git repository
  */
-async function checkGitRepository(verbose?: boolean): Promise<HealthCheck> {
+async function checkGitRepository(_verbose?: boolean): Promise<HealthCheck> {
   try {
     const gitPath = path.join(process.cwd(), '.git');
     // Use stat instead of access to avoid TOCTOU race condition

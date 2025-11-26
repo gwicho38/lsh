@@ -8,7 +8,6 @@ import type {
   CreateSecretInput,
   UpdateSecretInput,
   SecretSummary,
-  TIER_LIMITS,
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { encryptionService } from './saas-encryption.js';

@@ -4,13 +4,13 @@
  */
 
 import { randomBytes, createCipheriv, createDecipheriv, createHash, pbkdf2Sync } from 'crypto';
-import type { EncryptionKey, CreateEncryptionKeyInput } from './saas-types.js';
+import type { EncryptionKey } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 
 const ALGORITHM = 'aes-256-cbc';
 const KEY_LENGTH = 32; // 256 bits
 const IV_LENGTH = 16; // 128 bits
-const SALT_LENGTH = 32;
+const _SALT_LENGTH = 32; // Reserved for future use
 const PBKDF2_ITERATIONS = 100000;
 
 /**

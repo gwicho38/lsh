@@ -4,7 +4,8 @@
  */
 
 import yaml from 'js-yaml';
-import { stringify as stringifyToml } from 'smol-toml';
+// Note: We use manual TOML formatting for better control over output
+// import { stringify as stringifyToml } from 'smol-toml';
 
 export type OutputFormat = 'env' | 'json' | 'yaml' | 'toml' | 'export';
 
