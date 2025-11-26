@@ -6,9 +6,7 @@
 import { Command } from 'commander';
 import { spawn } from 'child_process';
 import {
-  ConfigManager,
   getConfigManager,
-  DEFAULT_CONFIG_FILE,
   loadGlobalConfig
 } from '../lib/config-manager.js';
 import * as fs from 'fs/promises';

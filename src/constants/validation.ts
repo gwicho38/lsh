@@ -105,6 +105,8 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     riskLevel: RISK_LEVELS.MEDIUM,
   },
   {
+    // Detect null byte injection attacks (legitimate security pattern)
+    // eslint-disable-next-line no-control-regex
     pattern: /\x00/i,
     description: ERRORS.NULL_BYTE,
     riskLevel: RISK_LEVELS.HIGH,

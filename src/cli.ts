@@ -53,7 +53,7 @@ program
 program
   .option('-v, --verbose', 'Verbose output')
   .option('-d, --debug', 'Debug mode')
-  .action(async (options) => {
+  .action(async (_options) => {
     // No arguments - show secrets-focused help
     console.log('LSH - Encrypted Secrets Manager');
     console.log('');

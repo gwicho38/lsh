@@ -8,10 +8,10 @@ import rateLimit from 'express-rate-limit';
 import { authService, verifyToken } from '../lib/saas-auth.js';
 import { organizationService, teamService } from '../lib/saas-organizations.js';
 import { billingService } from '../lib/saas-billing.js';
-import { auditLogger, getIpFromRequest, getUserAgentFromRequest } from '../lib/saas-audit.js';
+import { auditLogger, getIpFromRequest } from '../lib/saas-audit.js';
 import { emailService } from '../lib/saas-email.js';
 import { secretsService } from '../lib/saas-secrets.js';
-import type { ApiResponse } from '../lib/saas-types.js';
+// ApiResponse type reserved for future use
 
 /**
  * Rate Limiters for different endpoint types

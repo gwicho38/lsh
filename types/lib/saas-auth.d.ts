@@ -74,7 +74,7 @@ export declare class AuthService {
     /**
      * Reset password
      */
-    resetPassword(token: string, newPassword: string): Promise<void>;
+    resetPassword(_token: string, _newPassword: string): Promise<void>;
     /**
      * Change password
      */
