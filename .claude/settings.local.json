@@ -122,7 +122,9 @@
       "Bash(timeout 60 npm test:*)",
       "Bash(timeout 90 npm test:*)",
       "Bash(npm run lint:*)",
-      "Bash(gh issue close:*)"
+      "Bash(gh issue close:*)",
+      "Bash(gh issue view:*)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []
