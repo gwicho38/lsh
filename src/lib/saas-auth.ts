@@ -3,12 +3,11 @@
  * Handles user signup, login, email verification, and session management
  */
 
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type {
   User,
-  CreateUserInput,
   LoginInput,
   SignupInput,
   AuthToken,
@@ -110,7 +109,7 @@ export function verifyToken(token: string): { userId: string; email?: string; ty
       email: decoded.email,
       type: decoded.type,
     };
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Invalid or expired token');
   }
 }
@@ -413,7 +412,7 @@ export class AuthService {
     }
 
     const resetToken = generateToken();
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    const _expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour (for future use)
 
     // Store reset token (we'll need a password_reset_tokens table)
     // For now, just return the token
@@ -423,7 +422,7 @@ export class AuthService {
   /**
    * Reset password
    */
-  async resetPassword(token: string, newPassword: string): Promise<void> {
+  async resetPassword(_token: string, _newPassword: string): Promise<void> {
     // TODO: Implement password reset
     // Need to create password_reset_tokens table
     throw new Error('Not implemented');

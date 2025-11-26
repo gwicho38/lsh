@@ -225,7 +225,7 @@ async function checkExistingConfig(): Promise<boolean> {
 /**
  * Pull secrets after init is complete
  */
-async function pullSecretsAfterInit(encryptionKey: string, repoName: string): Promise<void> {
+async function pullSecretsAfterInit(_encryptionKey: string, _repoName: string): Promise<void> {
   const spinner = ora('Pulling secrets from cloud...').start();
 
   try {
@@ -439,7 +439,7 @@ async function configurePostgres(config: InitConfig, skipTest?: boolean): Promis
 /**
  * Configure local-only mode
  */
-async function configureLocal(config: InitConfig): Promise<void> {
+async function configureLocal(_config: InitConfig): Promise<void> {
   console.log(chalk.cyan('\n💾 Local Encryption Mode'));
   console.log(chalk.gray('Secrets will be encrypted locally. No cloud sync available.'));
   console.log('');

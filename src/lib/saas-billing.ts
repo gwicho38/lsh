@@ -5,10 +5,8 @@
 
 import type {
   Subscription,
-  CreateSubscriptionInput,
-  SubscriptionTier,
-  SubscriptionStatus,
   Invoice,
+  SubscriptionTier,
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
@@ -206,12 +204,12 @@ export class BillingService {
   /**
    * Verify webhook signature
    */
-  private verifyWebhookSignature(payload: string, signature: string): any {
+  private verifyWebhookSignature(payload: string, _signature: string): any {
     // In production, use Stripe's webhook signature verification
     // For now, just parse the payload
     try {
       return JSON.parse(payload);
-    } catch (error) {
+    } catch (_error) {
       throw new Error('Invalid webhook payload');
     }
   }
