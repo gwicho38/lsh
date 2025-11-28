@@ -46,19 +46,19 @@ export default {
       '/build/',
       '__tests__/setup.ts',                 // Setup file, not a test suite
       '__tests__/integration/storacha-multihost-sync.test.ts', // Requires Storacha network access (disabled in tests)
+      '__tests__/multihost-key-isolation.test.ts', // Requires shared storage (Supabase/cloud) - tests use separate git repos with different metadata keys
       '__tests__/daemon.test.ts',           // TODO: Rewrite tests to match actual LSHJobDaemon API
       '__tests__/api-server.test.ts',       // TODO: Update mocks to match JobSpec interface
       '__tests__/pipeline-service.test.ts', // TODO: Fix after reviewing failures
-      '__tests__/secrets-manager.test.ts',  // TODO: Update tests after sync/status feature changes
       '__tests__/helpers/',                 // Helper files, not test suites
       '__tests__/fixtures/',                // Fixture files, not test suites
       '__tests__/mocks/',                   // Mock files, not test suites
     ],
 
     // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-    // Transform ES modules from node_modules like chalk
+    // Transform ES modules from node_modules like chalk and storacha
     transformIgnorePatterns: [
-        'node_modules/(?!(chalk|chalk-template|ansi-styles|supports-color|has-flag|#ansi-styles|#supports-color)/)'
+        'node_modules/(?!(chalk|chalk-template|ansi-styles|supports-color|has-flag|#ansi-styles|#supports-color|@storacha|@ucanto|@ipld|multiformats|@web3-storage)/)'
     ],
 
     // Whether to use watchman for file crawling
@@ -86,6 +86,8 @@ export default {
     // Module name mapping for ESM compatibility - map .js imports to .ts files for testing
     // Only map relative imports (starting with ./ or ../), not node_modules
     moduleNameMapper: {
+        // Mock storacha-client to avoid ESM issues in tests (must be before .js$ mapper)
+        '.*/storacha-client(\\.js)?$': '<rootDir>/__tests__/mocks/storacha-client-mock.ts',
         '^(\\.{1,2}/.*)\\.js$': '$1',
     },
 };
