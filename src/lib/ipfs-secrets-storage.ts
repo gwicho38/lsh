@@ -319,15 +319,35 @@ export class IPFSSecretsStorage {
    * Decrypt secrets using AES-256
    */
   private decryptSecrets(encryptedData: string, encryptionKey: string): Secret[] {
-    const [ivHex, encrypted] = encryptedData.split(':');
-    const key = crypto.createHash('sha256').update(encryptionKey).digest();
-    const iv = Buffer.from(ivHex, 'hex');
+    try {
+      const [ivHex, encrypted] = encryptedData.split(':');
+      const key = crypto.createHash('sha256').update(encryptionKey).digest();
+      const iv = Buffer.from(ivHex, 'hex');
 
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+      const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
+      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
 
-    return JSON.parse(decrypted) as Secret[];
+      return JSON.parse(decrypted) as Secret[];
+    } catch (error) {
+      const err = error as Error;
+      // Catch crypto errors (bad decrypt, wrong block length) AND JSON parse errors
+      // (wrong key can produce garbage that fails JSON.parse)
+      if (err.message.includes('bad decrypt') ||
+          err.message.includes('wrong final block length') ||
+          err.message.includes('Unexpected token') ||
+          err.message.includes('JSON')) {
+        throw new Error(
+          'Decryption failed. This usually means:\n' +
+          '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
+          '  2. The key must match the one used during encryption\n' +
+          '  3. Generate a shared key with: lsh secrets key\n' +
+          '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
+          '\nOriginal error: ' + err.message
+        );
+      }
+      throw error;
+    }
   }
 
   /**

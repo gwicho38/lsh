@@ -2,21 +2,11 @@
  * Tests for SecretsManager - LSH's primary feature
  *
  * Testing encrypted secrets management with multi-environment support
+ *
+ * Note: storacha-client is mocked via moduleNameMapper in jest.config.js
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { SecretsManager } from '../src/lib/secrets-manager.js';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { TestEnvironment, generateTestKey, parseEnvContent } from './helpers/secrets-test-helpers.js';
-import {
-  sampleEnvFile,
-  envWithQuotes,
-  envWithComments,
-  envWithSpecialChars,
-  envMinimal,
-} from './fixtures/env-files.js';
 
 // Mock DatabasePersistence with shared storage across instances
 const sharedStorage = new Map<string, any>();
@@ -62,6 +52,22 @@ jest.unstable_mockModule('../src/lib/database-persistence.js', () => {
     }
   };
 });
+
+// Static imports
+import * as fs from 'fs';
+import * as path from 'path';
+import * as crypto from 'crypto';
+import { TestEnvironment, generateTestKey, parseEnvContent } from './helpers/secrets-test-helpers.js';
+import {
+  sampleEnvFile,
+  envWithQuotes,
+  envWithComments,
+  envWithSpecialChars,
+  envMinimal,
+} from './fixtures/env-files.js';
+
+// SecretsManager import - storacha-client is mocked via moduleNameMapper
+import { SecretsManager } from '../src/lib/secrets-manager.js';
 
 describe('SecretsManager', () => {
   let testEnv: TestEnvironment;
@@ -408,12 +414,14 @@ describe('SecretsManager', () => {
       const sharedKey = generateTestKey();
 
       const manager1 = new SecretsManager('user1', sharedKey);
-      const manager2 = new SecretsManager('user2', sharedKey);
 
       const pushFile = testEnv.createTempFile(envMinimal, 'team-push');
       const pullFile = testEnv.createTempFile('', 'team-pull');
 
       await manager1.push(pushFile, 'team');
+
+      // Create manager2 AFTER the push so it loads the updated metadata
+      const manager2 = new SecretsManager('user2', sharedKey);
       await manager2.pull(pullFile, 'team', true);
 
       const pushed = parseEnvContent(fs.readFileSync(pushFile, 'utf8'));
@@ -424,15 +432,17 @@ describe('SecretsManager', () => {
 
     it('should fail with mismatched keys', async () => {
       const manager1 = new SecretsManager('user1', generateTestKey());
-      const manager2 = new SecretsManager('user2', generateTestKey());
 
       const pushFile = testEnv.createTempFile(envMinimal, 'mismatch-push');
       const pullFile = testEnv.createTempFile('', 'mismatch-pull');
 
-      await manager1.push(pushFile, 'test');
+      await manager1.push(pushFile, 'mismatch');
+
+      // Create manager2 AFTER the push so it can find the secrets (but with wrong key)
+      const manager2 = new SecretsManager('user2', generateTestKey());
 
       await expect(async () => {
-        await manager2.pull(pullFile, 'test');
+        await manager2.pull(pullFile, 'mismatch');
       }).rejects.toThrow(/Decryption failed/);
     });
   });
@@ -440,15 +450,17 @@ describe('SecretsManager', () => {
   describe('Error Handling', () => {
     it('should provide helpful error message for decryption failure', async () => {
       const manager1 = new SecretsManager(undefined, generateTestKey());
-      const manager2 = new SecretsManager(undefined, generateTestKey());
 
       const pushFile = testEnv.createTempFile(envMinimal, 'error-push');
       const pullFile = testEnv.createTempFile('', 'error-pull');
 
-      await manager1.push(pushFile, 'test');
+      await manager1.push(pushFile, 'decryption_error');
+
+      // Create manager2 AFTER the push so it can find the secrets (but with wrong key)
+      const manager2 = new SecretsManager(undefined, generateTestKey());
 
       try {
-        await manager2.pull(pullFile, 'test');
+        await manager2.pull(pullFile, 'decryption_error');
         fail('Should have thrown');
       } catch (error: any) {
         expect(error.message).toContain('LSH_SECRETS_KEY');
