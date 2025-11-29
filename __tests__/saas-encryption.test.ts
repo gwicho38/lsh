@@ -6,17 +6,36 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll, jest } from '@jest/globals';
 import { randomBytes } from 'crypto';
 
-// Mock Supabase client
-const mockSupabase = {
-  from: jest.fn().mockReturnThis(),
-  insert: jest.fn().mockReturnThis(),
-  update: jest.fn().mockReturnThis(),
-  select: jest.fn().mockReturnThis(),
-  eq: jest.fn().mockReturnThis(),
-  order: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockReturnThis(),
-  single: jest.fn(),
+// Mock Supabase client with thenable chain
+const createMockSupabase = () => {
+  const defaultResponse = { data: null, error: null };
+
+  const chain: any = {
+    from: jest.fn(),
+    insert: jest.fn(),
+    update: jest.fn(),
+    select: jest.fn(),
+    eq: jest.fn(),
+    order: jest.fn(),
+    limit: jest.fn(),
+    single: jest.fn(),
+    then: (resolve: any) => Promise.resolve(defaultResponse).then(resolve),
+    catch: () => Promise.resolve(defaultResponse),
+  };
+
+  chain.from.mockReturnValue(chain);
+  chain.insert.mockReturnValue(chain);
+  chain.update.mockReturnValue(chain);
+  chain.select.mockReturnValue(chain);
+  chain.eq.mockReturnValue(chain);
+  chain.order.mockReturnValue(chain);
+  chain.limit.mockReturnValue(chain);
+  chain.single.mockReturnValue(chain);
+
+  return chain;
 };
+
+const mockSupabase = createMockSupabase();
 
 jest.mock('../src/lib/supabase-client.js', () => ({
   getSupabaseClient: () => mockSupabase,

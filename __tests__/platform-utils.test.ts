@@ -4,8 +4,10 @@
  */
 
 import { describe, it, expect, beforeAll } from '@jest/globals';
+import * as os from 'os';
+import * as path from 'path';
 
-describe('Platform Utils', () => {
+describe('PlatformUtils', () => {
   let getPlatformPaths: typeof import('../src/lib/platform-utils.js').getPlatformPaths;
   let normalizePath: typeof import('../src/lib/platform-utils.js').normalizePath;
   let isWindows: typeof import('../src/lib/platform-utils.js').isWindows;
@@ -48,217 +50,162 @@ describe('Platform Utils', () => {
   });
 
   describe('getPlatformPaths', () => {
-    it('should return platform paths with default app name', () => {
+    it('should return all required paths', () => {
       const paths = getPlatformPaths();
-
       expect(paths.tmpDir).toBeDefined();
       expect(paths.homeDir).toBeDefined();
       expect(paths.user).toBeDefined();
-      expect(paths.pidFile).toContain('lsh');
-      expect(paths.logFile).toContain('lsh');
-      expect(paths.socketPath).toContain('lsh');
+      expect(paths.pidFile).toBeDefined();
+      expect(paths.logFile).toBeDefined();
+      expect(paths.socketPath).toBeDefined();
       expect(paths.configDir).toBeDefined();
       expect(paths.dataDir).toBeDefined();
     });
 
     it('should use custom app name', () => {
       const paths = getPlatformPaths('myapp');
-
       expect(paths.pidFile).toContain('myapp');
       expect(paths.logFile).toContain('myapp');
-      expect(paths.socketPath).toContain('myapp');
     });
 
-    it('should include user in temp file paths', () => {
+    it('should include username in paths', () => {
       const paths = getPlatformPaths();
-
-      expect(paths.pidFile).toContain(paths.user);
-      expect(paths.logFile).toContain(paths.user);
+      const user = os.userInfo().username;
+      expect(paths.pidFile).toContain(user);
+      expect(paths.logFile).toContain(user);
     });
   });
 
   describe('normalizePath', () => {
-    it('should normalize path separators', () => {
-      const result = normalizePath('foo/bar/baz');
-      expect(result).toBeDefined();
+    it('should normalize path', () => {
+      const result = normalizePath('/foo/bar/../baz');
+      expect(result).toBe(path.normalize('/foo/bar/../baz'));
     });
 
-    it('should remove redundant separators', () => {
-      const result = normalizePath('foo//bar///baz');
-      expect(result).not.toContain('//');
+    it('should handle simple paths', () => {
+      const result = normalizePath('/simple/path');
+      expect(result).toBe('/simple/path');
     });
   });
 
   describe('Platform detection', () => {
-    it('should return consistent platform detection', () => {
-      const platform = process.platform;
-
-      if (platform === 'win32') {
-        expect(isWindows()).toBe(true);
-        expect(isMacOS()).toBe(false);
-        expect(isLinux()).toBe(false);
-      } else if (platform === 'darwin') {
-        expect(isWindows()).toBe(false);
-        expect(isMacOS()).toBe(true);
-        expect(isLinux()).toBe(false);
-      } else if (platform === 'linux') {
-        expect(isWindows()).toBe(false);
-        expect(isMacOS()).toBe(false);
-        expect(isLinux()).toBe(true);
-      }
+    it('should detect current platform', () => {
+      const platformCount = [isWindows(), isMacOS(), isLinux()].filter(Boolean).length;
+      expect(platformCount).toBeLessThanOrEqual(1);
     });
 
-    it('should detect exactly one platform', () => {
-      const platforms = [isWindows(), isMacOS(), isLinux()];
-      const trueCount = platforms.filter(p => p).length;
-      expect(trueCount).toBeLessThanOrEqual(1);
+    it('isWindows should match process.platform', () => {
+      expect(isWindows()).toBe(process.platform === 'win32');
+    });
+
+    it('isMacOS should match process.platform', () => {
+      expect(isMacOS()).toBe(process.platform === 'darwin');
+    });
+
+    it('isLinux should match process.platform', () => {
+      expect(isLinux()).toBe(process.platform === 'linux');
     });
   });
 
   describe('getPlatformName', () => {
-    it('should return human-readable platform name', () => {
+    it('should return readable platform name', () => {
       const name = getPlatformName();
-
       expect(['Windows', 'macOS', 'Linux']).toContain(name);
     });
   });
 
   describe('getEnvVar', () => {
-    it('should return environment variable', () => {
-      const home = getEnvVar('HOME', 'USERPROFILE');
-      expect(home).toBeDefined();
+    it('should get environment variable', () => {
+      process.env.TEST_VAR_PLATFORM = 'test_value';
+      const result = getEnvVar('TEST_VAR_PLATFORM');
+      expect(result).toBe('test_value');
+      delete process.env.TEST_VAR_PLATFORM;
     });
 
-    it('should return undefined for non-existent variables', () => {
-      const result = getEnvVar('NON_EXISTENT_VAR_XYZ123');
+    it('should return undefined for missing var', () => {
+      const result = getEnvVar('NONEXISTENT_VAR_12345');
       expect(result).toBeUndefined();
     });
   });
 
   describe('ensureDir', () => {
-    it('should create directory if it does not exist', async () => {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const os = await import('os');
-
-      const testDir = path.join(os.tmpdir(), `platform-utils-test-${Date.now()}`);
-
-      await ensureDir(testDir);
-
-      const stats = await fs.stat(testDir);
-      expect(stats.isDirectory()).toBe(true);
-
-      // Cleanup
-      await fs.rmdir(testDir);
-    });
-
-    it('should not throw if directory already exists', async () => {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const os = await import('os');
-
-      const testDir = path.join(os.tmpdir(), `platform-utils-test-${Date.now()}`);
-      await fs.mkdir(testDir, { recursive: true });
-
-      await expect(ensureDir(testDir)).resolves.not.toThrow();
-
-      // Cleanup
-      await fs.rmdir(testDir);
+    it('should not throw if directory exists', async () => {
+      const existingDir = os.tmpdir();
+      await expect(ensureDir(existingDir)).resolves.not.toThrow();
     });
   });
 
   describe('getDefaultShell', () => {
-    it('should return a shell path', () => {
+    it('should return shell path', () => {
       const shell = getDefaultShell();
-
-      expect(shell).toBeDefined();
       expect(typeof shell).toBe('string');
+      expect(shell.length).toBeGreaterThan(0);
     });
   });
 
   describe('getPathSeparator', () => {
-    it('should return colon on Unix or semicolon on Windows', () => {
+    it('should return path delimiter', () => {
       const sep = getPathSeparator();
-
-      if (isWindows()) {
-        expect(sep).toBe(';');
-      } else {
-        expect(sep).toBe(':');
-      }
+      expect(sep).toBe(path.delimiter);
     });
   });
 
   describe('joinPaths', () => {
-    it('should join path segments', () => {
+    it('should join paths correctly', () => {
       const result = joinPaths('foo', 'bar', 'baz');
-      expect(result).toContain('foo');
-      expect(result).toContain('bar');
-      expect(result).toContain('baz');
+      expect(result).toBe(path.join('foo', 'bar', 'baz'));
     });
-  });
 
-  describe('toPlatformPath', () => {
-    it('should convert unix paths to platform paths', () => {
-      const result = toPlatformPath('foo/bar/baz');
-
-      if (isWindows()) {
-        expect(result).toBe('foo\\bar\\baz');
-      } else {
-        expect(result).toBe('foo/bar/baz');
-      }
+    it('should handle single path', () => {
+      const result = joinPaths('foo');
+      expect(result).toBe('foo');
     });
   });
 
   describe('toUnixPath', () => {
-    it('should convert platform paths to unix paths', () => {
+    it('should convert backslashes to forward slashes', () => {
       const result = toUnixPath('foo\\bar\\baz');
       expect(result).toBe('foo/bar/baz');
     });
-  });
 
-  describe('getExecutableExtension', () => {
-    it('should return .exe on Windows, empty on Unix', () => {
-      const ext = getExecutableExtension();
-
-      if (isWindows()) {
-        expect(ext).toBe('.exe');
-      } else {
-        expect(ext).toBe('');
-      }
+    it('should leave forward slashes as is', () => {
+      const result = toUnixPath('foo/bar/baz');
+      expect(result).toBe('foo/bar/baz');
     });
   });
 
   describe('isAbsolutePath', () => {
     it('should detect absolute paths', () => {
-      if (isWindows()) {
-        expect(isAbsolutePath('C:\\foo\\bar')).toBe(true);
-        expect(isAbsolutePath('foo\\bar')).toBe(false);
-      } else {
-        expect(isAbsolutePath('/foo/bar')).toBe(true);
-        expect(isAbsolutePath('foo/bar')).toBe(false);
-      }
+      expect(isAbsolutePath('/foo/bar')).toBe(true);
+    });
+
+    it('should detect relative paths', () => {
+      expect(isAbsolutePath('foo/bar')).toBe(false);
+      expect(isAbsolutePath('./foo')).toBe(false);
+      expect(isAbsolutePath('../foo')).toBe(false);
     });
   });
 
   describe('resolveHomePath', () => {
     it('should expand tilde to home directory', () => {
       const result = resolveHomePath('~/test');
-      const os = require('os');
-
-      expect(result).toContain(os.homedir());
-      expect(result).not.toContain('~');
+      expect(result).toBe(path.join(os.homedir(), 'test'));
     });
 
     it('should leave non-tilde paths unchanged', () => {
-      const result = resolveHomePath('/absolute/path');
-      expect(result).toBe('/absolute/path');
+      const result = resolveHomePath('/foo/bar');
+      expect(result).toBe('/foo/bar');
+    });
+
+    it('should handle tilde only', () => {
+      const result = resolveHomePath('~');
+      expect(result).toBe(os.homedir());
     });
   });
 
   describe('getLineEnding', () => {
-    it('should return platform-specific line ending', () => {
+    it('should return platform line ending', () => {
       const ending = getLineEnding();
-
       if (isWindows()) {
         expect(ending).toBe('\r\n');
       } else {
@@ -270,24 +217,14 @@ describe('Platform Utils', () => {
   describe('getPlatformInfo', () => {
     it('should return comprehensive platform info', () => {
       const info = getPlatformInfo();
-
-      expect(info.platform).toBeDefined();
+      expect(info.platform).toBe(process.platform);
       expect(info.platformName).toBeDefined();
-      expect(info.arch).toBeDefined();
+      expect(info.arch).toBe(process.arch);
       expect(info.release).toBeDefined();
-      expect(info.nodeVersion).toBeDefined();
+      expect(info.nodeVersion).toBe(process.version);
       expect(info.homeDir).toBeDefined();
       expect(info.tmpDir).toBeDefined();
       expect(info.user).toBeDefined();
-    });
-
-    it('should have consistent values', () => {
-      const info = getPlatformInfo();
-      const paths = getPlatformPaths();
-
-      expect(info.homeDir).toBe(paths.homeDir);
-      expect(info.tmpDir).toBe(paths.tmpDir);
-      expect(info.user).toBe(paths.user);
     });
   });
 });

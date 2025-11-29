@@ -13,6 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 import ora from 'ora';
 import { getPlatformPaths } from '../lib/platform-utils.js';
 import { getGitRepoInfo } from '../lib/git-utils.js';
+import * as os from 'os';
 
 interface InitConfig {
   storageType: 'supabase' | 'local' | 'postgres' | 'storacha';
@@ -30,6 +31,7 @@ export function registerInitCommands(program: Command): void {
   program
     .command('init')
     .description('Interactive setup wizard (first-time configuration)')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--local', 'Use local-only encryption (no cloud sync)')
     .option('--storacha', 'Use Storacha IPFS network sync (recommended)')
     .option('--supabase', 'Use Supabase cloud storage')
@@ -47,21 +49,38 @@ export function registerInitCommands(program: Command): void {
 }
 
 /**
+ * Get the base directory for .env files
+ */
+function getBaseDir(globalMode?: boolean): string {
+  return globalMode ? os.homedir() : process.cwd();
+}
+
+/**
  * Run the interactive setup wizard
  */
 async function runSetupWizard(options: {
+  global?: boolean;
   local?: boolean;
   storacha?: boolean;
   supabase?: boolean;
   postgres?: boolean;
   skipTest?: boolean;
 }): Promise<void> {
-  console.log(chalk.bold.cyan('\n🔐 LSH Secrets Manager - Setup Wizard'));
-  console.log(chalk.gray('━'.repeat(50)));
+  const globalMode = options.global ?? false;
+  const baseDir = getBaseDir(globalMode);
+
+  if (globalMode) {
+    console.log(chalk.bold.cyan('\n🔐 LSH Secrets Manager - Global Setup Wizard'));
+    console.log(chalk.gray('━'.repeat(50)));
+    console.log(chalk.yellow(`\n🌐 Global Mode: Using $HOME (${baseDir})`));
+  } else {
+    console.log(chalk.bold.cyan('\n🔐 LSH Secrets Manager - Setup Wizard'));
+    console.log(chalk.gray('━'.repeat(50)));
+  }
   console.log('');
 
   // Check if already configured
-  const existingConfig = await checkExistingConfig();
+  const existingConfig = await checkExistingConfig(baseDir);
   if (existingConfig) {
     const { overwrite } = await inquirer.prompt([
       {
@@ -200,7 +219,7 @@ async function runSetupWizard(options: {
   }
 
   // Save configuration
-  await saveConfiguration(config);
+  await saveConfiguration(config, baseDir, globalMode);
 
   // Show success message
   showSuccessMessage(config);
@@ -209,9 +228,9 @@ async function runSetupWizard(options: {
 /**
  * Check if LSH is already configured
  */
-async function checkExistingConfig(): Promise<boolean> {
+async function checkExistingConfig(baseDir: string): Promise<boolean> {
   try {
-    const envPath = path.join(process.cwd(), '.env');
+    const envPath = path.join(baseDir, '.env');
     // Read file directly without access check to avoid TOCTOU race condition
     const content = await fs.readFile(envPath, 'utf-8');
     return content.includes('LSH_SECRETS_KEY') ||
@@ -460,11 +479,11 @@ function generateEncryptionKey(): string {
 /**
  * Save configuration to .env file
  */
-async function saveConfiguration(config: InitConfig): Promise<void> {
+async function saveConfiguration(config: InitConfig, baseDir: string, globalMode?: boolean): Promise<void> {
   const spinner = ora('Saving configuration...').start();
 
   try {
-    const envPath = path.join(process.cwd(), '.env');
+    const envPath = path.join(baseDir, '.env');
     let envContent = '';
 
     // Try to read existing .env
@@ -512,8 +531,10 @@ async function saveConfiguration(config: InitConfig): Promise<void> {
     // Write .env file
     await fs.writeFile(envPath, envContent, 'utf-8');
 
-    // Update .gitignore
-    await updateGitignore();
+    // Update .gitignore (skip for global mode since it's in $HOME)
+    if (!globalMode) {
+      await updateGitignore();
+    }
 
     spinner.succeed(chalk.green('✅ Configuration saved'));
   } catch (error) {

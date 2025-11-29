@@ -1,6 +1,6 @@
 {
   "name": "lsh-framework",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "description": "Simple, cross-platform encrypted secrets manager with automatic sync, IPFS audit logs, and multi-environment support. Just run lsh sync and start managing your secrets.",
   "main": "dist/app.js",
   "bin": {
@@ -17,7 +17,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "test": "node --experimental-vm-modules ./node_modules/.bin/jest",
+    "test": "node --experimental-vm-modules ./node_modules/.bin/jest --runInBand",
     "test:ci": "node --experimental-vm-modules ./node_modules/.bin/jest --runInBand",
     "test:coverage": "node --experimental-vm-modules ./node_modules/.bin/jest --coverage --runInBand",
     "clean": "rm -rf ./build; rm -rf ./bin; rm -rf ./dist",
