@@ -22,21 +22,72 @@ export interface Secret {
   updatedAt: Date;
 }
 
+export interface SecretsManagerOptions {
+  userId?: string;
+  encryptionKey?: string;
+  detectGit?: boolean;
+  globalMode?: boolean;  // When true, uses $HOME as workspace and 'global' as namespace
+}
+
 export class SecretsManager {
   private storage: IPFSSecretsStorage;
   private encryptionKey: string;
   private gitInfo?: GitRepoInfo;
+  private globalMode: boolean;
+  private homeDir: string;
 
-  constructor(userId?: string, encryptionKey?: string, detectGit: boolean = true) {
+  constructor(userId?: string, encryptionKey?: string, detectGit?: boolean);
+  constructor(options: SecretsManagerOptions);
+  constructor(userIdOrOptions?: string | SecretsManagerOptions, encryptionKey?: string, detectGit?: boolean) {
     this.storage = new IPFSSecretsStorage();
+    this.homeDir = process.env.HOME || process.env.USERPROFILE || '';
+
+    // Handle both legacy and new constructor signatures
+    let options: SecretsManagerOptions;
+    if (typeof userIdOrOptions === 'object') {
+      options = userIdOrOptions;
+    } else {
+      options = {
+        userId: userIdOrOptions,
+        encryptionKey,
+        detectGit: detectGit ?? true,
+        globalMode: false,
+      };
+    }
+
+    this.globalMode = options.globalMode ?? false;
 
     // Use provided key or generate from machine ID + user
-    this.encryptionKey = encryptionKey || this.getDefaultEncryptionKey();
+    this.encryptionKey = options.encryptionKey || this.getDefaultEncryptionKey();
 
-    // Auto-detect git repo context
-    if (detectGit) {
+    // Auto-detect git repo context (skip if in global mode)
+    if (!this.globalMode && (options.detectGit ?? true)) {
       this.gitInfo = getGitRepoInfo();
     }
+  }
+
+  /**
+   * Check if running in global mode
+   */
+  isGlobalMode(): boolean {
+    return this.globalMode;
+  }
+
+  /**
+   * Get the home directory path
+   */
+  getHomeDir(): string {
+    return this.homeDir;
+  }
+
+  /**
+   * Resolve file path - in global mode, resolves relative to $HOME
+   */
+  resolveFilePath(filePath: string): string {
+    if (this.globalMode && !path.isAbsolute(filePath)) {
+      return path.join(this.homeDir, filePath);
+    }
+    return filePath;
   }
 
   /**
@@ -559,8 +610,14 @@ export class SecretsManager {
   /**
    * Get the default environment name based on context
    * v2.0: In git repo, default is repo name; otherwise 'dev'
+   * Global mode: always returns 'dev' (which resolves to 'global' namespace)
    */
   public getDefaultEnvironment(): string {
+    // Global mode uses simple 'dev' which maps to 'global' namespace
+    if (this.globalMode) {
+      return 'dev';
+    }
+
     // Check for v1 compatibility mode
     if (process.env.LSH_V1_COMPAT === 'true') {
       return 'dev'; // v1.x behavior
@@ -578,11 +635,20 @@ export class SecretsManager {
    * v2.0: Returns environment name with repo context if in a git repo
    *
    * Behavior:
+   * - Global mode: returns 'global' or 'global_env' (e.g., global_staging)
    * - Empty env in repo: returns just repo name (v2.0 default)
    * - Named env in repo: returns repo_env (e.g., repo_staging)
    * - Any env outside repo: returns env as-is
    */
   private getRepoAwareEnvironment(environment: string): string {
+    // Global mode uses 'global' namespace
+    if (this.globalMode) {
+      if (environment === '' || environment === 'default' || environment === 'dev') {
+        return 'global';
+      }
+      return `global_${environment}`;
+    }
+
     if (this.gitInfo?.repoName) {
       // v2.0: Empty environment means "use repo name only"
       if (environment === '' || environment === 'default') {
@@ -767,8 +833,13 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
       out(`\n🔍 Smart sync for: ${displayEnv}\n`);
 
-    // Show git repo context if detected
-    if (this.gitInfo?.isGitRepo) {
+    // Show workspace context
+    if (this.globalMode) {
+      out('🌐 Global Workspace:');
+      out(`   Location: ${this.homeDir}`);
+      out(`   Namespace: global`);
+      out();
+    } else if (this.gitInfo?.isGitRepo) {
       out('📁 Git Repository:');
       out(`   Repo: ${this.gitInfo.repoName || 'unknown'}`);
       if (this.gitInfo.currentBranch) {

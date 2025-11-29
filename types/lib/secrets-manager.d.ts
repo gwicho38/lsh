@@ -10,11 +10,32 @@ export interface Secret {
     createdAt: Date;
     updatedAt: Date;
 }
+export interface SecretsManagerOptions {
+    userId?: string;
+    encryptionKey?: string;
+    detectGit?: boolean;
+    globalMode?: boolean;
+}
 export declare class SecretsManager {
     private storage;
     private encryptionKey;
     private gitInfo?;
+    private globalMode;
+    private homeDir;
     constructor(userId?: string, encryptionKey?: string, detectGit?: boolean);
+    constructor(options: SecretsManagerOptions);
+    /**
+     * Check if running in global mode
+     */
+    isGlobalMode(): boolean;
+    /**
+     * Get the home directory path
+     */
+    getHomeDir(): string;
+    /**
+     * Resolve file path - in global mode, resolves relative to $HOME
+     */
+    resolveFilePath(filePath: string): string;
     /**
      * Cleanup resources (stop timers, close connections)
      * Call this when done to allow process to exit
@@ -94,6 +115,7 @@ export declare class SecretsManager {
     /**
      * Get the default environment name based on context
      * v2.0: In git repo, default is repo name; otherwise 'dev'
+     * Global mode: always returns 'dev' (which resolves to 'global' namespace)
      */
     getDefaultEnvironment(): string;
     /**
@@ -101,6 +123,7 @@ export declare class SecretsManager {
      * v2.0: Returns environment name with repo context if in a git repo
      *
      * Behavior:
+     * - Global mode: returns 'global' or 'global_env' (e.g., global_staging)
      * - Empty env in repo: returns just repo name (v2.0 default)
      * - Named env in repo: returns repo_env (e.g., repo_staging)
      * - Any env outside repo: returns env as-is

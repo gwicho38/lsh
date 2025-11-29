@@ -17,13 +17,16 @@ export async function init_secrets(program: Command) {
     .description('Push local .env to encrypted cloud storage')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name (dev/staging/prod)', 'dev')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--force', 'Force push even if destructive changes detected')
     .action(async (options) => {
-      const manager = new SecretsManager();
+      const manager = new SecretsManager({ globalMode: options.global });
       try {
+        // Resolve file path (handles global mode)
+        const filePath = manager.resolveFilePath(options.file);
         // v2.0: Use context-aware default environment
         const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
-        await manager.push(options.file, env, options.force);
+        await manager.push(filePath, env, options.force);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to push secrets:', err.message);
@@ -40,13 +43,16 @@ export async function init_secrets(program: Command) {
     .description('Pull .env from encrypted cloud storage')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name (dev/staging/prod)', 'dev')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--force', 'Overwrite without creating backup')
     .action(async (options) => {
-      const manager = new SecretsManager();
+      const manager = new SecretsManager({ globalMode: options.global });
       try {
+        // Resolve file path (handles global mode)
+        const filePath = manager.resolveFilePath(options.file);
         // v2.0: Use context-aware default environment
         const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
-        await manager.pull(options.file, env, options.force);
+        await manager.pull(filePath, env, options.force);
       } catch (error) {
         const err = error as Error;
         console.error('❌ Failed to pull secrets:', err.message);
@@ -63,12 +69,14 @@ export async function init_secrets(program: Command) {
     .alias('ls')
     .description('List secrets in the current local .env file')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--keys-only', 'Show only keys, not values')
     .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
     .option('--no-mask', 'Show full values (default: auto based on format)')
     .action(async (options) => {
       try {
-        const envPath = path.resolve(options.file);
+        const manager = new SecretsManager({ globalMode: options.global });
+        const envPath = path.resolve(manager.resolveFilePath(options.file));
 
         if (!fs.existsSync(envPath)) {
           console.error(`❌ File not found: ${envPath}`);
@@ -148,11 +156,12 @@ export async function init_secrets(program: Command) {
   program
     .command('env [environment]')
     .description('List all stored environments or show secrets for specific environment')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--all-files', 'List all tracked .env files across environments')
     .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
     .action(async (environment, options) => {
       try {
-        const manager = new SecretsManager();
+        const manager = new SecretsManager({ globalMode: options.global });
 
         // If --all-files flag is set, list all tracked files
         if (options.allFiles) {
@@ -293,23 +302,26 @@ API_KEY=
     .description('Automatically set up and synchronize secrets (smart mode)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name', 'dev')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--dry-run', 'Show what would be done without executing')
     .option('--legacy', 'Use legacy sync mode (suggestions only)')
     .option('--load', 'Output eval-able export commands for loading secrets')
     .option('--force', 'Force sync even if destructive changes detected')
     .option('--force-rekey', 'Re-encrypt cloud secrets with current local key (use when key mismatch)')
     .action(async (options) => {
-      const manager = new SecretsManager();
+      const manager = new SecretsManager({ globalMode: options.global });
       try {
+        // Resolve file path (handles global mode)
+        const filePath = manager.resolveFilePath(options.file);
         // v2.0: Use context-aware default environment
         const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
 
         if (options.legacy) {
           // Use legacy sync (suggestions only)
-          await manager.sync(options.file, env);
+          await manager.sync(filePath, env);
         } else {
           // Use new smart sync (auto-execute)
-          await manager.smartSync(options.file, env, !options.dryRun, options.load, options.force, options.forceRekey);
+          await manager.smartSync(filePath, env, !options.dryRun, options.load, options.force, options.forceRekey);
         }
       } catch (error) {
         const err = error as Error;
@@ -327,10 +339,12 @@ API_KEY=
     .description('Get detailed secrets status (JSON output)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name', 'dev')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .action(async (options) => {
       try {
-        const manager = new SecretsManager();
-        const status = await manager.status(options.file, options.env);
+        const manager = new SecretsManager({ globalMode: options.global });
+        const filePath = manager.resolveFilePath(options.file);
+        const status = await manager.status(filePath, options.env);
         console.log(JSON.stringify(status, null, 2));
       } catch (error) {
         const err = error as Error;
@@ -345,16 +359,21 @@ API_KEY=
     .description('Show current directory context and tracked environment')
     .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-e, --env <name>', 'Environment name', 'dev')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .action(async (options) => {
       try {
-        const gitInfo = getGitRepoInfo();
-        const manager = new SecretsManager();
-        const envPath = path.resolve(options.file);
+        const gitInfo = options.global ? null : getGitRepoInfo();
+        const manager = new SecretsManager({ globalMode: options.global });
+        const envPath = path.resolve(manager.resolveFilePath(options.file));
 
         console.log('\n📍 Current Directory Context\n');
 
-        // Git Repository Info
-        if (gitInfo.isGitRepo) {
+        // Workspace Info
+        if (options.global) {
+          console.log('🌐 Global Workspace:');
+          console.log(`   Location: ${manager.getHomeDir()}`);
+          console.log('   Mode: Global (not repo-specific)');
+        } else if (gitInfo?.isGitRepo) {
           console.log('📁 Git Repository:');
           console.log(`   Root: ${gitInfo.rootPath || 'unknown'}`);
           console.log(`   Name: ${gitInfo.repoName || 'unknown'}`);
@@ -374,14 +393,22 @@ API_KEY=
         console.log('🔐 Environment Tracking:');
 
         // Show the effective environment name used for cloud storage
-        const effectiveEnv = gitInfo.repoName
-          ? `${gitInfo.repoName}_${options.env}`
-          : options.env;
+        let effectiveEnv: string;
+        if (options.global) {
+          effectiveEnv = options.env === 'dev' ? 'global' : `global_${options.env}`;
+        } else {
+          effectiveEnv = gitInfo?.repoName
+            ? `${gitInfo.repoName}_${options.env}`
+            : options.env;
+        }
 
         console.log(`   Base environment: ${options.env}`);
         console.log(`   Cloud storage name: ${effectiveEnv}`);
 
-        if (gitInfo.repoName) {
+        if (options.global) {
+          console.log('   Namespace: global');
+          console.log('   ℹ️  Global workspace mode enabled');
+        } else if (gitInfo?.repoName) {
           console.log(`   Namespace: ${gitInfo.repoName}`);
           console.log('   ℹ️  Repo-based isolation enabled');
         } else {
@@ -456,13 +483,15 @@ API_KEY=
     .command('get [key]')
     .description('Get a specific secret value from .env file, or all secrets with --all')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--all', 'Get all secrets from the file')
     .option('--export', 'Output in export format for shell evaluation (alias for --format export)')
     .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
     .option('--exact', 'Require exact key match (disable fuzzy matching)')
     .action(async (key, options) => {
       try {
-        const envPath = path.resolve(options.file);
+        const manager = new SecretsManager({ globalMode: options.global });
+        const envPath = path.resolve(manager.resolveFilePath(options.file));
 
         if (!fs.existsSync(envPath)) {
           console.error(`❌ File not found: ${envPath}`);
@@ -586,10 +615,12 @@ API_KEY=
     .command('set [key] [value]')
     .description('Set a specific secret value in .env file, or batch upsert from stdin (KEY=VALUE format)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('--stdin', 'Read KEY=VALUE pairs from stdin (one per line)')
     .action(async (key, value, options) => {
       try {
-        const envPath = path.resolve(options.file);
+        const manager = new SecretsManager({ globalMode: options.global });
+        const envPath = path.resolve(manager.resolveFilePath(options.file));
 
         // Check if we should read from stdin
         const isStdin = options.stdin || (!key && !value);
@@ -881,10 +912,12 @@ API_KEY=
     .command('delete')
     .description('Delete .env file (requires confirmation)')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('-y, --yes', 'Skip confirmation prompt')
     .action(async (options) => {
       try {
-        const envPath = path.resolve(options.file);
+        const manager = new SecretsManager({ globalMode: options.global });
+        const envPath = path.resolve(manager.resolveFilePath(options.file));
 
         // Check if file exists
         if (!fs.existsSync(envPath)) {
