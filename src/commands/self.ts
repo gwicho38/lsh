@@ -14,6 +14,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/** GitHub workflow run (minimal interface for CI check) */
+interface GitHubWorkflowRun {
+  head_branch: string;
+  status: string;
+  conclusion: string;
+  html_url: string;
+}
+
 const selfCommand = new Command('self');
 selfCommand.description('Manage and update the LSH application');
 
@@ -140,8 +148,7 @@ async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?
             const runs = ghData.workflow_runs || [];
 
             // Find the most recent workflow run for main branch
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const mainRuns = runs.filter((run: any) =>
+            const mainRuns = (runs as GitHubWorkflowRun[]).filter((run) =>
               run.head_branch === 'main' && run.status === 'completed'
             );
 

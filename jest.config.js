@@ -17,14 +17,16 @@ export default {
     ],
 
     // Coverage threshold - Set realistic baseline to prevent regression
-    // Current baseline (2025-10-02): 11.73% lines, 11.47% statements, 12.39% branches, 9.71% functions
+    // Current baseline (2025-11-29): 30.88% lines, 30.93% statements, 32.95% branches, 30.42% functions
+    // Previous baseline (2025-10-02): 11.73% lines, 11.47% statements, 12.39% branches, 9.71% functions
     // Target (Issue #68): 70% coverage
+    // Note: Use --runInBand flag when running tests to prevent mock contamination between test files
     coverageThreshold: {
         global: {
-            statements: 11,
-            branches: 12,
-            functions: 9,
-            lines: 11
+            statements: 30,
+            branches: 32,
+            functions: 30,
+            lines: 30
         }
     },
 
