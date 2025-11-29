@@ -19,27 +19,50 @@ const createMockSupabase = () => {
   mockOrderFn = jest.fn();
   mockLimitFn = jest.fn();
 
-  const mockChain = {
-    from: jest.fn(),
-    insert: jest.fn(),
-    update: jest.fn(),
-    upsert: jest.fn(),
-    select: jest.fn(),
-    eq: jest.fn(),
-    order: mockOrderFn,
-    limit: mockLimitFn,
-    single: mockSingleFn,
+  const defaultResponse = { data: null, error: null };
+  const defaultArrayResponse = { data: [], error: null };
+
+  // Create a thenable chain that can be awaited or chained
+  const createThenable = (defaultValue: any) => {
+    const chain: any = {
+      from: jest.fn(),
+      insert: jest.fn(),
+      update: jest.fn(),
+      upsert: jest.fn(),
+      select: jest.fn(),
+      eq: jest.fn(),
+      order: jest.fn(),
+      limit: jest.fn(),
+      single: jest.fn(),
+      // Make it thenable for await
+      then: (resolve: any) => Promise.resolve(defaultValue).then(resolve),
+      catch: () => Promise.resolve(defaultValue),
+    };
+
+    chain.from.mockReturnValue(chain);
+    chain.insert.mockReturnValue(chain);
+    chain.update.mockReturnValue(chain);
+    chain.upsert.mockReturnValue(chain);
+    chain.select.mockReturnValue(chain);
+    chain.eq.mockReturnValue(chain);
+    chain.order.mockReturnValue(chain);
+    chain.limit.mockReturnValue(chain);
+    chain.single.mockReturnValue(chain);
+
+    return chain;
   };
 
-  // Each method returns the chain for fluent API
-  mockChain.from.mockReturnValue(mockChain);
-  mockChain.insert.mockReturnValue(mockChain);
-  mockChain.update.mockReturnValue(mockChain);
-  mockChain.upsert.mockReturnValue(mockChain);
-  mockChain.select.mockReturnValue(mockChain);
-  mockChain.eq.mockReturnValue(mockChain);
-  mockChain.order.mockReturnValue(mockChain);
-  mockChain.limit.mockReturnValue(mockChain);
+  const mockChain = createThenable(defaultArrayResponse);
+
+  // Store references to the mock functions for test assertions and override
+  mockSingleFn = mockChain.single;
+  mockOrderFn = mockChain.order;
+  mockLimitFn = mockChain.limit;
+
+  // Allow overriding the then value for specific tests
+  mockChain.setNextResponse = (response: any) => {
+    mockChain.then = (resolve: any) => Promise.resolve(response).then(resolve);
+  };
 
   return mockChain;
 };

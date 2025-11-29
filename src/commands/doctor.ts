@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import _ora from 'ora';
 import { getPlatformPaths, getPlatformInfo } from '../lib/platform-utils.js';
 import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
+import * as os from 'os';
 
 interface HealthCheck {
   name: string;
@@ -26,6 +27,7 @@ export function registerDoctorCommands(program: Command): void {
   program
     .command('doctor')
     .description('Health check and troubleshooting')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('-v, --verbose', 'Show detailed information')
     .option('--json', 'Output results as JSON')
     .action(async (options) => {
@@ -40,11 +42,25 @@ export function registerDoctorCommands(program: Command): void {
 }
 
 /**
+ * Get the base directory for .env files
+ */
+function getBaseDir(globalMode?: boolean): string {
+  return globalMode ? os.homedir() : process.cwd();
+}
+
+/**
  * Run comprehensive health check
  */
-async function runHealthCheck(options: { verbose?: boolean; json?: boolean }): Promise<void> {
+async function runHealthCheck(options: { global?: boolean; verbose?: boolean; json?: boolean }): Promise<void> {
+  const baseDir = getBaseDir(options.global);
+
   if (!options.json) {
-    console.log(chalk.bold.cyan('\n🏥 LSH Health Check'));
+    if (options.global) {
+      console.log(chalk.bold.cyan('\n🏥 LSH Health Check (Global Workspace)'));
+      console.log(chalk.yellow(`   Location: ${baseDir}`));
+    } else {
+      console.log(chalk.bold.cyan('\n🏥 LSH Health Check'));
+    }
     console.log(chalk.gray('━'.repeat(50)));
     console.log('');
   }
@@ -55,23 +71,25 @@ async function runHealthCheck(options: { verbose?: boolean; json?: boolean }): P
   checks.push(await checkPlatform(options.verbose));
 
   // .env file check
-  checks.push(await checkEnvFile(options.verbose));
+  checks.push(await checkEnvFile(options.verbose, baseDir));
 
   // Encryption key check
-  checks.push(await checkEncryptionKey(options.verbose));
+  checks.push(await checkEncryptionKey(options.verbose, baseDir));
 
   // Storage backend check
-  const storageChecks = await checkStorageBackend(options.verbose);
+  const storageChecks = await checkStorageBackend(options.verbose, baseDir);
   checks.push(...storageChecks);
 
-  // Git repository check
-  checks.push(await checkGitRepository(options.verbose));
+  // Git repository check (skip for global mode)
+  if (!options.global) {
+    checks.push(await checkGitRepository(options.verbose));
+  }
 
   // IPFS client check
   checks.push(await checkIPFSClient(options.verbose));
 
   // Permissions check
-  checks.push(await checkPermissions(options.verbose));
+  checks.push(await checkPermissions(options.verbose, baseDir));
 
   // Display results
   if (options.json) {
@@ -110,9 +128,9 @@ async function checkPlatform(verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check .env file
  */
-async function checkEnvFile(verbose?: boolean): Promise<HealthCheck> {
+async function checkEnvFile(verbose?: boolean, baseDir?: string): Promise<HealthCheck> {
   try {
-    const envPath = path.join(process.cwd(), '.env');
+    const envPath = path.join(baseDir || process.cwd(), '.env');
     // Read file directly without access check to avoid TOCTOU race condition
     const content = await fs.readFile(envPath, 'utf-8');
     const lines = content.split('\n').filter(l => l.trim() && !l.startsWith('#'));
@@ -136,9 +154,9 @@ async function checkEnvFile(verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check encryption key
  */
-async function checkEncryptionKey(verbose?: boolean): Promise<HealthCheck> {
+async function checkEncryptionKey(verbose?: boolean, baseDir?: string): Promise<HealthCheck> {
   try {
-    const envPath = path.join(process.cwd(), '.env');
+    const envPath = path.join(baseDir || process.cwd(), '.env');
     const content = await fs.readFile(envPath, 'utf-8');
 
     const match = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
@@ -193,11 +211,11 @@ async function checkEncryptionKey(verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check storage backend configuration
  */
-async function checkStorageBackend(verbose?: boolean): Promise<HealthCheck[]> {
+async function checkStorageBackend(verbose?: boolean, baseDir?: string): Promise<HealthCheck[]> {
   const checks: HealthCheck[] = [];
 
   try {
-    const envPath = path.join(process.cwd(), '.env');
+    const envPath = path.join(baseDir || process.cwd(), '.env');
     const content = await fs.readFile(envPath, 'utf-8');
 
     const supabaseUrl = content.match(/^SUPABASE_URL=(.+)$/m)?.[1]?.trim();
@@ -375,7 +393,7 @@ async function checkIPFSClient(verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check file permissions
  */
-async function checkPermissions(verbose?: boolean): Promise<HealthCheck> {
+async function checkPermissions(verbose?: boolean, _baseDir?: string): Promise<HealthCheck> {
   try {
     const paths = getPlatformPaths();
 

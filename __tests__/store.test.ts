@@ -3,7 +3,7 @@
  * Tests for the global store module
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeAll, jest } from '@jest/globals';
 
 describe('Store', () => {
   let getPkgId: typeof import('../src/store/store.js').getPkgId;

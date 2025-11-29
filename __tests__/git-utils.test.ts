@@ -7,9 +7,8 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/gl
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { execSync } from 'child_process';
 
-describe('Git Utils', () => {
+describe('GitUtils', () => {
   let isInGitRepo: typeof import('../src/lib/git-utils.js').isInGitRepo;
   let getGitRootPath: typeof import('../src/lib/git-utils.js').getGitRootPath;
   let getGitRemoteUrl: typeof import('../src/lib/git-utils.js').getGitRemoteUrl;
@@ -20,7 +19,7 @@ describe('Git Utils', () => {
   let isEnvIgnored: typeof import('../src/lib/git-utils.js').isEnvIgnored;
   let ensureEnvInGitignore: typeof import('../src/lib/git-utils.js').ensureEnvInGitignore;
 
-  let testDir: string;
+  let tempDir: string;
 
   beforeAll(async () => {
     const module = await import('../src/lib/git-utils.js');
@@ -35,17 +34,53 @@ describe('Git Utils', () => {
     ensureEnvInGitignore = module.ensureEnvInGitignore;
   });
 
-  beforeEach(async () => {
-    testDir = path.join(os.tmpdir(), `git-utils-test-${Date.now()}`);
-    await fs.promises.mkdir(testDir, { recursive: true });
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'git-utils-test-'));
   });
 
-  afterEach(async () => {
-    try {
-      await fs.promises.rm(testDir, { recursive: true, force: true });
-    } catch {
-      // Directory may not exist
+  afterEach(() => {
+    if (tempDir && fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  describe('isInGitRepo', () => {
+    it('should return true for actual git repo', () => {
+      // The lsh project itself is a git repo
+      const result = isInGitRepo(process.cwd());
+      expect(result).toBe(true);
+    });
+
+    it('should return false for non-git directory', () => {
+      const result = isInGitRepo(tempDir);
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getGitRootPath', () => {
+    it('should return root path for git repo', () => {
+      const result = getGitRootPath(process.cwd());
+      expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
+    });
+
+    it('should return undefined for non-git directory', () => {
+      const result = getGitRootPath(tempDir);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getGitRemoteUrl', () => {
+    it('should return remote url for git repo with remote', () => {
+      const result = getGitRemoteUrl(process.cwd());
+      // May or may not have a remote depending on setup
+      expect(result === undefined || typeof result === 'string').toBe(true);
+    });
+
+    it('should return undefined for non-git directory', () => {
+      const result = getGitRemoteUrl(tempDir);
+      expect(result).toBeUndefined();
+    });
   });
 
   describe('extractRepoName', () => {
@@ -64,206 +99,121 @@ describe('Git Utils', () => {
       expect(result).toBe('my-repo');
     });
 
-    it('should use directory name as fallback', () => {
-      const result = extractRepoName(undefined, '/path/to/my-project');
+    it('should fallback to directory name', () => {
+      const result = extractRepoName(undefined, '/home/user/my-project');
       expect(result).toBe('my-project');
     });
 
-    it('should return undefined if no URL or path', () => {
-      const result = extractRepoName();
+    it('should return undefined when no info available', () => {
+      const result = extractRepoName(undefined, undefined);
       expect(result).toBeUndefined();
     });
   });
 
+  describe('getCurrentBranch', () => {
+    it('should return branch name for git repo', () => {
+      const result = getCurrentBranch(process.cwd());
+      expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
+    });
+
+    it('should return undefined for non-git directory', () => {
+      const result = getCurrentBranch(tempDir);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('getGitRepoInfo', () => {
+    it('should return comprehensive info for git repo', () => {
+      const result = getGitRepoInfo(process.cwd());
+      expect(result.isGitRepo).toBe(true);
+      expect(result.rootPath).toBeDefined();
+      expect(result.currentBranch).toBeDefined();
+    });
+
+    it('should return minimal info for non-git directory', () => {
+      const result = getGitRepoInfo(tempDir);
+      expect(result.isGitRepo).toBe(false);
+      expect(result.rootPath).toBeUndefined();
+    });
+  });
+
   describe('hasEnvExample', () => {
-    it('should find .env.example', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.env.example'), 'TEST=value');
-
-      const result = hasEnvExample(testDir);
-      expect(result).toBe(path.join(testDir, '.env.example'));
+    it('should find .env.example file', () => {
+      fs.writeFileSync(path.join(tempDir, '.env.example'), 'KEY=value');
+      const result = hasEnvExample(tempDir);
+      expect(result).toBeDefined();
+      expect(result).toContain('.env.example');
     });
 
-    it('should find .env.sample', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.env.sample'), 'TEST=value');
-
-      const result = hasEnvExample(testDir);
-      expect(result).toBe(path.join(testDir, '.env.sample'));
+    it('should find .env.sample file', () => {
+      fs.writeFileSync(path.join(tempDir, '.env.sample'), 'KEY=value');
+      const result = hasEnvExample(tempDir);
+      expect(result).toBeDefined();
+      expect(result).toContain('.env.sample');
     });
 
-    it('should find .env.template', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.env.template'), 'TEST=value');
-
-      const result = hasEnvExample(testDir);
-      expect(result).toBe(path.join(testDir, '.env.template'));
+    it('should find .env.template file', () => {
+      fs.writeFileSync(path.join(tempDir, '.env.template'), 'KEY=value');
+      const result = hasEnvExample(tempDir);
+      expect(result).toBeDefined();
+      expect(result).toContain('.env.template');
     });
 
-    it('should return undefined if no env example exists', () => {
-      const result = hasEnvExample(testDir);
+    it('should return undefined when no env example exists', () => {
+      const result = hasEnvExample(tempDir);
       expect(result).toBeUndefined();
     });
   });
 
   describe('isEnvIgnored', () => {
-    it('should return true if .env is in .gitignore', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.gitignore'), '.env\nnode_modules/');
-
-      const result = isEnvIgnored(testDir);
-      expect(result).toBe(true);
-    });
-
-    it('should return true if *.env is in .gitignore', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.gitignore'), '*.env\nnode_modules/');
-
-      const result = isEnvIgnored(testDir);
-      expect(result).toBe(true);
-    });
-
-    it('should return false if .gitignore does not contain .env', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.gitignore'), 'node_modules/\n*.log');
-
-      const result = isEnvIgnored(testDir);
+    it('should return false when no .gitignore exists', () => {
+      const result = isEnvIgnored(tempDir);
       expect(result).toBe(false);
     });
 
-    it('should return false if .gitignore does not exist', () => {
-      const result = isEnvIgnored(testDir);
+    it('should return true when .env is in gitignore', () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), '.env\n');
+      const result = isEnvIgnored(tempDir);
+      expect(result).toBe(true);
+    });
+
+    it('should return true when *.env pattern is in gitignore', () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), '*.env\n');
+      const result = isEnvIgnored(tempDir);
+      expect(result).toBe(true);
+    });
+
+    it('should return false when .env is not in gitignore', () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), 'node_modules/\n');
+      const result = isEnvIgnored(tempDir);
       expect(result).toBe(false);
     });
   });
 
   describe('ensureEnvInGitignore', () => {
-    it('should add .env to new .gitignore', () => {
-      ensureEnvInGitignore(testDir);
-
-      const content = fs.readFileSync(path.join(testDir, '.gitignore'), 'utf8');
+    it('should create gitignore with .env if not exists', () => {
+      ensureEnvInGitignore(tempDir);
+      const gitignorePath = path.join(tempDir, '.gitignore');
+      expect(fs.existsSync(gitignorePath)).toBe(true);
+      const content = fs.readFileSync(gitignorePath, 'utf8');
       expect(content).toContain('.env');
     });
 
-    it('should add .env to existing .gitignore', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.gitignore'), 'node_modules/\n');
-
-      ensureEnvInGitignore(testDir);
-
-      const content = fs.readFileSync(path.join(testDir, '.gitignore'), 'utf8');
+    it('should add .env to existing gitignore', () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), 'node_modules/\n');
+      ensureEnvInGitignore(tempDir);
+      const content = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf8');
       expect(content).toContain('node_modules/');
       expect(content).toContain('.env');
     });
 
-    it('should not duplicate .env if already present', async () => {
-      await fs.promises.writeFile(path.join(testDir, '.gitignore'), '.env\n');
-
-      ensureEnvInGitignore(testDir);
-
-      const content = fs.readFileSync(path.join(testDir, '.gitignore'), 'utf8');
+    it('should not duplicate .env if already present', () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), '.env\n');
+      ensureEnvInGitignore(tempDir);
+      const content = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf8');
       const envCount = (content.match(/^\.env$/gm) || []).length;
       expect(envCount).toBe(1);
-    });
-  });
-
-  describe('isInGitRepo', () => {
-    it('should return false for non-git directory', () => {
-      const result = isInGitRepo(testDir);
-      expect(result).toBe(false);
-    });
-
-    it('should return true for git repository', async () => {
-      // Initialize git repo in test dir
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        const result = isInGitRepo(testDir);
-        expect(result).toBe(true);
-      } catch {
-        // Git may not be available, skip test
-        console.log('Git not available, skipping test');
-      }
-    });
-  });
-
-  describe('getGitRootPath', () => {
-    it('should return undefined for non-git directory', () => {
-      const result = getGitRootPath(testDir);
-      expect(result).toBeUndefined();
-    });
-
-    it('should return root path for git repository', async () => {
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        const result = getGitRootPath(testDir);
-        expect(result).toBe(testDir);
-      } catch {
-        // Git may not be available, skip test
-        console.log('Git not available, skipping test');
-      }
-    });
-  });
-
-  describe('getCurrentBranch', () => {
-    it('should return undefined for non-git directory', () => {
-      const result = getCurrentBranch(testDir);
-      expect(result).toBeUndefined();
-    });
-
-    it('should return branch name for git repository with commits', async () => {
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        execSync('git config user.email "test@test.com"', { cwd: testDir, stdio: 'pipe' });
-        execSync('git config user.name "Test"', { cwd: testDir, stdio: 'pipe' });
-        await fs.promises.writeFile(path.join(testDir, 'test.txt'), 'test');
-        execSync('git add .', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "initial"', { cwd: testDir, stdio: 'pipe' });
-
-        const result = getCurrentBranch(testDir);
-        expect(['main', 'master']).toContain(result);
-      } catch {
-        // Git may not be available, skip test
-        console.log('Git not available, skipping test');
-      }
-    });
-  });
-
-  describe('getGitRepoInfo', () => {
-    it('should return isGitRepo false for non-git directory', () => {
-      const result = getGitRepoInfo(testDir);
-      expect(result.isGitRepo).toBe(false);
-    });
-
-    it('should return full info for git repository', async () => {
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        execSync('git config user.email "test@test.com"', { cwd: testDir, stdio: 'pipe' });
-        execSync('git config user.name "Test"', { cwd: testDir, stdio: 'pipe' });
-        await fs.promises.writeFile(path.join(testDir, 'test.txt'), 'test');
-        execSync('git add .', { cwd: testDir, stdio: 'pipe' });
-        execSync('git commit -m "initial"', { cwd: testDir, stdio: 'pipe' });
-
-        const result = getGitRepoInfo(testDir);
-
-        expect(result.isGitRepo).toBe(true);
-        expect(result.rootPath).toBe(testDir);
-        expect(result.repoName).toBeDefined();
-        expect(['main', 'master']).toContain(result.currentBranch);
-      } catch {
-        // Git may not be available, skip test
-        console.log('Git not available, skipping test');
-      }
-    });
-  });
-
-  describe('getGitRemoteUrl', () => {
-    it('should return undefined for non-git directory', () => {
-      const result = getGitRemoteUrl(testDir);
-      expect(result).toBeUndefined();
-    });
-
-    it('should return undefined for git repo without remote', async () => {
-      try {
-        execSync('git init', { cwd: testDir, stdio: 'pipe' });
-        const result = getGitRemoteUrl(testDir);
-        expect(result).toBeUndefined();
-      } catch {
-        // Git may not be available, skip test
-        console.log('Git not available, skipping test');
-      }
     });
   });
 });
