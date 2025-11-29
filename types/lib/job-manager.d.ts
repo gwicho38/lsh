@@ -105,7 +105,14 @@ export declare class JobManager extends BaseJobManager {
     /**
      * Get job statistics
      */
-    getJobStats(): any;
+    getJobStats(): {
+        total: number;
+        byStatus: Record<string, number>;
+        byType: Record<string, number>;
+        running: number;
+        completed: number;
+        failed: number;
+    };
     /**
      * Clean up old jobs
      */

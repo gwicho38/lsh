@@ -166,15 +166,18 @@ export class LSHJobDaemon extends EventEmitter {
     try {
       await fs.promises.unlink(this.config.pidFile);
     } catch (_error) {
-      // Ignore if file doesn\'t exist
+      // Ignore if file doesn't exist
     }
 
-    // Close log stream
+    // Log before closing stream
+    this.log('INFO', 'Daemon stopped');
+
+    // Close log stream AFTER logging
     if (this.logStream) {
       this.logStream.end();
+      this.logStream = undefined;
     }
 
-    this.log('INFO', 'Daemon stopped');
     this.emit('stopped');
   }
 
@@ -857,8 +860,23 @@ export class LSHJobDaemon extends EventEmitter {
 // Module-level logger for CLI operations
 const cliLogger = createLogger('LSHDaemonCLI');
 
+// Helper to check if this module is run directly (ESM-compatible)
+// Uses indirect eval to avoid parse-time errors in CommonJS/Jest environments
+const isMainModule = (): boolean => {
+  try {
+    // Use Function constructor to avoid parse-time errors with import.meta
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+    const getImportMetaUrl = new Function('return import.meta.url');
+    const metaUrl = getImportMetaUrl();
+    return metaUrl === `file://${process.argv[1]}`;
+  } catch {
+    // Fallback for CommonJS or environments that don't support import.meta
+    return false;
+  }
+};
+
 // CLI interface for the daemon
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule()) {
   const command = process.argv[2];
   const subCommand = process.argv[3];
   const _args = process.argv.slice(4);
