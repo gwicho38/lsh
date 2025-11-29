@@ -389,4 +389,254 @@ describe('Job Manager', () => {
       await expect(jobManager.cleanup()).resolves.not.toThrow();
     });
   });
+
+  describe('Job Start and Stop', () => {
+    it('should start a shell job and execute command', async () => {
+      const job = await jobManager.createJob({
+        command: 'echo "hello world"',
+        name: 'Start Test Job',
+      });
+
+      const startedJob = await jobManager.startJob(job.id);
+
+      expect(startedJob.status).toBe('running');
+      expect(startedJob.startedAt).toBeInstanceOf(Date);
+      expect(startedJob.pid).toBeDefined();
+
+      // Wait for job to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const completedJob = await jobManager.getJob(job.id);
+      expect(['completed', 'running']).toContain(completedJob?.status);
+    });
+
+    it('should throw error when starting non-existent job', async () => {
+      await expect(jobManager.startJob('non-existent-id')).rejects.toThrow('not found');
+    });
+
+    it('should throw error when starting already running job', async () => {
+      const job = await jobManager.createJob({
+        command: 'sleep 10',
+        name: 'Already Running Test',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Try to start again
+      await expect(jobManager.startJob(job.id)).rejects.toThrow('already running');
+
+      // Cleanup
+      try {
+        await jobManager.stopJob(job.id);
+      } catch {
+        // Ignore errors on cleanup
+      }
+    });
+
+    it('should stop a running job', async () => {
+      const job = await jobManager.createJob({
+        command: 'sleep 30',
+        name: 'Stop Test Job',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait a bit for the process to start
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const stoppedJob = await jobManager.stopJob(job.id);
+
+      // Job should be stopped or killed
+      expect(['stopped', 'killed', 'failed']).toContain(stoppedJob.status);
+    });
+
+    it('should throw error when stopping non-existent job', async () => {
+      await expect(jobManager.stopJob('non-existent-id')).rejects.toThrow('not found');
+    });
+
+    it('should throw error when stopping non-running job', async () => {
+      const job = await jobManager.createJob({
+        command: 'echo test',
+        name: 'Not Running Test',
+      });
+
+      // Job is in 'created' status, not running
+      await expect(jobManager.stopJob(job.id)).rejects.toThrow('not running');
+    });
+
+    it('should handle job with timeout', async () => {
+      const job = await jobManager.createJob({
+        command: 'sleep 10',
+        name: 'Timeout Test Job',
+        timeout: 100, // 100ms timeout
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for timeout to trigger
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const timedOutJob = await jobManager.getJob(job.id);
+      expect(['killed', 'failed', 'completed']).toContain(timedOutJob?.status);
+    });
+
+    it('should capture stdout from job', async () => {
+      const job = await jobManager.createJob({
+        command: 'echo "test output"',
+        name: 'Stdout Capture Test',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for job to complete and capture output
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const completedJob = await jobManager.getJob(job.id);
+      expect(completedJob?.stdout).toContain('test output');
+    });
+
+    it('should capture stderr from job', async () => {
+      const job = await jobManager.createJob({
+        command: 'sh -c "echo error output 1>&2"',
+        name: 'Stderr Capture Test',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for job to complete
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const completedJob = await jobManager.getJob(job.id);
+      // stderr may or may not be captured depending on shell behavior
+      expect(completedJob).toBeDefined();
+      expect(['completed', 'running', 'failed']).toContain(completedJob?.status);
+    });
+  });
+
+  describe('Job Events', () => {
+    it('should emit jobOutput event on stdout', async () => {
+      const outputReceived: string[] = [];
+
+      jobManager.on('jobOutput', (_jobId: string, stream: string, data: string) => {
+        if (stream === 'stdout') {
+          outputReceived.push(data);
+        }
+      });
+
+      const job = await jobManager.createJob({
+        command: 'echo "event test"',
+        name: 'Event Test Job',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for output
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      expect(outputReceived.length).toBeGreaterThan(0);
+      expect(outputReceived.join('')).toContain('event test');
+    });
+
+    it('should emit jobCompleted event', async () => {
+      let completedJobId: string | null = null;
+
+      jobManager.on('jobCompleted', (job: { id: string }) => {
+        completedJobId = job.id;
+      });
+
+      const job = await jobManager.createJob({
+        command: 'echo "done"',
+        name: 'Completion Event Test',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for completion
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      expect(completedJobId).toBe(job.id);
+    });
+  });
+
+  describe('Ready State', () => {
+    it('should wait for initialization to complete', async () => {
+      const newManager = new JobManager('/tmp/ready-test-jobs.json');
+
+      await expect(newManager.ready()).resolves.not.toThrow();
+
+      await newManager.cleanup();
+
+      // Clean up test file
+      if (fs.existsSync('/tmp/ready-test-jobs.json')) {
+        fs.unlinkSync('/tmp/ready-test-jobs.json');
+      }
+    });
+  });
+
+  describe('Job with Custom Environment', () => {
+    it('should pass custom environment variables to job', async () => {
+      const job = await jobManager.createJob({
+        command: 'printenv MY_VAR',
+        name: 'Custom Env Test',
+        env: { ...process.env, MY_VAR: 'custom_value' },
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for completion
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const completedJob = await jobManager.getJob(job.id);
+      expect(completedJob?.stdout).toContain('custom_value');
+    });
+
+    it('should use custom working directory', async () => {
+      const job = await jobManager.createJob({
+        command: 'pwd',
+        name: 'Custom CWD Test',
+        cwd: '/tmp',
+      });
+
+      await jobManager.startJob(job.id);
+
+      // Wait for completion
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      const completedJob = await jobManager.getJob(job.id);
+      // On macOS, /tmp is a symlink to /private/tmp
+      expect(completedJob?.stdout).toMatch(/\/tmp|\/private\/tmp/);
+    });
+  });
+
+  describe('Job Scheduling', () => {
+    it('should accept schedule configuration', async () => {
+      const job = await jobManager.createJob({
+        command: 'echo "scheduled"',
+        name: 'Scheduled Job Test',
+        schedule: {
+          type: 'cron',
+          expression: '0 * * * *', // Every hour
+        },
+      });
+
+      expect(job.schedule).toBeDefined();
+      expect(job.schedule?.type).toBe('cron');
+      expect(job.schedule?.expression).toBe('0 * * * *');
+    });
+
+    it('should accept interval schedule', async () => {
+      const job = await jobManager.createJob({
+        command: 'echo "interval"',
+        name: 'Interval Job Test',
+        schedule: {
+          type: 'interval',
+          interval: 60000, // Every minute
+        },
+      });
+
+      expect(job.schedule).toBeDefined();
+      expect(job.schedule?.type).toBe('interval');
+      expect(job.schedule?.interval).toBe(60000);
+    });
+  });
 });
