@@ -25,7 +25,7 @@ export declare class OrganizationService {
      */
     updateOrganization(id: string, updates: {
         name?: string;
-        settings?: Record<string, any>;
+        settings?: Record<string, unknown>;
     }): Promise<Organization>;
     /**
      * Delete organization (soft delete)

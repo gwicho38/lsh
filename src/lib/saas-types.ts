@@ -625,7 +625,7 @@ export interface ApiResponse<T> {
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: Record<string, unknown> | string;
   };
 }
 
@@ -682,3 +682,94 @@ export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclu
   {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
   }[Keys];
+
+// ============================================================================
+// EXPRESS REQUEST EXTENSIONS
+// ============================================================================
+
+import { Request } from 'express';
+
+/**
+ * Extended Express Request with authenticated user context
+ */
+export interface AuthenticatedRequest extends Request {
+  user?: User;
+  organizationId?: string;
+  organization?: Organization;
+  membership?: OrganizationMember;
+}
+
+/**
+ * Error type for catch blocks - prefer unknown for safety
+ */
+export interface AppError extends Error {
+  code?: string;
+  statusCode?: number;
+  details?: Record<string, unknown>;
+}
+
+/**
+ * Helper to safely extract error message
+ */
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  if (typeof error === 'string') {
+    return error;
+  }
+  return 'Unknown error occurred';
+}
+
+/**
+ * Helper to safely extract error for logging
+ */
+export function getErrorDetails(error: unknown): { message: string; stack?: string; code?: string } {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      stack: error.stack,
+      code: (error as AppError).code,
+    };
+  }
+  return { message: String(error) };
+}
+
+/**
+ * Helper to get authenticated user from request.
+ * Use after authenticateUser middleware - throws if user not present.
+ */
+export function getAuthenticatedUser(req: AuthenticatedRequest): User {
+  if (!req.user) {
+    throw new Error('User not authenticated');
+  }
+  return req.user;
+}
+
+/**
+ * Create a standardized API error response
+ */
+export function createErrorResponse(
+  code: ErrorCode,
+  message: string,
+  details?: Record<string, unknown> | string
+): ApiResponse<never> {
+  return {
+    success: false,
+    error: {
+      code,
+      message,
+      details,
+    },
+  };
+}
+
+/**
+ * Create a standardized API success response
+ */
+export function createSuccessResponse<T>(data: T): ApiResponse<T> {
+  return {
+    success: true,
+    data,
+  };
+}

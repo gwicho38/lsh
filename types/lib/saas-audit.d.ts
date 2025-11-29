@@ -2,6 +2,7 @@
  * LSH SaaS Audit Logging Service
  * Comprehensive audit trail for all actions
  */
+import type { Request } from 'express';
 import type { AuditLog, CreateAuditLogInput, AuditAction, ResourceType } from './saas-types.js';
 /**
  * Audit Logger Service
@@ -71,8 +72,8 @@ export declare const auditLogger: AuditLogger;
 /**
  * Helper function to extract IP from request
  */
-export declare function getIpFromRequest(req: any): string | undefined;
+export declare function getIpFromRequest(req: Request): string | undefined;
 /**
  * Helper function to extract user agent from request
  */
-export declare function getUserAgentFromRequest(req: any): string | undefined;
+export declare function getUserAgentFromRequest(req: Request): string | undefined;

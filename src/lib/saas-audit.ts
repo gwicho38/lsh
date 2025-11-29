@@ -3,6 +3,7 @@
  * Comprehensive audit trail for all actions
  */
 
+import type { Request } from 'express';
 import type { AuditLog, CreateAuditLogInput, AuditAction, ResourceType } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 
@@ -247,6 +248,7 @@ export class AuditLogger {
   /**
    * Map database log to AuditLog type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbLogToLog(dbLog: any): AuditLog {
     return {
       id: dbLog.id,
@@ -275,11 +277,13 @@ export const auditLogger = new AuditLogger();
 /**
  * Helper function to extract IP from request
  */
-export function getIpFromRequest(req: any): string | undefined {
+export function getIpFromRequest(req: Request): string | undefined {
+  const forwarded = req.headers['x-forwarded-for'];
+  const forwardedIp = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : undefined;
+  const realIp = req.headers['x-real-ip'];
   return (
-    req.headers['x-forwarded-for']?.split(',')[0].trim() ||
-    req.headers['x-real-ip'] ||
-    req.connection?.remoteAddress ||
+    forwardedIp ||
+    (typeof realIp === 'string' ? realIp : undefined) ||
     req.socket?.remoteAddress
   );
 }
@@ -287,6 +291,6 @@ export function getIpFromRequest(req: any): string | undefined {
 /**
  * Helper function to extract user agent from request
  */
-export function getUserAgentFromRequest(req: any): string | undefined {
+export function getUserAgentFromRequest(req: Request): string | undefined {
   return req.headers['user-agent'];
 }

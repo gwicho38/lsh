@@ -47,9 +47,6 @@ export default {
       '__tests__/setup.ts',                 // Setup file, not a test suite
       '__tests__/integration/storacha-multihost-sync.test.ts', // Requires Storacha network access (disabled in tests)
       '__tests__/multihost-key-isolation.test.ts', // Requires shared storage (Supabase/cloud) - tests use separate git repos with different metadata keys
-      '__tests__/daemon.test.ts',           // TODO: Rewrite tests to match actual LSHJobDaemon API
-      '__tests__/api-server.test.ts',       // TODO: Update mocks to match JobSpec interface
-      '__tests__/pipeline-service.test.ts', // TODO: Fix after reviewing failures
       '__tests__/helpers/',                 // Helper files, not test suites
       '__tests__/fixtures/',                // Fixture files, not test suites
       '__tests__/mocks/',                   // Mock files, not test suites
