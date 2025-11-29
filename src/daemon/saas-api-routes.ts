@@ -3,7 +3,7 @@
  * RESTful API endpoints for the SaaS platform
  */
 
-import type { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction, Application } from 'express';
 import rateLimit from 'express-rate-limit';
 import { authService, verifyToken } from '../lib/saas-auth.js';
 import { organizationService, teamService } from '../lib/saas-organizations.js';
@@ -11,7 +11,8 @@ import { billingService } from '../lib/saas-billing.js';
 import { auditLogger, getIpFromRequest } from '../lib/saas-audit.js';
 import { emailService } from '../lib/saas-email.js';
 import { secretsService } from '../lib/saas-secrets.js';
-// ApiResponse type reserved for future use
+import type { AuthenticatedRequest } from '../lib/saas-types.js';
+import { getErrorMessage, getAuthenticatedUser } from '../lib/saas-types.js'; // eslint-disable-line no-duplicate-imports
 
 /**
  * Rate Limiters for different endpoint types
@@ -51,7 +52,7 @@ const writeLimiter = rateLimit({
  * Security is enforced by cryptographic JWT verification and database lookup,
  * not by input validation alone.
  */
-export async function authenticateUser(req: any, res: Response, next: NextFunction) {
+export async function authenticateUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
 
@@ -88,12 +89,12 @@ export async function authenticateUser(req: any, res: Response, next: NextFuncti
     // Attach user to request
     req.user = user;
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res.status(401).json({
       success: false,
       error: {
         code: 'UNAUTHORIZED',
-        message: error.message || 'Authentication failed',
+        message: getErrorMessage(error) || 'Authentication failed',
       },
     });
   }
@@ -102,7 +103,7 @@ export async function authenticateUser(req: any, res: Response, next: NextFuncti
 /**
  * Middleware: Check organization membership
  */
-export async function requireOrganizationMembership(req: any, res: Response, next: NextFunction) {
+export async function requireOrganizationMembership(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     // Only use organizationId from URL params to prevent bypass attacks
     const organizationId = req.params.organizationId;
@@ -113,7 +114,14 @@ export async function requireOrganizationMembership(req: any, res: Response, nex
       });
     }
 
-    const role = await organizationService.getUserRole(organizationId, req.user.id);
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
+      });
+    }
+
+    const role = await organizationService.getUserRole(organizationId, getAuthenticatedUser(req).id);
     if (!role) {
       return res.status(403).json({
         success: false,
@@ -121,12 +129,12 @@ export async function requireOrganizationMembership(req: any, res: Response, nex
       });
     }
 
-    req.organizationRole = role;
+    req.organizationId = organizationId;
     next();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return res.status(500).json({
       success: false,
-      error: { code: 'INTERNAL_ERROR', message: error.message },
+      error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
     });
   }
 }
@@ -134,7 +142,7 @@ export async function requireOrganizationMembership(req: any, res: Response, nex
 /**
  * Setup SaaS API routes
  */
-export function setupSaaSApiRoutes(app: any) {
+export function setupSaaSApiRoutes(app: Application) {
   // ============================================================================
   // AUTH ROUTES
   // ============================================================================
@@ -198,10 +206,10 @@ export function setupSaaSApiRoutes(app: any) {
           message: 'Verification email sent',
         },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.status(400).json({
         success: false,
-        error: { code: error.message.includes('ALREADY_EXISTS') ? 'EMAIL_ALREADY_EXISTS' : 'INTERNAL_ERROR', message: error.message },
+        error: { code: getErrorMessage(error).includes('ALREADY_EXISTS') ? 'EMAIL_ALREADY_EXISTS' : 'INTERNAL_ERROR', message: getErrorMessage(error) },
       });
     }
   });
@@ -235,11 +243,11 @@ export function setupSaaSApiRoutes(app: any) {
         success: true,
         data: session,
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('EMAIL_NOT_VERIFIED') ? 403 : 401;
+    } catch (error: unknown) {
+      const statusCode = getErrorMessage(error).includes('EMAIL_NOT_VERIFIED') ? 403 : 401;
       res.status(statusCode).json({
         success: false,
-        error: { code: error.message || 'INVALID_CREDENTIALS', message: error.message },
+        error: { code: getErrorMessage(error) || 'INVALID_CREDENTIALS', message: getErrorMessage(error) },
       });
     }
   });
@@ -274,10 +282,10 @@ export function setupSaaSApiRoutes(app: any) {
         success: true,
         data: { user, message: 'Email verified successfully' },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.status(400).json({
         success: false,
-        error: { code: 'INVALID_TOKEN', message: error.message },
+        error: { code: 'INVALID_TOKEN', message: getErrorMessage(error) },
       });
     }
   });
@@ -301,10 +309,10 @@ export function setupSaaSApiRoutes(app: any) {
         success: true,
         data: { message: 'Verification email sent' },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.status(400).json({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: error.message },
+        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
       });
     }
   });
@@ -330,10 +338,10 @@ export function setupSaaSApiRoutes(app: any) {
         success: true,
         data: tokens,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.status(401).json({
         success: false,
-        error: { code: 'INVALID_TOKEN', message: error.message },
+        error: { code: 'INVALID_TOKEN', message: getErrorMessage(error) },
       });
     }
   });
@@ -342,7 +350,7 @@ export function setupSaaSApiRoutes(app: any) {
    * GET /api/v1/auth/me
    * Get current user
    */
-  app.get('/api/v1/auth/me', authenticateUser, async (req: any, res: Response) => {
+  app.get('/api/v1/auth/me', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     res.json({
       success: true,
       data: { user: req.user },
@@ -357,7 +365,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/organizations
    * Create a new organization
    */
-  app.post('/api/v1/organizations', writeLimiter, authenticateUser, async (req: any, res: Response) => {
+  app.post('/api/v1/organizations', writeLimiter, authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { name, slug } = req.body;
 
@@ -371,17 +379,17 @@ export function setupSaaSApiRoutes(app: any) {
       const organization = await organizationService.createOrganization({
         name,
         slug,
-        ownerId: req.user.id,
+        ownerId: getAuthenticatedUser(req).id,
       });
 
       res.json({
         success: true,
         data: { organization },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.status(400).json({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: error.message },
+        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
       });
     }
   });
@@ -394,7 +402,7 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/organizations/:organizationId',
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const organization = await organizationService.getOrganizationById(
           req.params.organizationId
@@ -414,10 +422,10 @@ export function setupSaaSApiRoutes(app: any) {
           success: true,
           data: { organization, usage },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -431,7 +439,7 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/organizations/:organizationId/members',
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const members = await organizationService.getOrganizationMembers(
           req.params.organizationId
@@ -441,10 +449,10 @@ export function setupSaaSApiRoutes(app: any) {
           success: true,
           data: { members },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -459,12 +467,12 @@ export function setupSaaSApiRoutes(app: any) {
     writeLimiter,
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         // Check permission
         const canInvite = await organizationService.hasPermission(
           req.params.organizationId,
-          req.user.id,
+          getAuthenticatedUser(req).id,
           'canInviteMembers'
         );
 
@@ -481,17 +489,17 @@ export function setupSaaSApiRoutes(app: any) {
           organizationId: req.params.organizationId,
           userId,
           role: role || 'member',
-          invitedBy: req.user.id,
+          invitedBy: getAuthenticatedUser(req).id,
         });
 
         res.json({
           success: true,
           data: { member },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(400).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -510,7 +518,7 @@ export function setupSaaSApiRoutes(app: any) {
     writeLimiter,
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const { name, slug, description } = req.body;
 
@@ -528,17 +536,17 @@ export function setupSaaSApiRoutes(app: any) {
             slug,
             description,
           },
-          req.user.id
+          getAuthenticatedUser(req).id
         );
 
         res.json({
           success: true,
           data: { team },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(400).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -552,7 +560,7 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/organizations/:organizationId/teams',
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const teams = await teamService.getOrganizationTeams(req.params.organizationId);
 
@@ -560,10 +568,10 @@ export function setupSaaSApiRoutes(app: any) {
           success: true,
           data: { teams },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -577,7 +585,7 @@ export function setupSaaSApiRoutes(app: any) {
    * POST /api/v1/teams/:teamId/secrets
    * Create a new secret
    */
-  app.post('/api/v1/teams/:teamId/secrets', writeLimiter, authenticateUser, async (req: any, res: Response) => {
+  app.post('/api/v1/teams/:teamId/secrets', writeLimiter, authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { environment, key, value, description, tags, rotationIntervalDays } = req.body;
 
@@ -596,18 +604,18 @@ export function setupSaaSApiRoutes(app: any) {
         description,
         tags,
         rotationIntervalDays,
-        createdBy: req.user.id,
+        createdBy: getAuthenticatedUser(req).id,
       });
 
       res.json({
         success: true,
         data: { secret: { ...secret, encryptedValue: '***REDACTED***' } },
       });
-    } catch (error: any) {
-      const statusCode = error.message.includes('TIER_LIMIT_EXCEEDED') ? 402 : 400;
+    } catch (error: unknown) {
+      const statusCode = getErrorMessage(error).includes('TIER_LIMIT_EXCEEDED') ? 402 : 400;
       res.status(statusCode).json({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: error.message },
+        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
       });
     }
   });
@@ -616,7 +624,7 @@ export function setupSaaSApiRoutes(app: any) {
    * GET /api/v1/teams/:teamId/secrets
    * Get team secrets
    */
-  app.get('/api/v1/teams/:teamId/secrets', authenticateUser, async (req: any, res: Response) => {
+  app.get('/api/v1/teams/:teamId/secrets', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { environment, decrypt } = req.query;
 
@@ -636,10 +644,10 @@ export function setupSaaSApiRoutes(app: any) {
         success: true,
         data: { secrets: maskedSecrets },
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       res.status(500).json({
         success: false,
-        error: { code: 'INTERNAL_ERROR', message: error.message },
+        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
       });
     }
   });
@@ -652,7 +660,7 @@ export function setupSaaSApiRoutes(app: any) {
   app.post(
     '/api/v1/teams/:teamId/secrets/:secretId/retrieve',
     authenticateUser,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         // Use POST body for decrypt flag to prevent exposure in logs/URLs
         const decrypt = req.body?.decrypt === true;
@@ -678,10 +686,10 @@ export function setupSaaSApiRoutes(app: any) {
             },
           },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -695,7 +703,7 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/teams/:teamId/secrets/:secretId',
     writeLimiter,
     authenticateUser,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const { value, description, tags, rotationIntervalDays } = req.body;
 
@@ -704,17 +712,17 @@ export function setupSaaSApiRoutes(app: any) {
           description,
           tags,
           rotationIntervalDays,
-          updatedBy: req.user.id,
+          updatedBy: getAuthenticatedUser(req).id,
         });
 
         res.json({
           success: true,
           data: { secret: { ...secret, encryptedValue: '***REDACTED***' } },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(400).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -728,18 +736,18 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/teams/:teamId/secrets/:secretId',
     writeLimiter,
     authenticateUser,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
-        await secretsService.deleteSecret(req.params.secretId, req.user.id);
+        await secretsService.deleteSecret(req.params.secretId, getAuthenticatedUser(req).id);
 
         res.json({
           success: true,
           data: { message: 'Secret deleted successfully' },
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(400).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -752,7 +760,7 @@ export function setupSaaSApiRoutes(app: any) {
   app.get(
     '/api/v1/teams/:teamId/secrets/export/env',
     authenticateUser,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const { environment } = req.query;
 
@@ -774,10 +782,10 @@ export function setupSaaSApiRoutes(app: any) {
           `attachment; filename="${environment}.env"`
         );
         res.send(envContent);
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -791,7 +799,7 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/teams/:teamId/secrets/import/env',
     writeLimiter,
     authenticateUser,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         const { environment, content } = req.body;
 
@@ -806,17 +814,17 @@ export function setupSaaSApiRoutes(app: any) {
           req.params.teamId,
           environment,
           content,
-          req.user.id
+          getAuthenticatedUser(req).id
         );
 
         res.json({
           success: true,
           data: result,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(400).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -834,12 +842,12 @@ export function setupSaaSApiRoutes(app: any) {
     '/api/v1/organizations/:organizationId/audit-logs',
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         // Check permission
         const canView = await organizationService.hasPermission(
           req.params.organizationId,
-          req.user.id,
+          getAuthenticatedUser(req).id,
           'canViewAuditLogs'
         );
 
@@ -866,10 +874,10 @@ export function setupSaaSApiRoutes(app: any) {
           success: true,
           data: result,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -888,12 +896,12 @@ export function setupSaaSApiRoutes(app: any) {
     writeLimiter,
     authenticateUser,
     requireOrganizationMembership,
-    async (req: any, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
       try {
         // Check permission
         const canManage = await organizationService.hasPermission(
           req.params.organizationId,
-          req.user.id,
+          getAuthenticatedUser(req).id,
           'canManageBilling'
         );
 
@@ -927,10 +935,10 @@ export function setupSaaSApiRoutes(app: any) {
           success: true,
           data: checkout,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         res.status(400).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: error.message },
+          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
         });
       }
     }
@@ -948,9 +956,9 @@ export function setupSaaSApiRoutes(app: any) {
       await billingService.handleWebhook(payload, signature);
 
       res.json({ received: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Webhook error:', error);
-      res.status(400).json({ error: error.message });
+      res.status(400).json({ error: getErrorMessage(error) });
     }
   });
 

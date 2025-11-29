@@ -3,10 +3,12 @@
  * Express-based RESTful API for the SaaS platform
  */
 
-import express, { type Express } from 'express';
+import express, { type Express, type ErrorRequestHandler } from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { setupSaaSApiRoutes } from './saas-api-routes.js';
+import type { Server } from 'http';
+import { getErrorMessage } from '../lib/saas-types.js';
 
 export interface SaaSApiServerConfig {
   port: number;
@@ -22,7 +24,7 @@ export interface SaaSApiServerConfig {
 export class SaaSApiServer {
   private app: Express;
   private config: SaaSApiServerConfig;
-  private server: any;
+  private server: Server | undefined;
 
   constructor(config?: Partial<SaaSApiServerConfig>) {
     this.config = {
@@ -154,21 +156,24 @@ export class SaaSApiServer {
    */
   private setupErrorHandlers() {
     // Global error handler
-    this.app.use((err: any, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
       console.error('API Error:', err);
 
       // Don't leak error details in production
       const isDev = process.env.NODE_ENV !== 'production';
+      const statusCode = (err as { status?: number }).status || 500;
+      const errorCode = (err as { code?: string }).code || 'INTERNAL_ERROR';
 
-      res.status(err.status || 500).json({
+      res.status(statusCode).json({
         success: false,
         error: {
-          code: err.code || 'INTERNAL_ERROR',
-          message: isDev ? err.message : 'Internal server error',
-          details: isDev ? err.stack : undefined,
+          code: errorCode,
+          message: isDev ? getErrorMessage(err) : 'Internal server error',
+          details: isDev ? (err as Error).stack : undefined,
         },
       });
-    });
+    };
+    this.app.use(errorHandler);
   }
 
   /**
@@ -196,7 +201,7 @@ export class SaaSApiServer {
           resolve();
         });
 
-        this.server.on('error', (error: any) => {
+        this.server.on('error', (error: NodeJS.ErrnoException) => {
           if (error.code === 'EADDRINUSE') {
             reject(new Error(`Port ${this.config.port} is already in use`));
           } else {
@@ -219,7 +224,7 @@ export class SaaSApiServer {
         return;
       }
 
-      this.server.close((err: any) => {
+      this.server.close((err?: Error) => {
         if (err) {
           reject(err);
         } else {

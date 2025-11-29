@@ -3,11 +3,12 @@
  * Multi-tenant secrets with per-team encryption
  */
 
-import type {
-  Secret,
-  CreateSecretInput,
-  UpdateSecretInput,
-  SecretSummary,
+import {
+  getErrorMessage,
+  type Secret,
+  type CreateSecretInput,
+  type UpdateSecretInput,
+  type SecretSummary,
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { encryptionService } from './saas-encryption.js';
@@ -169,7 +170,14 @@ export class SecretsService {
       throw new Error('Secret not found');
     }
 
-    const updateData: any = {
+    const updateData: {
+      updated_by: string;
+      updated_at: string;
+      encrypted_value?: string;
+      description?: string;
+      tags?: string;
+      rotation_interval_days?: number;
+    } = {
       updated_by: input.updatedBy,
       updated_at: new Date().toISOString(),
     };
@@ -275,6 +283,7 @@ export class SecretsService {
       throw new Error(`Failed to get secrets summary: ${error.message}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row from view
     return (data || []).map((row: any) => ({
       teamId: row.team_id,
       teamName: row.team_name,
@@ -389,8 +398,8 @@ export class SecretsService {
           });
           created++;
         }
-      } catch (error: any) {
-        errors.push(`${secret.key}: ${error.message}`);
+      } catch (error: unknown) {
+        errors.push(`${secret.key}: ${getErrorMessage(error)}`);
       }
     }
 
@@ -437,6 +446,7 @@ export class SecretsService {
   /**
    * Map database secret to Secret type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbSecretToSecret(dbSecret: any): Secret {
     return {
       id: dbSecret.id,

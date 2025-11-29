@@ -349,7 +349,7 @@ export interface ApiResponse<T> {
     error?: {
         code: string;
         message: string;
-        details?: any;
+        details?: Record<string, unknown> | string;
     };
 }
 export interface PaginatedResponse<T> {
@@ -384,3 +384,46 @@ export type DeepPartial<T> = {
 export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> & {
     [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
 }[Keys];
+import { Request } from 'express';
+/**
+ * Extended Express Request with authenticated user context
+ */
+export interface AuthenticatedRequest extends Request {
+    user?: User;
+    organizationId?: string;
+    organization?: Organization;
+    membership?: OrganizationMember;
+}
+/**
+ * Error type for catch blocks - prefer unknown for safety
+ */
+export interface AppError extends Error {
+    code?: string;
+    statusCode?: number;
+    details?: Record<string, unknown>;
+}
+/**
+ * Helper to safely extract error message
+ */
+export declare function getErrorMessage(error: unknown): string;
+/**
+ * Helper to safely extract error for logging
+ */
+export declare function getErrorDetails(error: unknown): {
+    message: string;
+    stack?: string;
+    code?: string;
+};
+/**
+ * Helper to get authenticated user from request.
+ * Use after authenticateUser middleware - throws if user not present.
+ */
+export declare function getAuthenticatedUser(req: AuthenticatedRequest): User;
+/**
+ * Create a standardized API error response
+ */
+export declare function createErrorResponse(code: ErrorCode, message: string, details?: Record<string, unknown> | string): ApiResponse<never>;
+/**
+ * Create a standardized API success response
+ */
+export declare function createSuccessResponse<T>(data: T): ApiResponse<T>;

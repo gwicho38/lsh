@@ -204,6 +204,7 @@ export class BillingService {
   /**
    * Verify webhook signature
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe event structure
   private verifyWebhookSignature(payload: string, _signature: string): any {
     // In production, use Stripe's webhook signature verification
     // For now, just parse the payload
@@ -217,6 +218,7 @@ export class BillingService {
   /**
    * Handle checkout completed
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe checkout session object
   private async handleCheckoutCompleted(session: any): Promise<void> {
     const organizationId = session.metadata?.organization_id;
     if (!organizationId) {
@@ -231,6 +233,7 @@ export class BillingService {
   /**
    * Handle subscription updated
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe subscription object
   private async handleSubscriptionUpdated(subscription: any): Promise<void> {
     const organizationId = subscription.metadata?.organization_id;
     if (!organizationId) {
@@ -293,6 +296,7 @@ export class BillingService {
   /**
    * Handle subscription deleted
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe subscription object
   private async handleSubscriptionDeleted(subscription: any): Promise<void> {
     const organizationId = subscription.metadata?.organization_id;
     if (!organizationId) {
@@ -329,6 +333,7 @@ export class BillingService {
   /**
    * Handle invoice paid
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe invoice object
   private async handleInvoicePaid(invoice: any): Promise<void> {
     const organizationId = invoice.subscription_metadata?.organization_id;
     if (!organizationId) {
@@ -356,6 +361,7 @@ export class BillingService {
   /**
    * Handle invoice payment failed
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe invoice object
   private async handleInvoicePaymentFailed(invoice: any): Promise<void> {
     const organizationId = invoice.subscription_metadata?.organization_id;
     if (!organizationId) {
@@ -436,6 +442,7 @@ export class BillingService {
   /**
    * Map database subscription to Subscription type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbSubscriptionToSubscription(dbSub: any): Subscription {
     return {
       id: dbSub.id,
@@ -461,6 +468,7 @@ export class BillingService {
   /**
    * Map database invoice to Invoice type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbInvoiceToInvoice(dbInvoice: any): Invoice {
     return {
       id: dbInvoice.id,

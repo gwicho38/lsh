@@ -246,6 +246,7 @@ export class EncryptionService {
   /**
    * Map database key to EncryptionKey type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbKeyToKey(dbKey: any): EncryptionKey {
     return {
       id: dbKey.id,
