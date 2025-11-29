@@ -3,7 +3,7 @@
  * Provides database connectivity for LSH features
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
 
 // Supabase configuration from environment variables
 // IMPORTANT: These must be set in .env or environment
@@ -16,8 +16,7 @@ export interface SupabaseConfig {
 }
 
 export class SupabaseClient {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private client: any;
+  private client: SupabaseClientType;
   private config: SupabaseConfig;
 
   constructor(config?: Partial<SupabaseConfig>) {
@@ -52,11 +51,11 @@ export class SupabaseClient {
    */
   public async testConnection(): Promise<boolean> {
     try {
-      const { _data, error } = await this.client
+      const { error } = await this.client
         .from('shell_history')
         .select('count')
         .limit(1);
-      
+
       return !error;
     } catch (error) {
       console.error('Supabase connection test failed:', error);

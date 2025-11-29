@@ -2,7 +2,7 @@
  * LSH SaaS Secrets Management Service
  * Multi-tenant secrets with per-team encryption
  */
-import type { Secret, CreateSecretInput, UpdateSecretInput, SecretSummary } from './saas-types.js';
+import { type Secret, type CreateSecretInput, type UpdateSecretInput, type SecretSummary } from './saas-types.js';
 /**
  * Secrets Service
  */

@@ -205,6 +205,8 @@ export class CronJobManager extends BaseJobManager {
    */
   public async getJobReport(jobId: string): Promise<JobExecutionReport> {
     // Try to get historical data from database if available, otherwise use current job info
+    // Using any[] because getJobHistory returns ShellJob (snake_case properties)
+    // but getJob returns JobSpec (camelCase properties), and this code handles both
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let jobs: any[] = [];
 

@@ -384,8 +384,14 @@ export class JobManager extends BaseJobManager {
   /**
    * Get job statistics
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getJobStats(): any {
+  getJobStats(): {
+    total: number;
+    byStatus: Record<string, number>;
+    byType: Record<string, number>;
+    running: number;
+    completed: number;
+    failed: number;
+  } {
     const jobs = Array.from(this.jobs.values()) as JobSpec[];
     const stats = {
       total: jobs.length,

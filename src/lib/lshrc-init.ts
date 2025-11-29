@@ -100,8 +100,7 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
   /**
    * Source .lshrc commands
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  public async source(_executor?: any): Promise<string[]> {
+  public async source(_executor?: unknown): Promise<string[]> {
     if (!this.exists()) {
       return [];
     }

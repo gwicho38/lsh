@@ -2,6 +2,7 @@
  * Supabase Client Configuration
  * Provides database connectivity for LSH features
  */
+import { SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
 export interface SupabaseConfig {
     url: string;
     anonKey: string;
@@ -14,7 +15,7 @@ export declare class SupabaseClient {
     /**
      * Get the Supabase client instance
      */
-    getClient(): any;
+    getClient(): SupabaseClientType<any, "public", "public", any, any>;
     /**
      * Test database connectivity
      */
@@ -33,7 +34,7 @@ export declare class SupabaseClient {
  */
 export declare function isSupabaseConfigured(): boolean;
 export declare const supabaseClient: {
-    getClient(): any;
+    getClient(): SupabaseClientType<any, "public", "public", any, any>;
     testConnection(): Promise<boolean>;
     getConnectionInfo(): {
         url: string;
@@ -51,5 +52,5 @@ export declare const supabaseClient: {
  * Uses environment variables for configuration
  * @throws {Error} If SUPABASE_URL or SUPABASE_ANON_KEY are not set
  */
-export declare function getSupabaseClient(): import("@supabase/supabase-js").SupabaseClient<any, "public", "public", any, any>;
+export declare function getSupabaseClient(): SupabaseClientType<any, "public", "public", any, any>;
 export default SupabaseClient;

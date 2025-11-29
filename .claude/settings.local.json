@@ -124,7 +124,19 @@
       "Bash(npm run lint:*)",
       "Bash(gh issue close:*)",
       "Bash(gh issue view:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(gh issue comment:*)",
+      "Bash(timeout 30 npx jest:*)",
+      "Bash(timeout 60 npx jest:*)",
+      "Bash(timeout 90 npx jest:*)",
+      "Bash(timeout 120 npm test:*)",
+      "Bash(timeout 120 npx jest:*)",
+      "Bash(timeout 180 npm run test:coverage)",
+      "Bash(npx tsc:*)",
+      "Bash(gh issue reopen:*)",
+      "Bash(timeout 300 npx jest:*)",
+      "Bash(timeout 300 npm run test:coverage:*)",
+      "Bash(npx jest:*)"
     ],
     "deny": [],
     "ask": []
