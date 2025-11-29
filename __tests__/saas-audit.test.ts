@@ -11,38 +11,45 @@ let mockOrderFn: jest.Mock;
 let mockLimitFn: jest.Mock;
 
 const createMockSupabase = () => {
-  mockInsertFn = jest.fn();
-  mockOrderFn = jest.fn();
-  mockLimitFn = jest.fn();
+  const defaultResponse = { data: null, error: null };
+  const defaultArrayResponse = { data: [], error: null };
 
-  const mockChain: Record<string, jest.Mock> = {
+  // Create a thenable chain that can be awaited or chained
+  const chain: any = {
     from: jest.fn(),
-    insert: mockInsertFn,
+    insert: jest.fn(),
     select: jest.fn(),
     delete: jest.fn(),
     eq: jest.fn(),
     gte: jest.fn(),
     lte: jest.fn(),
     lt: jest.fn(),
-    order: mockOrderFn,
-    limit: mockLimitFn,
+    order: jest.fn(),
+    limit: jest.fn(),
     range: jest.fn(),
+    // Make it thenable for await
+    then: (resolve: any) => Promise.resolve(defaultArrayResponse).then(resolve),
+    catch: () => Promise.resolve(defaultArrayResponse),
   };
 
-  // Each method returns the chain for fluent API
-  mockChain.from.mockImplementation(() => mockChain);
-  mockChain.insert.mockImplementation(() => mockChain);
-  mockChain.select.mockImplementation(() => mockChain);
-  mockChain.delete.mockImplementation(() => mockChain);
-  mockChain.eq.mockImplementation(() => mockChain);
-  mockChain.gte.mockImplementation(() => mockChain);
-  mockChain.lte.mockImplementation(() => mockChain);
-  mockChain.lt.mockImplementation(() => mockChain);
-  mockChain.order.mockImplementation(() => mockChain);
-  mockChain.limit.mockImplementation(() => mockChain);
-  mockChain.range.mockImplementation(() => mockChain);
+  chain.from.mockReturnValue(chain);
+  chain.insert.mockReturnValue(chain);
+  chain.select.mockReturnValue(chain);
+  chain.delete.mockReturnValue(chain);
+  chain.eq.mockReturnValue(chain);
+  chain.gte.mockReturnValue(chain);
+  chain.lte.mockReturnValue(chain);
+  chain.lt.mockReturnValue(chain);
+  chain.order.mockReturnValue(chain);
+  chain.limit.mockReturnValue(chain);
+  chain.range.mockReturnValue(chain);
 
-  return mockChain;
+  // Store references for test assertions
+  mockInsertFn = chain.insert;
+  mockOrderFn = chain.order;
+  mockLimitFn = chain.limit;
+
+  return chain;
 };
 
 let mockSupabase = createMockSupabase();

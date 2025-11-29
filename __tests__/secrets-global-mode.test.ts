@@ -4,42 +4,18 @@
  * Testing global workspace functionality that resolves to $HOME
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from '@jest/globals';
 import * as path from 'path';
 import * as os from 'os';
 
-// Mock DatabasePersistence
-const sharedStorage = new Map<string, any>();
-
-jest.unstable_mockModule('../src/lib/database-persistence.js', () => {
-  return {
-    default: class MockDatabasePersistence {
-      async saveJob(job: any) {
-        sharedStorage.set(job.job_id, job);
-      }
-      async getActiveJobs() {
-        return Array.from(sharedStorage.values());
-      }
-      reset() {
-        sharedStorage.clear();
-      }
-    }
-  };
-});
-
-// Import SecretsManager after mocking
-const { SecretsManager } = await import('../src/lib/secrets-manager.js');
-
 describe('SecretsManager Global Mode', () => {
+  let SecretsManager: typeof import('../src/lib/secrets-manager.js').SecretsManager;
   const homeDir = os.homedir();
   const testKey = 'a'.repeat(64); // 32-byte key in hex
 
-  beforeEach(() => {
-    sharedStorage.clear();
-  });
-
-  afterEach(() => {
-    sharedStorage.clear();
+  beforeAll(async () => {
+    const module = await import('../src/lib/secrets-manager.js');
+    SecretsManager = module.SecretsManager;
   });
 
   describe('Constructor Options', () => {

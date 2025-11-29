@@ -242,10 +242,12 @@ export async function init_secrets(program: Command) {
     .command('create')
     .description('Create a new .env file')
     .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-g, --global', 'Use global workspace ($HOME)')
     .option('-t, --template', 'Create with common template variables')
     .action(async (options) => {
       try {
-        const envPath = path.resolve(options.file);
+        const manager = new SecretsManager({ globalMode: options.global });
+        const envPath = path.resolve(manager.resolveFilePath(options.file));
 
         // Check if file already exists
         if (fs.existsSync(envPath)) {
@@ -976,6 +978,7 @@ API_KEY=
   program
     .command('clear')
     .description('Clear local metadata and cache to resolve stuck registries')
+    .option('-g, --global', 'Use global workspace ($HOME) - default behavior')
     .option('--repo <name>', 'Clear metadata for specific repo only')
     .option('--cache', 'Also clear local encrypted secrets cache')
     .option('--storacha', 'Also delete old Storacha uploads (registries and secrets)')

@@ -39,6 +39,11 @@ export default {
     // The test environment that will be used for testing
     testEnvironment: 'node',
 
+    // Reset mocks and modules between tests to prevent contamination
+    resetMocks: true,
+    clearMocks: true,
+    restoreMocks: true,
+
     // Setup files to run before tests
     setupFiles: ['<rootDir>/__tests__/setup.ts'],
 

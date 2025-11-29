@@ -13,30 +13,37 @@ let mockIsFn: jest.Mock;
 let mockFromFn: jest.Mock;
 
 const createMockSupabase = () => {
-  mockSingleFn = jest.fn();
-  mockEqFn = jest.fn();
-  mockIsFn = jest.fn();
-  mockFromFn = jest.fn();
+  const defaultResponse = { data: null, error: null };
 
-  const mockChain = {
-    from: mockFromFn,
+  // Create a thenable chain that can be awaited or chained
+  const chain: any = {
+    from: jest.fn(),
     insert: jest.fn(),
     update: jest.fn(),
     select: jest.fn(),
-    eq: mockEqFn,
-    is: mockIsFn,
-    single: mockSingleFn,
+    eq: jest.fn(),
+    is: jest.fn(),
+    single: jest.fn(),
+    // Make it thenable for await
+    then: (resolve: any) => Promise.resolve(defaultResponse).then(resolve),
+    catch: () => Promise.resolve(defaultResponse),
   };
 
-  // Each method returns the chain for fluent API
-  mockChain.from.mockReturnValue(mockChain);
-  mockChain.insert.mockReturnValue(mockChain);
-  mockChain.update.mockReturnValue(mockChain);
-  mockChain.select.mockReturnValue(mockChain);
-  mockChain.eq.mockReturnValue(mockChain);
-  mockChain.is.mockReturnValue(mockChain);
+  chain.from.mockReturnValue(chain);
+  chain.insert.mockReturnValue(chain);
+  chain.update.mockReturnValue(chain);
+  chain.select.mockReturnValue(chain);
+  chain.eq.mockReturnValue(chain);
+  chain.is.mockReturnValue(chain);
+  chain.single.mockReturnValue(chain);
 
-  return mockChain;
+  // Store references for test assertions
+  mockSingleFn = chain.single;
+  mockEqFn = chain.eq;
+  mockIsFn = chain.is;
+  mockFromFn = chain.from;
+
+  return chain;
 };
 
 let mockSupabase = createMockSupabase();

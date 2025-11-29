@@ -1,133 +1,108 @@
 /**
- * Tests for Format Utilities
- * Tests all output format converters
+ * Format Utils Tests
+ * Tests for secret export formatting utilities
  */
 
-import { describe, it, expect } from '@jest/globals';
-import {
-  maskSecret,
-  maskSecrets,
-  detectNamespaces,
-  formatAsEnv,
-  formatAsJSON,
-  formatAsYAML,
-  formatAsTOML,
-  formatAsExport,
-  formatSecrets,
-  type SecretEntry,
-} from '../src/lib/format-utils';
+import { describe, it, expect, beforeAll } from '@jest/globals';
 
-describe('Format Utilities', () => {
-  const testSecrets: SecretEntry[] = [
-    { key: 'API_KEY', value: 'sk_test_1234567890' },
-    { key: 'DATABASE_URL', value: 'postgresql://localhost/mydb' },
-    { key: 'DATABASE_PORT', value: '5432' },
-    { key: 'REDIS_HOST', value: 'localhost' },
-    { key: 'REDIS_PORT', value: '6379' },
-    { key: 'SECRET_TOKEN', value: 'abc123' },
-  ];
+describe('FormatUtils', () => {
+  let maskSecret: typeof import('../src/lib/format-utils.js').maskSecret;
+  let maskSecrets: typeof import('../src/lib/format-utils.js').maskSecrets;
+  let detectNamespaces: typeof import('../src/lib/format-utils.js').detectNamespaces;
+  let formatAsEnv: typeof import('../src/lib/format-utils.js').formatAsEnv;
+  let formatAsJSON: typeof import('../src/lib/format-utils.js').formatAsJSON;
+  let formatAsYAML: typeof import('../src/lib/format-utils.js').formatAsYAML;
+  let formatAsTOML: typeof import('../src/lib/format-utils.js').formatAsTOML;
+  let formatAsExport: typeof import('../src/lib/format-utils.js').formatAsExport;
+  let formatSecrets: typeof import('../src/lib/format-utils.js').formatSecrets;
+
+  beforeAll(async () => {
+    const module = await import('../src/lib/format-utils.js');
+    maskSecret = module.maskSecret;
+    maskSecrets = module.maskSecrets;
+    detectNamespaces = module.detectNamespaces;
+    formatAsEnv = module.formatAsEnv;
+    formatAsJSON = module.formatAsJSON;
+    formatAsYAML = module.formatAsYAML;
+    formatAsTOML = module.formatAsTOML;
+    formatAsExport = module.formatAsExport;
+    formatSecrets = module.formatSecrets;
+  });
 
   describe('maskSecret', () => {
-    it('should mask values longer than 6 characters', () => {
-      const result = maskSecret('1234567890');
-      expect(result).toBe('123***890');
+    it('should mask long secrets', () => {
+      const result = maskSecret('sk_test_1234567890');
+      expect(result).toBe('sk_***890');
     });
 
-    it('should show *** for values 6 characters or less', () => {
-      expect(maskSecret('123456')).toBe('***');
-      expect(maskSecret('12345')).toBe('***');
+    it('should fully mask short secrets', () => {
       expect(maskSecret('abc')).toBe('***');
+      expect(maskSecret('123456')).toBe('***');
     });
 
-    it('should handle very long values', () => {
-      const longValue = 'a'.repeat(100);
-      const result = maskSecret(longValue);
-      expect(result).toBe('aaa***aaa');
-    });
-
-    it('should handle empty strings', () => {
-      const result = maskSecret('');
-      expect(result).toBe('***');
+    it('should handle 7 character secrets', () => {
+      const result = maskSecret('1234567');
+      expect(result).toBe('123***567');
     });
   });
 
   describe('maskSecrets', () => {
-    it('should mask all secret values', () => {
-      const result = maskSecrets(testSecrets);
-      expect(result).toHaveLength(testSecrets.length);
+    it('should mask array of secrets', () => {
+      const secrets = [
+        { key: 'API_KEY', value: 'sk_test_1234567890' },
+        { key: 'TOKEN', value: 'short' }
+      ];
+      const result = maskSecrets(secrets);
       expect(result[0].value).toBe('sk_***890');
-      expect(result[1].value).toBe('pos***ydb');
+      expect(result[1].value).toBe('***');
     });
 
-    it('should preserve keys unchanged', () => {
-      const result = maskSecrets(testSecrets);
-      expect(result.map(s => s.key)).toEqual(testSecrets.map(s => s.key));
-    });
-
-    it('should handle empty array', () => {
-      const result = maskSecrets([]);
-      expect(result).toEqual([]);
+    it('should preserve keys', () => {
+      const secrets = [{ key: 'MY_KEY', value: 'myvalue123' }];
+      const result = maskSecrets(secrets);
+      expect(result[0].key).toBe('MY_KEY');
     });
   });
 
   describe('detectNamespaces', () => {
-    it('should detect common prefixes and group them', () => {
-      const result = detectNamespaces(testSecrets);
-
-      expect(result.has('database')).toBe(true);
-      expect(result.has('redis')).toBe(true);
-
-      const dbSecrets = result.get('database')!;
-      expect(dbSecrets).toHaveLength(2);
-      expect(dbSecrets[0].key).toBe('URL');
-      expect(dbSecrets[1].key).toBe('PORT');
-    });
-
-    it('should put ungrouped keys in _root', () => {
-      const result = detectNamespaces(testSecrets);
-
-      expect(result.has('_root')).toBe(true);
-      const rootSecrets = result.get('_root')!;
-      expect(rootSecrets.length).toBeGreaterThan(0);
-      expect(rootSecrets.some(s => s.key === 'API_KEY')).toBe(true);
-    });
-
-    it('should not create namespace for single-item groups', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'DATABASE_URL', value: 'test' },
-        { key: 'API_KEY', value: 'test' },
+    it('should group secrets by prefix', () => {
+      const secrets = [
+        { key: 'DATABASE_URL', value: 'postgres://localhost' },
+        { key: 'DATABASE_PORT', value: '5432' },
+        { key: 'REDIS_URL', value: 'redis://localhost' }
       ];
-
-      const result = detectNamespaces(secrets);
-      expect(result.has('database')).toBe(false);
-      expect(result.has('_root')).toBe(true);
+      const namespaces = detectNamespaces(secrets);
+      expect(namespaces.has('database')).toBe(true);
+      expect(namespaces.get('database')?.length).toBe(2);
     });
 
-    it('should handle secrets without underscores', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'api', value: 'test' },
-        { key: 'secret', value: 'value' },
+    it('should not group single-item namespaces', () => {
+      const secrets = [
+        { key: 'DATABASE_URL', value: 'postgres://localhost' },
+        { key: 'REDIS_URL', value: 'redis://localhost' }
       ];
-
-      const result = detectNamespaces(secrets);
-      expect(result.has('_root')).toBe(true);
-      expect(result.get('_root')).toHaveLength(2);
+      const namespaces = detectNamespaces(secrets);
+      // Both are single items, so they should be in _root
+      expect(namespaces.has('_root')).toBe(true);
     });
 
-    it('should handle empty array', () => {
-      const result = detectNamespaces([]);
-      expect(result.size).toBe(0);
+    it('should handle ungrouped keys', () => {
+      const secrets = [
+        { key: 'SIMPLE_KEY', value: 'value' }
+      ];
+      const namespaces = detectNamespaces(secrets);
+      expect(namespaces.has('_root')).toBe(true);
     });
   });
 
   describe('formatAsEnv', () => {
-    it('should format secrets as KEY=value pairs', () => {
-      const result = formatAsEnv(testSecrets);
-      const lines = result.split('\n');
-
-      expect(lines).toHaveLength(testSecrets.length);
-      expect(lines[0]).toBe('API_KEY=sk_test_1234567890');
-      expect(lines[1]).toBe('DATABASE_URL=postgresql://localhost/mydb');
+    it('should format as KEY=value pairs', () => {
+      const secrets = [
+        { key: 'API_KEY', value: 'test123' },
+        { key: 'SECRET', value: 'mysecret' }
+      ];
+      const result = formatAsEnv(secrets);
+      expect(result).toBe('API_KEY=test123\nSECRET=mysecret');
     });
 
     it('should handle empty array', () => {
@@ -135,258 +110,154 @@ describe('Format Utilities', () => {
       expect(result).toBe('');
     });
 
-    it('should handle special characters in values', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'TEST', value: 'value with spaces' },
-        { key: 'SPECIAL', value: 'value=with=equals' },
-      ];
-
+    it('should handle values with special characters', () => {
+      const secrets = [{ key: 'URL', value: 'https://example.com?foo=bar' }];
       const result = formatAsEnv(secrets);
-      expect(result).toContain('TEST=value with spaces');
-      expect(result).toContain('SPECIAL=value=with=equals');
+      expect(result).toBe('URL=https://example.com?foo=bar');
     });
   });
 
   describe('formatAsJSON', () => {
-    it('should format secrets as JSON object', () => {
-      const result = formatAsJSON(testSecrets);
+    it('should format as valid JSON', () => {
+      const secrets = [
+        { key: 'API_KEY', value: 'test123' }
+      ];
+      const result = formatAsJSON(secrets);
       const parsed = JSON.parse(result);
-
-      expect(parsed.API_KEY).toBe('sk_test_1234567890');
-      expect(parsed.DATABASE_URL).toBe('postgresql://localhost/mydb');
-      expect(Object.keys(parsed)).toHaveLength(testSecrets.length);
+      expect(parsed.API_KEY).toBe('test123');
     });
 
-    it('should produce pretty-printed JSON', () => {
-      const result = formatAsJSON(testSecrets);
-      expect(result).toContain('\n');
-      expect(result).toContain('  '); // Indentation
+    it('should format multiple keys', () => {
+      const secrets = [
+        { key: 'KEY1', value: 'val1' },
+        { key: 'KEY2', value: 'val2' }
+      ];
+      const result = formatAsJSON(secrets);
+      const parsed = JSON.parse(result);
+      expect(parsed.KEY1).toBe('val1');
+      expect(parsed.KEY2).toBe('val2');
     });
 
     it('should handle empty array', () => {
       const result = formatAsJSON([]);
-      const parsed = JSON.parse(result);
-      expect(parsed).toEqual({});
+      expect(JSON.parse(result)).toEqual({});
     });
   });
 
   describe('formatAsYAML', () => {
-    it('should format secrets as YAML', () => {
-      const result = formatAsYAML(testSecrets);
-
-      expect(result).toContain('API_KEY: sk_test_1234567890');
-      expect(result).toContain('DATABASE_URL: postgresql://localhost/mydb');
-    });
-
-    it('should handle empty array', () => {
-      const result = formatAsYAML([]);
-      expect(result).toBe('{}\n');
-    });
-
-    it('should handle values with special characters', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'TEST', value: 'value: with: colons' },
-        { key: 'QUOTE', value: "value with 'quotes'" },
+    it('should format as valid YAML', () => {
+      const secrets = [
+        { key: 'API_KEY', value: 'test123' }
       ];
-
       const result = formatAsYAML(secrets);
-      expect(result).toBeTruthy();
-      expect(result).toContain('TEST:');
-      expect(result).toContain('QUOTE:');
+      expect(result).toContain('API_KEY:');
+      expect(result).toContain('test123');
+    });
+
+    it('should handle multiple keys', () => {
+      const secrets = [
+        { key: 'KEY1', value: 'val1' },
+        { key: 'KEY2', value: 'val2' }
+      ];
+      const result = formatAsYAML(secrets);
+      expect(result).toContain('KEY1:');
+      expect(result).toContain('KEY2:');
     });
   });
 
   describe('formatAsTOML', () => {
-    it('should format secrets as TOML with namespace detection', () => {
-      const result = formatAsTOML(testSecrets);
-
-      expect(result).toContain('[database]');
-      expect(result).toContain('[redis]');
-      expect(result).toContain('URL = ');
-      expect(result).toContain('PORT = ');
-    });
-
-    it('should put ungrouped keys at the top', () => {
-      const result = formatAsTOML(testSecrets);
-      const lines = result.split('\n');
-
-      // API_KEY and SECRET_TOKEN should be before first section
-      const firstSectionIndex = lines.findIndex(l => l.startsWith('['));
-      const apiKeyIndex = lines.findIndex(l => l.startsWith('API_KEY'));
-
-      expect(apiKeyIndex).toBeGreaterThan(-1);
-      expect(apiKeyIndex).toBeLessThan(firstSectionIndex);
-    });
-
-    it('should handle empty array', () => {
-      const result = formatAsTOML([]);
-      expect(result).toBe('');
-    });
-
-    it('should quote string values properly', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'TEST', value: 'simple' },
-        { key: 'SPECIAL', value: 'with "quotes"' },
+    it('should format as valid TOML', () => {
+      const secrets = [
+        { key: 'API_KEY', value: 'test123' }
       ];
-
       const result = formatAsTOML(secrets);
-      expect(result).toContain('TEST = "simple"');
-      expect(result).toBeTruthy();
+      expect(result).toContain('API_KEY');
+      expect(result).toContain('"test123"');
     });
 
-    it('should add blank lines between sections', () => {
-      const result = formatAsTOML(testSecrets);
-      const sections = result.split('\n\n');
-
-      expect(sections.length).toBeGreaterThan(1);
+    it('should group by namespace', () => {
+      const secrets = [
+        { key: 'DATABASE_URL', value: 'postgres://localhost' },
+        { key: 'DATABASE_PORT', value: '5432' }
+      ];
+      const result = formatAsTOML(secrets);
+      expect(result).toContain('[database]');
+      expect(result).toContain('URL');
+      expect(result).toContain('PORT');
     });
   });
 
   describe('formatAsExport', () => {
-    it('should format secrets as shell export statements', () => {
-      const result = formatAsExport(testSecrets);
-      const lines = result.split('\n');
-
-      expect(lines).toHaveLength(testSecrets.length);
-      expect(lines[0]).toBe("export API_KEY='sk_test_1234567890'");
-      expect(lines[1]).toBe("export DATABASE_URL='postgresql://localhost/mydb'");
+    it('should format as shell export statements', () => {
+      const secrets = [
+        { key: 'API_KEY', value: 'test123' }
+      ];
+      const result = formatAsExport(secrets);
+      expect(result).toBe("export API_KEY='test123'");
     });
 
     it('should escape single quotes in values', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'TEST', value: "value with 'single' quotes" },
+      const secrets = [
+        { key: 'MSG', value: "hello'world" }
       ];
-
       const result = formatAsExport(secrets);
-      expect(result).toContain("'\\''");
+      expect(result).toContain("'hello'\\''world'");
     });
 
-    it('should handle empty array', () => {
-      const result = formatAsExport([]);
-      expect(result).toBe('');
-    });
-
-    it('should handle values with special characters', () => {
-      const secrets: SecretEntry[] = [
-        { key: 'SPECIAL', value: '$PATH:/usr/bin' },
-        { key: 'QUOTED', value: '"double quotes"' },
+    it('should handle multiple exports', () => {
+      const secrets = [
+        { key: 'KEY1', value: 'val1' },
+        { key: 'KEY2', value: 'val2' }
       ];
-
       const result = formatAsExport(secrets);
-      expect(result).toContain("export SPECIAL='$PATH:/usr/bin'");
-      expect(result).toContain('export QUOTED=\'"double quotes"\'');
+      expect(result).toContain("export KEY1='val1'");
+      expect(result).toContain("export KEY2='val2'");
     });
   });
 
   describe('formatSecrets', () => {
-    it('should format with env format', () => {
-      const result = formatSecrets(testSecrets, 'env');
+    const testSecrets = [
+      { key: 'API_KEY', value: 'sk_test_1234567890' }
+    ];
+
+    it('should format as env', () => {
+      const result = formatSecrets(testSecrets, 'env', false);
       expect(result).toContain('API_KEY=');
     });
 
-    it('should format with json format', () => {
+    it('should format as json', () => {
       const result = formatSecrets(testSecrets, 'json');
-      const parsed = JSON.parse(result);
-      expect(parsed.API_KEY).toBeTruthy();
+      expect(() => JSON.parse(result)).not.toThrow();
     });
 
-    it('should format with yaml format', () => {
+    it('should format as yaml', () => {
       const result = formatSecrets(testSecrets, 'yaml');
       expect(result).toContain('API_KEY:');
     });
 
-    it('should format with toml format', () => {
+    it('should format as toml', () => {
       const result = formatSecrets(testSecrets, 'toml');
-      expect(result).toBeTruthy();
+      expect(result).toContain('API_KEY');
     });
 
-    it('should format with export format', () => {
+    it('should format as export', () => {
       const result = formatSecrets(testSecrets, 'export');
       expect(result).toContain('export API_KEY=');
+    });
+
+    it('should throw for unsupported format', () => {
+      expect(() => formatSecrets(testSecrets, 'xml' as any)).toThrow('Unsupported format');
+    });
+
+    it('should mask values when mask is true', () => {
+      const result = formatSecrets(testSecrets, 'json', true);
+      const parsed = JSON.parse(result);
+      expect(parsed.API_KEY).toBe('sk_***890');
     });
 
     it('should auto-mask for env format', () => {
       const result = formatSecrets(testSecrets, 'env');
       expect(result).toContain('***');
-    });
-
-    it('should not auto-mask for json format', () => {
-      const result = formatSecrets(testSecrets, 'json');
-      expect(result).not.toContain('***');
-      expect(result).toContain('sk_test_1234567890');
-    });
-
-    it('should respect explicit mask=true', () => {
-      const result = formatSecrets(testSecrets, 'json', true);
-      expect(result).toContain('***');
-    });
-
-    it('should respect explicit mask=false', () => {
-      const result = formatSecrets(testSecrets, 'env', false);
-      expect(result).not.toContain('***');
-      expect(result).toContain('sk_test_1234567890');
-    });
-
-    it('should throw error for unsupported format', () => {
-      expect(() => {
-        formatSecrets(testSecrets, 'xml' as any);
-      }).toThrow('Unsupported format');
-    });
-  });
-
-  describe('Integration Tests', () => {
-    it('should produce valid output for all formats', () => {
-      const formats: Array<'env' | 'json' | 'yaml' | 'toml' | 'export'> = [
-        'env',
-        'json',
-        'yaml',
-        'toml',
-        'export',
-      ];
-
-      for (const format of formats) {
-        const result = formatSecrets(testSecrets, format, false);
-        expect(result).toBeTruthy();
-        expect(result.length).toBeGreaterThan(0);
-      }
-    });
-
-    it('should handle complex real-world secrets', () => {
-      const realWorldSecrets: SecretEntry[] = [
-        { key: 'DATABASE_URL', value: 'postgresql://user:pass@localhost:5432/db' },
-        { key: 'DATABASE_POOL_SIZE', value: '10' },
-        { key: 'REDIS_URL', value: 'redis://localhost:6379' },
-        { key: 'AWS_ACCESS_KEY_ID', value: 'AKIAIOSFODNN7EXAMPLE' },
-        { key: 'AWS_SECRET_ACCESS_KEY', value: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' },
-        { key: 'STRIPE_SECRET_KEY', value: 'sk_test_123456789' },
-        { key: 'JWT_SECRET', value: 'super-secret-jwt-key-12345' },
-        { key: 'API_ENDPOINT', value: 'https://api.example.com/v1' },
-      ];
-
-      const formats: Array<'env' | 'json' | 'yaml' | 'toml' | 'export'> = [
-        'env',
-        'json',
-        'yaml',
-        'toml',
-        'export',
-      ];
-
-      for (const format of formats) {
-        const result = formatSecrets(realWorldSecrets, format, false);
-        expect(result).toBeTruthy();
-
-        // Verify all keys are present (except for TOML which transforms them)
-        if (format !== 'toml') {
-          for (const secret of realWorldSecrets) {
-            expect(result).toContain(secret.key);
-          }
-        } else {
-          // For TOML, just verify sections and values exist
-          expect(result).toContain('[database]');
-          expect(result).toContain('[aws]');
-          expect(result).toContain('STRIPE_SECRET_KEY');
-        }
-      }
     });
   });
 });

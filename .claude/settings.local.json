@@ -136,7 +136,12 @@
       "Bash(gh issue reopen:*)",
       "Bash(timeout 300 npx jest:*)",
       "Bash(timeout 300 npm run test:coverage:*)",
-      "Bash(npx jest:*)"
+      "Bash(npx jest:*)",
+      "Bash(timeout 180 npx jest:*)",
+      "Bash(timeout 240 npx jest:*)",
+      "Bash(timeout 180 npm test:*)",
+      "Bash(timeout 300 npm test:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
