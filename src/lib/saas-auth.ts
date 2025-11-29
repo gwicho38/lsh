@@ -392,6 +392,7 @@ export class AuthService {
       throw new Error(`Failed to get user organizations: ${error.message}`);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB join result
     return (data || []).map((row: any) => this.mapDbOrgToOrg(row.organizations));
   }
 
@@ -462,6 +463,7 @@ export class AuthService {
   /**
    * Map database user to User type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbUserToUser(dbUser: any): User {
     return {
       id: dbUser.id,
@@ -488,6 +490,7 @@ export class AuthService {
   /**
    * Map database organization to Organization type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbOrgToOrg(dbOrg: any): Organization {
     return {
       id: dbOrg.id,

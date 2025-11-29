@@ -476,4 +476,290 @@ describe('SecretsManager', () => {
       }).toThrow(/Invalid encrypted format/);
     });
   });
+
+  describe('LSH Internal Key Filtering', () => {
+    it('should filter out LSH_SECRETS_KEY', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = {
+        DATABASE_URL: 'postgres://localhost',
+        LSH_SECRETS_KEY: 'should-be-filtered',
+        API_KEY: 'my-api-key',
+      };
+
+      const filtered = (manager as any).filterLshInternalKeys(env);
+
+      expect(filtered).toEqual({
+        DATABASE_URL: 'postgres://localhost',
+        API_KEY: 'my-api-key',
+      });
+      expect(filtered.LSH_SECRETS_KEY).toBeUndefined();
+    });
+
+    it('should filter out LSH_MASTER_KEY', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = {
+        DATABASE_URL: 'postgres://localhost',
+        LSH_MASTER_KEY: 'should-be-filtered',
+      };
+
+      const filtered = (manager as any).filterLshInternalKeys(env);
+
+      expect(filtered).toEqual({
+        DATABASE_URL: 'postgres://localhost',
+      });
+    });
+
+    it('should filter out LSH_INTERNAL_* prefix keys', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = {
+        DATABASE_URL: 'postgres://localhost',
+        LSH_INTERNAL_CONFIG: 'internal-value',
+        LSH_INTERNAL_DEBUG: 'debug-value',
+        API_KEY: 'my-api-key',
+      };
+
+      const filtered = (manager as any).filterLshInternalKeys(env);
+
+      expect(filtered).toEqual({
+        DATABASE_URL: 'postgres://localhost',
+        API_KEY: 'my-api-key',
+      });
+    });
+
+    it('should preserve non-LSH keys', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = {
+        DATABASE_URL: 'postgres://localhost',
+        API_KEY: 'my-api-key',
+        STRIPE_KEY: 'sk_test_123',
+      };
+
+      const filtered = (manager as any).filterLshInternalKeys(env);
+
+      expect(filtered).toEqual(env);
+    });
+  });
+
+  describe('Destructive Change Detection', () => {
+    it('should detect when filled secrets become empty', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const cloudSecrets = {
+        API_KEY: 'sk_test_123',
+        DATABASE_URL: 'postgres://localhost',
+      };
+      const localSecrets = {
+        API_KEY: '',  // Was filled, now empty
+        DATABASE_URL: 'postgres://localhost',
+      };
+
+      const destructive = (manager as any).detectDestructiveChanges(cloudSecrets, localSecrets);
+
+      expect(destructive).toHaveLength(1);
+      expect(destructive[0].key).toBe('API_KEY');
+      expect(destructive[0].cloudValue).toBe('sk_test_123');
+      expect(destructive[0].localValue).toBe('');
+    });
+
+    it('should detect multiple destructive changes', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const cloudSecrets = {
+        API_KEY: 'sk_test_123',
+        DATABASE_URL: 'postgres://localhost',
+        STRIPE_KEY: 'pk_live_abc',
+      };
+      const localSecrets = {
+        API_KEY: '',
+        DATABASE_URL: '',
+        STRIPE_KEY: 'pk_live_abc',
+      };
+
+      const destructive = (manager as any).detectDestructiveChanges(cloudSecrets, localSecrets);
+
+      expect(destructive).toHaveLength(2);
+      expect(destructive.map((d: { key: string }) => d.key).sort()).toEqual(['API_KEY', 'DATABASE_URL']);
+    });
+
+    it('should not flag new empty keys as destructive', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const cloudSecrets = {
+        API_KEY: 'sk_test_123',
+      };
+      const localSecrets = {
+        API_KEY: 'sk_test_123',
+        NEW_KEY: '',  // New key that's empty - not destructive
+      };
+
+      const destructive = (manager as any).detectDestructiveChanges(cloudSecrets, localSecrets);
+
+      expect(destructive).toHaveLength(0);
+    });
+
+    it('should not flag already-empty cloud secrets as destructive', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const cloudSecrets = {
+        API_KEY: '',  // Already empty in cloud
+      };
+      const localSecrets = {
+        API_KEY: '',  // Still empty - not destructive
+      };
+
+      const destructive = (manager as any).detectDestructiveChanges(cloudSecrets, localSecrets);
+
+      expect(destructive).toHaveLength(0);
+    });
+
+    it('should handle whitespace-only values as empty', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const cloudSecrets = {
+        API_KEY: 'sk_test_123',
+      };
+      const localSecrets = {
+        API_KEY: '   ',  // Whitespace only = empty
+      };
+
+      const destructive = (manager as any).detectDestructiveChanges(cloudSecrets, localSecrets);
+
+      expect(destructive).toHaveLength(1);
+    });
+  });
+
+  describe('Destructive Changes Error Formatting', () => {
+    it('should format single destructive change error', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const destructive = [{
+        key: 'API_KEY',
+        cloudValue: 'sk_test_123456',
+        localValue: '',
+      }];
+
+      const error = (manager as any).formatDestructiveChangesError(destructive);
+
+      expect(error).toContain('Destructive change detected');
+      expect(error).toContain('1 secret');
+      expect(error).toContain('API_KEY');
+      expect(error).toContain('sk_te****');  // Masked value
+      expect(error).toContain('--force');
+    });
+
+    it('should format multiple destructive changes error', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const destructive = [
+        { key: 'API_KEY', cloudValue: 'sk_test_123', localValue: '' },
+        { key: 'DB_PASS', cloudValue: 'secret', localValue: '' },
+      ];
+
+      const error = (manager as any).formatDestructiveChangesError(destructive);
+
+      expect(error).toContain('2 secrets');
+      expect(error).toContain('API_KEY');
+      expect(error).toContain('DB_PASS');
+    });
+
+    it('should mask short values completely', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const destructive = [{
+        key: 'SHORT',
+        cloudValue: 'abc',  // 3 chars - less than 5
+        localValue: '',
+      }];
+
+      const error = (manager as any).formatDestructiveChangesError(destructive);
+
+      expect(error).toContain('****');
+    });
+  });
+
+  describe('List All Files', () => {
+    it('should return array of file metadata', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile(envMinimal, 'list-all-test');
+
+      // Push a unique environment
+      const uniqueEnv = `list-all-${Date.now()}`;
+      await manager.push(envFile, uniqueEnv);
+
+      const files = await manager.listAllFiles();
+
+      // Should have at least one file (our pushed one)
+      expect(files.length).toBeGreaterThanOrEqual(1);
+      expect(files.some(f => f.environment === uniqueEnv)).toBe(true);
+
+      // Files should have expected structure
+      const ourFile = files.find(f => f.environment === uniqueEnv);
+      expect(ourFile).toBeDefined();
+      expect(ourFile?.filename).toBe('.env');
+      expect(ourFile?.updated).toBeDefined();
+    });
+  });
+
+  describe('Show Secrets', () => {
+    it('should throw error when no secrets found', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+
+      await expect(async () => {
+        await manager.show('nonexistent');
+      }).rejects.toThrow(/No secrets found/);
+    });
+
+    it('should show masked secrets for existing environment', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile(sampleEnvFile, 'show-test');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.push(envFile, 'show-test');
+      await manager.show('show-test');
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).toContain('show-test');
+      expect(calls).toContain('Secrets for');
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Status', () => {
+    it('should return correct status for non-existent local file', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+
+      const status = await manager.status('/nonexistent/file.env', 'status-nonexistent');
+
+      expect(status.localExists).toBe(false);
+      expect(status.localKeys).toBe(0);
+    });
+
+    it('should return correct status for existing local file', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile(envMinimal, 'status-test');
+
+      const status = await manager.status(envFile, 'status-existing');
+
+      expect(status.localExists).toBe(true);
+      expect(status.localKeys).toBeGreaterThan(0);
+      // Check it's a valid date by checking it has getTime method
+      expect(typeof status.localModified?.getTime).toBe('function');
+    });
+
+    it('should detect if LSH_SECRETS_KEY is set', async () => {
+      // Clear the key first
+      const originalKey = process.env.LSH_SECRETS_KEY;
+      delete process.env.LSH_SECRETS_KEY;
+
+      const manager1 = new SecretsManager(undefined, testKey);
+      const status1 = await manager1.status('/nonexistent.env', 'status-key-test');
+      expect(status1.keySet).toBe(false);
+
+      // Set the key
+      process.env.LSH_SECRETS_KEY = testKey;
+      const manager2 = new SecretsManager();
+      const status2 = await manager2.status('/nonexistent.env', 'status-key-test2');
+      expect(status2.keySet).toBe(true);
+
+      // Restore
+      if (originalKey) {
+        process.env.LSH_SECRETS_KEY = originalKey;
+      } else {
+        delete process.env.LSH_SECRETS_KEY;
+      }
+    });
+  });
 });

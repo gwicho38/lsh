@@ -139,9 +139,9 @@ export class OrganizationService {
    */
   async updateOrganization(
     id: string,
-    updates: { name?: string; settings?: Record<string, any> }
+    updates: { name?: string; settings?: Record<string, unknown> }
   ): Promise<Organization> {
-    const updateData: any = {};
+    const updateData: { name?: string; settings?: Record<string, unknown> } = {};
 
     if (updates.name) {
       updateData.name = updates.name;
@@ -431,6 +431,7 @@ export class OrganizationService {
   /**
    * Map database org to Organization type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbOrgToOrg(dbOrg: any): Organization {
     return {
       id: dbOrg.id,
@@ -452,6 +453,7 @@ export class OrganizationService {
   /**
    * Map database member to OrganizationMember type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbMemberToMember(dbMember: any): OrganizationMember {
     return {
       id: dbMember.id,
@@ -469,6 +471,7 @@ export class OrganizationService {
   /**
    * Map database member detailed to OrganizationMemberDetailed type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row with joined user data
   private mapDbMemberDetailedToMemberDetailed(dbMember: any): OrganizationMemberDetailed {
     return {
       id: dbMember.id,
@@ -698,6 +701,7 @@ export class TeamService {
   /**
    * Map database team to Team type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbTeamToTeam(dbTeam: any): Team {
     return {
       id: dbTeam.id,
@@ -715,6 +719,7 @@ export class TeamService {
   /**
    * Map database team member to TeamMember type
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   private mapDbTeamMemberToTeamMember(dbMember: any): TeamMember {
     return {
       id: dbMember.id,
