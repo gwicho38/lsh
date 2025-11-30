@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { fileURLToPath } from 'url';
+import { ENV_VARS } from '../constants/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,8 +22,8 @@ export class LshrcManager {
   private lshrcPath: string;
 
   constructor(lshrcPath?: string) {
-    // Use process.env.HOME if set (for testability), fallback to os.homedir()
-    const homeDir = process.env.HOME || os.homedir();
+    // Use process.env[ENV_VARS.HOME] if set (for testability), fallback to os.homedir()
+    const homeDir = process.env[ENV_VARS.HOME] || os.homedir();
     this.lshrcPath = lshrcPath || path.join(homeDir, '.lshrc');
   }
 

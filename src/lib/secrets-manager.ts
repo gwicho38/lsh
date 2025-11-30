@@ -10,6 +10,7 @@ import { createLogger, LogLevel } from './logger.js';
 import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo } from './git-utils.js';
 import { IPFSSyncLogger } from './ipfs-sync-logger.js';
 import { IPFSSecretsStorage } from './ipfs-secrets-storage.js';
+import { ENV_VARS } from '../constants/index.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -40,7 +41,7 @@ export class SecretsManager {
   constructor(options: SecretsManagerOptions);
   constructor(userIdOrOptions?: string | SecretsManagerOptions, encryptionKey?: string, detectGit?: boolean) {
     this.storage = new IPFSSecretsStorage();
-    this.homeDir = process.env.HOME || process.env.USERPROFILE || '';
+    this.homeDir = process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || '';
 
     // Handle both legacy and new constructor signatures
     let options: SecretsManagerOptions;
@@ -103,13 +104,14 @@ export class SecretsManager {
    */
   private getDefaultEncryptionKey(): string {
     // Check for explicit key
-    if (process.env.LSH_SECRETS_KEY) {
-      return process.env.LSH_SECRETS_KEY;
+    const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+    if (envKey) {
+      return envKey;
     }
 
     // Generate from machine ID and user
-    const machineId = process.env.HOSTNAME || 'localhost';
-    const user = process.env.USER || 'unknown';
+    const machineId = process.env[ENV_VARS.HOSTNAME] || 'localhost';
+    const user = process.env[ENV_VARS.USER] || 'unknown';
     const seed = `${machineId}-${user}-lsh-secrets`;
 
     // Create deterministic key
@@ -312,7 +314,7 @@ export class SecretsManager {
     const effectiveEnv = this.getRepoAwareEnvironment(environment);
 
     // Warn if using default key
-    if (!process.env.LSH_SECRETS_KEY) {
+    if (!process.env[ENV_VARS.LSH_SECRETS_KEY]) {
       logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
       logger.warn('   To share secrets across machines, generate a key with: lsh key');
       logger.warn('   Then add LSH_SECRETS_KEY=<key> to your .env on all machines');
@@ -562,7 +564,7 @@ export class SecretsManager {
       cloudExists: false,
       cloudKeys: 0,
       cloudModified: undefined as Date | undefined,
-      keySet: !!process.env.LSH_SECRETS_KEY,
+      keySet: !!process.env[ENV_VARS.LSH_SECRETS_KEY],
       keyMatches: undefined as boolean | undefined,
       suggestions: [] as string[],
     };
@@ -619,7 +621,7 @@ export class SecretsManager {
     }
 
     // Check for v1 compatibility mode
-    if (process.env.LSH_V1_COMPAT === 'true') {
+    if (process.env[ENV_VARS.LSH_V1_COMPAT] === 'true') {
       return 'dev'; // v1.x behavior
     }
 
@@ -663,7 +665,7 @@ export class SecretsManager {
    * Generate encryption key if not set
    */
   private async ensureEncryptionKey(): Promise<boolean> {
-    if (process.env.LSH_SECRETS_KEY) {
+    if (process.env[ENV_VARS.LSH_SECRETS_KEY]) {
       return true; // Key already set
     }
 
@@ -694,7 +696,7 @@ export class SecretsManager {
       fs.writeFileSync(envPath, content, 'utf8');
 
       // Set in current process
-      process.env.LSH_SECRETS_KEY = key;
+      process.env[ENV_VARS.LSH_SECRETS_KEY] = key;
       this.encryptionKey = key;
 
       logger.info('✅ Generated and saved encryption key to .env');
@@ -849,7 +851,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     }
 
     // Step 1: Ensure encryption key exists
-    if (!process.env.LSH_SECRETS_KEY) {
+    if (!process.env[ENV_VARS.LSH_SECRETS_KEY]) {
       logger.info('🔑 No encryption key found...');
       await this.ensureEncryptionKey();
       out();

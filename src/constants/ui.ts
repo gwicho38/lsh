@@ -82,3 +82,92 @@ export const LOG_LEVELS = {
   ERROR: 'ERROR',
   DEBUG: 'DEBUG',
 } as const;
+
+/**
+ * Emoji prefixes for consistent UI output
+ */
+export const EMOJI = {
+  SUCCESS: '✅',
+  ERROR: '❌',
+  WARNING: '⚠️',
+  INFO: 'ℹ️',
+  TIP: '💡',
+  KEY: '🔑',
+  FILE: '📄',
+  FOLDER: '📁',
+  LIST: '📋',
+  SEARCH: '🔍',
+  LOCATION: '📍',
+  UP: '⬆️',
+  DOWN: '⬇️',
+  CALENDAR: '📅',
+  GEAR: '⚙️',
+} as const;
+
+/**
+ * Status messages with emoji
+ */
+export const STATUS_MESSAGES = {
+  // Success messages
+  SUCCESS: '✅',
+  SUCCESS_GENERIC: '✅ Success',
+  CONNECTION_SUCCESS: '✅ Connection successful!',
+  CONFIG_SAVED: '✅ Configuration saved',
+  SECRETS_PULLED: '✅ Secrets pulled successfully!',
+  IPFS_INSTALLED: '✅ IPFS client installed',
+
+  // Error messages
+  ERROR: '❌',
+  ERROR_GENERIC: '❌ Error',
+  CONNECTION_FAILED: '❌ Connection failed',
+  CONFIG_SAVE_FAILED: '❌ Failed to save configuration',
+  PULL_FAILED: '❌ Failed to pull secrets',
+
+  // Warning messages
+  WARNING: '⚠️',
+  WARNING_GENERIC: '⚠️ Warning',
+  IPFS_NOT_INSTALLED: '⚠️  IPFS client not installed',
+  NOT_GIT_REPO: 'ℹ️  Not in a git repository',
+
+  // Info messages
+  INFO: 'ℹ️',
+  RECOMMENDATIONS: '💡 Recommendations:',
+  CURRENT_REPO: '📁 Current Repository:',
+} as const;
+
+/**
+ * Doctor/diagnostic messages
+ */
+export const DOCTOR_MESSAGES = {
+  CHECKING: '🔍 Checking:',
+  ALL_PASSED: '✅ All checks passed!',
+  ISSUES_FOUND: '❌ Issues found',
+  RECOMMENDATIONS: '💡 Recommendations:',
+} as const;
+
+/**
+ * Init/setup messages
+ */
+export const INIT_MESSAGES = {
+  WELCOME: '🚀 Welcome to LSH Setup',
+  STEP_COMPLETE: '✅ Step complete',
+  SETUP_COMPLETE: '✅ Setup complete!',
+  CONNECTION_TEST_SKIPPED: '⚠️  Connection test skipped. Run "lsh doctor" after setup to verify.',
+} as const;
+
+/**
+ * Migration messages
+ */
+export const MIGRATION_MESSAGES = {
+  SCANNING: '🔍 Scanning for Firebase references...',
+  MIGRATING: '🔄 Migrating...',
+  COMPLETE: '✅ Migration complete',
+  NO_CHANGES: 'ℹ️  No changes needed',
+} as const;
+
+/**
+ * Deprecation warnings
+ */
+export const DEPRECATION_WARNINGS = {
+  LIB_COMMANDS: '\x1b[33m⚠️  WARNING: "lsh lib" commands are deprecated as of v1.0.0\x1b[0m',
+} as const;
