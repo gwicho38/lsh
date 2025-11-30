@@ -9,70 +9,55 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll, jest } from '@je
 const mockFetch = jest.fn();
 global.fetch = mockFetch as unknown as typeof fetch;
 
-// Create mock with proper chaining
-let mockSingleFn: jest.Mock;
-let mockOrderFn: jest.Mock;
-let mockLimitFn: jest.Mock;
+// Create stable mock references - these persist across tests
+const mockSingleFn = jest.fn();
+const mockOrderFn = jest.fn();
+const mockUpsertFn = jest.fn();
+const mockUpdateFn = jest.fn();
+const mockFromFn = jest.fn();
 
-const createMockSupabase = () => {
-  mockSingleFn = jest.fn();
-  mockOrderFn = jest.fn();
-  mockLimitFn = jest.fn();
-
-  const defaultResponse = { data: null, error: null };
-  const defaultArrayResponse = { data: [], error: null };
-
-  // Create a thenable chain that can be awaited or chained
-  const createThenable = (defaultValue: any) => {
-    const chain: any = {
-      from: jest.fn(),
-      insert: jest.fn(),
-      update: jest.fn(),
-      upsert: jest.fn(),
-      select: jest.fn(),
-      eq: jest.fn(),
-      order: jest.fn(),
-      limit: jest.fn(),
-      single: jest.fn(),
-      // Make it thenable for await
-      then: (resolve: any) => Promise.resolve(defaultValue).then(resolve),
-      catch: () => Promise.resolve(defaultValue),
-    };
-
-    chain.from.mockReturnValue(chain);
-    chain.insert.mockReturnValue(chain);
-    chain.update.mockReturnValue(chain);
-    chain.upsert.mockReturnValue(chain);
-    chain.select.mockReturnValue(chain);
-    chain.eq.mockReturnValue(chain);
-    chain.order.mockReturnValue(chain);
-    chain.limit.mockReturnValue(chain);
-    chain.single.mockReturnValue(chain);
-
-    return chain;
-  };
-
-  const mockChain = createThenable(defaultArrayResponse);
-
-  // Store references to the mock functions for test assertions and override
-  mockSingleFn = mockChain.single;
-  mockOrderFn = mockChain.order;
-  mockLimitFn = mockChain.limit;
-
-  // Allow overriding the then value for specific tests
-  mockChain.setNextResponse = (response: any) => {
-    mockChain.then = (resolve: any) => Promise.resolve(response).then(resolve);
-  };
-
-  return mockChain;
+// Create stable mock chain
+const mockSupabase: any = {
+  from: mockFromFn,
+  insert: jest.fn(),
+  update: mockUpdateFn,
+  upsert: mockUpsertFn,
+  select: jest.fn(),
+  eq: jest.fn(),
+  order: mockOrderFn,
+  limit: jest.fn(),
+  single: mockSingleFn,
 };
 
-let mockSupabase = createMockSupabase();
+// Setup chaining - always returns the chain
+mockSupabase.from.mockReturnValue(mockSupabase);
+mockSupabase.insert.mockReturnValue(mockSupabase);
+mockSupabase.update.mockReturnValue(mockSupabase);
+mockSupabase.upsert.mockReturnValue(mockSupabase);
+mockSupabase.select.mockReturnValue(mockSupabase);
+mockSupabase.eq.mockReturnValue(mockSupabase);
+mockSupabase.order.mockReturnValue(mockSupabase);
+mockSupabase.limit.mockReturnValue(mockSupabase);
+mockSupabase.single.mockReturnValue(mockSupabase);
+
+// Make chain thenable with default empty response
+const makeThenable = (defaultValue: any) => {
+  Object.defineProperty(mockSupabase, 'then', {
+    value: (resolve: any) => Promise.resolve(defaultValue).then(resolve),
+    writable: true,
+    configurable: true,
+  });
+  Object.defineProperty(mockSupabase, 'catch', {
+    value: () => Promise.resolve(defaultValue),
+    writable: true,
+    configurable: true,
+  });
+};
+
+makeThenable({ data: [], error: null });
 
 jest.mock('../src/lib/supabase-client.js', () => ({
-  get getSupabaseClient() {
-    return () => mockSupabase;
-  },
+  getSupabaseClient: () => mockSupabase,
 }));
 
 // Mock audit logger
@@ -91,14 +76,6 @@ describe('SaaS Billing Service', () => {
   let STRIPE_PRICE_IDS: typeof import('../src/lib/saas-billing.js').STRIPE_PRICE_IDS;
 
   beforeAll(async () => {
-    // Reset modules to ensure our mock is applied fresh
-    jest.resetModules();
-
-    // Re-establish the mock after reset
-    jest.doMock('../src/lib/supabase-client.js', () => ({
-      getSupabaseClient: () => mockSupabase,
-    }));
-
     process.env.STRIPE_SECRET_KEY = 'sk_test_fake_key';
     process.env.STRIPE_WEBHOOK_SECRET = 'whsec_fake_secret';
     process.env.STRIPE_PRICE_PRO_MONTHLY = 'price_pro_monthly';
@@ -112,9 +89,24 @@ describe('SaaS Billing Service', () => {
   });
 
   beforeEach(() => {
+    // Clear all mock call counts but keep the chaining setup
     jest.clearAllMocks();
-    mockSupabase = createMockSupabase();
     mockFetch.mockReset();
+
+    // Re-setup chaining after clearAllMocks
+    mockFromFn.mockReturnValue(mockSupabase);
+    mockSupabase.insert.mockReturnValue(mockSupabase);
+    mockUpdateFn.mockReturnValue(mockSupabase);
+    mockUpsertFn.mockReturnValue(mockSupabase);
+    mockSupabase.select.mockReturnValue(mockSupabase);
+    mockSupabase.eq.mockReturnValue(mockSupabase);
+    mockOrderFn.mockReturnValue(mockSupabase);
+    mockSupabase.limit.mockReturnValue(mockSupabase);
+    mockSingleFn.mockReturnValue(mockSupabase);
+
+    // Reset thenable to default
+    makeThenable({ data: [], error: null });
+
     billingService = new BillingService();
   });
 
@@ -305,8 +297,8 @@ describe('SaaS Billing Service', () => {
     });
 
     it('should handle customer.subscription.created event', async () => {
-      // Mock upsert
-      mockSupabase.upsert.mockResolvedValueOnce({ error: null });
+      // Make upsert resolve successfully
+      mockUpsertFn.mockResolvedValueOnce({ error: null });
 
       const event = {
         type: 'customer.subscription.created',
@@ -333,11 +325,15 @@ describe('SaaS Billing Service', () => {
 
       await billingService.handleWebhook(JSON.stringify(event), 'sig_test');
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('subscriptions');
-      expect(mockSupabase.upsert).toHaveBeenCalled();
+      expect(mockFromFn).toHaveBeenCalledWith('subscriptions');
+      expect(mockUpsertFn).toHaveBeenCalled();
     });
 
     it('should handle customer.subscription.deleted event', async () => {
+      // The chain should return mockSupabase, and the terminal eq should resolve
+      mockSupabase.eq.mockResolvedValueOnce({ error: null });
+      mockSupabase.eq.mockResolvedValueOnce({ error: null });
+
       const event = {
         type: 'customer.subscription.deleted',
         data: {
@@ -351,11 +347,11 @@ describe('SaaS Billing Service', () => {
       await billingService.handleWebhook(JSON.stringify(event), 'sig_test');
 
       // Should update subscription and organization
-      expect(mockSupabase.update).toHaveBeenCalled();
+      expect(mockUpdateFn).toHaveBeenCalled();
     });
 
     it('should handle invoice.paid event', async () => {
-      mockSupabase.upsert.mockResolvedValueOnce({ error: null });
+      mockUpsertFn.mockResolvedValueOnce({ error: null });
 
       const event = {
         type: 'invoice.paid',
@@ -368,6 +364,7 @@ describe('SaaS Billing Service', () => {
             amount_paid: 1999,
             currency: 'usd',
             created: Math.floor(Date.now() / 1000),
+            status: 'paid',
             status_transitions: { paid_at: Math.floor(Date.now() / 1000) },
             invoice_pdf: 'https://stripe.com/invoice.pdf',
           },
@@ -376,10 +373,13 @@ describe('SaaS Billing Service', () => {
 
       await billingService.handleWebhook(JSON.stringify(event), 'sig_test');
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('invoices');
+      expect(mockFromFn).toHaveBeenCalledWith('invoices');
     });
 
     it('should handle invoice.payment_failed event', async () => {
+      // The chain should return mockSupabase, and the terminal eq should resolve
+      mockSupabase.eq.mockResolvedValueOnce({ error: null });
+
       const event = {
         type: 'invoice.payment_failed',
         data: {
@@ -393,7 +393,7 @@ describe('SaaS Billing Service', () => {
       await billingService.handleWebhook(JSON.stringify(event), 'sig_test');
 
       // Should update organization status to past_due
-      expect(mockSupabase.update).toHaveBeenCalled();
+      expect(mockUpdateFn).toHaveBeenCalled();
     });
 
     it('should throw error for invalid webhook payload', async () => {
