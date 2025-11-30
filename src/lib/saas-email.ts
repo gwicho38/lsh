@@ -3,6 +3,8 @@
  * Email sending using Resend API
  */
 
+import { ENV_VARS } from '../constants/index.js';
+
 /**
  * Email Service Configuration
  */
@@ -31,10 +33,10 @@ export class EmailService {
 
   constructor(config?: Partial<EmailConfig>) {
     this.config = {
-      apiKey: config?.apiKey || process.env.RESEND_API_KEY || '',
-      fromEmail: config?.fromEmail || process.env.EMAIL_FROM || 'noreply@lsh.dev',
+      apiKey: config?.apiKey || process.env[ENV_VARS.RESEND_API_KEY] || '',
+      fromEmail: config?.fromEmail || process.env[ENV_VARS.EMAIL_FROM] || 'noreply@lsh.dev',
       fromName: config?.fromName || 'LSH Secrets Manager',
-      baseUrl: config?.baseUrl || process.env.BASE_URL || 'https://app.lsh.dev',
+      baseUrl: config?.baseUrl || process.env[ENV_VARS.BASE_URL] || 'https://app.lsh.dev',
     };
 
     if (!this.config.apiKey) {

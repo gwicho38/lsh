@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import { getGitRepoInfo } from './git-utils.js';
+import { ENV_VARS } from '../constants/index.js';
 
 export interface SyncRecord {
   timestamp: string;
@@ -68,7 +69,7 @@ export class IPFSSyncLogger {
    * Check if IPFS sync is enabled
    */
   isEnabled(): boolean {
-    return process.env.DISABLE_IPFS_SYNC !== 'true';
+    return process.env[ENV_VARS.DISABLE_IPFS_SYNC] !== 'true';
   }
 
   /**
@@ -257,7 +258,7 @@ export class IPFSSyncLogger {
    * Get encryption key fingerprint
    */
   private getKeyFingerprint(): string {
-    const key = process.env.LSH_SECRETS_KEY || 'default';
+    const key = process.env[ENV_VARS.LSH_SECRETS_KEY] || 'default';
     return `sha256:${crypto.createHash('sha256').update(key).digest('hex').substring(0, 16)}`;
   }
 

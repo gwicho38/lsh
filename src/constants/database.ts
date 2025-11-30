@@ -17,6 +17,34 @@ export const TABLES = {
   // CI/CD tables
   PIPELINE_EVENTS: 'pipeline_events',
 
+  // SaaS tables - Users and Authentication
+  USERS: 'users',
+  USER_SESSIONS: 'user_sessions',
+
+  // SaaS tables - Organizations and Teams
+  ORGANIZATIONS: 'organizations',
+  ORGANIZATION_MEMBERS: 'organization_members',
+  TEAMS: 'teams',
+  TEAM_MEMBERS: 'team_members',
+
+  // SaaS tables - Secrets
+  SECRETS: 'secrets',
+  SECRET_ACCESS_LOGS: 'secret_access_logs',
+  SECRET_VERSIONS: 'secret_versions',
+
+  // SaaS tables - Audit
+  AUDIT_LOGS: 'audit_logs',
+
+  // SaaS tables - Billing
+  SUBSCRIPTIONS: 'subscriptions',
+  INVOICES: 'invoices',
+
+  // SaaS tables - Encryption
+  ENCRYPTION_KEYS: 'encryption_keys',
+
+  // LSH Secrets (legacy name)
+  LSH_SECRETS: 'lsh_secrets',
+
   // Trading/ML tables (legacy)
   TRADING_DISCLOSURES: 'trading_disclosures',
   POLITICIANS: 'politicians',

@@ -9,6 +9,8 @@ import rateLimit from 'express-rate-limit';
 import { setupSaaSApiRoutes } from './saas-api-routes.js';
 import type { Server } from 'http';
 import { getErrorMessage } from '../lib/saas-types.js';
+import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import { ERROR_CODES } from '../constants/errors.js';
 
 export interface SaaSApiServerConfig {
   port: number;
@@ -28,11 +30,11 @@ export class SaaSApiServer {
 
   constructor(config?: Partial<SaaSApiServerConfig>) {
     this.config = {
-      port: config?.port || parseInt(process.env.LSH_SAAS_API_PORT || '3031'),
-      host: config?.host || process.env.LSH_SAAS_API_HOST || '0.0.0.0',
-      corsOrigins: config?.corsOrigins || (process.env.LSH_CORS_ORIGINS?.split(',') || ['*']),
+      port: config?.port || parseInt(process.env[ENV_VARS.LSH_SAAS_API_PORT] || String(DEFAULTS.SAAS_API_PORT)),
+      host: config?.host || process.env[ENV_VARS.LSH_SAAS_API_HOST] || DEFAULTS.DEFAULT_HOST,
+      corsOrigins: config?.corsOrigins || (process.env[ENV_VARS.LSH_CORS_ORIGINS]?.split(',') || [...DEFAULTS.DEFAULT_CORS_ORIGINS]),
       rateLimitWindowMs: config?.rateLimitWindowMs || 15 * 60 * 1000, // 15 minutes
-      rateLimitMax: config?.rateLimitMax || 100, // Max 100 requests per windowMs
+      rateLimitMax: config?.rateLimitMax || DEFAULTS.MAX_EVENTS_LIMIT, // Max 100 requests per windowMs
     };
 
     this.app = express();
@@ -144,7 +146,7 @@ export class SaaSApiServer {
       res.status(404).json({
         success: false,
         error: {
-          code: 'NOT_FOUND',
+          code: ERROR_CODES.NOT_FOUND,
           message: `Endpoint ${req.method} ${req.path} not found`,
         },
       });
@@ -160,9 +162,9 @@ export class SaaSApiServer {
       console.error('API Error:', err);
 
       // Don't leak error details in production
-      const isDev = process.env.NODE_ENV !== 'production';
+      const isDev = process.env[ENV_VARS.NODE_ENV] !== 'production';
       const statusCode = (err as { status?: number }).status || 500;
-      const errorCode = (err as { code?: string }).code || 'INTERNAL_ERROR';
+      const errorCode = (err as { code?: string }).code || ERROR_CODES.INTERNAL_ERROR;
 
       res.status(statusCode).json({
         success: false,

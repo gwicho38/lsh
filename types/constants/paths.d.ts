@@ -13,6 +13,8 @@ export declare const PATHS: {
     readonly DAEMON_LOG_FILE_TEMPLATE: "/tmp/lsh-job-daemon-${USER}.log";
     readonly DAEMON_JOBS_FILE_TEMPLATE: "/tmp/lsh-daemon-jobs-${USER}.json";
     readonly DEFAULT_JOBS_PERSISTENCE_FILE: "/tmp/lsh-jobs.json";
+    readonly JOB_REGISTRY_FILE: "/tmp/lsh-job-registry.json";
+    readonly JOB_LOGS_DIR: "/tmp/lsh-job-logs";
 };
 export declare const PREFIXES: {
     readonly SESSION_ID: "lsh_";

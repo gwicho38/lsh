@@ -11,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { logger } from './logger.js';
+import { ENV_VARS } from '../constants/index.js';
 
 interface LshConfig {
   version: string;
@@ -88,7 +89,7 @@ export class LshConfigManager {
     }
 
     // Fall back to environment variables
-    const envKey = process.env.LSH_SECRETS_KEY || process.env.LSH_MASTER_KEY;
+    const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY] || process.env[ENV_VARS.LSH_MASTER_KEY];
     if (envKey) {
       logger.debug(`Using encryption key from environment for ${repoName}`);
       return envKey;

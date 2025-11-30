@@ -10,12 +10,13 @@ import {
   loadGlobalConfig
 } from '../lib/config-manager.js';
 import * as fs from 'fs/promises';
+import { ENV_VARS } from '../constants/index.js';
 
 /**
  * Get user's preferred editor
  */
 function getEditor(): string {
-  return process.env.VISUAL || process.env.EDITOR || 'vi';
+  return process.env[ENV_VARS.VISUAL] || process.env[ENV_VARS.EDITOR] || 'vi';
 }
 
 /**

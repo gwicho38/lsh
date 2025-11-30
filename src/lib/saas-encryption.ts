@@ -6,6 +6,7 @@
 import { randomBytes, createCipheriv, createDecipheriv, createHash, pbkdf2Sync } from 'crypto';
 import type { EncryptionKey } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
+import { ENV_VARS } from '../constants/index.js';
 
 const ALGORITHM = 'aes-256-cbc';
 const KEY_LENGTH = 32; // 256 bits
@@ -18,7 +19,7 @@ const PBKDF2_ITERATIONS = 100000;
  * This key is used to encrypt/decrypt team encryption keys
  */
 function getMasterKey(): Buffer {
-  const masterKeyHex = process.env.LSH_MASTER_KEY || process.env.LSH_SECRETS_KEY;
+  const masterKeyHex = process.env[ENV_VARS.LSH_MASTER_KEY] || process.env[ENV_VARS.LSH_SECRETS_KEY];
 
   if (!masterKeyHex) {
     throw new Error(

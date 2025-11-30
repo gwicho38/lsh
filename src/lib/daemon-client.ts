@@ -12,6 +12,7 @@ import { createLogger } from './logger.js';
 import { JobSpec } from './job-manager.js';
 import { ShellJob } from './database-schema.js';
 import { getPlatformPaths } from './platform-utils.js';
+import { ENV_VARS } from '../constants/index.js';
 
 export interface DaemonMessage {
   command: string;
@@ -351,7 +352,7 @@ export class DaemonClient extends EventEmitter {
       schedule: jobSpec.schedule,
       env: jobSpec.environment || {},
       cwd: jobSpec.workingDirectory || process.cwd(),
-      user: jobSpec.user || process.env.USER,
+      user: jobSpec.user || process.env[ENV_VARS.USER],
       priority: jobSpec.priority || 0,
       tags: jobSpec.tags || [],
       enabled: jobSpec.enabled !== false,

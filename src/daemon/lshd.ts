@@ -17,6 +17,7 @@ import { validateEnvironment, printValidationResults } from '../lib/env-validato
 import { createLogger } from '../lib/logger.js';
 import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
 import { getPlatformPaths } from '../lib/platform-utils.js';
+import { ENV_VARS, DEFAULTS, ERRORS } from '../constants/index.js';
 
 const execAsync = promisify(exec);
 
@@ -74,13 +75,13 @@ export class LSHJobDaemon extends EventEmitter {
       logFile: platformPaths.logFile,
       jobsFile: jobsFilePath,
       socketPath: platformPaths.socketPath,
-      checkInterval: 2000, // 2 seconds for better cron accuracy
-      maxLogSize: 10 * 1024 * 1024, // 10MB
+      checkInterval: DEFAULTS.CHECK_INTERVAL_MS,
+      maxLogSize: DEFAULTS.MAX_LOG_SIZE_BYTES,
       autoRestart: true,
-      apiEnabled: process.env.LSH_API_ENABLED === 'true' || false,
-      apiPort: parseInt(process.env.LSH_API_PORT || '3030'),
-      apiKey: process.env.LSH_API_KEY,
-      enableWebhooks: process.env.LSH_ENABLE_WEBHOOKS === 'true',
+      apiEnabled: process.env[ENV_VARS.LSH_API_ENABLED] === 'true' || false,
+      apiPort: parseInt(process.env[ENV_VARS.LSH_API_PORT] || String(DEFAULTS.API_PORT)),
+      apiKey: process.env[ENV_VARS.LSH_API_KEY],
+      enableWebhooks: process.env[ENV_VARS.LSH_ENABLE_WEBHOOKS] === 'true',
       ...config
     };
 
@@ -107,9 +108,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
 
     // Fail fast in production if validation fails
-    if (!envValidation.isValid && process.env.NODE_ENV === 'production') {
+    if (!envValidation.isValid && process.env[ENV_VARS.NODE_ENV] === 'production') {
       this.log('ERROR', 'Environment validation failed in production');
-      throw new Error('Invalid environment configuration. Check logs for details.');
+      throw new Error(ERRORS.INVALID_ENV_CONFIG);
     }
 
     // Log warnings even in development
@@ -186,7 +187,7 @@ export class LSHJobDaemon extends EventEmitter {
    */
   async restart(): Promise<void> {
     await this.stop();
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+    await new Promise(resolve => setTimeout(resolve, DEFAULTS.DAEMON_RESTART_DELAY_MS));
     await this.start();
   }
 
@@ -250,8 +251,8 @@ export class LSHJobDaemon extends EventEmitter {
 
       // Validate command for security issues
       const validation = validateCommand(job.command, {
-        allowDangerousCommands: process.env.LSH_ALLOW_DANGEROUS_COMMANDS === 'true',
-        maxLength: 10000
+        allowDangerousCommands: process.env[ENV_VARS.LSH_ALLOW_DANGEROUS_COMMANDS] === 'true',
+        maxLength: DEFAULTS.MAX_COMMAND_LENGTH
       });
 
       if (!validation.isValid) {
@@ -382,8 +383,7 @@ export class LSHJobDaemon extends EventEmitter {
       }
 
       // Default limit to prevent oversized responses
-      const defaultLimit = 100;
-      return sanitizedJobs.slice(0, defaultLimit);
+      return sanitizedJobs.slice(0, DEFAULTS.MAX_EVENTS_LIMIT);
     } catch (error) {
       this.log('ERROR', `Failed to list jobs: ${error.message}`);
       return [];
@@ -865,7 +865,7 @@ const cliLogger = createLogger('LSHDaemonCLI');
 const isMainModule = (): boolean => {
   try {
     // Use Function constructor to avoid parse-time errors with import.meta
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
+     
     const getImportMetaUrl = new Function('return import.meta.url');
     const metaUrl = getImportMetaUrl();
     return metaUrl === `file://${process.argv[1]}`;
@@ -908,7 +908,7 @@ if (isMainModule()) {
           schedule: { interval: 0 }, // Run once
           env: process.env as Record<string, string>,
           cwd: process.cwd(),
-          user: process.env.USER,
+          user: process.env[ENV_VARS.USER],
           priority: 5,
           tags: ['manual'],
           maxRetries: 0,

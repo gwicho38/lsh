@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { homedir } from 'os';
 import { logger } from './logger.js';
+import { ENV_VARS } from '../constants/index.js';
 
 export interface StorachaConfig {
   email?: string;
@@ -54,7 +55,7 @@ export class StorachaClient {
     }
 
     // Default to enabled unless explicitly disabled
-    const envDisabled = process.env.LSH_STORACHA_ENABLED === 'false';
+    const envDisabled = process.env[ENV_VARS.LSH_STORACHA_ENABLED] === 'false';
     return {
       enabled: !envDisabled,
     };
@@ -77,7 +78,7 @@ export class StorachaClient {
    */
   isEnabled(): boolean {
     // Explicitly disabled via env var
-    if (process.env.LSH_STORACHA_ENABLED === 'false') {
+    if (process.env[ENV_VARS.LSH_STORACHA_ENABLED] === 'false') {
       return false;
     }
     // Use config setting (defaults to true)

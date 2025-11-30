@@ -9,7 +9,7 @@ export const ENDPOINTS = {
   HEALTH: '/health',
   ROOT: '/',
 
-  // Authentication
+  // Authentication (legacy)
   AUTH: '/api/auth',
   AUTH_REGISTER: '/auth/register',
   AUTH_LOGIN: '/auth/login',
@@ -58,6 +58,44 @@ export const ENDPOINTS = {
   API_ANALYTICS_PREDICTIONS: '/api/analytics/predictions',
   API_ANALYTICS_COSTS: '/api/analytics/costs',
   API_ANALYTICS_BOTTLENECKS: '/api/analytics/bottlenecks',
+
+  // SaaS API v1 - Authentication
+  API_V1_AUTH_SIGNUP: '/api/v1/auth/signup',
+  API_V1_AUTH_LOGIN: '/api/v1/auth/login',
+  API_V1_AUTH_VERIFY_EMAIL: '/api/v1/auth/verify-email',
+  API_V1_AUTH_RESEND_VERIFICATION: '/api/v1/auth/resend-verification',
+  API_V1_AUTH_REFRESH: '/api/v1/auth/refresh',
+  API_V1_AUTH_ME: '/api/v1/auth/me',
+
+  // SaaS API v1 - Organizations
+  API_V1_ORGANIZATIONS: '/api/v1/organizations',
+  API_V1_ORGANIZATION: '/api/v1/organizations/:organizationId',
+  API_V1_ORGANIZATION_MEMBERS: '/api/v1/organizations/:organizationId/members',
+  API_V1_ORGANIZATION_TEAMS: '/api/v1/organizations/:organizationId/teams',
+  API_V1_ORGANIZATION_AUDIT: '/api/v1/organizations/:organizationId/audit',
+  API_V1_ORGANIZATION_BILLING_SUBSCRIPTION: '/api/v1/organizations/:organizationId/billing/subscription',
+  API_V1_ORGANIZATION_BILLING_CHECKOUT: '/api/v1/organizations/:organizationId/billing/checkout',
+
+  // SaaS API v1 - Teams
+  API_V1_TEAM_SECRETS: '/api/v1/teams/:teamId/secrets',
+  API_V1_TEAM_SECRET: '/api/v1/teams/:teamId/secrets/:secretId',
+  API_V1_TEAM_SECRET_RETRIEVE: '/api/v1/teams/:teamId/secrets/:secretId/retrieve',
+  API_V1_TEAM_SECRETS_EXPORT: '/api/v1/teams/:teamId/secrets/export/env',
+  API_V1_TEAM_SECRETS_IMPORT: '/api/v1/teams/:teamId/secrets/import/env',
+
+  // SaaS API v1 - Webhooks
+  API_V1_WEBHOOKS_STRIPE: '/api/v1/webhooks/stripe',
+  API_V1_BILLING_WEBHOOKS: '/api/v1/billing/webhooks',
+  API_V1_ORGANIZATION_AUDIT_LOGS: '/api/v1/organizations/:organizationId/audit-logs',
+
+  // API Info/Documentation (patterns)
+  API_V1_ROOT: '/api/v1',
+  API_V1_AUTH_WILDCARD: '/api/v1/auth/*',
+  API_V1_ORGANIZATIONS_WILDCARD: '/api/v1/organizations/*',
+  API_V1_ORG_TEAMS_WILDCARD: '/api/v1/organizations/:id/teams/*',
+  API_V1_TEAMS_SECRETS_WILDCARD: '/api/v1/teams/:id/secrets/*',
+  API_V1_ORG_BILLING_WILDCARD: '/api/v1/organizations/:id/billing/*',
+  API_V1_ORG_AUDIT_LOGS: '/api/v1/organizations/:id/audit-logs',
 } as const;
 
 export const HTTP_HEADERS = {

@@ -5,6 +5,7 @@
 
 import * as path from 'path';
 import * as os from 'os';
+import { ENV_VARS } from '../constants/index.js';
 
 export interface PlatformPaths {
   tmpDir: string;
@@ -50,7 +51,7 @@ export function getPlatformPaths(appName: string = 'lsh'): PlatformPaths {
   // Linux: ~/.config/lsh
   let configDir: string;
   if (isWindows) {
-    configDir = path.join(process.env.APPDATA || path.join(homeDir, 'AppData', 'Roaming'), appName);
+    configDir = path.join(process.env[ENV_VARS.APPDATA] || path.join(homeDir, 'AppData', 'Roaming'), appName);
   } else if (isMac) {
     configDir = path.join(homeDir, 'Library', 'Application Support', appName);
   } else {
@@ -63,7 +64,7 @@ export function getPlatformPaths(appName: string = 'lsh'): PlatformPaths {
   // Linux: ~/.local/share/lsh
   let dataDir: string;
   if (isWindows) {
-    dataDir = path.join(process.env.LOCALAPPDATA || path.join(homeDir, 'AppData', 'Local'), appName);
+    dataDir = path.join(process.env[ENV_VARS.LOCALAPPDATA] || path.join(homeDir, 'AppData', 'Local'), appName);
   } else if (isMac) {
     dataDir = path.join(homeDir, 'Library', 'Application Support', appName);
   } else {
@@ -158,9 +159,9 @@ export async function ensureDir(dirPath: string): Promise<void> {
  */
 export function getDefaultShell(): string {
   if (isWindows()) {
-    return process.env.COMSPEC || 'cmd.exe';
+    return process.env[ENV_VARS.COMSPEC] || 'cmd.exe';
   }
-  return process.env.SHELL || '/bin/sh';
+  return process.env[ENV_VARS.SHELL] || '/bin/sh';
 }
 
 /**

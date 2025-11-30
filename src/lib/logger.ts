@@ -4,6 +4,8 @@
  * structured logging, and environment-based configuration.
  */
 
+import { ENV_VARS } from '../constants/index.js';
+
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -62,7 +64,7 @@ const colors = {
  * Get log level from environment variable
  */
 function getLogLevelFromEnv(): LogLevel {
-  const level = process.env.LSH_LOG_LEVEL?.toUpperCase();
+  const level = process.env[ENV_VARS.LSH_LOG_LEVEL]?.toUpperCase();
   switch (level) {
     case 'DEBUG':
       return LogLevel.DEBUG;
@@ -75,7 +77,7 @@ function getLogLevelFromEnv(): LogLevel {
     case 'NONE':
       return LogLevel.NONE;
     default:
-      return process.env.NODE_ENV === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
+      return process.env[ENV_VARS.NODE_ENV] === 'production' ? LogLevel.INFO : LogLevel.DEBUG;
   }
 }
 
@@ -89,8 +91,8 @@ export class Logger {
     this.config = {
       level: config?.level ?? getLogLevelFromEnv(),
       enableTimestamp: config?.enableTimestamp ?? true,
-      enableColors: config?.enableColors ?? (!process.env.NO_COLOR && process.stdout.isTTY),
-      enableJSON: config?.enableJSON ?? (process.env.LSH_LOG_FORMAT === 'json'),
+      enableColors: config?.enableColors ?? (!process.env[ENV_VARS.NO_COLOR] && process.stdout.isTTY),
+      enableJSON: config?.enableJSON ?? (process.env[ENV_VARS.LSH_LOG_FORMAT] === 'json'),
       context: config?.context,
     };
   }

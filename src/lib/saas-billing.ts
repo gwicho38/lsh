@@ -10,15 +10,16 @@ import type {
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
+import { ENV_VARS } from '../constants/index.js';
 
 /**
  * Stripe Pricing IDs (set via environment variables)
  */
 export const STRIPE_PRICE_IDS = {
-  pro_monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || '',
-  pro_yearly: process.env.STRIPE_PRICE_PRO_YEARLY || '',
-  enterprise_monthly: process.env.STRIPE_PRICE_ENTERPRISE_MONTHLY || '',
-  enterprise_yearly: process.env.STRIPE_PRICE_ENTERPRISE_YEARLY || '',
+  pro_monthly: process.env[ENV_VARS.STRIPE_PRICE_PRO_MONTHLY] || '',
+  pro_yearly: process.env[ENV_VARS.STRIPE_PRICE_PRO_YEARLY] || '',
+  enterprise_monthly: process.env[ENV_VARS.STRIPE_PRICE_ENTERPRISE_MONTHLY] || '',
+  enterprise_yearly: process.env[ENV_VARS.STRIPE_PRICE_ENTERPRISE_YEARLY] || '',
 };
 
 /**
@@ -26,8 +27,8 @@ export const STRIPE_PRICE_IDS = {
  */
 export class BillingService {
   private supabase = getSupabaseClient();
-  private stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
-  private stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
+  private stripeSecretKey = process.env[ENV_VARS.STRIPE_SECRET_KEY] || '';
+  private stripeWebhookSecret = process.env[ENV_VARS.STRIPE_WEBHOOK_SECRET] || '';
   private stripeApiUrl = 'https://api.stripe.com/v1';
 
   /**

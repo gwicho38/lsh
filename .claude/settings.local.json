@@ -141,7 +141,12 @@
       "Bash(timeout 240 npx jest:*)",
       "Bash(timeout 180 npm test:*)",
       "Bash(timeout 300 npm test:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(sort:*)",
+      "Bash(for nb in notebooks/ingestion/*.ipynb)",
+      "Bash(ln:*)",
+      "Bash(xargs ls:*)",
+      "Bash(npx ts-node:*)"
     ],
     "deny": [],
     "ask": []

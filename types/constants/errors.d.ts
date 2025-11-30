@@ -58,3 +58,22 @@ export declare const RISK_LEVELS: {
     readonly MEDIUM: "medium";
     readonly LOW: "low";
 };
+/**
+ * API Error Codes
+ *
+ * Standard error codes used across the SaaS API and services.
+ */
+export declare const ERROR_CODES: {
+    readonly UNAUTHORIZED: "UNAUTHORIZED";
+    readonly INVALID_CREDENTIALS: "INVALID_CREDENTIALS";
+    readonly INVALID_TOKEN: "INVALID_TOKEN";
+    readonly EMAIL_NOT_VERIFIED: "EMAIL_NOT_VERIFIED";
+    readonly EMAIL_ALREADY_EXISTS: "EMAIL_ALREADY_EXISTS";
+    readonly FORBIDDEN: "FORBIDDEN";
+    readonly INVALID_INPUT: "INVALID_INPUT";
+    readonly NOT_FOUND: "NOT_FOUND";
+    readonly ALREADY_EXISTS: "ALREADY_EXISTS";
+    readonly PAYMENT_REQUIRED: "PAYMENT_REQUIRED";
+    readonly TIER_LIMIT_EXCEEDED: "TIER_LIMIT_EXCEEDED";
+    readonly INTERNAL_ERROR: "INTERNAL_ERROR";
+};

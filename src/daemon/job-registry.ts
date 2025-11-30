@@ -13,6 +13,7 @@ import { exec } from 'child_process';
 import { BaseJobManager, BaseJobSpec } from '../lib/base-job-manager.js';
 import MemoryJobStorage from '../lib/job-storage-memory.js';
 import { JobSpec } from '../lib/job-manager.js';
+import { ENV_VARS } from '../constants/index.js';
 
 export interface JobExecutionRecord {
   executionId: string;
@@ -143,7 +144,7 @@ export class JobRegistry extends BaseJobManager {
       outputSize: 0,
       environment: { ...(job.env || {}) },
       workingDirectory: job.cwd || process.cwd(),
-      user: job.user || process.env.USER || 'unknown',
+      user: job.user || process.env[ENV_VARS.USER] || 'unknown',
       hostname: os.hostname(),
       tags: [...(job.tags || [])],
       priority: job.priority || 5,
