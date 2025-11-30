@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { getGitRepoInfo } from '../../lib/git-utils.js';
+import { ENV_VARS } from '../../constants/index.js';
 
 export async function init_secrets(program: Command) {
   // Push secrets to cloud
@@ -986,7 +987,7 @@ API_KEY=
     .option('-y, --yes', 'Skip confirmation prompts')
     .action(async (options) => {
       try {
-        const lshDir = path.join(process.env.HOME || process.env.USERPROFILE || '', '.lsh');
+        const lshDir = path.join(process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || '', '.lsh');
         const metadataPath = path.join(lshDir, 'secrets-metadata.json');
         const cacheDir = path.join(lshDir, 'secrets-cache');
 

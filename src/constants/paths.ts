@@ -21,6 +21,10 @@ export const PATHS = {
 
   // Job persistence
   DEFAULT_JOBS_PERSISTENCE_FILE: '/tmp/lsh-jobs.json',
+
+  // Job registry files
+  JOB_REGISTRY_FILE: '/tmp/lsh-job-registry.json',
+  JOB_LOGS_DIR: '/tmp/lsh-job-logs',
 } as const;
 
 export const PREFIXES = {

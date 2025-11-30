@@ -15,6 +15,7 @@ import type {
   Organization,
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
+import { ENV_VARS } from '../constants/index.js';
 
 const BCRYPT_ROUNDS = 12;
 const TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -46,7 +47,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * Generate JWT access token
  */
 export function generateAccessToken(userId: string, email: string): string {
-  const secret = process.env.LSH_JWT_SECRET;
+  const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
     throw new Error('LSH_JWT_SECRET is not set');
   }
@@ -70,7 +71,7 @@ export function generateAccessToken(userId: string, email: string): string {
  * Generate JWT refresh token
  */
 export function generateRefreshToken(userId: string): string {
-  const secret = process.env.LSH_JWT_SECRET;
+  const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
     throw new Error('LSH_JWT_SECRET is not set');
   }
@@ -93,7 +94,7 @@ export function generateRefreshToken(userId: string): string {
  * Verify and decode JWT token
  */
 export function verifyToken(token: string): { userId: string; email?: string; type: string } {
-  const secret = process.env.LSH_JWT_SECRET;
+  const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
     throw new Error('LSH_JWT_SECRET is not set');
   }

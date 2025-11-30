@@ -61,3 +61,79 @@ export declare const LOG_LEVELS: {
     readonly ERROR: "ERROR";
     readonly DEBUG: "DEBUG";
 };
+/**
+ * Emoji prefixes for consistent UI output
+ */
+export declare const EMOJI: {
+    readonly SUCCESS: "✅";
+    readonly ERROR: "❌";
+    readonly WARNING: "⚠️";
+    readonly INFO: "ℹ️";
+    readonly TIP: "💡";
+    readonly KEY: "🔑";
+    readonly FILE: "📄";
+    readonly FOLDER: "📁";
+    readonly LIST: "📋";
+    readonly SEARCH: "🔍";
+    readonly LOCATION: "📍";
+    readonly UP: "⬆️";
+    readonly DOWN: "⬇️";
+    readonly CALENDAR: "📅";
+    readonly GEAR: "⚙️";
+};
+/**
+ * Status messages with emoji
+ */
+export declare const STATUS_MESSAGES: {
+    readonly SUCCESS: "✅";
+    readonly SUCCESS_GENERIC: "✅ Success";
+    readonly CONNECTION_SUCCESS: "✅ Connection successful!";
+    readonly CONFIG_SAVED: "✅ Configuration saved";
+    readonly SECRETS_PULLED: "✅ Secrets pulled successfully!";
+    readonly IPFS_INSTALLED: "✅ IPFS client installed";
+    readonly ERROR: "❌";
+    readonly ERROR_GENERIC: "❌ Error";
+    readonly CONNECTION_FAILED: "❌ Connection failed";
+    readonly CONFIG_SAVE_FAILED: "❌ Failed to save configuration";
+    readonly PULL_FAILED: "❌ Failed to pull secrets";
+    readonly WARNING: "⚠️";
+    readonly WARNING_GENERIC: "⚠️ Warning";
+    readonly IPFS_NOT_INSTALLED: "⚠️  IPFS client not installed";
+    readonly NOT_GIT_REPO: "ℹ️  Not in a git repository";
+    readonly INFO: "ℹ️";
+    readonly RECOMMENDATIONS: "💡 Recommendations:";
+    readonly CURRENT_REPO: "📁 Current Repository:";
+};
+/**
+ * Doctor/diagnostic messages
+ */
+export declare const DOCTOR_MESSAGES: {
+    readonly CHECKING: "🔍 Checking:";
+    readonly ALL_PASSED: "✅ All checks passed!";
+    readonly ISSUES_FOUND: "❌ Issues found";
+    readonly RECOMMENDATIONS: "💡 Recommendations:";
+};
+/**
+ * Init/setup messages
+ */
+export declare const INIT_MESSAGES: {
+    readonly WELCOME: "🚀 Welcome to LSH Setup";
+    readonly STEP_COMPLETE: "✅ Step complete";
+    readonly SETUP_COMPLETE: "✅ Setup complete!";
+    readonly CONNECTION_TEST_SKIPPED: "⚠️  Connection test skipped. Run \"lsh doctor\" after setup to verify.";
+};
+/**
+ * Migration messages
+ */
+export declare const MIGRATION_MESSAGES: {
+    readonly SCANNING: "🔍 Scanning for Firebase references...";
+    readonly MIGRATING: "🔄 Migrating...";
+    readonly COMPLETE: "✅ Migration complete";
+    readonly NO_CHANGES: "ℹ️  No changes needed";
+};
+/**
+ * Deprecation warnings
+ */
+export declare const DEPRECATION_WARNINGS: {
+    readonly LIB_COMMANDS: "\u001B[33m⚠️  WARNING: \"lsh lib\" commands are deprecated as of v1.0.0\u001B[0m";
+};

@@ -4,6 +4,7 @@
  */
 
 import { createClient, SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
+import { ENV_VARS } from '../constants/index.js';
 
 // Supabase configuration from environment variables
 // IMPORTANT: These must be set in .env or environment
@@ -20,9 +21,9 @@ export class SupabaseClient {
   private config: SupabaseConfig;
 
   constructor(config?: Partial<SupabaseConfig>) {
-    const url = config?.url || process.env.SUPABASE_URL;
-    const anonKey = config?.anonKey || process.env.SUPABASE_ANON_KEY;
-    const databaseUrl = config?.databaseUrl || process.env.DATABASE_URL;
+    const url = config?.url || process.env[ENV_VARS.SUPABASE_URL];
+    const anonKey = config?.anonKey || process.env[ENV_VARS.SUPABASE_ANON_KEY];
+    const databaseUrl = config?.databaseUrl || process.env[ENV_VARS.DATABASE_URL];
 
     if (!url || !anonKey) {
       throw new Error(
@@ -100,7 +101,7 @@ function getDefaultClient(): SupabaseClient | null {
  * Check if Supabase is configured and available
  */
 export function isSupabaseConfigured(): boolean {
-  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+  return !!(process.env[ENV_VARS.SUPABASE_URL] && process.env[ENV_VARS.SUPABASE_ANON_KEY]);
 }
 
 export const supabaseClient = {
@@ -140,8 +141,8 @@ export const supabaseClient = {
  * @throws {Error} If SUPABASE_URL or SUPABASE_ANON_KEY are not set
  */
 export function getSupabaseClient() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_ANON_KEY;
+  const url = process.env[ENV_VARS.SUPABASE_URL];
+  const key = process.env[ENV_VARS.SUPABASE_ANON_KEY];
 
   if (!url || !key) {
     throw new Error(

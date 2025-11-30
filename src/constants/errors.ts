@@ -88,3 +88,32 @@ export const RISK_LEVELS = {
   MEDIUM: 'medium',
   LOW: 'low',
 } as const;
+
+/**
+ * API Error Codes
+ *
+ * Standard error codes used across the SaaS API and services.
+ */
+export const ERROR_CODES = {
+  // Authentication errors
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  INVALID_CREDENTIALS: 'INVALID_CREDENTIALS',
+  INVALID_TOKEN: 'INVALID_TOKEN',
+  EMAIL_NOT_VERIFIED: 'EMAIL_NOT_VERIFIED',
+  EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
+
+  // Authorization errors
+  FORBIDDEN: 'FORBIDDEN',
+
+  // Validation errors
+  INVALID_INPUT: 'INVALID_INPUT',
+  NOT_FOUND: 'NOT_FOUND',
+  ALREADY_EXISTS: 'ALREADY_EXISTS',
+
+  // Payment errors
+  PAYMENT_REQUIRED: 'PAYMENT_REQUIRED',
+  TIER_LIMIT_EXCEEDED: 'TIER_LIMIT_EXCEEDED',
+
+  // Server errors
+  INTERNAL_ERROR: 'INTERNAL_ERROR',
+} as const;

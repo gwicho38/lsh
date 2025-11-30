@@ -14,6 +14,7 @@ import {
   ShellFunction,
 } from './database-schema.js';
 import { LocalStorageAdapter } from './local-storage-adapter.js';
+import { ENV_VARS } from '../constants/index.js';
 
 export class DatabasePersistence {
   private client?: SupabaseClient;
@@ -28,7 +29,7 @@ export class DatabasePersistence {
     if (this.useLocalStorage) {
       // Using local storage is normal when Supabase is not configured
       // Only show this message once per session to avoid noise
-      if (!process.env.LSH_LOCAL_STORAGE_QUIET) {
+      if (!process.env[ENV_VARS.LSH_LOCAL_STORAGE_QUIET]) {
         console.log('ℹ️  Using local storage (Supabase not configured)');
       }
       this.localStorage = new LocalStorageAdapter(userId);

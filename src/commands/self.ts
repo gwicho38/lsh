@@ -10,6 +10,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import chalk from 'chalk';
 import { fileURLToPath } from 'url';
+import { ENV_VARS } from '../constants/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -344,9 +345,9 @@ selfCommand
 
     // Environment
     console.log(chalk.yellow('Environment:'));
-    console.log('  NODE_ENV:', process.env.NODE_ENV || 'not set');
-    console.log('  HOME:', process.env.HOME || 'not set');
-    console.log('  USER:', process.env.USER || 'not set');
+    console.log('  NODE_ENV:', process.env[ENV_VARS.NODE_ENV] || 'not set');
+    console.log('  HOME:', process.env[ENV_VARS.HOME] || 'not set');
+    console.log('  USER:', process.env[ENV_VARS.USER] || 'not set');
     console.log();
 
     // Configuration

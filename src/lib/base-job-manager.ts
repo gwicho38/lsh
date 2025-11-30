@@ -12,6 +12,7 @@
 
 import { EventEmitter } from 'events';
 import { createLogger, Logger } from './logger.js';
+import { ENV_VARS } from '../constants/index.js';
 
 /**
  * Unified job specification
@@ -192,7 +193,7 @@ export abstract class BaseJobManager extends EventEmitter {
       createdAt: new Date(),
       env: spec.env,
       cwd: spec.cwd || process.cwd(),
-      user: spec.user || process.env.USER,
+      user: spec.user || process.env[ENV_VARS.USER],
       schedule: spec.schedule,
       tags: spec.tags || [],
       description: spec.description,

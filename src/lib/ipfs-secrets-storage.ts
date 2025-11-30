@@ -10,6 +10,7 @@ import * as crypto from 'crypto';
 import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
 import { getStorachaClient } from './storacha-client.js';
+import { ENV_VARS } from '../constants/index.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -40,7 +41,7 @@ export class IPFSSecretsStorage {
   private metadata: Record<string, IPFSSecretsMetadata>;
 
   constructor() {
-    const homeDir = process.env.HOME || os.homedir();
+    const homeDir = process.env[ENV_VARS.HOME] || os.homedir();
     const lshDir = path.join(homeDir, '.lsh');
     this.cacheDir = path.join(lshDir, 'secrets-cache');
     this.metadataPath = path.join(lshDir, 'secrets-metadata.json');
