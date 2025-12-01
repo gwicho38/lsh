@@ -12,7 +12,7 @@ import { createLogger } from './logger.js';
 import { JobSpec } from './job-manager.js';
 import { ShellJob } from './database-schema.js';
 import { getPlatformPaths } from './platform-utils.js';
-import { ENV_VARS } from '../constants/index.js';
+import { ENV_VARS, DEFAULTS } from '../constants/index.js';
 
 export interface DaemonMessage {
   command: string;
@@ -147,7 +147,7 @@ export class DaemonClient extends EventEmitter {
       });
 
       let buffer = '';
-      const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB limit
+      const MAX_BUFFER_SIZE = DEFAULTS.MAX_BUFFER_SIZE_BYTES;
 
       this.socket.on('data', (data: Buffer) => {
         try {

@@ -49,4 +49,15 @@ export const TABLES = {
   TRADING_DISCLOSURES: 'trading_disclosures',
   POLITICIANS: 'politicians',
   DATA_PULL_JOBS: 'data_pull_jobs',
+
+  // ML tables
+  ML_TRAINING_JOBS: 'ml_training_jobs',
+  ML_MODELS: 'ml_models',
+  ML_FEATURES: 'ml_features',
+
+  // Views (read-only aggregations)
+  ORGANIZATION_MEMBERS_DETAILED: 'organization_members_detailed',
+  ORGANIZATION_USAGE_SUMMARY: 'organization_usage_summary',
+  TEAM_MEMBERS_DETAILED: 'team_members_detailed',
+  SECRETS_SUMMARY: 'secrets_summary',
 } as const;

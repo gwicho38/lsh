@@ -12,6 +12,7 @@ import {
 import DatabaseJobStorage from './job-storage-database.js';
 import DaemonClient, { CronJobSpec } from './daemon-client.js';
 import DatabasePersistence from './database-persistence.js';
+import { DEFAULTS } from '../constants/index.js';
 
 export interface CronJobTemplate {
   id: string;
@@ -71,7 +72,7 @@ export class CronJobManager extends BaseJobManager {
         workingDirectory: '/backups',
         priority: 8,
         maxRetries: 3,
-        timeout: 3600000, // 1 hour
+        timeout: DEFAULTS.JOB_TIMEOUT_1H_MS,
       },
       {
         id: 'log-cleanup',
@@ -83,7 +84,7 @@ export class CronJobManager extends BaseJobManager {
         tags: ['logs', 'cleanup', 'weekly'],
         priority: 3,
         maxRetries: 2,
-        timeout: 300000, // 5 minutes
+        timeout: DEFAULTS.JOB_TIMEOUT_5M_MS,
       },
       {
         id: 'disk-monitor',
@@ -95,7 +96,7 @@ export class CronJobManager extends BaseJobManager {
         tags: ['monitoring', 'disk', 'alert'],
         priority: 7,
         maxRetries: 1,
-        timeout: 60000, // 1 minute
+        timeout: DEFAULTS.JOB_TIMEOUT_1M_MS,
       },
       {
         id: 'data-sync',
@@ -108,7 +109,7 @@ export class CronJobManager extends BaseJobManager {
         workingDirectory: '/data',
         priority: 6,
         maxRetries: 5,
-        timeout: 7200000, // 2 hours
+        timeout: DEFAULTS.JOB_TIMEOUT_2H_MS,
       },
     ];
 

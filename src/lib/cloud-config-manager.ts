@@ -7,6 +7,7 @@ import DatabasePersistence from './database-persistence.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { DEFAULTS } from '../constants/index.js';
 
 export interface CloudConfigOptions {
   userId?: string;
@@ -35,7 +36,7 @@ export class CloudConfigManager {
       userId: undefined,
       enableCloudSync: true,
       localConfigPath: path.join(os.homedir(), '.lshrc'),
-      syncInterval: 60000, // 1 minute
+      syncInterval: DEFAULTS.CLOUD_CONFIG_SYNC_INTERVAL_MS,
       ...options,
     };
 

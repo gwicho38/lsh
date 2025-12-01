@@ -132,6 +132,15 @@ export const DEFAULTS = {
   REDIS_CACHE_EXPIRY_SECONDS: 3600, // 1 hour
   METRICS_RETENTION_SECONDS: 30 * 24 * 60 * 60, // 30 days
 
+  // Cloud sync intervals
+  CLOUD_CONFIG_SYNC_INTERVAL_MS: 60000, // 1 minute
+  HISTORY_SYNC_INTERVAL_MS: 30000, // 30 seconds
+
+  // Job registry
+  MAX_RECORDS_PER_JOB: 1000,
+  MAX_TOTAL_RECORDS: 50000,
+  METRICS_RETENTION_DAYS: 90,
+
   // Shell defaults
   DEFAULT_SHELL_UNIX: '/bin/sh',
   DEFAULT_SHELL_WIN: 'cmd.exe',
