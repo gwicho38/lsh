@@ -7,6 +7,7 @@ import HistorySystem, { HistoryEntry, HistoryConfig } from './history-system.js'
 import DatabasePersistence from './database-persistence.js';
 import * as os from 'os';
 import * as path from 'path';
+import { DEFAULTS } from '../constants/index.js';
 
 export interface EnhancedHistoryConfig extends HistoryConfig {
   enableCloudSync: boolean;
@@ -22,7 +23,7 @@ export class EnhancedHistorySystem extends HistorySystem {
 
   constructor(config: Partial<EnhancedHistoryConfig> = {}) {
     const defaultConfig: EnhancedHistoryConfig = {
-      maxSize: 10000,
+      maxSize: DEFAULTS.MAX_HISTORY_SIZE,
       filePath: path.join(os.homedir(), '.lsh_history'),
       shareHistory: true,
       ignoreDups: true,
@@ -30,7 +31,7 @@ export class EnhancedHistorySystem extends HistorySystem {
       expireDuplicatesFirst: true,
       enableCloudSync: true,
       userId: undefined,
-      syncInterval: 30000, // 30 seconds
+      syncInterval: DEFAULTS.HISTORY_SYNC_INTERVAL_MS,
       ...config,
     };
 

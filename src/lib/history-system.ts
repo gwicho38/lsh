@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { DEFAULTS } from '../constants/index.js';
 
 export interface HistoryEntry {
   lineNumber: number;
@@ -31,7 +32,7 @@ export class HistorySystem {
 
   constructor(config?: Partial<HistoryConfig>) {
     this.config = {
-      maxSize: 10000,
+      maxSize: DEFAULTS.MAX_HISTORY_SIZE,
       filePath: path.join(os.homedir(), '.lsh_history'),
       shareHistory: false,
       ignoreDups: true,

@@ -87,6 +87,11 @@ export declare const DEFAULTS: {
     readonly MAX_PIPE_USAGE: 3;
     readonly REDIS_CACHE_EXPIRY_SECONDS: 3600;
     readonly METRICS_RETENTION_SECONDS: number;
+    readonly CLOUD_CONFIG_SYNC_INTERVAL_MS: 60000;
+    readonly HISTORY_SYNC_INTERVAL_MS: 30000;
+    readonly MAX_RECORDS_PER_JOB: 1000;
+    readonly MAX_TOTAL_RECORDS: 50000;
+    readonly METRICS_RETENTION_DAYS: 90;
     readonly DEFAULT_SHELL_UNIX: "/bin/sh";
     readonly DEFAULT_SHELL_WIN: "cmd.exe";
     readonly DEFAULT_EDITOR: "vi";
