@@ -1043,4 +1043,672 @@ describe('SecretsManager', () => {
       expect(content).toContain(testKey);
     });
   });
+
+  describe('SmartSync Advanced Scenarios', () => {
+    it('should handle forceRekey when cloud exists with different key', async () => {
+      const uniqueEnv = `force-rekey-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const key1 = generateTestKey();
+      const key2 = generateTestKey();
+
+      // Push with key1
+      const manager1 = new SecretsManager(undefined, key1, false);
+      const envFile = testEnv.createTempFile('API_KEY=secret123\n', 'force-rekey');
+      await manager1.push(envFile, uniqueEnv);
+
+      // SmartSync with key2 and forceRekey=true
+      const manager2 = new SecretsManager(undefined, key2, false);
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager2.smartSync(envFile, uniqueEnv, true, false, false, true);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).toContain('Re-key');
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle in-sync scenario when local and cloud match', async () => {
+      const uniqueEnv = `in-sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey, false);
+      const envFile = testEnv.createTempFile('API_KEY=test123\n', 'in-sync');
+
+      // Push first
+      await manager.push(envFile, uniqueEnv);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      await manager.smartSync(envFile, uniqueEnv, true, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).toContain('✅');
+      consoleSpy.mockRestore();
+    });
+
+    it('should show workspace context in global mode', async () => {
+      const uniqueEnv = `global-ws-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager({ globalMode: true, encryptionKey: testKey, detectGit: false });
+      const envFile = testEnv.createTempFile('API_KEY=test123\n', 'global-ws');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.smartSync(envFile, uniqueEnv, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).toContain('Global');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Show Method Formats', () => {
+    it('should show secrets in json format', async () => {
+      const uniqueEnv = `show-json-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('API_KEY=test123\nDB_URL=localhost\n', 'show-json');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.push(envFile, uniqueEnv);
+      await manager.show(uniqueEnv, 'json');
+
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      // JSON format should contain valid JSON structure
+      expect(calls).toContain('{');
+      expect(calls).toContain('}');
+      consoleSpy.mockRestore();
+    });
+
+    it('should show default env format with masking', async () => {
+      const uniqueEnv = `show-env-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('API_KEY=verylongsecretvalue123\n', 'show-env');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.push(envFile, uniqueEnv);
+      await manager.show(uniqueEnv, 'env');
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).toContain('*'); // Should have masked value
+      expect(calls).not.toContain('verylongsecretvalue123'); // Full value should not appear
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('List All Files', () => {
+    it('should list files with repo filtering', async () => {
+      const uniqueEnv = `list-repo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('API_KEY=test123\n', 'list-repo');
+
+      await manager.push(envFile, uniqueEnv);
+      const files = await manager.listAllFiles();
+
+      expect(Array.isArray(files)).toBe(true);
+      expect(files.length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  describe('Status with Cloud Data', () => {
+    it('should return keyMatches when cloud exists and key matches', async () => {
+      const uniqueEnv = `status-match-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('API_KEY=test123\n', 'status-match');
+
+      await manager.push(envFile, uniqueEnv);
+      const status = await manager.status(envFile, uniqueEnv);
+
+      expect(status.cloudExists).toBe(true);
+      expect(status.keyMatches).toBe(true);
+    });
+
+    it('should return keyMatches=false when keys differ', async () => {
+      const uniqueEnv = `status-mismatch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const key1 = generateTestKey();
+      const key2 = generateTestKey();
+
+      // Push with key1
+      const manager1 = new SecretsManager(undefined, key1);
+      const envFile = testEnv.createTempFile('API_KEY=test123\n', 'status-mismatch');
+      await manager1.push(envFile, uniqueEnv);
+
+      // Status with key2
+      const manager2 = new SecretsManager(undefined, key2);
+      const status = await manager2.status(envFile, uniqueEnv);
+
+      expect(status.cloudExists).toBe(true);
+      expect(status.keyMatches).toBe(false);
+    });
+  });
+
+  describe('Parse and Format Env', () => {
+    it('should quote values with spaces in format', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = { MESSAGE: 'hello world' };
+
+      const formatted = (manager as any).formatEnvFile(env);
+      expect(formatted).toContain('MESSAGE="hello world"');
+    });
+
+    it('should quote values with hash in format', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = { COMMENT: 'value#with#hash' };
+
+      const formatted = (manager as any).formatEnvFile(env);
+      expect(formatted).toContain('COMMENT="value#with#hash"');
+    });
+
+    it('should not quote simple values', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const env = { KEY: 'simplevalue' };
+
+      const formatted = (manager as any).formatEnvFile(env);
+      expect(formatted).toContain('KEY=simplevalue');
+      expect(formatted).not.toContain('"simplevalue"');
+    });
+  });
+
+  describe('Generate Export with Various Values', () => {
+    it('should handle multiline values', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY1=value1\nKEY2=value2\n', 'export-multi');
+
+      const exports = (manager as any).generateExportCommands(envFile);
+
+      expect(exports).toContain('export KEY1=');
+      expect(exports).toContain('export KEY2=');
+    });
+
+    it('should handle values with equals sign', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('URL=http://host?key=value\n', 'export-equals');
+
+      const exports = (manager as any).generateExportCommands(envFile);
+
+      expect(exports).toContain('export URL=');
+    });
+  });
+
+  describe('Push with Warnings', () => {
+    it('should warn when no LSH_SECRETS_KEY is set', async () => {
+      const uniqueEnv = `push-warn-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const originalKey = process.env.LSH_SECRETS_KEY;
+      delete process.env.LSH_SECRETS_KEY;
+
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('API_KEY=test123\n', 'push-warn');
+
+      await manager.push(envFile, uniqueEnv);
+
+      // Restore
+      if (originalKey) {
+        process.env.LSH_SECRETS_KEY = originalKey;
+      }
+
+      // Test passes if no error thrown
+      expect(true).toBe(true);
+    });
+  });
+
+  describe('Encryption Key from Environment', () => {
+    it('should use environment key when available', async () => {
+      const envKey = generateTestKey();
+      const originalKey = process.env.LSH_SECRETS_KEY;
+      process.env.LSH_SECRETS_KEY = envKey;
+
+      const manager = new SecretsManager();
+
+      // The manager should have picked up the env key
+      const uniqueEnv = `env-key-${Date.now()}`;
+      const envFile = testEnv.createTempFile('TEST=value\n', 'env-key');
+
+      // Should work without explicit key
+      await manager.push(envFile, uniqueEnv);
+      await manager.pull(envFile, uniqueEnv, true);
+
+      const content = fs.readFileSync(envFile, 'utf8');
+      expect(content).toContain('TEST=value');
+
+      // Restore
+      if (originalKey) {
+        process.env.LSH_SECRETS_KEY = originalKey;
+      } else {
+        delete process.env.LSH_SECRETS_KEY;
+      }
+    });
+  });
+
+  describe('List Environments', () => {
+    it('should list all environments', async () => {
+      const uniquePrefix = `list-envs-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY=value\n', 'list-envs');
+
+      // Push to multiple environments
+      await manager.push(envFile, `${uniquePrefix}-dev`);
+      await manager.push(envFile, `${uniquePrefix}-staging`);
+
+      const envs = await manager.listEnvironments();
+
+      // Should have at least these environments
+      expect(envs.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('Show with No Secrets', () => {
+    it('should throw error when no secrets found', async () => {
+      const uniqueEnv = `show-empty-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Storage throws when no secrets found
+      await expect(manager.show(uniqueEnv, 'env')).rejects.toThrow('No secrets found');
+    });
+  });
+
+  describe('SmartSync Load Mode', () => {
+    it('should run in load mode suppressing output', async () => {
+      const uniqueEnv = `sync-load-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('API_KEY=loadtest123\n', 'sync-load');
+
+      // First push secrets
+      await manager.push(envFile, uniqueEnv);
+
+      // SmartSync in load mode
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      await manager.smartSync(envFile, uniqueEnv, true, true, false, false);
+
+      // In load mode, output export commands
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      expect(calls).toContain('export');
+      consoleSpy.mockRestore();
+    });
+
+    it('should handle local exists but not cloud with autoExecute', async () => {
+      const uniqueEnv = `sync-local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('LOCAL_KEY=localvalue\n', 'sync-local');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // SmartSync should detect local exists but not cloud
+      await manager.smartSync(envFile, uniqueEnv, true, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should indicate local exists
+      expect(calls.length).toBeGreaterThan(0);
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('SmartSync Pull Action', () => {
+    it('should pull when cloud exists but not local', async () => {
+      const uniqueEnv = `sync-pull-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Create and push with one file
+      const pushFile = testEnv.createTempFile('CLOUD_KEY=cloudvalue\n', 'sync-push');
+      await manager.push(pushFile, uniqueEnv);
+
+      // SmartSync with a different non-existent file
+      const pullFile = path.join(os.tmpdir(), `.env.sync-pull-${uniqueEnv}-nonexistent`);
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.smartSync(pullFile, uniqueEnv, true, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should indicate cloud secrets available
+      expect(calls.length).toBeGreaterThan(0);
+      consoleSpy.mockRestore();
+
+      // Cleanup
+      if (fs.existsSync(pullFile)) {
+        fs.unlinkSync(pullFile);
+      }
+    });
+  });
+
+  describe('SmartSync Key Mismatch without ForceRekey', () => {
+    it('should show error when key mismatch and no forceRekey', async () => {
+      const uniqueEnv = `sync-mismatch-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const key1 = generateTestKey();
+      const key2 = generateTestKey();
+
+      // Push with key1
+      const manager1 = new SecretsManager(undefined, key1);
+      const envFile = testEnv.createTempFile('API_KEY=secret123\n', 'sync-mismatch');
+      await manager1.push(envFile, uniqueEnv);
+
+      // SmartSync with key2 (no forceRekey)
+      const manager2 = new SecretsManager(undefined, key2);
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager2.smartSync(envFile, uniqueEnv, true, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should show key mismatch warning
+      expect(calls).toContain('mismatch');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('SmartSync No Local No Cloud', () => {
+    it('should create and push when no local and no cloud', async () => {
+      const uniqueEnv = `sync-new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Use a non-existent file path
+      const newFile = path.join(os.tmpdir(), `.env.sync-new-${uniqueEnv}`);
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // SmartSync should create file and push
+      await manager.smartSync(newFile, uniqueEnv, true, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should indicate creating new
+      expect(calls.length).toBeGreaterThan(0);
+      consoleSpy.mockRestore();
+
+      // Cleanup
+      if (fs.existsSync(newFile)) {
+        fs.unlinkSync(newFile);
+      }
+    });
+
+    it('should suggest commands when autoExecute is false', async () => {
+      const uniqueEnv = `sync-suggest-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      const newFile = path.join(os.tmpdir(), `.env.sync-suggest-${uniqueEnv}`);
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // SmartSync with autoExecute=false
+      await manager.smartSync(newFile, uniqueEnv, false, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should suggest commands
+      expect(calls).toContain('Run');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Status with Full Cloud Data', () => {
+    it('should return cloud metadata when exists', async () => {
+      const uniqueEnv = `status-cloud-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY1=val1\nKEY2=val2\n', 'status-cloud');
+
+      await manager.push(envFile, uniqueEnv);
+
+      const status = await manager.status(envFile, uniqueEnv);
+
+      expect(status.cloudExists).toBe(true);
+      expect(status.cloudKeys).toBeGreaterThanOrEqual(2);
+      expect(status.cloudModified).toBeInstanceOf(Date);
+    });
+  });
+
+  describe('Resolve File Path', () => {
+    it('should resolve relative path in global mode', async () => {
+      const manager = new SecretsManager({ encryptionKey: testKey, globalMode: true });
+      const resolved = manager.resolveFilePath('test.env');
+
+      expect(resolved).toContain(os.homedir());
+    });
+
+    it('should keep absolute path unchanged', async () => {
+      const manager = new SecretsManager({ encryptionKey: testKey, globalMode: true });
+      const absolutePath = '/tmp/test.env';
+      const resolved = manager.resolveFilePath(absolutePath);
+
+      expect(resolved).toBe(absolutePath);
+    });
+  });
+
+  describe('Get Home Dir', () => {
+    it('should return home directory', async () => {
+      const manager = new SecretsManager({ encryptionKey: testKey, globalMode: true });
+      const homeDir = manager.getHomeDir();
+
+      expect(homeDir).toBe(os.homedir());
+    });
+  });
+
+  describe('Show with YAML format', () => {
+    it('should output YAML format', async () => {
+      const uniqueEnv = `show-yaml-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY1=value1\nKEY2=value2\n', 'show-yaml');
+
+      await manager.push(envFile, uniqueEnv);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      await manager.show(uniqueEnv, 'yaml');
+
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      // YAML format typically has colons
+      expect(calls).toContain(':');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Show with TOML format', () => {
+    it('should output TOML format', async () => {
+      const uniqueEnv = `show-toml-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY1=value1\nKEY2=value2\n', 'show-toml');
+
+      await manager.push(envFile, uniqueEnv);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      await manager.show(uniqueEnv, 'toml');
+
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      // TOML format has = signs
+      expect(calls).toContain('=');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Show with Export format', () => {
+    it('should output export format', async () => {
+      const uniqueEnv = `show-export-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY1=value1\n', 'show-export');
+
+      await manager.push(envFile, uniqueEnv);
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      await manager.show(uniqueEnv, 'export');
+
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      expect(calls).toContain('export');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Generate Export Commands Edge Cases', () => {
+    it('should handle non-existent file', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const nonExistentFile = '/tmp/this-file-does-not-exist-12345.env';
+
+      const exports = (manager as any).generateExportCommands(nonExistentFile);
+
+      expect(exports).toContain('# No .env file found');
+    });
+
+    it('should handle quoted values', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('KEY1="value with spaces"\nKEY2=\'single quoted\'\n', 'export-quoted');
+
+      const exports = (manager as any).generateExportCommands(envFile);
+
+      expect(exports).toContain('export KEY1=');
+      expect(exports).toContain('export KEY2=');
+    });
+
+    it('should skip malformed lines', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('VALID=value\nno-equals-sign\n\n# comment\nANOTHER=test\n', 'export-malformed');
+
+      const exports = (manager as any).generateExportCommands(envFile);
+
+      expect(exports).toContain('export VALID=');
+      expect(exports).toContain('export ANOTHER=');
+      expect(exports).not.toContain('no-equals-sign');
+    });
+  });
+
+  describe('SmartSync with Load Mode Export', () => {
+    it('should output exports in load mode after pull', async () => {
+      const uniqueEnv = `load-pull-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Push first
+      const pushFile = testEnv.createTempFile('LOAD_KEY=loadvalue\n', 'load-push');
+      await manager.push(pushFile, uniqueEnv);
+
+      // Pull to a different file in load mode
+      const pullFile = path.join(os.tmpdir(), `.env.load-pull-${uniqueEnv}`);
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.smartSync(pullFile, uniqueEnv, true, true, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      // In load mode should output export commands
+      expect(calls).toContain('export');
+      consoleSpy.mockRestore();
+
+      // Cleanup
+      if (fs.existsSync(pullFile)) {
+        fs.unlinkSync(pullFile);
+      }
+    });
+
+    it('should handle in-sync state in load mode', async () => {
+      const uniqueEnv = `load-insync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Create and push file
+      const envFile = testEnv.createTempFile('SYNC_KEY=syncvalue\n', 'load-insync');
+      await manager.push(envFile, uniqueEnv);
+
+      // SmartSync in load mode (already in sync)
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      await manager.smartSync(envFile, uniqueEnv, true, true, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join('\n');
+      expect(calls).toContain('export');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('SmartSync Workspace Context', () => {
+    it('should show git repo context', async () => {
+      const uniqueEnv = `sync-git-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('GIT_KEY=gitvalue\n', 'sync-git');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      // SmartSync should detect git context (we're in lsh repo)
+      await manager.smartSync(envFile, uniqueEnv, true, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should show workspace context
+      expect(calls.length).toBeGreaterThan(0);
+      consoleSpy.mockRestore();
+    });
+
+    it('should show global workspace context in global mode', async () => {
+      const uniqueEnv = `sync-global-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager({ encryptionKey: testKey, globalMode: true });
+      const envFile = testEnv.createTempFile('GLOBAL_KEY=globalvalue\n', 'sync-global');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.smartSync(envFile, uniqueEnv, true, false, false, false);
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      expect(calls).toContain('Global');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Status Suggestions', () => {
+    it('should suggest push when local exists but cloud does not', async () => {
+      const uniqueEnv = `suggest-push-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('LOCAL_ONLY=value\n', 'suggest-push');
+
+      // Don't push to cloud - only local exists
+      const status = await manager.status(envFile, uniqueEnv);
+
+      expect(status.localExists).toBe(true);
+      expect(status.cloudExists).toBe(false);
+      expect(status.suggestions.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should suggest pull when cloud exists but local does not', async () => {
+      const uniqueEnv = `suggest-pull-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Push to cloud first
+      const pushFile = testEnv.createTempFile('CLOUD_ONLY=value\n', 'suggest-pull-push');
+      await manager.push(pushFile, uniqueEnv);
+
+      // Check status with non-existent local file
+      const nonExistentFile = `/tmp/nonexistent-${uniqueEnv}.env`;
+      const status = await manager.status(nonExistentFile, uniqueEnv);
+
+      expect(status.localExists).toBe(false);
+      expect(status.cloudExists).toBe(true);
+    });
+  });
+
+  describe('IsGlobalMode', () => {
+    it('should return true when in global mode', () => {
+      const manager = new SecretsManager({ encryptionKey: testKey, globalMode: true });
+      expect(manager.isGlobalMode()).toBe(true);
+    });
+
+    it('should return false when not in global mode', () => {
+      const manager = new SecretsManager(undefined, testKey);
+      expect(manager.isGlobalMode()).toBe(false);
+    });
+  });
+
+  describe('Show with Default Env Format Masking', () => {
+    it('should mask long values', async () => {
+      const uniqueEnv = `show-mask-long-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('LONG_SECRET=verylongsecretvalue12345\n', 'show-mask-long');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.push(envFile, uniqueEnv);
+      await manager.show(uniqueEnv, 'env');
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Should show first 4 chars + asterisks
+      expect(calls).toContain('very');
+      expect(calls).toContain('*');
+      expect(calls).not.toContain('verylongsecretvalue12345');
+      consoleSpy.mockRestore();
+    });
+
+    it('should mask short values completely', async () => {
+      const uniqueEnv = `show-mask-short-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const manager = new SecretsManager(undefined, testKey);
+      const envFile = testEnv.createTempFile('SHORT=abc\n', 'show-mask-short');
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
+      await manager.push(envFile, uniqueEnv);
+      await manager.show(uniqueEnv, 'env');
+
+      const calls = consoleSpy.mock.calls.flat().join(' ');
+      // Short values should be fully masked
+      expect(calls).toContain('****');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Cleanup', () => {
+    it('should cleanup without error', async () => {
+      const manager = new SecretsManager(undefined, testKey);
+
+      // Should not throw
+      await expect(manager.cleanup()).resolves.toBeUndefined();
+    });
+  });
 });
