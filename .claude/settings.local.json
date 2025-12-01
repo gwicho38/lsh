@@ -146,7 +146,10 @@
       "Bash(for nb in notebooks/ingestion/*.ipynb)",
       "Bash(ln:*)",
       "Bash(xargs ls:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm update:*)",
+      "Bash(npm audit fix:*)"
     ],
     "deny": [],
     "ask": []
