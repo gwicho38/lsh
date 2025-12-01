@@ -149,7 +149,10 @@
       "Bash(npx ts-node:*)",
       "Bash(npm outdated:*)",
       "Bash(npm update:*)",
-      "Bash(npm audit fix:*)"
+      "Bash(npm audit fix:*)",
+      "Bash(timeout 180 npm run test:coverage:*)",
+      "Bash(timeout 200 npm test:*)",
+      "Bash(timeout 220 npm test:*)"
     ],
     "deny": [],
     "ask": []
