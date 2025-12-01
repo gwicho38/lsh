@@ -14,6 +14,7 @@ import { getSupabaseClient } from './supabase-client.js';
 import { encryptionService } from './saas-encryption.js';
 import { auditLogger } from './saas-audit.js';
 import { organizationService } from './saas-organizations.js';
+import { TABLES } from '../constants/index.js';
 
 /**
  * Secrets Service
@@ -275,7 +276,7 @@ export class SecretsService {
    */
   async getSecretsSummary(teamId: string): Promise<SecretSummary[]> {
     const { data, error } = await this.supabase
-      .from('secrets_summary')
+      .from(TABLES.SECRETS_SUMMARY)
       .select('*')
       .eq('team_id', teamId);
 

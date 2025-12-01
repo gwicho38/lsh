@@ -29,4 +29,11 @@ export declare const TABLES: {
     readonly TRADING_DISCLOSURES: "trading_disclosures";
     readonly POLITICIANS: "politicians";
     readonly DATA_PULL_JOBS: "data_pull_jobs";
+    readonly ML_TRAINING_JOBS: "ml_training_jobs";
+    readonly ML_MODELS: "ml_models";
+    readonly ML_FEATURES: "ml_features";
+    readonly ORGANIZATION_MEMBERS_DETAILED: "organization_members_detailed";
+    readonly ORGANIZATION_USAGE_SUMMARY: "organization_usage_summary";
+    readonly TEAM_MEMBERS_DETAILED: "team_members_detailed";
+    readonly SECRETS_SUMMARY: "secrets_summary";
 };

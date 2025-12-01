@@ -17,6 +17,7 @@ import type {
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
+import { TABLES } from '../constants/index.js';
 
 /**
  * Generate URL-friendly slug from name
@@ -299,7 +300,7 @@ export class OrganizationService {
    */
   async getOrganizationMembers(organizationId: string): Promise<OrganizationMemberDetailed[]> {
     const { data, error } = await this.supabase
-      .from('organization_members_detailed')
+      .from(TABLES.ORGANIZATION_MEMBERS_DETAILED)
       .select('*')
       .eq('organization_id', organizationId);
 
@@ -348,7 +349,7 @@ export class OrganizationService {
    */
   async getUsageSummary(organizationId: string): Promise<OrganizationUsageSummary> {
     const { data, error } = await this.supabase
-      .from('organization_usage_summary')
+      .from(TABLES.ORGANIZATION_USAGE_SUMMARY)
       .select('*')
       .eq('organization_id', organizationId)
       .single();
@@ -687,7 +688,7 @@ export class TeamService {
    */
   async getTeamMembers(teamId: string): Promise<any[]> {
     const { data, error } = await this.supabase
-      .from('team_members_detailed')
+      .from(TABLES.TEAM_MEMBERS_DETAILED)
       .select('*')
       .eq('team_id', teamId);
 

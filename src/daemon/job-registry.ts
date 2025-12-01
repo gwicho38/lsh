@@ -13,7 +13,7 @@ import { exec } from 'child_process';
 import { BaseJobManager, BaseJobSpec } from '../lib/base-job-manager.js';
 import MemoryJobStorage from '../lib/job-storage-memory.js';
 import { JobSpec } from '../lib/job-manager.js';
-import { ENV_VARS } from '../constants/index.js';
+import { ENV_VARS, DEFAULTS, PATHS } from '../constants/index.js';
 
 export interface JobExecutionRecord {
   executionId: string;
@@ -114,12 +114,12 @@ export class JobRegistry extends BaseJobManager {
     super(new MemoryJobStorage(), 'JobRegistry');
 
     this.config = {
-      registryFile: '/tmp/lsh-job-registry.json',
-      maxRecordsPerJob: 1000,
-      maxTotalRecords: 50000,
+      registryFile: PATHS.JOB_REGISTRY_FILE,
+      maxRecordsPerJob: DEFAULTS.MAX_RECORDS_PER_JOB,
+      maxTotalRecords: DEFAULTS.MAX_TOTAL_RECORDS,
       compressionEnabled: true,
-      metricsRetentionDays: 90,
-      outputLogDir: '/tmp/lsh-job-logs',
+      metricsRetentionDays: DEFAULTS.METRICS_RETENTION_DAYS,
+      outputLogDir: PATHS.JOB_LOGS_DIR,
       indexingEnabled: true,
       ...config
     };

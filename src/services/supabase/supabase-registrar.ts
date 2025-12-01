@@ -9,6 +9,7 @@ import { supabaseClient } from '../../lib/supabase-client.js';
 import DatabasePersistence from '../../lib/database-persistence.js';
 import CloudConfigManager from '../../lib/cloud-config-manager.js';
 import { CREATE_TABLES_SQL } from '../../lib/database-schema.js';
+import { TABLES } from '../../constants/index.js';
 
 /**
  * Type helper to extract options from commander command
@@ -283,7 +284,7 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         const opts = options as CommandOptions;
         if (opts.list) {
           let query = supabaseClient.getClient()
-            .from('ml_training_jobs')
+            .from(TABLES.ML_TRAINING_JOBS)
             .select('*')
             .order('created_at', { ascending: false });
 
@@ -345,7 +346,7 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         const opts = options as CommandOptions;
         if (opts.list) {
           let query = supabaseClient.getClient()
-            .from('ml_models')
+            .from(TABLES.ML_MODELS)
             .select('*')
             .order('created_at', { ascending: false });
 
@@ -385,7 +386,7 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         const opts = options as CommandOptions;
         if (opts.list) {
           const { data: features, error } = await supabaseClient.getClient()
-            .from('ml_features')
+            .from(TABLES.ML_FEATURES)
             .select('*')
             .order('created_at', { ascending: false })
             .limit(20);
