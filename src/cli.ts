@@ -181,7 +181,15 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   const args = process.argv.slice(2);
   if (args.length > 0) {
     const firstArg = args[0];
-    const validCommands = program.commands.map(cmd => cmd.name());
+    // Include both command names AND their aliases
+    const validCommands: string[] = [];
+    program.commands.forEach(cmd => {
+      validCommands.push(cmd.name());
+      const aliases = cmd.aliases();
+      if (aliases && aliases.length > 0) {
+        validCommands.push(...aliases);
+      }
+    });
     const validOptions = ['-v', '--verbose', '-d', '--debug', '-h', '--help', '-V', '--version'];
 
     // Check if first argument looks like a command but isn't valid
@@ -189,7 +197,9 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
         !validCommands.includes(firstArg) &&
         !validOptions.some(opt => args.includes(opt))) {
 
-      const suggestions = findSimilarCommands(firstArg, validCommands);
+      // For suggestions, only use primary command names (not aliases)
+      const primaryCommands = program.commands.map(cmd => cmd.name());
+      const suggestions = findSimilarCommands(firstArg, primaryCommands);
       console.error(`error: unknown command '${firstArg}'`);
 
       if (suggestions.length > 0) {
