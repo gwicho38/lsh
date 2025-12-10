@@ -86,7 +86,7 @@ jobs:
       continue-on-error: true
 
     - name: Run tests with coverage
-      run: npm test -- --coverage
+      run: npm test -- --coverage --forceExit
       continue-on-error: true  # Temporarily allow test failures while fixing test suite (v0.5.3)
 
     - name: Upload coverage reports
