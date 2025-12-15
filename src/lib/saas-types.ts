@@ -58,23 +58,51 @@ export const TIER_LIMITS: Record<SubscriptionTier, TierLimits> = {
 // ORGANIZATIONS
 // ============================================================================
 
+/**
+ * Organization domain model.
+ *
+ * Represents a tenant in the multi-tenant SaaS platform.
+ * Organizations contain teams, which contain secrets.
+ *
+ * @see DbOrganizationRecord in database-types.ts for database representation
+ */
 export interface Organization {
+  /** UUID primary key */
   id: string;
+  /** Display name (e.g., "Acme Corp") */
   name: string;
+  /** URL-friendly identifier, unique across all orgs (e.g., "acme-corp") */
   slug: string;
+  /** When the organization was created */
   createdAt: Date;
+  /** When the organization was last modified */
   updatedAt: Date;
 
   // Billing
+  /** Stripe customer ID (cus_xxx) for billing operations */
   stripeCustomerId: string | null;
+  /** Current subscription tier determining feature limits */
   subscriptionTier: SubscriptionTier;
+  /** Current subscription status from Stripe */
   subscriptionStatus: SubscriptionStatus;
+  /** When the current subscription period ends */
   subscriptionExpiresAt: Date | null;
 
-  // Settings
-  settings: Record<string, any>;
+  /**
+   * Organization settings stored as JSONB.
+   *
+   * Common keys (not enforced, but documented):
+   * - `theme`: 'light' | 'dark' | 'system' - UI preference
+   * - `notifications`: { email?: boolean, slack?: boolean } - Alert preferences
+   * - `default_environment`: string - Default env for new secrets
+   * - `allowed_ips`: string[] - IP whitelist for API access (CIDR notation)
+   * - `branding`: { logo_url?: string, primary_color?: string } - Enterprise only
+   *
+   * @see DbOrganizationSettings in database-types.ts for typed structure
+   */
+  settings: Record<string, unknown>;
 
-  // Soft delete
+  /** When soft-deleted, null if active */
   deletedAt: Date | null;
 }
 
@@ -392,29 +420,56 @@ export type AuditAction =
 
 export type ResourceType = 'secret' | 'team' | 'user' | 'organization' | 'api_key' | 'subscription';
 
+/**
+ * Audit log entry for compliance and debugging.
+ *
+ * Records all significant actions in the system for security auditing
+ * and compliance (SOC 2, GDPR, etc.). Retained according to tier limits.
+ *
+ * @see DbAuditLogRecord in database-types.ts for database representation
+ */
 export interface AuditLog {
+  /** UUID primary key */
   id: string;
+  /** FK to organization where action occurred */
   organizationId: string;
+  /** FK to team if action was team-scoped, null for org-level actions */
   teamId: string | null;
 
   // Actor
+  /** FK to user who performed the action, null for system actions */
   userId: string | null;
+  /** Email of actor at time of action (preserved even if user changes email) */
   userEmail: string | null;
 
   // Action
+  /** What action was performed (e.g., 'secret.create', 'member.invite') */
   action: AuditAction;
+  /** Type of resource affected */
   resourceType: ResourceType;
+  /** ID of the affected resource */
   resourceId: string | null;
 
   // Context
+  /** IP address of the request */
   ipAddress: string | null;
+  /** User agent string from request headers */
   userAgent: string | null;
-  metadata: Record<string, any>;
+  /**
+   * Additional context specific to the action.
+   * Examples:
+   * - For secret.create: { environment: 'production' }
+   * - For member.invite: { invite_email: 'user@example.com' }
+   */
+  metadata: Record<string, unknown>;
 
   // Changes
-  oldValue: Record<string, any> | null;
-  newValue: Record<string, any> | null;
+  /** Previous value before update/delete (for change tracking) */
+  oldValue: Record<string, unknown> | null;
+  /** New value after create/update (for change tracking) */
+  newValue: Record<string, unknown> | null;
 
+  /** When the action occurred */
   timestamp: Date;
 }
 

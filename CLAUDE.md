@@ -349,4 +349,143 @@ Key libraries:
 - **zx** - Shell scripting utilities
 
 For full dependency list see `package.json`.
-- every time you push a new releasre it should be a new release in github and a new version published to npm
+
+## Common Code Patterns
+
+This section documents patterns that AI assistants should follow when working with this codebase.
+
+### Database Response Handling
+
+All Supabase queries return `{ data, error }`. Always check error first:
+
+```typescript
+const { data, error } = await supabase.from('table').select('*').eq('id', id).single();
+
+if (error) {
+  throw new LSHError(ErrorCodes.DB_QUERY_FAILED, error.message, { table: 'table', id });
+}
+
+// Map to domain type
+return this.mapDbRecordToDomainObject(data);
+```
+
+### Error Handling in Catch Blocks
+
+Never use `(error as Error).message`. Use the error utilities from `lsh-error.ts`:
+
+```typescript
+import { extractErrorMessage, extractErrorDetails, LSHError, ErrorCodes } from './lsh-error.js';
+
+try {
+  await riskyOperation();
+} catch (error) {
+  // For logging
+  console.error('Failed:', extractErrorMessage(error));
+
+  // For structured logging
+  this.logger.error('Operation failed', extractErrorDetails(error));
+
+  // For re-throwing with context
+  throw wrapAsLSHError(error, ErrorCodes.INTERNAL_ERROR, { operation: 'riskyOperation' });
+}
+```
+
+### Type Mapping (Database → Domain)
+
+Use types from `database-types.ts` for Supabase records and types from `saas-types.ts` for domain models:
+
+```typescript
+import type { DbOrganizationRecord } from './database-types.js';
+import type { Organization } from './saas-types.js';
+
+// Mapper function with proper types
+private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
+  return {
+    id: dbOrg.id,
+    name: dbOrg.name,
+    createdAt: new Date(dbOrg.created_at),  // ISO string → Date
+    subscriptionTier: dbOrg.subscription_tier,  // snake_case → camelCase
+    // ... other fields
+  };
+}
+```
+
+### Adding New SaaS Features
+
+1. Define domain types in `saas-types.ts`
+2. Add database record types in `database-types.ts`
+3. Implement service class in `saas-<feature>.ts`
+4. Add mapper function with JSDoc explaining transformations
+5. Register commands in `cli.ts`
+6. Add constants to `src/constants/`
+7. Write tests using fixtures from `src/__tests__/fixtures/`
+
+### Using Test Fixtures
+
+Test fixtures are in `src/__tests__/fixtures/`. Use factory functions for test data:
+
+```typescript
+import { mockOrganization, mockUser, createMockSupabase } from '../fixtures/supabase-mocks';
+import { createTestJob, SAMPLE_JOBS } from '../fixtures/job-fixtures';
+
+describe('MyService', () => {
+  const mockSupabase = createMockSupabase({
+    organizations: [mockOrganization({ name: 'Test Org' })],
+    users: [mockUser({ email: 'test@example.com' })],
+  });
+
+  beforeEach(() => {
+    jest.mock('../../lib/supabase-client', () => ({
+      getSupabaseClient: () => mockSupabase,
+    }));
+  });
+
+  it('should handle jobs', () => {
+    const job = createTestJob({ name: 'my-job', command: 'echo test' });
+    // ... test
+  });
+});
+```
+
+### Job Specification
+
+Use `BaseJobSpec` for defining jobs:
+
+```typescript
+const job: Partial<BaseJobSpec> = {
+  name: 'rotate-secrets',
+  command: './scripts/rotate.sh',
+  schedule: { cron: '0 2 * * 0' },  // Weekly at 2am Sunday
+  tags: ['secrets', 'maintenance'],
+  timeout: 300000,  // 5 minutes
+  maxRetries: 3,
+};
+
+await jobManager.createJob(job);
+```
+
+### Constants Usage
+
+Never hardcode strings. Use constants from `src/constants/`:
+
+```typescript
+import { ERROR_MESSAGES, ENV_VARS, TABLES, API_ENDPOINTS } from '../constants/index.js';
+
+// Good
+throw new Error(ERROR_MESSAGES.NOT_FOUND);
+const apiKey = process.env[ENV_VARS.LSH_API_KEY];
+await supabase.from(TABLES.ORGANIZATIONS).select();
+
+// Bad - triggers eslint lsh/no-hardcoded-strings
+throw new Error('Resource not found');
+```
+
+## Additional Documentation
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Module dependency graph and data flows
+- **[docs/TYPE_SAFETY_TODO.md](docs/TYPE_SAFETY_TODO.md)** - TypeScript strict mode migration status
+- **[src/__tests__/fixtures/README.md](src/__tests__/fixtures/README.md)** - Test fixture usage guide
+
+## Release Notes
+
+Every time you push a new release it should be a new release in GitHub and a new version published to npm.
