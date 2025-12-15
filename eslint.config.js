@@ -85,15 +85,49 @@ export default [
       'no-duplicate-imports': 'error',
       'no-unused-expressions': 'error',
       'prefer-const': 'error',
-      // Custom LSH rules (set to 'warn' to allow build while tracking for cleanup)
+      /**
+       * Custom LSH ESLint Rule: no-hardcoded-strings
+       *
+       * PURPOSE: Prevents magic strings throughout the codebase by requiring
+       * string literals to be defined in constants files.
+       *
+       * LOCATION: ./eslint-plugin-lsh/index.js
+       *
+       * WHEN IT TRIGGERS:
+       * - String literals longer than `minLength` (3 chars)
+       * - Strings not in `allowedStrings` list
+       * - Files not in `constantsPaths` directories
+       *
+       * HOW TO FIX VIOLATIONS:
+       * 1. Move the string to an appropriate file in src/constants/
+       * 2. Add to `allowedStrings` if it's a common pattern (HTTP methods, encodings)
+       * 3. Use template strings if `allowTemplateStrings` is true
+       * 4. Add inline disable: // eslint-disable-next-line lsh/no-hardcoded-strings
+       *
+       * CONSTANTS FILES:
+       * - src/constants/errors.ts - Error messages
+       * - src/constants/api.ts - API endpoints, headers
+       * - src/constants/paths.ts - File paths
+       * - src/constants/config.ts - Default configuration values
+       * - src/constants/env-vars.ts - Environment variable names
+       *
+       * Currently set to 'warn' to allow builds while gradually fixing violations.
+       * Target: Change to 'error' once existing violations are cleaned up.
+       */
       'lsh/no-hardcoded-strings': ['warn', {
+        /** Minimum string length to check (shorter strings are ignored) */
         minLength: 3,
+        /** Whether to allow template literals (`string ${var}`) */
         allowTemplateStrings: true,
+        /** Paths containing constants files (violations ignored here) */
         constantsPaths: ['/constants/', '/eslint-plugin-lsh/'],
+        /** Strings that are always allowed (common literals) */
         allowedStrings: [
-          // Common JS/TS literals that are OK
+          // HTTP methods
           'GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS',
+          // Encodings
           'utf8', 'utf-8', 'ascii', 'base64', 'hex', 'binary',
+          // Common values
           'localhost',
           // File extensions
           '.js', '.ts', '.tsx', '.json', '.md',
