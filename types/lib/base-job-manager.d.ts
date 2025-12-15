@@ -12,35 +12,87 @@
 import { EventEmitter } from 'events';
 import { Logger } from './logger.js';
 /**
- * Unified job specification
+ * Unified job specification for all LSH job types.
+ *
+ * Used by job managers, daemon, and cron system to define, track, and execute jobs.
+ * Jobs can be one-shot commands or scheduled recurring tasks.
+ *
+ * @example
+ * ```typescript
+ * const job: Partial<BaseJobSpec> = {
+ *   name: 'rotate-secrets',
+ *   command: './scripts/rotate.sh',
+ *   schedule: { cron: '0 2 * * 0' }, // Weekly at 2am Sunday
+ *   tags: ['secrets', 'maintenance'],
+ *   timeout: 300000, // 5 minutes
+ * };
+ * ```
  */
 export interface BaseJobSpec {
+    /** Unique job identifier (auto-generated if not provided) */
     id: string;
+    /** Human-readable job name for display and logging */
     name: string;
+    /** Command to execute (can be shell command or script path) */
     command: string;
+    /** Arguments to pass to the command */
     args?: string[];
+    /**
+     * Current job lifecycle state:
+     * - `created`: Job defined but never started
+     * - `running`: Currently executing
+     * - `stopped`: Manually stopped
+     * - `paused`: Temporarily suspended (can be resumed)
+     * - `completed`: Finished successfully (exitCode 0)
+     * - `failed`: Finished with error (exitCode != 0)
+     * - `killed`: Terminated by signal (SIGTERM/SIGKILL)
+     */
     status: 'created' | 'running' | 'stopped' | 'paused' | 'completed' | 'failed' | 'killed';
+    /** When the job spec was created */
     createdAt: Date;
+    /** When the job started executing (first run for scheduled jobs) */
     startedAt?: Date;
+    /** When the job finished (most recent completion for scheduled jobs) */
     completedAt?: Date;
+    /** Environment variables to set for job execution */
     env?: Record<string, string>;
+    /** Working directory for command execution (defaults to process.cwd()) */
     cwd?: string;
+    /** User to run job as (defaults to current user) */
     user?: string;
+    /**
+     * Schedule configuration for recurring jobs.
+     * Either `cron` OR `interval` should be set, not both.
+     */
     schedule?: {
+        /** Cron expression (e.g., "0 2 * * *" for daily at 2am) */
         cron?: string;
+        /** Interval in milliseconds between runs */
         interval?: number;
+        /** Next scheduled run time (computed by scheduler) */
         nextRun?: Date;
     };
+    /** Tags for filtering and grouping jobs */
     tags?: string[];
+    /** Human-readable description of what the job does */
     description?: string;
+    /** Priority for execution ordering (1-10, higher = more important, default: 5) */
     priority?: number;
+    /** Process ID when running */
     pid?: number;
+    /** Exit code from most recent execution */
     exitCode?: number;
+    /** Captured stdout from most recent execution */
     stdout?: string;
+    /** Captured stderr from most recent execution */
     stderr?: string;
+    /** Maximum execution time in milliseconds before kill */
     timeout?: number;
+    /** Maximum number of retry attempts on failure (default: 3) */
     maxRetries?: number;
+    /** Current retry count for this execution */
     retryCount?: number;
+    /** Whether to persist job state to database (default: true) */
     databaseSync?: boolean;
 }
 /**
