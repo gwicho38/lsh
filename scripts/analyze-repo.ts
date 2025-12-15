@@ -248,15 +248,19 @@ function analyzeTests(quick: boolean): TestAnalysis {
 
   console.log('  🧪 Running tests (this may take a minute)...');
 
-  // Run tests with coverage
-  const testOutput = run('npm run test:coverage 2>&1 || true');
+  // Run tests with coverage (use --forceExit to handle Jest hanging from open handles)
+  const testOutput = run('node --experimental-vm-modules ./node_modules/.bin/jest --coverage --runInBand --forceExit --coverageReporters=text-summary 2>&1 || true');
 
-  // Parse test results
-  const testsMatch = testOutput.match(/Tests:\s+(\d+) passed,?\s*(\d+)? failed,?\s*(\d+)? skipped,?\s*(\d+) total/);
-  const total = testsMatch ? parseInt(testsMatch[4], 10) : 0;
-  const passed = testsMatch ? parseInt(testsMatch[1], 10) : 0;
-  const failed = testsMatch ? parseInt(testsMatch[2] || '0', 10) : 0;
-  const skipped = testsMatch ? parseInt(testsMatch[3] || '0', 10) : 0;
+  // Parse test results - format varies: "28 skipped, 1202 passed, 1230 total" or "1202 passed, 1230 total"
+  const totalMatch = testOutput.match(/(\d+)\s+total/);
+  const passedMatch = testOutput.match(/(\d+)\s+passed/);
+  const failedMatch = testOutput.match(/(\d+)\s+failed/);
+  const skippedMatch = testOutput.match(/(\d+)\s+skipped/);
+
+  const total = totalMatch ? parseInt(totalMatch[1], 10) : 0;
+  const passed = passedMatch ? parseInt(passedMatch[1], 10) : 0;
+  const failed = failedMatch ? parseInt(failedMatch[1], 10) : 0;
+  const skipped = skippedMatch ? parseInt(skippedMatch[1], 10) : 0;
 
   // Parse coverage
   const coverage = { lines: 0, statements: 0, branches: 0, functions: 0 };
