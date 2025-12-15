@@ -80,11 +80,48 @@ export declare class AuthService {
      */
     changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void>;
     /**
-     * Map database user to User type
+     * Transform Supabase user record to domain model.
+     *
+     * Maps database snake_case columns to TypeScript camelCase properties:
+     * - `email_verified` → `emailVerified` (boolean)
+     * - `email_verification_token` → `emailVerificationToken` (nullable string)
+     * - `email_verification_expires_at` → `emailVerificationExpiresAt` (nullable Date)
+     * - `password_hash` → `passwordHash` (nullable, null for OAuth-only users)
+     * - `oauth_provider` → `oauthProvider` ('google' | 'github' | 'microsoft' | null)
+     * - `oauth_provider_id` → `oauthProviderId` (nullable)
+     * - `first_name` → `firstName` (nullable)
+     * - `last_name` → `lastName` (nullable)
+     * - `avatar_url` → `avatarUrl` (nullable)
+     * - `last_login_at` → `lastLoginAt` (nullable Date)
+     * - `last_login_ip` → `lastLoginIp` (nullable)
+     * - `deleted_at` → `deletedAt` (nullable Date, for soft delete)
+     *
+     * Security note: passwordHash is included in domain model but should
+     * never be exposed in API responses.
+     *
+     * @param dbUser - Supabase record from 'users' table
+     * @returns Domain User object
+     * @see DbUserRecord in database-types.ts for input shape
+     * @see User in saas-types.ts for output shape
      */
     private mapDbUserToUser;
     /**
-     * Map database organization to Organization type
+     * Transform Supabase organization record to domain model.
+     *
+     * Used when fetching user's organizations via the organization_members join.
+     * Identical mapping logic to OrganizationService.mapDbOrgToOrg().
+     *
+     * Maps database snake_case columns to TypeScript camelCase properties:
+     * - `stripe_customer_id` → `stripeCustomerId`
+     * - `subscription_tier` → `subscriptionTier` (SubscriptionTier type)
+     * - `subscription_status` → `subscriptionStatus` (SubscriptionStatus type)
+     * - `subscription_expires_at` → `subscriptionExpiresAt` (nullable Date)
+     * - `deleted_at` → `deletedAt` (nullable Date)
+     *
+     * @param dbOrg - Supabase record from 'organizations' table (via join)
+     * @returns Domain Organization object
+     * @see DbOrganizationRecord in database-types.ts for input shape
+     * @see Organization in saas-types.ts for output shape
      */
     private mapDbOrgToOrg;
 }
