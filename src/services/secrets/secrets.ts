@@ -336,6 +336,73 @@ API_KEY=
       }
     });
 
+  // Load command - sync and output export commands for shell evaluation
+  program
+    .command('load')
+    .description('Sync secrets and output export commands (use with eval)')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-e, --env <name>', 'Environment name', 'dev')
+    .option('-g, --global', 'Use global workspace ($HOME)')
+    .option('--no-sync', 'Skip sync, just output exports from local file')
+    .option('--quiet', 'Suppress hints (for scripting)')
+    .action(async (options) => {
+      const manager = new SecretsManager({ globalMode: options.global });
+      try {
+        const filePath = manager.resolveFilePath(options.file);
+        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
+
+        // Sync first (unless --no-sync)
+        if (options.sync !== false) {
+          // Use smartSync in load mode (suppresses output, returns exports)
+          await manager.smartSync(filePath, env, true, true, false, false);
+        } else {
+          // Just output exports from local file
+          const envPath = path.resolve(filePath);
+          if (!fs.existsSync(envPath)) {
+            console.error(`❌ File not found: ${envPath}`);
+            process.exit(1);
+          }
+
+          const content = fs.readFileSync(envPath, 'utf8');
+          const lines = content.split('\n');
+
+          for (const line of lines) {
+            if (line.trim().startsWith('#') || !line.trim()) continue;
+            const match = line.match(/^([^=]+)=(.*)$/);
+            if (match) {
+              const key = match[1].trim();
+              let value = match[2].trim();
+              // Remove quotes if present
+              if ((value.startsWith('"') && value.endsWith('"')) ||
+                  (value.startsWith("'") && value.endsWith("'"))) {
+                value = value.slice(1, -1);
+              }
+              // Escape single quotes in value
+              const escapedValue = value.replace(/'/g, "'\\''");
+              console.log(`export ${key}='${escapedValue}'`);
+            }
+          }
+        }
+
+        // Show hint to stderr (doesn't interfere with eval)
+        if (!options.quiet) {
+          console.error('');
+          console.error('💡 To load these into your shell:');
+          console.error('   eval "$(lsh load)"');
+          console.error('');
+          console.error('💡 Add to ~/.zshrc for auto-load:');
+          console.error('   lsh-load() { eval "$(lsh load --quiet "$@")"; echo "✅ Secrets loaded"; }');
+        }
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to load secrets:', err.message);
+        await manager.cleanup();
+        process.exit(1);
+      } finally {
+        await manager.cleanup();
+      }
+    });
+
   // Status command - get detailed status info
   program
     .command('status')
