@@ -491,6 +491,7 @@ API_KEY=
     .option('--export', 'Output in export format for shell evaluation (alias for --format export)')
     .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
     .option('--exact', 'Require exact key match (disable fuzzy matching)')
+    .option('--no-mask', 'Show full values in fuzzy match results')
     .action(async (key, options) => {
       try {
         const manager = new SecretsManager({ globalMode: options.global });
@@ -594,11 +595,13 @@ API_KEY=
         // Multiple matches - show all matches for user to choose
         console.error(`🔍 Found ${matches.length} matches for '${key}':\n`);
         for (const match of matches) {
-          // Mask value for display
-          const maskedValue = match.value.length > 4
-            ? match.value.substring(0, 4) + '*'.repeat(Math.min(match.value.length - 4, 10))
-            : '****';
-          console.error(`  ${match.key}=${maskedValue}`);
+          // Mask value for display unless --no-mask is set
+          const displayValue = options.mask === false
+            ? match.value
+            : (match.value.length > 4
+                ? match.value.substring(0, 4) + '*'.repeat(Math.min(match.value.length - 4, 10))
+                : '****');
+          console.error(`  ${match.key}=${displayValue}`);
         }
         console.error('');
         console.error('💡 Please specify the exact key name or use one of:');
