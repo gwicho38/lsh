@@ -414,7 +414,9 @@ API_KEY=
       try {
         const manager = new SecretsManager({ globalMode: options.global });
         const filePath = manager.resolveFilePath(options.file);
-        const status = await manager.status(filePath, options.env);
+        // v2.0: Use context-aware default environment (same as push/pull/sync)
+        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
+        const status = await manager.status(filePath, env);
         console.log(JSON.stringify(status, null, 2));
       } catch (error) {
         const err = error as Error;
@@ -435,6 +437,8 @@ API_KEY=
         const gitInfo = options.global ? null : getGitRepoInfo();
         const manager = new SecretsManager({ globalMode: options.global });
         const envPath = path.resolve(manager.resolveFilePath(options.file));
+        // v2.0: Use context-aware default environment (same as push/pull/sync)
+        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
 
         console.log('\n📍 Current Directory Context\n');
 
@@ -465,14 +469,14 @@ API_KEY=
         // Show the effective environment name used for cloud storage
         let effectiveEnv: string;
         if (options.global) {
-          effectiveEnv = options.env === 'dev' ? 'global' : `global_${options.env}`;
+          effectiveEnv = env === '' ? 'global' : (env === 'dev' ? 'global' : `global_${env}`);
         } else {
           effectiveEnv = gitInfo?.repoName
-            ? `${gitInfo.repoName}_${options.env}`
-            : options.env;
+            ? (env === '' ? gitInfo.repoName : `${gitInfo.repoName}_${env}`)
+            : (env || 'dev');
         }
 
-        console.log(`   Base environment: ${options.env}`);
+        console.log(`   Base environment: ${env || '(default)'}`);
         console.log(`   Cloud storage name: ${effectiveEnv}`);
 
         if (options.global) {
@@ -514,7 +518,7 @@ API_KEY=
         // Cloud Status
         console.log('☁️  Cloud Storage:');
         try {
-          const status = await manager.status(options.file, options.env);
+          const status = await manager.status(options.file, env);
 
           if (status.cloudExists) {
             console.log(`   Environment: ${effectiveEnv}`);
@@ -536,9 +540,10 @@ API_KEY=
 
         // Quick Actions
         console.log('💡 Quick Actions:');
-        console.log(`   Push:  lsh push --env ${options.env}`);
-        console.log(`   Pull:  lsh pull --env ${options.env}`);
-        console.log(`   Sync:  lsh sync --env ${options.env}`);
+        const envArg = env ? `--env ${env}` : '';
+        console.log(`   Push:  lsh push ${envArg}`.trim());
+        console.log(`   Pull:  lsh pull ${envArg}`.trim());
+        console.log(`   Sync:  lsh sync ${envArg}`.trim());
 
         console.log('');
       } catch (error) {

@@ -68,6 +68,16 @@ export declare class StorachaClient {
      */
     download(cid: string): Promise<Buffer>;
     /**
+     * Check file size without downloading the full content
+     * Returns size in bytes, or -1 if size cannot be determined
+     */
+    getFileSize(cid: string): Promise<number>;
+    /**
+     * Download only if file is small (registry check optimization)
+     * Returns buffer if small enough, null otherwise
+     */
+    downloadIfSmall(cid: string, maxSize?: number): Promise<Buffer | null>;
+    /**
      * Upload registry file for a repo
      * Registry files mark that secrets exist and include the latest secrets CID
      */
@@ -75,11 +85,17 @@ export declare class StorachaClient {
     /**
      * Get the latest secrets CID from registry
      * Returns the CID of the latest secrets if registry exists, null otherwise
+     *
+     * NOTE: This method paginates through uploads to find registries for the
+     * specific repo, ensuring secrets from different repos don't get mixed up.
      */
     getLatestCID(repoName: string): Promise<string | null>;
     /**
      * Get the latest registry object for a repo
      * Returns the full registry object including registryVersion
+     *
+     * NOTE: This method paginates through uploads to find registries for the
+     * specific repo, ensuring secrets from different repos don't get mixed up.
      */
     getLatestRegistry(repoName: string): Promise<{
         repoName: string;
@@ -93,8 +109,8 @@ export declare class StorachaClient {
      * Check if registry exists for a repo by listing uploads
      * Returns true if a registry file for this repo exists in Storacha
      *
-     * NOTE: This is optimized to check only recent small files (likely registry files)
-     * to avoid downloading large encrypted secret files.
+     * NOTE: This paginates through uploads to find registries for the specific repo,
+     * ensuring secrets from different repos don't get mixed up.
      */
     checkRegistry(repoName: string): Promise<boolean>;
     /**

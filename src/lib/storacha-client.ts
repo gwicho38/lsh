@@ -273,7 +273,7 @@ export class StorachaClient {
     const gatewayUrl = `https://${cid}.ipfs.storacha.link`;
 
     try {
-      logger.info(`📥 Downloading from Storacha: ${cid}...`);
+      logger.debug(`📥 Downloading from Storacha: ${cid}...`);
 
       const response = await fetch(gatewayUrl);
 
@@ -284,12 +284,63 @@ export class StorachaClient {
       const arrayBuffer = await response.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      logger.info(`✅ Downloaded ${buffer.length} bytes from Storacha`);
+      logger.debug(`✅ Downloaded ${buffer.length} bytes from Storacha`);
 
       return buffer;
     } catch (error) {
       const err = error as Error;
       throw new Error(`Failed to download from Storacha: ${err.message}`);
+    }
+  }
+
+  /**
+   * Check file size without downloading the full content
+   * Returns size in bytes, or -1 if size cannot be determined
+   */
+  async getFileSize(cid: string): Promise<number> {
+    const gatewayUrl = `https://${cid}.ipfs.storacha.link`;
+
+    try {
+      const response = await fetch(gatewayUrl, { method: 'HEAD' });
+
+      if (!response.ok) {
+        return -1;
+      }
+
+      const contentLength = response.headers.get('content-length');
+      if (contentLength) {
+        return parseInt(contentLength, 10);
+      }
+
+      return -1;
+    } catch {
+      return -1;
+    }
+  }
+
+  /**
+   * Download only if file is small (registry check optimization)
+   * Returns buffer if small enough, null otherwise
+   */
+  async downloadIfSmall(cid: string, maxSize: number = 1024): Promise<Buffer | null> {
+    // First check size with HEAD request
+    const size = await this.getFileSize(cid);
+
+    // If size check succeeds and file is too large, skip download
+    if (size > 0 && size > maxSize) {
+      logger.debug(`⏭️  Skipping large file ${cid} (${size} bytes > ${maxSize})`);
+      return null;
+    }
+
+    // Size unknown or small enough, download with size check after
+    try {
+      const buffer = await this.download(cid);
+      if (buffer.length > maxSize) {
+        return null;
+      }
+      return buffer;
+    } catch {
+      return null;
     }
   }
 
@@ -344,6 +395,9 @@ export class StorachaClient {
   /**
    * Get the latest secrets CID from registry
    * Returns the CID of the latest secrets if registry exists, null otherwise
+   *
+   * NOTE: This method paginates through uploads to find registries for the
+   * specific repo, ensuring secrets from different repos don't get mixed up.
    */
   async getLatestCID(repoName: string): Promise<string | null> {
     if (!this.isEnabled()) {
@@ -357,51 +411,69 @@ export class StorachaClient {
     try {
       const client = await this.getClient();
 
-      // Only check recent uploads (limit to 20 for performance)
       const pageSize = 20;
+      const maxPages = 5;  // Check up to 100 uploads total (20 * 5)
+      let cursor: string | undefined = '';
+      let pagesChecked = 0;
 
-      // Get first page of uploads
-      const results = await client.capability.upload.list({
-        cursor: '',
-        size: pageSize,
-      });
-
-      // Collect all registry files for this repo
+      // Collect all registry files for this repo across all pages
       const registries: Array<{ cid: string; timestamp: string; secretsCid: string; registryVersion: number }> = [];
 
-      for (const upload of results.results) {
-        try {
-          const cid = upload.root.toString();
+      // Paginate through uploads to find registries for this specific repo
+      while (pagesChecked < maxPages) {
+        pagesChecked++;
 
-          // Download with timeout
-          const downloadPromise = this.download(cid);
-          const timeoutPromise = new Promise<Buffer>((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), 5000)
-          );
+        const results = await client.capability.upload.list({
+          cursor: cursor || '',
+          size: pageSize,
+        });
 
-          const content = await Promise.race([downloadPromise, timeoutPromise]);
+        for (const upload of results.results) {
+          try {
+            const cid = upload.root.toString();
 
-          // Skip large files (registry should be < 1KB)
-          if (content.length > 1024) {
+            // Use optimized download that checks size first with HEAD request
+            const content = await this.downloadIfSmall(cid, 1024);
+
+            // Skip if file is too large or download failed
+            if (!content) {
+              continue;
+            }
+
+            // Try to parse as JSON
+            const json = JSON.parse(content.toString('utf-8'));
+
+            // Check if it's an LSH registry file for our repo
+            if (json.repoName === repoName && json.version && json.cid && json.timestamp) {
+              registries.push({
+                cid: cid,
+                timestamp: json.timestamp,
+                secretsCid: json.cid,
+                registryVersion: json.registryVersion || 0, // Default to 0 for old registries without version
+              });
+            }
+          } catch {
+            // Not an LSH registry file or failed to download
             continue;
           }
-
-          // Try to parse as JSON
-          const json = JSON.parse(content.toString('utf-8'));
-
-          // Check if it's an LSH registry file for our repo
-          if (json.repoName === repoName && json.version && json.cid && json.timestamp) {
-            registries.push({
-              cid: cid,
-              timestamp: json.timestamp,
-              secretsCid: json.cid,
-              registryVersion: json.registryVersion || 0, // Default to 0 for old registries without version
-            });
-          }
-        } catch {
-          // Not an LSH registry file or failed to download
-          continue;
         }
+
+        // If we found registries for our repo, we can stop paginating
+        // (we already have the latest since uploads are sorted by recency)
+        if (registries.length > 0) {
+          break;
+        }
+
+        // Check if there are more pages
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const resultsCursor = (results as any).cursor;
+        if (!resultsCursor || results.results.length < pageSize) {
+          // No more pages
+          break;
+        }
+
+        cursor = resultsCursor;
+        logger.debug(`📄 Checking page ${pagesChecked + 1} for ${repoName} registry...`);
       }
 
       // Sort by registryVersion (highest first), then timestamp as tie-breaker
@@ -415,11 +487,12 @@ export class StorachaClient {
           return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
         });
         const latest = registries[0];
-        logger.debug(`✅ Found latest CID for ${repoName}: ${latest.secretsCid} (v${latest.registryVersion}, timestamp: ${latest.timestamp})`);
+        logger.debug(`✅ Found latest CID for ${repoName}: ${latest.secretsCid} (v${latest.registryVersion}, timestamp: ${latest.timestamp}, pages checked: ${pagesChecked})`);
         return latest.secretsCid;
       }
 
       // No registry found
+      logger.debug(`❌ No registry found for ${repoName} after checking ${pagesChecked} pages`);
       return null;
     } catch (error) {
       const err = error as Error;
@@ -431,6 +504,9 @@ export class StorachaClient {
   /**
    * Get the latest registry object for a repo
    * Returns the full registry object including registryVersion
+   *
+   * NOTE: This method paginates through uploads to find registries for the
+   * specific repo, ensuring secrets from different repos don't get mixed up.
    */
   async getLatestRegistry(repoName: string): Promise<{
     repoName: string;
@@ -451,16 +527,12 @@ export class StorachaClient {
     try {
       const client = await this.getClient();
 
-      // Only check recent uploads (limit to 20 for performance)
       const pageSize = 20;
+      const maxPages = 5;  // Check up to 100 uploads total (20 * 5)
+      let cursor: string | undefined = '';
+      let pagesChecked = 0;
 
-      // Get first page of uploads
-      const results = await client.capability.upload.list({
-        cursor: '',
-        size: pageSize,
-      });
-
-      // Collect all registry files for this repo
+      // Collect all registry files for this repo across all pages
       const registries: Array<{
         repoName: string;
         environment: string;
@@ -470,41 +542,62 @@ export class StorachaClient {
         registryVersion: number;
       }> = [];
 
-      for (const upload of results.results) {
-        try {
-          const cid = upload.root.toString();
+      // Paginate through uploads to find registries for this specific repo
+      while (pagesChecked < maxPages) {
+        pagesChecked++;
 
-          // Download with timeout
-          const downloadPromise = this.download(cid);
-          const timeoutPromise = new Promise<Buffer>((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), 5000)
-          );
+        const results = await client.capability.upload.list({
+          cursor: cursor || '',
+          size: pageSize,
+        });
 
-          const content = await Promise.race([downloadPromise, timeoutPromise]);
+        for (const upload of results.results) {
+          try {
+            const cid = upload.root.toString();
 
-          // Skip large files (registry should be < 1KB)
-          if (content.length > 1024) {
+            // Use optimized download that checks size first with HEAD request
+            const content = await this.downloadIfSmall(cid, 1024);
+
+            // Skip if file is too large or download failed
+            if (!content) {
+              continue;
+            }
+
+            // Try to parse as JSON
+            const json = JSON.parse(content.toString('utf-8'));
+
+            // Check if it's an LSH registry file for our repo
+            if (json.repoName === repoName && json.version && json.cid && json.timestamp) {
+              registries.push({
+                repoName: json.repoName,
+                environment: json.environment,
+                cid: json.cid,
+                timestamp: json.timestamp,
+                version: json.version,
+                registryVersion: json.registryVersion || 0,
+              });
+            }
+          } catch {
+            // Not an LSH registry file or failed to download
             continue;
           }
-
-          // Try to parse as JSON
-          const json = JSON.parse(content.toString('utf-8'));
-
-          // Check if it's an LSH registry file for our repo
-          if (json.repoName === repoName && json.version && json.cid && json.timestamp) {
-            registries.push({
-              repoName: json.repoName,
-              environment: json.environment,
-              cid: json.cid,
-              timestamp: json.timestamp,
-              version: json.version,
-              registryVersion: json.registryVersion || 0,
-            });
-          }
-        } catch {
-          // Not an LSH registry file or failed to download
-          continue;
         }
+
+        // If we found registries for our repo, we can stop paginating
+        if (registries.length > 0) {
+          break;
+        }
+
+        // Check if there are more pages
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const resultsCursor = (results as any).cursor;
+        if (!resultsCursor || results.results.length < pageSize) {
+          // No more pages
+          break;
+        }
+
+        cursor = resultsCursor;
+        logger.debug(`📄 Checking page ${pagesChecked + 1} for ${repoName} registry...`);
       }
 
       // Sort by registryVersion (highest first), then timestamp as tie-breaker
@@ -530,8 +623,8 @@ export class StorachaClient {
    * Check if registry exists for a repo by listing uploads
    * Returns true if a registry file for this repo exists in Storacha
    *
-   * NOTE: This is optimized to check only recent small files (likely registry files)
-   * to avoid downloading large encrypted secret files.
+   * NOTE: This paginates through uploads to find registries for the specific repo,
+   * ensuring secrets from different repos don't get mixed up.
    */
   async checkRegistry(repoName: string): Promise<boolean> {
     if (!this.isEnabled()) {
@@ -545,60 +638,70 @@ export class StorachaClient {
     try {
       const client = await this.getClient();
 
-      // Only check recent uploads (limit to 20 for performance)
       const pageSize = 20;
-
-      // Get first page of uploads
-      const results = await client.capability.upload.list({
-        cursor: '',
-        size: pageSize,
-      });
+      const maxPages = 5;  // Check up to 100 uploads total (20 * 5)
+      let cursor: string | undefined = '';
+      let pagesChecked = 0;
 
       // Track checked count for logging
       let checked = 0;
       let skipped = 0;
 
-      // Check if any uploads match our registry pattern
-      // Registry files are small JSON files (~200 bytes)
-      // Skip large files (encrypted secrets are much larger)
-      for (const upload of results.results) {
-        try {
-          const cid = upload.root.toString();
+      // Paginate through uploads to find registry for this specific repo
+      while (pagesChecked < maxPages) {
+        pagesChecked++;
 
-          // Quick heuristic: registry files are tiny (<1KB)
-          // Skip if this looks like a large encrypted file based on CID
-          // We'll attempt download with a timeout
-          const downloadPromise = this.download(cid);
-          const timeoutPromise = new Promise<Buffer>((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), 5000) // 5s timeout per file
-          );
+        const results = await client.capability.upload.list({
+          cursor: cursor || '',
+          size: pageSize,
+        });
 
-          const content = await Promise.race([downloadPromise, timeoutPromise]);
+        // Check if any uploads match our registry pattern
+        // Registry files are small JSON files (~200 bytes)
+        // Skip large files (encrypted secrets are much larger)
+        for (const upload of results.results) {
+          try {
+            const cid = upload.root.toString();
 
-          // Skip large files (registry should be < 1KB)
-          if (content.length > 1024) {
+            // Use optimized download that checks size first with HEAD request
+            const content = await this.downloadIfSmall(cid, 1024);
+
+            // Skip if file is too large or download failed
+            if (!content) {
+              skipped++;
+              continue;
+            }
+
+            checked++;
+
+            // Try to parse as JSON
+            const json = JSON.parse(content.toString('utf-8'));
+
+            // Check if it's an LSH registry file for our repo
+            if (json.repoName === repoName && json.version) {
+              logger.debug(`✅ Found registry for ${repoName} at CID: ${cid} (checked ${checked} files, skipped ${skipped}, pages: ${pagesChecked})`);
+              return true;
+            }
+          } catch {
+            // Not an LSH registry file or failed to download - continue
             skipped++;
-            continue;
           }
-
-          checked++;
-
-          // Try to parse as JSON
-          const json = JSON.parse(content.toString('utf-8'));
-
-          // Check if it's an LSH registry file for our repo
-          if (json.repoName === repoName && json.version) {
-            logger.debug(`✅ Found registry for ${repoName} at CID: ${cid} (checked ${checked} files, skipped ${skipped})`);
-            return true;
-          }
-        } catch {
-          // Not an LSH registry file, timed out, or failed to download - continue
-          skipped++;
         }
+
+        // Check if there are more pages
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const resultsCursor = (results as any).cursor;
+        if (!resultsCursor || results.results.length < pageSize) {
+          // No more pages
+          break;
+        }
+
+        cursor = resultsCursor;
+        logger.debug(`📄 Checking page ${pagesChecked + 1} for ${repoName} registry...`);
       }
 
       // No registry found
-      logger.debug(`❌ No registry found for ${repoName} (checked ${checked} files, skipped ${skipped})`);
+      logger.debug(`❌ No registry found for ${repoName} (checked ${checked} files, skipped ${skipped}, pages: ${pagesChecked})`);
       return false;
     } catch (error) {
       const err = error as Error;

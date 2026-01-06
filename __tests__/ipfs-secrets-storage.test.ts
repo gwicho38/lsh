@@ -29,7 +29,7 @@ describe('IPFS Secrets Storage', () => {
     IPFSSecretsStorage = module.IPFSSecretsStorage;
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Save original HOME
     originalHome = process.env.HOME;
 
@@ -43,6 +43,7 @@ describe('IPFS Secrets Storage', () => {
     fs.mkdirSync(path.join(testDir, '.lsh', 'secrets-cache'), { recursive: true });
 
     storage = new IPFSSecretsStorage();
+    await storage.initialize();
   });
 
   afterEach(() => {
