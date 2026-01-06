@@ -1,0 +1,199 @@
+# llms.txt - Machine-Readable Context for LSH
+# https://github.com/gwicho38/lsh
+# For ML models/agents to quickly understand this CLI tool
+# Run `lsh context` for comprehensive usage information
+
+> LSH is an encrypted secrets manager for .env files with cloud sync via IPFS/Storacha.
+
+## Quick Context
+
+Name: lsh (lsh-framework on npm)
+Purpose: Encrypted secrets manager with multi-host sync
+Install: npm install -g lsh-framework
+Repository: https://github.com/gwicho38/lsh
+Docs: https://github.com/gwicho38/lsh/blob/main/README.md
+
+## Primary Use Case
+
+Sync .env files across development machines with AES-256 encryption:
+1. Generate encryption key once: `lsh key`
+2. Push secrets to cloud: `lsh push`
+3. Pull on another machine: `lsh pull`
+
+## Command Reference
+
+### Setup Commands (First-Time)
+lsh init                          # Interactive setup wizard
+lsh key                           # Generate AES-256 encryption key
+lsh doctor                        # Verify configuration and connectivity
+
+### Core Secrets Commands
+lsh push [--env <name>] [--file <path>]    # Upload encrypted .env to cloud
+lsh pull [--env <name>] [--file <path>]    # Download .env from cloud
+lsh sync                                    # Smart sync (check status, auto-resolve)
+lsh list [--format <type>]                  # List local secrets (env|json|yaml|toml|export)
+lsh env [<name>]                            # List/view cloud environments
+lsh status                                  # Detailed sync status report
+
+### Individual Secret Operations
+lsh get <key> [--all] [--no-mask]    # Get specific secret value
+lsh set <key> <value>                 # Set specific secret value
+lsh delete                            # Delete .env file
+lsh create                            # Create new .env file
+
+### Multi-Environment Support
+lsh push --env dev                    # Push to dev environment
+lsh push --env staging                # Push to staging environment
+lsh push --env prod                   # Push to production environment
+lsh pull --env prod                   # Pull from production
+lsh push --file .env.local --env local  # Custom file to custom env
+
+### Automation Commands
+lsh daemon start                      # Start persistent background daemon
+lsh daemon stop                       # Stop daemon
+lsh daemon status                     # Check daemon status
+lsh cron add --name <n> --schedule <cron> --command <cmd>  # Schedule job
+lsh cron list                         # List scheduled jobs
+lsh cron remove <name>                # Remove scheduled job
+
+### Configuration Commands
+lsh config show                       # Show current configuration
+lsh config set <key> <value>          # Set configuration value
+lsh config get <key>                  # Get configuration value
+
+### Backend Commands
+lsh supabase init                     # Initialize Supabase connection
+lsh supabase test                     # Test Supabase connectivity
+lsh storacha login <email>            # Authenticate with Storacha/IPFS
+
+### Self-Management
+lsh self update                       # Update to latest version
+lsh self version                      # Show version information
+lsh self info                         # Show installation info
+lsh --help                            # Show help
+lsh --version                         # Show version
+
+## Common Patterns
+
+### First-Time Setup on Any Machine
+```bash
+npm install -g lsh-framework
+lsh init                    # Interactive setup
+lsh doctor                  # Verify everything works
+```
+
+### Daily Developer Workflow
+```bash
+cd ~/repos/my-project
+lsh pull                    # Get latest secrets
+# ... work ...
+lsh push                    # Push any changes
+```
+
+### Team Onboarding
+```bash
+# Team lead shares LSH_SECRETS_KEY via 1Password
+echo "LSH_SECRETS_KEY=shared-key" >> .env
+lsh storacha login email@company.com
+lsh pull --env prod
+```
+
+### CI/CD Integration
+```bash
+# In GitHub Actions / CI pipeline:
+export LSH_SECRETS_KEY=${{ secrets.LSH_SECRETS_KEY }}
+lsh pull --env $ENVIRONMENT
+source .env
+```
+
+### Automatic Secret Rotation
+```bash
+lsh daemon start
+lsh cron add \
+  --name "monthly-rotation" \
+  --schedule "0 0 1 * *" \
+  --command "lsh key && lsh push --force"
+```
+
+## Environment Variables
+
+### Required
+LSH_SECRETS_KEY=<64-char-hex>         # AES-256 encryption key (from `lsh key`)
+
+### Optional - Storage Backend
+LSH_STORACHA_ENABLED=true             # Enable IPFS sync (default: true)
+SUPABASE_URL=https://xxx.supabase.co  # Alternative Supabase backend
+SUPABASE_ANON_KEY=<key>               # Supabase anonymous key
+
+### Optional - Automation
+LSH_API_ENABLED=true                  # Enable REST API
+LSH_API_PORT=3030                     # API port (default: 3030)
+LSH_API_KEY=<key>                     # API authentication key
+
+## File Locations
+
+~/.config/lsh/lshrc                   # Global LSH configuration
+~/.lsh/secrets-cache/                 # Encrypted secrets cache
+~/.lsh/secrets-metadata.json          # Metadata index
+.env                                  # Local environment file (default)
+
+## Exit Codes
+
+0 - Success
+1 - General error (check stderr for details)
+
+## Output Formats
+
+lsh list --format env                 # KEY=value (default)
+lsh list --format json                # {"KEY": "value"}
+lsh list --format yaml                # KEY: value
+lsh list --format toml                # KEY = "value"
+lsh list --format export              # export KEY="value" (shell-sourceable)
+
+## Error Resolution
+
+### "No secrets found for environment"
+Run `lsh env` to see available environments, then `lsh push --env <name>` to create.
+
+### "Decryption failed"
+Ensure LSH_SECRETS_KEY matches the key used to encrypt. Generate new key with `lsh key` if lost.
+
+### "Storacha authentication required"
+Run `lsh storacha login your@email.com` and verify via email.
+
+## Security Model
+
+- AES-256-CBC encryption (local)
+- Content-addressed IPFS storage (tamper-proof)
+- Zero-knowledge: Storacha never sees plaintext
+- Keys never transmitted, only encrypted blobs
+
+## Integration Points
+
+### Load Secrets into Shell
+```bash
+eval "$(lsh list --format export)"
+```
+
+### Load Specific Secret
+```bash
+API_KEY=$(lsh get API_KEY --no-mask)
+```
+
+### Check if Synced
+```bash
+lsh status --quiet && echo "synced" || echo "needs sync"
+```
+
+## For ML Agents
+
+To get comprehensive, structured context for building automations:
+```bash
+lsh context                           # Full usage documentation (machine-readable)
+lsh context --json                    # JSON format for parsing
+```
+
+## Version
+
+Current: Run `lsh --version` to check
+Latest: https://www.npmjs.com/package/lsh-framework
