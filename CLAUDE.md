@@ -24,6 +24,26 @@ LSH is an **encrypted secrets manager** with automatic rotation, team sync, and 
 
 **Positioning:** While LSH is a full-featured shell and automation platform, its primary focus is making secrets management simple, secure, and automated. The built-in daemon and scheduling features uniquely enable automatic secret rotation - something no other secrets manager has built-in.
 
+## ML/Agent Context
+
+For ML models and automation agents needing to understand and use this CLI:
+
+- **`llms.txt`** - Machine-readable context file at repository root (standard format like robots.txt)
+- **`lsh context`** - Runtime command that outputs comprehensive, structured usage documentation
+- **`lsh context --json`** - JSON output for programmatic parsing
+
+Quick context for agents:
+```bash
+# Get full context as text
+lsh context
+
+# Get context as JSON for parsing
+lsh context --json
+
+# Or read the static file
+cat llms.txt
+```
+
 ## Build & Development Commands
 
 ### Building
