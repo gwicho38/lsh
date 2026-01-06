@@ -29,6 +29,10 @@ export declare class IPFSSecretsStorage {
     private metadata;
     constructor();
     /**
+     * Initialize async parts
+     */
+    initialize(): Promise<void>;
+    /**
      * Store secrets on IPFS
      */
     push(secrets: Secret[], environment: string, encryptionKey: string, gitRepo?: string, gitBranch?: string): Promise<string>;
@@ -49,9 +53,9 @@ export declare class IPFSSecretsStorage {
      */
     listEnvironments(): IPFSSecretsMetadata[];
     /**
-     * Delete secrets for environment
+     * Delete local cached secrets for an environment
      */
-    delete(environment: string, gitRepo?: string): Promise<void>;
+    deleteLocal(environment: string, gitRepo?: string): Promise<void>;
     /**
      * Encrypt secrets using AES-256
      */
@@ -80,6 +84,10 @@ export declare class IPFSSecretsStorage {
      * Load metadata from disk
      */
     private loadMetadata;
+    /**
+     * Load metadata from disk asynchronously
+     */
+    private loadMetadataAsync;
     /**
      * Save metadata to disk
      */

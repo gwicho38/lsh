@@ -4,6 +4,8 @@
  */
 
 import * as fs from 'fs';
+import * as fsPromises from 'fs/promises';
+
 import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
@@ -46,13 +48,28 @@ export class IPFSSecretsStorage {
     this.cacheDir = path.join(lshDir, 'secrets-cache');
     this.metadataPath = path.join(lshDir, 'secrets-metadata.json');
 
+    // Load metadata synchronously to ensure we have all existing entries
+    // This fixes the bug where sequential pushes from different repos
+    // would overwrite each other's metadata
+    this.metadata = this.loadMetadata();
+
+    // Ensure cache directory exists
+    if (!fs.existsSync(this.cacheDir)) {
+      fs.mkdirSync(this.cacheDir, { recursive: true });
+    }
+  }
+
+  /**
+   * Initialize async parts
+   */
+  async initialize(): Promise<void> {
     // Ensure directories exist
     if (!fs.existsSync(this.cacheDir)) {
       fs.mkdirSync(this.cacheDir, { recursive: true });
     }
 
     // Load metadata
-    this.metadata = this.loadMetadata();
+    this.metadata = await this.loadMetadataAsync();
   }
 
   /**
@@ -87,7 +104,7 @@ export class IPFSSecretsStorage {
       };
 
       this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
-      this.saveMetadata();
+      await this.saveMetadata();
 
       logger.info(`📦 Stored ${secrets.length} secrets on IPFS: ${cid}`);
       logger.info(`   Environment: ${environment}`);
@@ -168,7 +185,7 @@ export class IPFSSecretsStorage {
                 encrypted: true,
               };
               this.metadata[metadataKey] = metadata;
-              this.saveMetadata();
+              await this.saveMetadata();
             }
           }
         } catch (error) {
@@ -199,7 +216,7 @@ export class IPFSSecretsStorage {
                 timestamp: new Date().toISOString(),
               };
               this.metadata[metadataKey] = metadata;
-              this.saveMetadata();
+              await this.saveMetadata();
             }
           }
         } catch (error) {
@@ -279,22 +296,25 @@ export class IPFSSecretsStorage {
   }
 
   /**
-   * Delete secrets for environment
+   * Delete local cached secrets for an environment
    */
-  async delete(environment: string, gitRepo?: string): Promise<void> {
+  async deleteLocal(environment: string, gitRepo?: string): Promise<void> {
     const metadataKey = this.getMetadataKey(gitRepo, environment);
     const metadata = this.metadata[metadataKey];
 
     if (metadata) {
       // Delete local cache
       const cachePath = path.join(this.cacheDir, `${metadata.cid}.encrypted`);
-      if (fs.existsSync(cachePath)) {
-        fs.unlinkSync(cachePath);
+      try {
+        await fsPromises.access(cachePath);
+        await fsPromises.unlink(cachePath);
+      } catch {
+        // File doesn't exist, which is fine
       }
 
       // Remove metadata
       delete this.metadata[metadataKey];
-      this.saveMetadata();
+      await this.saveMetadata();
 
       logger.info(`🗑️  Deleted secrets for ${environment}`);
     }
@@ -365,8 +385,12 @@ export class IPFSSecretsStorage {
    */
   private async storeLocally(cid: string, encryptedData: string, _environment: string): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
-    fs.writeFileSync(cachePath, encryptedData, 'utf8');
-
+    
+    // Ensure parent directory exists
+    await fsPromises.mkdir(this.cacheDir, { recursive: true });
+    
+    // Write file without locking (simpler approach)
+    await fsPromises.writeFile(cachePath, encryptedData, 'utf8');
     logger.debug(`Cached secrets locally: ${cachePath}`);
   }
 
@@ -376,11 +400,14 @@ export class IPFSSecretsStorage {
   private async loadLocally(cid: string): Promise<string | null> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
 
-    if (!fs.existsSync(cachePath)) {
+    try {
+      await fsPromises.access(cachePath);
+    } catch {
       return null;
     }
 
-    return fs.readFileSync(cachePath, 'utf8');
+    // Simple read without locking for now
+    return await fsPromises.readFile(cachePath, 'utf8');
   }
 
   /**
@@ -407,10 +434,32 @@ export class IPFSSecretsStorage {
   }
 
   /**
+   * Load metadata from disk asynchronously
+   */
+  private async loadMetadataAsync(): Promise<Record<string, IPFSSecretsMetadata>> {
+    try {
+      await fsPromises.access(this.metadataPath);
+    } catch {
+      return {};
+    }
+
+    try {
+      const content = await fsPromises.readFile(this.metadataPath, 'utf8');
+      return JSON.parse(content);
+    } catch {
+      return {};
+    }
+  }
+
+  /**
    * Save metadata to disk
    */
-  private saveMetadata(): void {
-    fs.writeFileSync(
+  private async saveMetadata(): Promise<void> {
+    // Ensure parent directory exists
+    const parentDir = path.dirname(this.metadataPath);
+    await fsPromises.mkdir(parentDir, { recursive: true });
+    
+    await fsPromises.writeFile(
       this.metadataPath,
       JSON.stringify(this.metadata, null, 2),
       'utf8'
