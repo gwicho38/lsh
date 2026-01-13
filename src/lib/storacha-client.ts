@@ -10,6 +10,7 @@ import * as path from 'path';
 import { homedir } from 'os';
 import { logger } from './logger.js';
 import { ENV_VARS } from '../constants/index.js';
+import { getGitRepoInfo } from './git-utils.js';
 
 export interface StorachaConfig {
   email?: string;
@@ -145,15 +146,17 @@ export class StorachaClient {
       this.config.email = email;
       this.saveConfig();
 
-      // Check if space exists, create default if not
+      // Check existing spaces and provide guidance
       const spaces = await client.spaces();
       if (spaces.length === 0) {
-        logger.info('🆕 Creating default space: "lsh-secrets"...');
-        const space = await client.createSpace('lsh-secrets', { account });
+        // Detect project name for first space
+        const projectName = this.getProjectName();
+        logger.info(`🆕 Creating space for project: "${projectName}"...`);
+        const space = await client.createSpace(projectName, { account });
         await client.setCurrentSpace(space.did());
-        this.config.spaceName = 'lsh-secrets';
+        this.config.spaceName = projectName;
         this.saveConfig();
-        logger.info('✅ Default space created and activated!');
+        logger.info('✅ Project space created and activated!');
       } else {
         logger.info(`✅ Found ${spaces.length} existing space(s)`);
         // Set first space as current if none selected
@@ -168,6 +171,10 @@ export class StorachaClient {
       logger.info('🎉 Storacha setup complete!');
       logger.info('   Enable network sync: export LSH_STORACHA_ENABLED=true');
       logger.info('   Or add to ~/.bashrc or ~/.zshrc');
+      logger.info('');
+      logger.info('💡 LSH automatically uses project-specific spaces:');
+      logger.info('   - Each git repo gets its own Storacha space');
+      logger.info('   - Spaces are created/selected during lsh sync');
 
     } catch (error) {
       const err = error as Error;
@@ -233,6 +240,97 @@ export class StorachaClient {
     this.saveConfig();
 
     logger.info(`✅ Space "${name}" created and activated`);
+  }
+
+  /**
+   * Get project name from git repo or current directory
+   * Returns the git repo name if in a git repo, otherwise the current directory name
+   */
+  getProjectName(dir: string = process.cwd()): string {
+    const gitInfo = getGitRepoInfo(dir);
+
+    if (gitInfo.isGitRepo && gitInfo.repoName) {
+      return gitInfo.repoName;
+    }
+
+    // Fall back to current directory name
+    return path.basename(dir);
+  }
+
+  /**
+   * Select an existing space by name
+   * Returns true if space was found and selected, false otherwise
+   */
+  async selectSpace(name: string): Promise<boolean> {
+    const client = await this.getClient();
+    const spacesRecord = await client.spaces();
+    const spaces = Object.values(spacesRecord);
+
+    const space = spaces.find(s => s.name === name);
+    if (space) {
+      await client.setCurrentSpace(space.did());
+      this.config.spaceName = name;
+      this.saveConfig();
+      logger.debug(`Selected space: ${name}`);
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Ensure a project-specific space is active
+   * Creates the space if it doesn't exist, selects it if it does
+   *
+   * @param projectName - Optional project name override. If not provided, auto-detects from git/directory
+   * @returns The name of the active space
+   */
+  async ensureProjectSpace(projectName?: string): Promise<string> {
+    if (!await this.isAuthenticated()) {
+      throw new Error('Not authenticated. Run: lsh storacha login <email>');
+    }
+
+    const name = projectName || this.getProjectName();
+
+    const client = await this.getClient();
+    const spacesRecord = await client.spaces();
+    const spaces = Object.values(spacesRecord);
+
+    // Check if space already exists
+    const existingSpace = spaces.find(s => s.name === name);
+    if (existingSpace) {
+      // Check if it's already the current space
+      const currentSpace = await client.currentSpace();
+      if (currentSpace?.did() === existingSpace.did()) {
+        logger.debug(`Space "${name}" is already active`);
+        return name;
+      }
+
+      // Select the existing space
+      await client.setCurrentSpace(existingSpace.did());
+      this.config.spaceName = name;
+      this.saveConfig();
+      logger.info(`🔄 Switched to space: ${name}`);
+      return name;
+    }
+
+    // Create new space for this project
+    const accountsRecord = await client.accounts();
+    const accounts = Object.values(accountsRecord);
+
+    if (accounts.length === 0) {
+      throw new Error('Not authenticated. Run: lsh storacha login <email>');
+    }
+
+    logger.info(`🆕 Creating space for project: ${name}...`);
+    const space = await client.createSpace(name, { account: accounts[0] });
+    await client.setCurrentSpace(space.did());
+
+    this.config.spaceName = name;
+    this.saveConfig();
+
+    logger.info(`✅ Space "${name}" created and activated`);
+    return name;
   }
 
   /**

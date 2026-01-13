@@ -154,6 +154,72 @@ export function registerStorachaCommands(program: Command) {
     });
 
   space
+    .command('auto')
+    .description('Auto-select space based on current project (git repo or directory name)')
+    .action(async () => {
+      try {
+        const client = getStorachaClient();
+
+        const status = await client.getStatus();
+        if (!status.authenticated) {
+          console.error('❌ Not authenticated');
+          console.error('');
+          console.error('💡 First, authenticate:');
+          console.error('   lsh storacha login [email protected]');
+          process.exit(1);
+        }
+
+        const projectName = client.getProjectName();
+        console.log(`\n🔍 Detected project: ${projectName}\n`);
+
+        const spaceName = await client.ensureProjectSpace();
+        console.log(`✅ Active space: ${spaceName}\n`);
+
+      } catch (error) {
+        const err = error as Error;
+        console.error('\n❌ Failed to auto-select space:', err.message);
+        process.exit(1);
+      }
+    });
+
+  space
+    .command('use <name>')
+    .description('Switch to a specific space')
+    .action(async (name: string) => {
+      try {
+        const client = getStorachaClient();
+
+        const status = await client.getStatus();
+        if (!status.authenticated) {
+          console.error('❌ Not authenticated');
+          console.error('');
+          console.error('💡 First, authenticate:');
+          console.error('   lsh storacha login [email protected]');
+          process.exit(1);
+        }
+
+        const found = await client.selectSpace(name);
+        if (found) {
+          console.log(`\n✅ Switched to space: ${name}\n`);
+        } else {
+          console.error(`\n❌ Space not found: ${name}`);
+          console.error('');
+          console.error('💡 To list available spaces:');
+          console.error('   lsh storacha space list');
+          console.error('');
+          console.error('💡 To create a new space:');
+          console.error(`   lsh storacha space create ${name}`);
+          process.exit(1);
+        }
+
+      } catch (error) {
+        const err = error as Error;
+        console.error('\n❌ Failed to switch space:', err.message);
+        process.exit(1);
+      }
+    });
+
+  space
     .command('list')
     .description('List all spaces')
     .action(async () => {
