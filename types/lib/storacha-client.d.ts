@@ -58,6 +58,24 @@ export declare class StorachaClient {
      */
     createSpace(name: string): Promise<void>;
     /**
+     * Get project name from git repo or current directory
+     * Returns the git repo name if in a git repo, otherwise the current directory name
+     */
+    getProjectName(dir?: string): string;
+    /**
+     * Select an existing space by name
+     * Returns true if space was found and selected, false otherwise
+     */
+    selectSpace(name: string): Promise<boolean>;
+    /**
+     * Ensure a project-specific space is active
+     * Creates the space if it doesn't exist, selects it if it does
+     *
+     * @param projectName - Optional project name override. If not provided, auto-detects from git/directory
+     * @returns The name of the active space
+     */
+    ensureProjectSpace(projectName?: string): Promise<string>;
+    /**
      * Upload data to Storacha
      * Returns CID of uploaded content
      */
