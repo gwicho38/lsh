@@ -116,6 +116,13 @@ export class IPFSSecretsStorage {
       const storacha = getStorachaClient();
       if (storacha.isEnabled()) {
         try {
+          // Ensure project-specific space is active before uploading
+          // This creates/selects a space named after the git repo or directory
+          if (await storacha.isAuthenticated()) {
+            const projectName = gitRepo || storacha.getProjectName();
+            await storacha.ensureProjectSpace(projectName);
+          }
+
           const filename = `lsh-secrets-${environment}-${cid}.encrypted`;
           // encryptedData is already a Buffer, pass it directly
           await storacha.upload(Buffer.from(encryptedData), filename);
@@ -171,6 +178,10 @@ export class IPFSSecretsStorage {
         try {
           const storacha = getStorachaClient();
           if (storacha.isEnabled() && await storacha.isAuthenticated()) {
+            // Ensure project-specific space is active before registry check
+            const projectName = gitRepo || storacha.getProjectName();
+            await storacha.ensureProjectSpace(projectName);
+
             logger.info(`   🔍 No local metadata found, checking Storacha registry...`);
             const latestCid = await storacha.getLatestCID(gitRepo);
             if (latestCid) {
@@ -206,6 +217,10 @@ export class IPFSSecretsStorage {
         try {
           const storacha = getStorachaClient();
           if (storacha.isEnabled() && await storacha.isAuthenticated()) {
+            // Ensure project-specific space is active
+            const projectName = gitRepo || storacha.getProjectName();
+            await storacha.ensureProjectSpace(projectName);
+
             const latestCid = await storacha.getLatestCID(gitRepo);
             if (latestCid && latestCid !== metadata.cid) {
               logger.info(`   🔄 Found newer version in registry (CID: ${latestCid})`);
@@ -234,6 +249,12 @@ export class IPFSSecretsStorage {
         const storacha = getStorachaClient();
         if (storacha.isEnabled()) {
           try {
+            // Ensure project-specific space is active before download
+            if (await storacha.isAuthenticated()) {
+              const projectName = gitRepo || storacha.getProjectName();
+              await storacha.ensureProjectSpace(projectName);
+            }
+
             logger.info(`   ☁️  Downloading from Storacha network...`);
             const downloadedData = await storacha.download(metadata.cid);
             // Store in local cache for future use
