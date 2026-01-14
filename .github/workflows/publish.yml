@@ -1,4 +1,5 @@
 # Automated NPM Publishing on Version Tags
+# Uses npm Trusted Publishing (OIDC) - no NPM_TOKEN required
 name: Publish to npm
 
 on:
@@ -7,11 +8,13 @@ on:
       - 'v*.*.*'  # Trigger on version tags like v0.5.2
 
 permissions:
-  contents: write  # Required to create releases
+  contents: write   # Required to create releases
+  id-token: write   # Required for npm provenance (OIDC)
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: npm-publish  # GitHub environment for trusted publishing
 
     steps:
     - name: Checkout code
@@ -33,9 +36,7 @@ jobs:
       run: npm test -- --forceExit
 
     - name: Publish to npm
-      run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npm publish --provenance --access public
 
     - name: Create GitHub Release
       env:
@@ -50,7 +51,7 @@ jobs:
 
         ### Installation
         \`\`\`bash
-        npm install -g gwicho38-lsh@latest
+        npm install -g lsh-framework@latest
         # or
         lsh self update
         \`\`\`"
