@@ -152,7 +152,18 @@
       "Bash(npm audit fix:*)",
       "Bash(timeout 180 npm run test:coverage:*)",
       "Bash(timeout 200 npm test:*)",
-      "Bash(timeout 220 npm test:*)"
+      "Bash(timeout 220 npm test:*)",
+      "Bash(git -C /Users/lefv/repos/lsh push origin main --tags)",
+      "Bash(git -C /Users/lefv/repos/lsh stash pop)",
+      "Bash(git -C /Users/lefv/repos/lsh commit -m \"fix: add --forceExit to publish workflow tests\")",
+      "Bash(git check-ignore:*)",
+      "Bash(LSH_LOG_LEVEL=error timeout 30 node:*)",
+      "Bash(LSH_STORACHA_ENABLED=false timeout 5 node:*)",
+      "Bash(kill:*)",
+      "Bash(git pull:*)",
+      "Bash(gh secret set:*)",
+      "Bash(gh run rerun:*)",
+      "WebFetch(domain:ipfs.io)"
     ],
     "deny": [],
     "ask": []

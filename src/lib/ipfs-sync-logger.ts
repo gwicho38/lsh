@@ -1,6 +1,6 @@
 /**
  * IPFS Sync Logger
- * Records immutable sync operations to IPFS using Storacha (formerly web3.storage)
+ * Records immutable sync operations to IPFS via native Kubo daemon
  */
 
 import * as fs from 'fs';
@@ -39,12 +39,11 @@ export interface SyncLog {
 /**
  * IPFS Sync Logger
  *
- * Stores immutable sync records on IPFS using Storacha (storacha.network)
+ * Stores immutable sync records on IPFS via native daemon
  *
  * Features:
- * - Zero-config: Works automatically with embedded token
+ * - Zero-config: Works with local IPFS daemon
  * - Immutable: Content-addressed storage on IPFS
- * - Free: 5GB storage forever via Storacha
  * - Privacy: Only metadata stored, no secrets
  * - Opt-out: Can be disabled via DISABLE_IPFS_SYNC config
  */
@@ -99,9 +98,8 @@ export class IPFSSyncLogger {
       lsh_version: version,
     };
 
-    // For now, use simple file-based storage with IPFS-like CIDs
-    // This avoids requiring Storacha authentication
-    // In production, you'd upload to actual IPFS/Storacha
+    // Use file-based storage with IPFS-like CIDs
+    // Records are stored locally and can optionally be uploaded to IPFS
     const cid = this.generateContentId(record);
     const repoEnv = this.getRepoEnvKey(record.git_repo, record.environment);
 

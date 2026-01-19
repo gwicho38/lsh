@@ -1,6 +1,6 @@
 /**
  * IPFS Sync Logger
- * Records immutable sync operations to IPFS using Storacha (formerly web3.storage)
+ * Records immutable sync operations to IPFS via native Kubo daemon
  */
 export interface SyncRecord {
     timestamp: string;
@@ -28,12 +28,11 @@ export interface SyncLog {
 /**
  * IPFS Sync Logger
  *
- * Stores immutable sync records on IPFS using Storacha (storacha.network)
+ * Stores immutable sync records on IPFS via native daemon
  *
  * Features:
- * - Zero-config: Works automatically with embedded token
+ * - Zero-config: Works with local IPFS daemon
  * - Immutable: Content-addressed storage on IPFS
- * - Free: 5GB storage forever via Storacha
  * - Privacy: Only metadata stored, no secrets
  * - Opt-out: Can be disabled via DISABLE_IPFS_SYNC config
  */

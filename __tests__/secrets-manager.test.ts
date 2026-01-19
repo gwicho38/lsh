@@ -2,8 +2,6 @@
  * Tests for SecretsManager - LSH's primary feature
  *
  * Testing encrypted secrets management with multi-environment support
- *
- * Note: storacha-client is mocked via moduleNameMapper in jest.config.js
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';

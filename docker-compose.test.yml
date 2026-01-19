@@ -1,0 +1,120 @@
+# Docker Integration Test Environment
+# Used for comprehensive integration testing of LSH components
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: lsh-test-postgres
+    environment:
+      POSTGRES_DB: lsh_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d lsh_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lsh-test
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: lsh-test-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - lsh-test
+
+  # LSH Test Container
+  lsh-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: lsh-test-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@postgres:5432/lsh_test
+      REDIS_URL: redis://redis:6379
+      LSH_API_ENABLED: true
+      LSH_API_PORT: 3030
+      LSH_API_KEY: test-api-key-for-integration
+      LSH_JWT_SECRET: test-jwt-secret-for-integration-testing
+      LSH_SECRETS_KEY: test-encryption-key-32-chars-long
+      LSH_ALLOW_DANGEROUS_COMMANDS: false
+      LSH_DEBUG: true
+      SUPABASE_URL: http://localhost:5432
+      SUPABASE_ANON_KEY: test-anon-key
+    ports:
+      - "3030:3030"
+      volumes:
+      - ./test-data:/app/test-data
+      - ./logs:/app/logs
+      - lsh_test_data:/app/data
+    networks:
+      - lsh-test
+    healthcheck:
+      test: ["CMD", "node", "dist/cli.js", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Performance Test Container
+  lsh-performance:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: lsh-performance-test
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://test_user:test_password@postgres:5432/lsh_test
+      REDIS_URL: redis://redis:6379
+      LSH_API_ENABLED: false
+      LSH_SECRETS_KEY: performance-test-key
+    volumes:
+      - performance_data:/app/data
+      - ./performance-tests:/app/tests
+    networks:
+      - lsh-test
+    profiles:
+      - performance
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  lsh_test_data:
+    driver: local
+  performance_data:
+    driver: local
+
+networks:
+  lsh-test:
+    driver: bridge

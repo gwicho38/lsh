@@ -35,7 +35,6 @@ export default {
         '!src/services/secrets/**', // Secrets CLI requires integration testing
         '!src/services/api/**', // API registrars require integration testing
         '!src/services/lib/**', // Service lib exports
-        '!src/lib/storacha-client.ts', // Requires Storacha network access
         '!src/lib/lshrc-init.ts', // CLI initialization
         // External service dependencies - require integration tests
         '!src/lib/database-persistence.ts', // Requires Supabase/PostgreSQL connection
@@ -86,16 +85,15 @@ export default {
       '/node_modules/',
       '/build/',
       '__tests__/setup.ts',                 // Setup file, not a test suite
-      '__tests__/integration/storacha-multihost-sync.test.ts', // Requires Storacha network access (disabled in tests)
       '__tests__/integration/cli-commands-comprehensive.test.ts', // Spawns CLI processes - too slow for CI, run manually
       '__tests__/integration/multi-host-sync.test.ts', // Requires multi-host setup - WIP
       '__tests__/multihost-key-isolation.test.ts', // Requires shared storage (Supabase/cloud) - tests use separate git repos with different metadata keys
       '__tests__/helpers/',                 // Helper files, not test suites
       '__tests__/fixtures/',                // Fixture files, not test suites
       '__tests__/mocks/',                   // Mock files, not test suites
-      // IPFS/Storacha tests - WIP, require network access
+      // IPFS tests - WIP, require network access
       '__tests__/secrets-manager.test.ts',  // Has IPFS integration tests that fail without network
-      '__tests__/ipfs-secrets-storage.test.ts', // Requires IPFS/Storacha network
+      '__tests__/ipfs-secrets-storage.test.ts', // Requires IPFS network
       '__tests__/secrets-destructive-changes.test.ts', // Flaky test - destructive change detection needs fix (Issue TBD)
       '__tests__/unit/ipfs-client-manager.test.ts', // Requires IPFS mocks - WIP
       // Security tests - WIP, require testcontainers/Docker
@@ -112,9 +110,9 @@ export default {
     ],
 
     // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-    // Transform ES modules from node_modules like chalk and storacha
+    // Transform ES modules from node_modules like chalk
     transformIgnorePatterns: [
-        'node_modules/(?!(chalk|chalk-template|ansi-styles|supports-color|has-flag|#ansi-styles|#supports-color|@storacha|@ucanto|@ipld|multiformats|@web3-storage)/)'
+        'node_modules/(?!(chalk|chalk-template|ansi-styles|supports-color|has-flag|#ansi-styles|#supports-color|multiformats)/)'
     ],
 
     // Whether to use watchman for file crawling
@@ -142,8 +140,6 @@ export default {
     // Module name mapping for ESM compatibility - map .js imports to .ts files for testing
     // Only map relative imports (starting with ./ or ../), not node_modules
     moduleNameMapper: {
-        // Mock storacha-client to avoid ESM issues in tests (must be before .js$ mapper)
-        '.*/storacha-client(\\.js)?$': '<rootDir>/__tests__/mocks/storacha-client-mock.ts',
         '^(\\.{1,2}/.*)\\.js$': '$1',
     },
 };

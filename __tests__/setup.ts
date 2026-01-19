@@ -3,8 +3,8 @@
  * Configures test environment variables
  */
 
-// Disable Storacha in tests to prevent timeouts from network operations
-process.env.LSH_STORACHA_ENABLED = 'false';
-
-// Disable other external services that might cause timeouts
+// Disable external services that might cause timeouts
 process.env.LSH_API_ENABLED = 'false';
+
+// Disable IPFS sync in tests to prevent network operations
+process.env.DISABLE_IPFS_SYNC = 'true';

@@ -1045,7 +1045,6 @@ API_KEY=
     .option('-g, --global', 'Use global workspace ($HOME) - default behavior')
     .option('--repo <name>', 'Clear metadata for specific repo only')
     .option('--cache', 'Also clear local encrypted secrets cache')
-    .option('--storacha', 'Also delete old Storacha uploads (registries and secrets)')
     .option('--all', 'Clear all metadata and cache (requires confirmation)')
     .option('-y, --yes', 'Skip confirmation prompts')
     .action(async (options) => {
@@ -1165,89 +1164,6 @@ API_KEY=
             }
           }
           console.log(`✅ Cleared ${cleared} cache ${cleared === 1 ? 'file' : 'files'}`);
-        }
-
-        // Clear Storacha uploads if requested
-        if (options.storacha && options.repo) {
-          console.log('');
-          console.log('🌐 Clearing Storacha uploads...');
-
-          try {
-            const { StorachaClient } = await import('../../lib/storacha-client.js');
-            const storacha = new StorachaClient();
-
-            if (!storacha.isEnabled()) {
-              console.log('ℹ️  Storacha is not enabled - skipping cloud cleanup');
-            } else if (!(await storacha.isAuthenticated())) {
-              console.log('ℹ️  Not authenticated with Storacha - skipping cloud cleanup');
-            } else {
-              // Get all uploads
-              const client = await storacha.getClient();
-              const pageSize = 50;
-              const results = await client.capability.upload.list({
-                cursor: '',
-                size: pageSize,
-              });
-
-              // Find LSH-related uploads for this repo
-              const toDelete: Array<{ cid: string; type: string; size: number }> = [];
-
-              for (const upload of results.results) {
-                try {
-                  const cid = upload.root.toString();
-
-                  // Download with timeout
-                  const downloadPromise = storacha.download(cid);
-                  const timeoutPromise = new Promise<Buffer>((_, reject) =>
-                    setTimeout(() => reject(new Error('timeout')), 5000)
-                  );
-
-                  const content = await Promise.race([downloadPromise, timeoutPromise]);
-
-                  // Check if it's a registry file for this repo
-                  if (content.length < 2048) {
-                    try {
-                      const json = JSON.parse(content.toString('utf-8'));
-                      if (json.repoName === options.repo) {
-                        toDelete.push({ cid, type: 'registry', size: content.length });
-                      }
-                    } catch {
-                      // Not JSON, might be encrypted secrets
-                      // Check filename pattern
-                      const _filename = `lsh-secrets-${options.repo}`;
-                      if (cid.includes(options.repo) || content.toString().includes(options.repo)) {
-                        toDelete.push({ cid, type: 'secrets', size: content.length });
-                      }
-                    }
-                  }
-                } catch {
-                  // Failed to download or parse, skip
-                  continue;
-                }
-              }
-
-              if (toDelete.length > 0) {
-                console.log(`Found ${toDelete.length} Storacha ${toDelete.length === 1 ? 'upload' : 'uploads'} for ${options.repo}:`);
-                toDelete.forEach((item) => {
-                  console.log(`  - ${item.type}: ${item.cid.substring(0, 16)}... (${item.size} bytes)`);
-                });
-
-                // Note: Storacha doesn't currently support deletion via SDK
-                // The uploads will remain but won't be used after metadata is cleared
-                console.log('');
-                console.log('⚠️  Note: Storacha uploads cannot be deleted programmatically.');
-                console.log('   These files will remain in Storacha but won\'t be used after metadata is cleared.');
-                console.log('   To fully remove them, use the Storacha web console:');
-                console.log('   https://console.storacha.network/');
-              } else {
-                console.log(`ℹ️  No Storacha uploads found for ${options.repo}`);
-              }
-            }
-          } catch (storageError) {
-            const storErr = storageError as Error;
-            console.error(`⚠️  Failed to check Storacha uploads: ${storErr.message}`);
-            console.log('   Local metadata has been cleared, but cloud uploads may remain.');
-          }
         }
 
         console.log('');
