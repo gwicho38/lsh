@@ -1,6 +1,10 @@
 /**
  * IPFS Secrets Storage Adapter
- * Stores encrypted secrets on IPFS using Storacha (formerly web3.storage)
+ * Stores encrypted secrets on IPFS via native Kubo daemon
+ *
+ * Priority order:
+ * 1. Native IPFS (Kubo daemon on port 5001) - zero-config, no auth
+ * 2. Local cache - always available for offline access
  */
 
 import * as fs from 'fs';
@@ -11,7 +15,7 @@ import * as os from 'os';
 import * as crypto from 'crypto';
 import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
-import { getStorachaClient } from './storacha-client.js';
+import { getIPFSSync } from './ipfs-sync.js';
 import { ENV_VARS } from '../constants/index.js';
 
 const logger = createLogger('IPFSSecretsStorage');
@@ -112,43 +116,44 @@ export class IPFSSecretsStorage {
         logger.info(`   Repository: ${gitRepo}/${gitBranch || 'main'}`);
       }
 
-      // Upload to Storacha network if enabled
-      const storacha = getStorachaClient();
-      if (storacha.isEnabled()) {
+      // Try native IPFS upload
+      const ipfsSync = getIPFSSync();
+      let uploadedToNetwork = false;
+      let realCid: string | null = null;
+
+      if (await ipfsSync.checkDaemon()) {
         try {
-          // Ensure project-specific space is active before uploading
-          // This creates/selects a space named after the git repo or directory
-          if (await storacha.isAuthenticated()) {
-            const projectName = gitRepo || storacha.getProjectName();
-            await storacha.ensureProjectSpace(projectName);
-          }
+          const filename = `lsh-secrets-${environment}.encrypted`;
+          realCid = await ipfsSync.upload(
+            Buffer.from(encryptedData, 'utf-8'),
+            filename,
+            { environment, gitRepo }
+          );
 
-          const filename = `lsh-secrets-${environment}-${cid}.encrypted`;
-          // encryptedData is already a Buffer, pass it directly
-          await storacha.upload(Buffer.from(encryptedData), filename);
-          logger.info(`   ☁️  Synced to Storacha network`);
+          if (realCid) {
+            // Update CID to the real IPFS CID
+            logger.info(`   🌐 Synced to IPFS (CID: ${realCid})`);
+            uploadedToNetwork = true;
 
-          // Upload registry file if this is a git repo
-          // This allows detection on new machines without local metadata
-          // Include the secrets CID so other hosts can fetch the latest version
-          if (gitRepo) {
-            try {
-              await storacha.uploadRegistry(gitRepo, environment, cid);
-              logger.debug(`   📝 Registry uploaded for ${gitRepo} (CID: ${cid})`);
-            } catch (regError) {
-              // Registry upload failed, but secrets are still uploaded
-              const _regErr = regError as Error;
-              logger.debug(`   Registry upload failed: ${_regErr.message}`);
+            // Update metadata with real CID if different
+            if (realCid !== cid) {
+              metadata.cid = realCid;
+              this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
+              await this.saveMetadata();
             }
           }
         } catch (error) {
           const err = error as Error;
-          logger.warn(`   ⚠️  Storacha upload failed: ${err.message}`);
-          logger.warn(`   Secrets are still cached locally`);
+          logger.warn(`   ⚠️  IPFS upload failed: ${err.message}`);
         }
       }
 
-      return cid;
+      if (!uploadedToNetwork) {
+        logger.warn(`   📁 Secrets cached locally only (no network sync)`);
+        logger.warn(`   💡 Start IPFS daemon for network sync: lsh ipfs start`);
+      }
+
+      return realCid || cid;
     } catch (error) {
       const err = error as Error;
       logger.error(`Failed to push secrets to IPFS: ${err.message}`);
@@ -173,109 +178,67 @@ export class IPFSSecretsStorage {
         ? (environment ? `${gitRepo}_${environment}` : gitRepo)
         : (environment || 'default');
 
-      // If no local metadata, try to fetch from Storacha registry first (for git repos)
+      // If no local metadata, check IPFS sync history
       if (!metadata && gitRepo) {
         try {
-          const storacha = getStorachaClient();
-          if (storacha.isEnabled() && await storacha.isAuthenticated()) {
-            // Ensure project-specific space is active before registry check
-            const projectName = gitRepo || storacha.getProjectName();
-            await storacha.ensureProjectSpace(projectName);
+          const ipfsSync = getIPFSSync();
+          const latestCid = await ipfsSync.getLatestCid(gitRepo, environment);
 
-            logger.info(`   🔍 No local metadata found, checking Storacha registry...`);
-            const latestCid = await storacha.getLatestCID(gitRepo);
-            if (latestCid) {
-              logger.info(`   ✅ Found secrets in registry (CID: ${latestCid})`);
-              // Create metadata from registry
-              metadata = {
-                environment,
-                git_repo: gitRepo,
-                cid: latestCid,
-                timestamp: new Date().toISOString(),
-                keys_count: 0, // Unknown until decrypted
-                encrypted: true,
-              };
-              this.metadata[metadataKey] = metadata;
-              await this.saveMetadata();
-            }
+          if (latestCid) {
+            logger.info(`   ✅ Found secrets in IPFS history (CID: ${latestCid})`);
+            // Create metadata from history
+            metadata = {
+              environment,
+              git_repo: gitRepo,
+              cid: latestCid,
+              timestamp: new Date().toISOString(),
+              keys_count: 0, // Unknown until decrypted
+              encrypted: true,
+            };
+            this.metadata[metadataKey] = metadata;
+            await this.saveMetadata();
           }
         } catch (error) {
-          // Registry check failed, continue to error
+          // History check failed, continue to error
           const err = error as Error;
-          logger.debug(`   Registry check failed: ${err.message}`);
+          logger.debug(`   IPFS history check failed: ${err.message}`);
         }
       }
 
       if (!metadata) {
         throw new Error(`No secrets found for environment: ${displayEnv}\n\n` +
           `💡 Tip: Check available environments with: lsh env\n` +
-          `   Or push secrets first with: lsh push`);
-      }
-
-      // Check if there's a newer version in the registry (for git repos)
-      if (gitRepo) {
-        try {
-          const storacha = getStorachaClient();
-          if (storacha.isEnabled() && await storacha.isAuthenticated()) {
-            // Ensure project-specific space is active
-            const projectName = gitRepo || storacha.getProjectName();
-            await storacha.ensureProjectSpace(projectName);
-
-            const latestCid = await storacha.getLatestCID(gitRepo);
-            if (latestCid && latestCid !== metadata.cid) {
-              logger.info(`   🔄 Found newer version in registry (CID: ${latestCid})`);
-              // Update metadata with latest CID
-              metadata = {
-                ...metadata,
-                cid: latestCid,
-                timestamp: new Date().toISOString(),
-              };
-              this.metadata[metadataKey] = metadata;
-              await this.saveMetadata();
-            }
-          }
-        } catch (error) {
-          // Registry check failed, continue with local metadata
-          const err = error as Error;
-          logger.debug(`   Registry check failed: ${err.message}`);
-        }
+          `   Or push secrets first with: lsh push\n` +
+          `   Or pull by CID with: lsh sync pull <cid>`);
       }
 
       // Try to load from local cache
       let cachedData = await this.loadLocally(metadata.cid);
 
-      // If not in cache, try downloading from Storacha
+      // If not in cache, try downloading from IPFS
       if (!cachedData) {
-        const storacha = getStorachaClient();
-        if (storacha.isEnabled()) {
-          try {
-            // Ensure project-specific space is active before download
-            if (await storacha.isAuthenticated()) {
-              const projectName = gitRepo || storacha.getProjectName();
-              await storacha.ensureProjectSpace(projectName);
-            }
+        const ipfsSync = getIPFSSync();
 
-            logger.info(`   ☁️  Downloading from Storacha network...`);
-            const downloadedData = await storacha.download(metadata.cid);
+        try {
+          logger.info(`   🌐 Downloading from IPFS...`);
+          const downloadedData = await ipfsSync.download(metadata.cid);
+
+          if (downloadedData) {
             // Store in local cache for future use
             await this.storeLocally(metadata.cid, downloadedData.toString('utf-8'), environment);
             cachedData = downloadedData.toString('utf-8');
-            logger.info(`   ✅ Downloaded and cached from Storacha`);
-          } catch (error) {
-            const err = error as Error;
-            throw new Error(`Secrets not in cache and Storacha download failed: ${err.message}`);
+            logger.info(`   ✅ Downloaded and cached from IPFS`);
           }
-        } else {
-          throw new Error(`Secrets not found in cache. CID: ${metadata.cid}\n\n` +
-            `💡 Tip: Enable Storacha network sync:\n` +
-            `   export LSH_STORACHA_ENABLED=true\n` +
-            `   Or set up Supabase: lsh supabase init`);
+        } catch (error) {
+          const err = error as Error;
+          logger.debug(`   IPFS download failed: ${err.message}`);
         }
       }
 
-      // At this point cachedData is guaranteed to be a string
       if (!cachedData) {
-        throw new Error(`Failed to retrieve secrets for environment: ${environment}`);
+        throw new Error(`Secrets not found in cache or IPFS. CID: ${metadata.cid}\n\n` +
+          `💡 Tip: Start IPFS daemon: lsh ipfs start\n` +
+          `   Or pull directly by CID: lsh sync pull <cid>`);
       }
 
       // Decrypt secrets
@@ -383,7 +346,7 @@ export class IPFSSecretsStorage {
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
-          '  3. Generate a shared key with: lsh secrets key\n' +
+          '  3. Generate a shared key with: lsh key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
           '\nOriginal error: ' + err.message
         );
@@ -406,10 +369,10 @@ export class IPFSSecretsStorage {
    */
   private async storeLocally(cid: string, encryptedData: string, _environment: string): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
-    
+
     // Ensure parent directory exists
     await fsPromises.mkdir(this.cacheDir, { recursive: true });
-    
+
     // Write file without locking (simpler approach)
     await fsPromises.writeFile(cachePath, encryptedData, 'utf8');
     logger.debug(`Cached secrets locally: ${cachePath}`);
@@ -479,7 +442,7 @@ export class IPFSSecretsStorage {
     // Ensure parent directory exists
     const parentDir = path.dirname(this.metadataPath);
     await fsPromises.mkdir(parentDir, { recursive: true });
-    
+
     await fsPromises.writeFile(
       this.metadataPath,
       JSON.stringify(this.metadata, null, 2),

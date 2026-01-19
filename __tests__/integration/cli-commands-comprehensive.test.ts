@@ -12,7 +12,7 @@
  * - Cron: cron (list, templates, add, start, stop, remove, info)
  * - Self: self (version, info, update)
  * - IPFS: ipfs (status)
- * - Storacha: storacha (status)
+ * - Sync: sync (init, push, pull, status, history, verify, clear)
  * - Help: help, --help, --version
  * - Supabase: supabase (init, test)
  * - Completion: completion
@@ -115,8 +115,8 @@ APP_NAME=lsh-test`;
       ...process.env,
       HOME: this.homeDir,
       XDG_CONFIG_HOME: path.join(this.homeDir, '.config'),
-      LSH_STORACHA_ENABLED: 'false',
       LSH_API_ENABLED: 'false',
+      DISABLE_IPFS_SYNC: 'true',
       LSH_SECRETS_KEY: crypto.randomBytes(32).toString('hex'),
       ...options.env,
     };
@@ -652,20 +652,34 @@ describe('LSH CLI Commands - Comprehensive Integration Tests', () => {
   });
 
   // ============================================================
-  // STORACHA COMMANDS
+  // SYNC COMMANDS
   // ============================================================
-  describe('Storacha Commands', () => {
-    it('should show storacha help', async () => {
-      const result = await cli.runCommand(['storacha', '--help']);
+  describe('Sync Commands', () => {
+    it('should show sync help', async () => {
+      const result = await cli.runCommand(['sync', '--help']);
 
       expect(result.exitCode).toBe(0);
-      expect(result.stdout).toContain('storacha');
+      expect(result.stdout).toContain('sync');
     });
 
-    it('should check storacha status', async () => {
-      const result = await cli.runCommand(['storacha', 'status']);
+    it('should show sync commands list', async () => {
+      const result = await cli.runCommand(['sync']);
 
-      // Storacha disabled in test environment
+      expect(result.exitCode).toBe(0);
+      expect(result.stdout).toContain('Commands');
+    });
+
+    it('should check sync status', async () => {
+      const result = await cli.runCommand(['sync', 'status']);
+
+      // May fail if IPFS daemon not running
+      expect([0, 1]).toContain(result.exitCode);
+    });
+
+    it('should show sync history', async () => {
+      const result = await cli.runCommand(['sync', 'history']);
+
+      // May be empty in test environment
       expect([0, 1]).toContain(result.exitCode);
     });
   });
@@ -873,7 +887,7 @@ describe('SecretsManager Direct Integration', () => {
 
     // Set environment
     process.env.HOME = homeDir;
-    process.env.LSH_STORACHA_ENABLED = 'false';
+    process.env.DISABLE_IPFS_SYNC = 'true';
 
     // Initialize git repo
     execSync('git init', { cwd: testDir, stdio: 'pipe' });
