@@ -13,8 +13,8 @@ import { registerCompletionCommands } from './commands/completion.js';
 import { registerConfigCommands } from './commands/config.js';
 import { registerSyncHistoryCommands } from './commands/sync-history.js';
 import { registerIPFSCommands } from './commands/ipfs.js';
+import { registerSyncCommands } from './commands/sync.js';
 import { registerMigrateCommand } from './commands/migrate.js';
-import { registerStorachaCommands } from './commands/storacha.js';
 import { registerContextCommand } from './commands/context.js';
 import { init_daemon } from './services/daemon/daemon.js';
 import { init_supabase } from './services/supabase/supabase.js';
@@ -161,8 +161,8 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   registerConfigCommands(program);
   registerSyncHistoryCommands(program);
   registerIPFSCommands(program);
+  registerSyncCommands(program);
   registerMigrateCommand(program);
-  registerStorachaCommands(program);
   registerContextCommand(program);
 
   // Secrets management (primary feature)

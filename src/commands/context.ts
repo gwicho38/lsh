@@ -82,7 +82,7 @@ function buildContextData(): ContextOutput {
       name: 'lsh',
       package: 'lsh-framework',
       version: getVersion(),
-      purpose: 'Encrypted secrets manager for .env files with multi-host sync via IPFS/Storacha',
+      purpose: 'Encrypted secrets manager for .env files with multi-host sync via native IPFS',
       repository: 'https://github.com/gwicho38/lsh',
     },
 
@@ -100,7 +100,7 @@ function buildContextData(): ContextOutput {
           command: 'lsh init',
           description: 'Interactive setup wizard for first-time configuration',
           examples: ['lsh init'],
-          notes: ['Guides through encryption key generation, Storacha auth, and initial push'],
+          notes: ['Guides through encryption key generation and IPFS setup'],
         },
         {
           command: 'lsh key',
@@ -112,7 +112,7 @@ function buildContextData(): ContextOutput {
           command: 'lsh doctor',
           description: 'Diagnose configuration and connectivity issues',
           examples: ['lsh doctor'],
-          notes: ['Checks: encryption key, Storacha auth, network, local files'],
+          notes: ['Checks: encryption key, IPFS daemon, network, local files'],
         },
       ],
 
@@ -291,21 +291,33 @@ function buildContextData(): ContextOutput {
 
       backend: [
         {
-          command: 'lsh storacha login <email>',
-          description: 'Authenticate with Storacha/IPFS network',
-          examples: ['lsh storacha login user@example.com'],
-          notes: ['Sends verification email', 'One-time per machine'],
+          command: 'lsh sync',
+          description: 'IPFS sync commands (push/pull secrets via native IPFS)',
+          examples: ['lsh sync'],
+          notes: ['Zero-config', 'No auth required', 'Share CIDs with teammates'],
         },
         {
-          command: 'lsh supabase init',
-          description: 'Initialize Supabase backend connection',
-          examples: ['lsh supabase init'],
-          notes: ['Alternative to Storacha', 'Requires SUPABASE_URL and SUPABASE_ANON_KEY'],
+          command: 'lsh sync init',
+          description: 'Initialize IPFS daemon for sync',
+          examples: ['lsh sync init'],
+          notes: ['Guides through IPFS installation and startup'],
         },
         {
-          command: 'lsh supabase test',
-          description: 'Test Supabase connectivity',
-          examples: ['lsh supabase test'],
+          command: 'lsh sync push',
+          description: 'Push encrypted secrets to IPFS, returns CID',
+          examples: ['lsh sync push', 'lsh sync push -f .env.prod'],
+          notes: ['Share CID with teammates to pull secrets'],
+        },
+        {
+          command: 'lsh sync pull <cid>',
+          description: 'Pull secrets from IPFS by CID',
+          examples: ['lsh sync pull Qm...'],
+          notes: ['Requires same LSH_SECRETS_KEY used to push'],
+        },
+        {
+          command: 'lsh ipfs status',
+          description: 'Check IPFS daemon status',
+          examples: ['lsh ipfs status'],
         },
       ],
 
@@ -359,11 +371,6 @@ function buildContextData(): ContextOutput {
         },
       ],
       optional: [
-        {
-          name: 'LSH_STORACHA_ENABLED',
-          description: 'Enable IPFS storage via Storacha',
-          default: 'true',
-        },
         {
           name: 'SUPABASE_URL',
           description: 'Supabase project URL (alternative backend)',
@@ -420,10 +427,9 @@ function buildContextData(): ContextOutput {
         name: 'Team Onboarding',
         description: 'Add new team member with shared secrets',
         commands: [
-          '# Get LSH_SECRETS_KEY from password manager',
-          'echo "LSH_SECRETS_KEY=<shared-key>" >> .env',
-          'lsh storacha login team@company.com',
-          'lsh pull --env prod',
+          '# Get LSH_SECRETS_KEY from teammate',
+          'export LSH_SECRETS_KEY=<shared-key>',
+          'lsh sync pull <cid-from-teammate>',
         ],
       },
       {
@@ -483,9 +489,9 @@ function buildContextData(): ContextOutput {
         solution: 'Ensure LSH_SECRETS_KEY in .env matches the original. If lost, generate new key with `lsh key` and re-push',
       },
       {
-        error: 'Storacha authentication required',
-        cause: 'Not authenticated with Storacha IPFS network',
-        solution: 'Run `lsh storacha login your@email.com` and verify via email',
+        error: 'IPFS daemon not running',
+        cause: 'IPFS daemon is not started',
+        solution: 'Run `lsh sync init` to set up IPFS or `lsh ipfs start` to start daemon',
       },
       {
         error: '.env file not found',
@@ -494,7 +500,7 @@ function buildContextData(): ContextOutput {
       },
       {
         error: 'Network error / timeout',
-        cause: 'Cannot reach Storacha or Supabase',
+        cause: 'Cannot reach IPFS gateways',
         solution: 'Check internet connection. Run `lsh doctor` to diagnose',
       },
     ],

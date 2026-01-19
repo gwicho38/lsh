@@ -1,6 +1,10 @@
 /**
  * IPFS Secrets Storage Adapter
- * Stores encrypted secrets on IPFS using Storacha (formerly web3.storage)
+ * Stores encrypted secrets on IPFS via native Kubo daemon
+ *
+ * Priority order:
+ * 1. Native IPFS (Kubo daemon on port 5001) - zero-config, no auth
+ * 2. Local cache - always available for offline access
  */
 import { Secret } from './secrets-manager.js';
 export interface IPFSSecretsMetadata {

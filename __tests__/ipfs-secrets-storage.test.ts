@@ -8,14 +8,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-// Mock storacha client
-jest.mock('../src/lib/storacha-client.js', () => ({
-  getStorachaClient: () => ({
-    isEnabled: () => false,
-    isAuthenticated: async () => false,
-  }),
-}));
-
 // Dynamic import for IPFSSecretsStorage
 let IPFSSecretsStorage: typeof import('../src/lib/ipfs-secrets-storage.js').IPFSSecretsStorage;
 
