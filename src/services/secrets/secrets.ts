@@ -299,43 +299,6 @@ API_KEY=
       }
     });
 
-  // Sync command - automatically set up and synchronize secrets
-  program
-    .command('sync')
-    .description('Automatically set up and synchronize secrets (smart mode)')
-    .option('-f, --file <path>', 'Path to .env file', '.env')
-    .option('-e, --env <name>', 'Environment name', 'dev')
-    .option('-g, --global', 'Use global workspace ($HOME)')
-    .option('--dry-run', 'Show what would be done without executing')
-    .option('--legacy', 'Use legacy sync mode (suggestions only)')
-    .option('--load', 'Output eval-able export commands for loading secrets')
-    .option('--force', 'Force sync even if destructive changes detected')
-    .option('--force-rekey', 'Re-encrypt cloud secrets with current local key (use when key mismatch)')
-    .action(async (options) => {
-      const manager = new SecretsManager({ globalMode: options.global });
-      try {
-        // Resolve file path (handles global mode)
-        const filePath = manager.resolveFilePath(options.file);
-        // v2.0: Use context-aware default environment
-        const env = options.env === 'dev' ? manager.getDefaultEnvironment() : options.env;
-
-        if (options.legacy) {
-          // Use legacy sync (suggestions only)
-          await manager.sync(filePath, env);
-        } else {
-          // Use new smart sync (auto-execute)
-          await manager.smartSync(filePath, env, !options.dryRun, options.load, options.force, options.forceRekey);
-        }
-      } catch (error) {
-        const err = error as Error;
-        console.error('❌ Failed to sync:', err.message);
-        await manager.cleanup();
-        process.exit(1);
-      } finally {
-        await manager.cleanup();
-      }
-    });
-
   // Load command - output export commands for shell evaluation (local only, no network)
   program
     .command('load')
