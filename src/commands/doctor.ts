@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js';
 import _ora from 'ora';
 import { getPlatformPaths, getPlatformInfo } from '../lib/platform-utils.js';
 import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
+import { getIPFSSync } from '../lib/ipfs-sync.js';
 import * as os from 'os';
 
 interface HealthCheck {
@@ -216,20 +217,34 @@ async function checkStorageBackend(verbose?: boolean, baseDir?: string): Promise
 
   try {
     const envPath = path.join(baseDir || process.cwd(), '.env');
-    const content = await fs.readFile(envPath, 'utf-8');
+    let content = '';
+    try {
+      content = await fs.readFile(envPath, 'utf-8');
+    } catch {
+      // .env may not exist, continue with other checks
+    }
 
     const supabaseUrl = content.match(/^SUPABASE_URL=(.+)$/m)?.[1]?.trim();
     const supabaseKey = content.match(/^SUPABASE_ANON_KEY=(.+)$/m)?.[1]?.trim();
     const databaseUrl = content.match(/^DATABASE_URL=(.+)$/m)?.[1]?.trim();
     const storageMode = content.match(/^LSH_STORAGE_MODE=(.+)$/m)?.[1]?.trim();
 
-    // Determine storage type
+    // Check if IPFS daemon is running
+    let ipfsRunning = false;
+    try {
+      const ipfsSync = getIPFSSync();
+      ipfsRunning = await ipfsSync.checkDaemon();
+    } catch {
+      // IPFS not available
+    }
+
+    // Determine storage type (priority: explicit mode > Supabase > PostgreSQL > IPFS > none)
     if (storageMode === 'local') {
       checks.push({
         name: 'Storage Backend',
         status: 'pass',
         message: 'Local encryption mode',
-        details: 'No cloud sync available',
+        details: ipfsRunning ? 'IPFS available for sync' : 'No cloud sync available',
       });
     } else if (supabaseUrl && supabaseKey) {
       checks.push({
@@ -248,12 +263,19 @@ async function checkStorageBackend(verbose?: boolean, baseDir?: string): Promise
         message: 'PostgreSQL configured',
         details: verbose ? maskConnectionString(databaseUrl) : undefined,
       });
+    } else if (ipfsRunning) {
+      checks.push({
+        name: 'Storage Backend',
+        status: 'pass',
+        message: 'Native IPFS sync',
+        details: 'Use "lsh sync push" to sync secrets',
+      });
     } else {
       checks.push({
         name: 'Storage Backend',
         status: 'warn',
         message: 'No storage backend configured',
-        details: 'Secrets will only be stored locally',
+        details: 'Run "lsh sync init" to set up IPFS sync',
       });
     }
   } catch {
