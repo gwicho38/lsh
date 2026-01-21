@@ -153,65 +153,125 @@ export async function init_secrets(program: Command) {
       }
     });
 
-  // Manage environments (old 'list' functionality)
+  // Show local .env file contents
   program
-    .command('env [environment]')
-    .description('List all stored environments or show secrets for specific environment')
+    .command('env')
+    .description('Show local .env file contents in various formats')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
     .option('-g, --global', 'Use global workspace ($HOME)')
-    .option('--all-files', 'List all tracked .env files across environments')
-    .option('--format <type>', 'Output format: env, json, yaml, toml, export', 'env')
-    .action(async (environment, options) => {
+    .option('--format <type>', 'Output format: env, json, yaml, toml, export (default: env)', 'env')
+    .option('--masked', 'Mask secret values')
+    .option('--keys', 'Show only key names')
+    .action(async (options) => {
       try {
         const manager = new SecretsManager({ globalMode: options.global });
+        const filePath = manager.resolveFilePath(options.file);
+        const envPath = path.resolve(filePath);
 
-        // If --all-files flag is set, list all tracked files
-        if (options.allFiles) {
-          const files = await manager.listAllFiles();
+        if (!fs.existsSync(envPath)) {
+          console.error(`❌ File not found: ${envPath}`);
+          console.log('');
+          console.log('Create a .env file or specify path with --file');
+          process.exit(1);
+        }
 
-          if (files.length === 0) {
-            console.log('No .env files found. Push your first file with: lsh push --file <filename>');
-            return;
+        const content = fs.readFileSync(envPath, 'utf8');
+        const lines = content.split('\n');
+
+        // Parse .env file
+        const secrets: Array<{ key: string; value: string }> = [];
+        for (const line of lines) {
+          if (line.trim().startsWith('#') || !line.trim()) continue;
+          const match = line.match(/^(?:export\s+)?([^=]+)=(.*)$/);
+          if (match) {
+            const key = match[1].trim();
+            let value = match[2].trim();
+            // Remove quotes if present
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.slice(1, -1);
+            }
+            secrets.push({ key, value });
           }
+        }
 
-          console.log('\n📦 Tracked .env files:\n');
-          for (const file of files) {
-            console.log(`  • ${file.filename} (${file.environment}) - Last updated: ${file.updated}`);
-          }
-          console.log();
+        if (secrets.length === 0) {
+          console.log('No secrets found in .env file');
           return;
         }
 
-        // If environment specified, show secrets for that environment
-        if (environment) {
-          const format = options.format.toLowerCase();
-          const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
+        // Keys only mode
+        if (options.keys) {
+          console.log(`\n🔑 Keys in ${options.file}:\n`);
+          for (const { key } of secrets) {
+            console.log(`  • ${key}`);
+          }
+          console.log(`\n  Total: ${secrets.length} key(s)\n`);
+          return;
+        }
 
-          if (!validFormats.includes(format)) {
-            console.error(`❌ Invalid format: ${format}`);
-            console.log(`Valid formats: ${validFormats.join(', ')}`);
-            process.exit(1);
+        // Mask values if requested
+        const displaySecrets = options.masked
+          ? secrets.map(s => ({
+              key: s.key,
+              value: s.value.length > 4
+                ? s.value.substring(0, 2) + '•'.repeat(Math.min(s.value.length - 4, 20)) + s.value.substring(s.value.length - 2)
+                : '••••'
+            }))
+          : secrets;
+
+        const format = options.format.toLowerCase();
+        const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
+
+        if (!validFormats.includes(format)) {
+          console.error(`❌ Invalid format: ${format}`);
+          console.log(`Valid formats: ${validFormats.join(', ')}`);
+          process.exit(1);
+        }
+
+        // Output in requested format
+        switch (format) {
+          case 'json': {
+            const jsonObj: Record<string, string> = {};
+            for (const { key, value } of displaySecrets) {
+              jsonObj[key] = value;
+            }
+            console.log(JSON.stringify(jsonObj, null, 2));
+            break;
           }
 
-          await manager.show(environment, format as any);
-          return;
-        }
+          case 'yaml':
+            for (const { key, value } of displaySecrets) {
+              console.log(`${key}: "${value.replace(/"/g, '\\"')}"`);
+            }
+            break;
 
-        // Otherwise, list all environments
-        const envs = await manager.listEnvironments();
+          case 'toml':
+            console.log('[secrets]');
+            for (const { key, value } of displaySecrets) {
+              console.log(`${key} = "${value.replace(/"/g, '\\"')}"`);
+            }
+            break;
 
-        if (envs.length === 0) {
-          console.log('No environments found. Push your first .env with: lsh push');
-          return;
-        }
+          case 'export':
+            for (const { key, value } of displaySecrets) {
+              const escapedValue = value.replace(/'/g, "'\\''");
+              console.log(`export ${key}='${escapedValue}'`);
+            }
+            break;
 
-        console.log('\n📦 Available environments:\n');
-        for (const env of envs) {
-          console.log(`  • ${env}`);
+          case 'env':
+          default:
+            console.log(`\n📋 Secrets in ${options.file}:\n`);
+            for (const { key, value } of displaySecrets) {
+              console.log(`  ${key}=${value}`);
+            }
+            console.log(`\n  Total: ${secrets.length} secret(s)\n`);
+            break;
         }
-        console.log();
       } catch (error) {
         const err = error as Error;
-        console.error('❌ Failed to list environments:', err.message);
+        console.error('❌ Failed to read .env:', err.message);
         process.exit(1);
       }
     });
