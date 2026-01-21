@@ -12,6 +12,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { getIPFSSync } from '../lib/ipfs-sync.js';
+import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 import { getGitRepoInfo } from '../lib/git-utils.js';
 import { ENV_VARS } from '../constants/index.js';
 
@@ -26,17 +27,21 @@ export function registerSyncCommands(program: Command): void {
       // Show help when running `lsh sync` without subcommand
       console.log(chalk.bold.cyan('\n🔄 LSH Sync - IPFS Secrets Sync\n'));
       console.log(chalk.gray('Sync encrypted secrets via native IPFS (no auth required)\n'));
-      console.log(chalk.bold('Commands:'));
-      console.log(`  ${chalk.cyan('init')}      🚀 Initialize and start the IPFS daemon`);
+      console.log(chalk.bold('Setup:'));
+      console.log(`  ${chalk.cyan('init')}      🚀 Full setup: install IPFS, initialize, and start daemon`);
+      console.log(`  ${chalk.cyan('status')}    📊 Show IPFS client, daemon, and sync status`);
+      console.log(`  ${chalk.cyan('start')}     ▶️  Start IPFS daemon`);
+      console.log(`  ${chalk.cyan('stop')}      ⏹️  Stop IPFS daemon`);
+      console.log('');
+      console.log(chalk.bold('Sync:'));
       console.log(`  ${chalk.cyan('push')}      ⬆️  Push encrypted secrets to IPFS`);
       console.log(`  ${chalk.cyan('pull')}      ⬇️  Pull secrets from IPFS by CID`);
-      console.log(`  ${chalk.cyan('status')}    📊 Show IPFS daemon and sync status`);
       console.log(`  ${chalk.cyan('history')}   📜 Show IPFS sync history`);
       console.log(`  ${chalk.cyan('verify')}    ✅ Verify that a CID is accessible on IPFS`);
       console.log(`  ${chalk.cyan('clear')}     🗑️  Clear sync history`);
       console.log('');
       console.log(chalk.bold('Examples:'));
-      console.log(chalk.gray('  lsh sync init          # Set up IPFS for first time'));
+      console.log(chalk.gray('  lsh sync init          # One-time setup'));
       console.log(chalk.gray('  lsh sync push          # Push secrets, get CID'));
       console.log(chalk.gray('  lsh sync pull <cid>    # Pull secrets by CID'));
       console.log('');
@@ -47,16 +52,18 @@ export function registerSyncCommands(program: Command): void {
   // lsh sync init
   syncCommand
     .command('init')
-    .description('🚀 Initialize and start the IPFS daemon')
-    .action(async () => {
-      console.log(chalk.bold.cyan('\n🚀 Initializing IPFS for sync...\n'));
+    .description('🚀 Full setup: install IPFS, initialize repo, and start daemon')
+    .option('-f, --force', 'Force reinstall even if already installed')
+    .action(async (options) => {
+      console.log(chalk.bold.cyan('\n🚀 Setting up IPFS for sync...\n'));
 
+      const manager = new IPFSClientManager();
       const ipfsSync = getIPFSSync();
 
-      // Check if daemon is already running
+      // Step 1: Check if daemon is already running
       if (await ipfsSync.checkDaemon()) {
         const info = await ipfsSync.getDaemonInfo();
-        console.log(chalk.green('✅ IPFS daemon is already running!'));
+        console.log(chalk.green('✅ IPFS is already set up and running!'));
         if (info) {
           console.log(chalk.gray(`   Peer ID: ${info.peerId.substring(0, 16)}...`));
           console.log(chalk.gray(`   Version: ${info.version}`));
@@ -68,22 +75,61 @@ export function registerSyncCommands(program: Command): void {
         return;
       }
 
-      // Daemon not running, show instructions
-      console.log(chalk.yellow('⚠️  IPFS daemon not running'));
+      // Step 2: Check if IPFS is installed
+      const clientInfo = await manager.detect();
+
+      if (!clientInfo.installed || options.force) {
+        const installSpinner = ora('Installing IPFS client (Kubo)...').start();
+        try {
+          await manager.install({ force: options.force });
+          installSpinner.succeed(chalk.green('IPFS client installed'));
+        } catch (error) {
+          const err = error as Error;
+          installSpinner.fail(chalk.red('Failed to install IPFS'));
+          console.error(chalk.red(err.message));
+          process.exit(1);
+        }
+      } else {
+        console.log(chalk.green('✅ IPFS client already installed'));
+        console.log(chalk.gray(`   Version: ${clientInfo.version}`));
+      }
+
+      // Step 3: Initialize IPFS repository if needed
+      const initSpinner = ora('Initializing IPFS repository...').start();
+      try {
+        await manager.init();
+        initSpinner.succeed(chalk.green('IPFS repository initialized'));
+      } catch (error) {
+        const err = error as Error;
+        // Check if already initialized
+        if (err.message.includes('already') || err.message.includes('exists')) {
+          initSpinner.succeed(chalk.green('IPFS repository already initialized'));
+        } else {
+          initSpinner.fail(chalk.red('Failed to initialize IPFS'));
+          console.error(chalk.red(err.message));
+          process.exit(1);
+        }
+      }
+
+      // Step 4: Start the daemon
+      const startSpinner = ora('Starting IPFS daemon...').start();
+      try {
+        await manager.start();
+        startSpinner.succeed(chalk.green('IPFS daemon started'));
+      } catch (error) {
+        const err = error as Error;
+        startSpinner.fail(chalk.red('Failed to start daemon'));
+        console.error(chalk.red(err.message));
+        process.exit(1);
+      }
+
+      // Final status
       console.log('');
-      console.log(chalk.gray('To start IPFS:'));
+      console.log(chalk.green.bold('✅ IPFS setup complete!'));
       console.log('');
-      console.log(chalk.bold('1. Install IPFS (if not installed):'));
-      console.log(chalk.cyan('   lsh ipfs install'));
-      console.log('');
-      console.log(chalk.bold('2. Initialize IPFS repository:'));
-      console.log(chalk.cyan('   lsh ipfs init'));
-      console.log('');
-      console.log(chalk.bold('3. Start the daemon:'));
-      console.log(chalk.cyan('   lsh ipfs start'));
-      console.log('');
-      console.log(chalk.gray('Or run all at once:'));
-      console.log(chalk.cyan('   lsh ipfs install && lsh ipfs init && lsh ipfs start'));
+      console.log(chalk.gray('You can now sync secrets:'));
+      console.log(chalk.cyan('  lsh sync push          # Push secrets → get CID'));
+      console.log(chalk.cyan('  lsh sync pull <cid>    # Pull secrets by CID'));
       console.log('');
     });
 
@@ -293,29 +339,79 @@ export function registerSyncCommands(program: Command): void {
   // lsh sync status
   syncCommand
     .command('status')
-    .description('📊 Show IPFS daemon and sync status')
-    .action(async () => {
+    .description('📊 Show IPFS client, daemon, and sync status')
+    .option('--json', 'Output as JSON')
+    .action(async (options) => {
       try {
+        const manager = new IPFSClientManager();
+        const clientInfo = await manager.detect();
         const ipfsSync = getIPFSSync();
         const daemonInfo = await ipfsSync.getDaemonInfo();
+        const history = await ipfsSync.getHistory(5);
+
+        if (options.json) {
+          console.log(JSON.stringify({
+            client: clientInfo,
+            daemonRunning: !!daemonInfo,
+            daemonInfo,
+            recentSyncs: history.length,
+          }, null, 2));
+          return;
+        }
 
         console.log(chalk.bold.cyan('\n📊 Sync Status\n'));
         console.log(chalk.gray('━'.repeat(50)));
         console.log('');
 
-        if (daemonInfo) {
-          console.log(chalk.green('✅ IPFS daemon running'));
-          console.log(`   Peer ID: ${daemonInfo.peerId.substring(0, 16)}...`);
-          console.log(`   Version: ${daemonInfo.version}`);
-          console.log('');
-          console.log(chalk.gray('Ready to sync:'));
-          console.log(chalk.cyan('  lsh sync push      # Push secrets'));
-          console.log(chalk.cyan('  lsh sync pull <cid>  # Pull by CID'));
+        // Client status
+        console.log(chalk.bold('IPFS Client:'));
+        if (clientInfo.installed) {
+          console.log(chalk.green('  ✅ Installed'));
+          console.log(`     Type: ${clientInfo.type}`);
+          console.log(`     Version: ${clientInfo.version}`);
         } else {
-          console.log(chalk.yellow('⚠️  IPFS daemon not running'));
-          console.log('');
-          console.log(chalk.gray('Start with:'));
-          console.log(chalk.cyan('  lsh sync init'));
+          console.log(chalk.yellow('  ⚠️  Not installed'));
+          console.log(chalk.gray('     Run: lsh sync init'));
+        }
+        console.log('');
+
+        // Daemon status
+        console.log(chalk.bold('IPFS Daemon:'));
+        if (daemonInfo) {
+          console.log(chalk.green('  ✅ Running'));
+          console.log(`     Peer ID: ${daemonInfo.peerId.substring(0, 16)}...`);
+          console.log(`     API: http://127.0.0.1:5001`);
+          console.log(`     Gateway: http://127.0.0.1:8080`);
+        } else {
+          console.log(chalk.yellow('  ⚠️  Not running'));
+          console.log(chalk.gray('     Run: lsh sync start'));
+        }
+        console.log('');
+
+        // Recent syncs
+        console.log(chalk.bold('Recent Syncs:'));
+        if (history.length > 0) {
+          console.log(`  ${history.length} recent sync(s)`);
+          const latest = history[0];
+          const date = new Date(latest.timestamp);
+          console.log(`  Latest: ${date.toLocaleString()}`);
+          console.log(`  CID: ${latest.cid.substring(0, 20)}...`);
+        } else {
+          console.log(chalk.gray('  No sync history'));
+        }
+        console.log('');
+
+        // Quick actions
+        if (clientInfo.installed && daemonInfo) {
+          console.log(chalk.bold('Ready to sync:'));
+          console.log(chalk.cyan('  lsh sync push        # Push secrets'));
+          console.log(chalk.cyan('  lsh sync pull <cid>  # Pull by CID'));
+        } else if (!clientInfo.installed) {
+          console.log(chalk.bold('Get started:'));
+          console.log(chalk.cyan('  lsh sync init        # Full setup'));
+        } else {
+          console.log(chalk.bold('Start daemon:'));
+          console.log(chalk.cyan('  lsh sync start'));
         }
         console.log('');
       } catch (error) {
@@ -428,6 +524,48 @@ export function registerSyncCommands(program: Command): void {
       } catch (error) {
         const err = error as Error;
         console.error(chalk.red('Failed to clear history:'), err.message);
+        process.exit(1);
+      }
+    });
+
+  // lsh sync start
+  syncCommand
+    .command('start')
+    .description('▶️  Start IPFS daemon')
+    .action(async () => {
+      try {
+        const manager = new IPFSClientManager();
+        const ipfsSync = getIPFSSync();
+
+        // Check if already running
+        if (await ipfsSync.checkDaemon()) {
+          const info = await ipfsSync.getDaemonInfo();
+          console.log(chalk.green('✅ IPFS daemon is already running'));
+          if (info) {
+            console.log(chalk.gray(`   Peer ID: ${info.peerId.substring(0, 16)}...`));
+          }
+          return;
+        }
+
+        await manager.start();
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red('Failed to start daemon:'), err.message);
+        process.exit(1);
+      }
+    });
+
+  // lsh sync stop
+  syncCommand
+    .command('stop')
+    .description('⏹️  Stop IPFS daemon')
+    .action(async () => {
+      try {
+        const manager = new IPFSClientManager();
+        await manager.stop();
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red('Failed to stop daemon:'), err.message);
         process.exit(1);
       }
     });
