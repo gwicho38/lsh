@@ -118,15 +118,29 @@ export function registerSyncCommands(program: Command): void {
 
         const content = fs.readFileSync(envPath, 'utf-8');
 
-        // Get encryption key
-        const encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+        // Get encryption key - check env first, then .env file
+        let encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+
+        if (!encryptionKey) {
+          // Try to read from .env file
+          const keyMatch = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
+          if (keyMatch) {
+            encryptionKey = keyMatch[1].trim();
+            // Remove quotes if present
+            if ((encryptionKey.startsWith('"') && encryptionKey.endsWith('"')) ||
+                (encryptionKey.startsWith("'") && encryptionKey.endsWith("'"))) {
+              encryptionKey = encryptionKey.slice(1, -1);
+            }
+          }
+        }
+
         if (!encryptionKey) {
           spinner.fail(chalk.red('LSH_SECRETS_KEY not set'));
           console.log('');
           console.log(chalk.gray('Generate a key with:'));
           console.log(chalk.cyan('  lsh key'));
           console.log('');
-          console.log(chalk.gray('Then set it:'));
+          console.log(chalk.gray('Then add it to .env or set it:'));
           console.log(chalk.cyan('  export LSH_SECRETS_KEY=<your-key>'));
           process.exit(1);
         }
@@ -197,13 +211,31 @@ export function registerSyncCommands(program: Command): void {
           process.exit(1);
         }
 
-        // Get encryption key
-        const encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+        // Get encryption key - check env first, then existing .env file
+        let encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+
+        if (!encryptionKey) {
+          // Try to read from existing .env file
+          const outputPath = path.resolve(options.output);
+          if (fs.existsSync(outputPath)) {
+            const existingContent = fs.readFileSync(outputPath, 'utf-8');
+            const keyMatch = existingContent.match(/^LSH_SECRETS_KEY=(.+)$/m);
+            if (keyMatch) {
+              encryptionKey = keyMatch[1].trim();
+              // Remove quotes if present
+              if ((encryptionKey.startsWith('"') && encryptionKey.endsWith('"')) ||
+                  (encryptionKey.startsWith("'") && encryptionKey.endsWith("'"))) {
+                encryptionKey = encryptionKey.slice(1, -1);
+              }
+            }
+          }
+        }
+
         if (!encryptionKey) {
           spinner.fail(chalk.red('LSH_SECRETS_KEY not set'));
           console.log('');
           console.log(chalk.gray('You need the same encryption key used to push.'));
-          console.log(chalk.gray('Set it in your environment:'));
+          console.log(chalk.gray('Set it in your environment or .env file:'));
           console.log(chalk.cyan('  export LSH_SECRETS_KEY=<key-from-teammate>'));
           process.exit(1);
         }
