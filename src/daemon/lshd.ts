@@ -93,6 +93,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Start the daemon
    */
+  // TODO(@gwicho38): Review - start
   async start(): Promise<void> {
     if (this.isRunning) {
       throw new Error('Daemon is already running');
@@ -142,6 +143,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Stop the daemon gracefully
    */
+  // TODO(@gwicho38): Review - stop
   async stop(): Promise<void> {
     if (!this.isRunning) {
       return;
@@ -185,6 +187,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Restart the daemon
    */
+  // TODO(@gwicho38): Review - restart
   async restart(): Promise<void> {
     await this.stop();
     await new Promise(resolve => setTimeout(resolve, DEFAULTS.DAEMON_RESTART_DELAY_MS));
@@ -194,6 +197,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Get daemon status
    */
+  // TODO(@gwicho38): Review - getStatus
   async getStatus(): Promise<DaemonStatus> {
     const stats = this.jobManager.getJobStats();
     const uptime = process.uptime();
@@ -221,6 +225,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Add a job to the daemon
    */
+  // TODO(@gwicho38): Review - addJob
   async addJob(jobSpec: Partial<JobSpec>): Promise<JobSpec> {
     this.log('INFO', `Adding job: ${jobSpec.name || 'unnamed'}`);
     const job = await this.jobManager.createJob(jobSpec);
@@ -230,6 +235,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Start a job
    */
+  // TODO(@gwicho38): Review - startJob
   async startJob(jobId: string): Promise<JobSpec> {
     this.log('INFO', `Starting job: ${jobId}`);
     const job = await this.jobManager.startJob(jobId);
@@ -239,6 +245,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Trigger a job to run immediately (returns sanitized result with output)
    */
+  // TODO(@gwicho38): Review - triggerJob
   async triggerJob(jobId: string): Promise<{ success: boolean; output?: string; error?: string; warnings?: string[] }> {
     this.log('INFO', `Triggering job: ${jobId}`);
 
@@ -294,6 +301,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Stop a job
    */
+  // TODO(@gwicho38): Review - stopJob
   async stopJob(jobId: string, signal = 'SIGTERM'): Promise<JobSpec> {
     this.log('INFO', `Stopping job: ${jobId} with signal ${signal}`);
     const job = await this.jobManager.killJob(jobId, signal);
@@ -303,6 +311,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Get job information
    */
+  // TODO(@gwicho38): Review - getJob
   async getJob(jobId: string): Promise<Record<string, unknown> | undefined> {
     const job = await this.jobManager.getJob(jobId);
     return job ? this.sanitizeJobForSerialization(job as JobSpec) : undefined;
@@ -311,6 +320,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Sanitize job objects for safe JSON serialization
    */
+  // TODO(@gwicho38): Review - sanitizeJobForSerialization
   private sanitizeJobForSerialization(job: JobSpec): Record<string, unknown> {
     // Use a whitelist approach - only include safe properties
     const sanitized: Record<string, unknown> = {
@@ -370,6 +380,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * List all jobs
    */
+  // TODO(@gwicho38): Review - listJobs
   async listJobs(filter?: JobFilter, limit?: number): Promise<Array<Record<string, unknown>>> {
     try {
       const jobs = await this.jobManager.listJobs(filter);
@@ -393,11 +404,15 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Remove a job
    */
+  // TODO(@gwicho38): Review - removeJob
   async removeJob(jobId: string, force = false): Promise<boolean> {
     this.log('INFO', `Removing job: ${jobId}, force: ${force}`);
     return await this.jobManager.removeJob(jobId, force);
   }
 
+  // TODO(@gwicho38): Review - isDaemonRunning
+
+  // TODO(@gwicho38): Review - isDaemonRunning
   private async isDaemonRunning(): Promise<boolean> {
     try {
       // First, kill any existing daemon processes for this socket path
@@ -420,6 +435,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - killExistingDaemons
+
+  // TODO(@gwicho38): Review - killExistingDaemons
   private async killExistingDaemons(): Promise<void> {
     try {
       // Find all lshd processes with the same socket path
@@ -445,6 +463,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - startJobScheduler
+
+  // TODO(@gwicho38): Review - startJobScheduler
   private startJobScheduler(): void {
     try {
       this.log('INFO', `📅 Starting job scheduler with ${this.config.checkInterval}ms interval`);
@@ -464,6 +485,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - checkScheduledJobs
+
+  // TODO(@gwicho38): Review - checkScheduledJobs
   private async checkScheduledJobs(): Promise<void> {
     // Debug: Log scheduler activity periodically
     if (Date.now() % 60000 < 5000) { // Log once per minute approximately
@@ -506,6 +530,7 @@ export class LSHJobDaemon extends EventEmitter {
               job.completedAt = undefined;
               job.stdout = '';
               job.stderr = '';
+              // TODO(@gwicho38): Review - await
               await (this.jobManager as unknown as { persistJobs(): Promise<void> }).persistJobs();
               this.log('INFO', `🔄 Reset completed job for recurring execution: ${job.id} (${job.name})`);
             }
@@ -531,6 +556,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - shouldRunByCron
+
+  // TODO(@gwicho38): Review - shouldRunByCron
   private shouldRunByCron(cronExpr: string, now: Date): boolean {
     try {
       const [minute, hour, day, month, weekday] = cronExpr.split(' ');
@@ -574,6 +602,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - matchesCronField
+
+  // TODO(@gwicho38): Review - matchesCronField
   private matchesCronField(field: string, currentValue: number, _min: number, _max: number): boolean {
     // Handle wildcard
     if (field === '*') {
@@ -621,6 +652,7 @@ export class LSHJobDaemon extends EventEmitter {
   /**
    * Reset job status for recurring cron jobs after completion
    */
+  // TODO(@gwicho38): Review - resetRecurringJobStatus
   private async resetRecurringJobStatus(jobId: string): Promise<void> {
     try {
       const job = await this.jobManager.getJob(jobId);
@@ -634,6 +666,7 @@ export class LSHJobDaemon extends EventEmitter {
 
         // Force persistence by calling internal method via reflection
         // Note: This is a temporary workaround for private method access
+        // TODO(@gwicho38): Review - await
         await (this.jobManager as unknown as { persistJobs(): Promise<void> }).persistJobs();
 
         this.log('INFO', `🔄 Reset recurring job status: ${jobId} (${job.name}) for next scheduled run`);
@@ -643,6 +676,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - cleanupCompletedJobs
+
+  // TODO(@gwicho38): Review - cleanupCompletedJobs
   private async cleanupCompletedJobs(): Promise<void> {
     const cleaned = await this.jobManager.cleanupJobs(24); // Clean jobs older than 24 hours
     if (cleaned > 0) {
@@ -650,6 +686,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - stopAllJobs
+
+  // TODO(@gwicho38): Review - stopAllJobs
   private async stopAllJobs(): Promise<void> {
     const runningJobs = await this.jobManager.listJobs({ status: ['running', 'stopped'] });
 
@@ -663,6 +702,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - setupLogging
+
+  // TODO(@gwicho38): Review - setupLogging
   private setupLogging(): void {
     // Create log directory if it doesn't exist
     const logDir = path.dirname(this.config.logFile);
@@ -688,6 +730,9 @@ export class LSHJobDaemon extends EventEmitter {
     });
   }
 
+  // TODO(@gwicho38): Review - setupIPC
+
+  // TODO(@gwicho38): Review - setupIPC
   private setupIPC(): void {
     // Setup Unix domain socket for communication with LSH clients
 
@@ -721,6 +766,9 @@ export class LSHJobDaemon extends EventEmitter {
     });
   }
 
+  // TODO(@gwicho38): Review - startIPCServer
+
+  // TODO(@gwicho38): Review - startIPCServer
   private startIPCServer(): void {
     if (this.ipcServer) {
       // Clean up any existing socket file
@@ -754,6 +802,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - handleIPCMessage
+
+  // TODO(@gwicho38): Review - handleIPCMessage
   private async handleIPCMessage(message: IPCMessage): Promise<IPCResponse | DaemonStatus | JobSpec | Record<string, unknown> | Array<Record<string, unknown>> | boolean | undefined> {
     const { command, args = {} } = message;
 
@@ -785,6 +836,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - log
+
+  // TODO(@gwicho38): Review - log
   private log(level: string, message: string): void {
     const timestamp = new Date().toISOString();
     const logEntry = `[${timestamp}] ${level}: ${message}\n`;
@@ -817,6 +871,9 @@ export class LSHJobDaemon extends EventEmitter {
     this.emit('log', level, message);
   }
 
+  // TODO(@gwicho38): Review - rotateLogs
+
+  // TODO(@gwicho38): Review - rotateLogs
   private rotateLogs(): void {
     try {
       const stats = fs.statSync(this.config.logFile);
@@ -837,6 +894,9 @@ export class LSHJobDaemon extends EventEmitter {
     }
   }
 
+  // TODO(@gwicho38): Review - setupSignalHandlers
+
+  // TODO(@gwicho38): Review - setupSignalHandlers
   private setupSignalHandlers(): void {
     process.on('SIGTERM', async () => {
       this.log('INFO', 'Received SIGTERM, shutting down gracefully');
@@ -862,6 +922,7 @@ const cliLogger = createLogger('LSHDaemonCLI');
 
 // Helper to check if this module is run directly (ESM-compatible)
 // Uses indirect eval to avoid parse-time errors in CommonJS/Jest environments
+// TODO(@gwicho38): Review - isMainModule
 const isMainModule = (): boolean => {
   try {
     // Use Function constructor to avoid parse-time errors with import.meta

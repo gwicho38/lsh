@@ -7,6 +7,9 @@ import { Command } from 'commander';
 import { IPFSSyncLogger } from '../lib/ipfs-sync-logger.js';
 import { getGitRepoInfo } from '../lib/git-utils.js';
 
+// TODO(@gwicho38): Review - registerSyncHistoryCommands
+
+// TODO(@gwicho38): Review - registerSyncHistoryCommands
 export function registerSyncHistoryCommands(program: Command) {
   const syncHistory = program
     .command('sync-history')

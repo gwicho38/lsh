@@ -66,6 +66,7 @@ const WARNING_PATTERNS = [
 /**
  * Validate a shell command for security issues
  */
+// TODO(@gwicho38): Review - validateCommand
 export function validateCommand(
   command: string,
   options: ValidationOptions = {}
@@ -186,6 +187,7 @@ export function validateCommand(
  * Sanitize a string for use as a shell argument
  * Note: This should be used for individual arguments, not full commands
  */
+// TODO(@gwicho38): Review - sanitizeShellArgument
 export function sanitizeShellArgument(arg: string): string {
   // Escape dangerous shell characters
   return arg.replace(/([;&|`$(){}[\]\\<>'"*?~])/g, '\\$1');
@@ -194,6 +196,7 @@ export function sanitizeShellArgument(arg: string): string {
 /**
  * Quote a string for safe use in shell commands
  */
+// TODO(@gwicho38): Review - quoteForShell
 export function quoteForShell(str: string): string {
   // Use single quotes to prevent expansion, escape any single quotes in the string
   return `'${str.replace(/'/g, "'\\''")}'`;
@@ -202,6 +205,7 @@ export function quoteForShell(str: string): string {
 /**
  * Parse command and extract the base command name
  */
+// TODO(@gwicho38): Review - getCommandName
 export function getCommandName(command: string): string {
   const trimmed = command.trim();
   // Handle sudo and other prefixes

@@ -93,6 +93,7 @@ export class LocalStorageAdapter {
   /**
    * Initialize storage directory and load existing data
    */
+  // TODO(@gwicho38): Review - initialize
   async initialize(): Promise<void> {
     try {
       // Create data directory if it doesn't exist
@@ -115,6 +116,7 @@ export class LocalStorageAdapter {
   /**
    * Flush in-memory data to disk
    */
+  // TODO(@gwicho38): Review - flush
   async flush(): Promise<void> {
     if (!this.isDirty) {
       return;
@@ -136,6 +138,7 @@ export class LocalStorageAdapter {
   /**
    * Mark data as dirty (needs flush)
    */
+  // TODO(@gwicho38): Review - markDirty
   private markDirty(): void {
     this.isDirty = true;
   }
@@ -143,6 +146,7 @@ export class LocalStorageAdapter {
   /**
    * Reload data from disk (useful to get latest data from other processes)
    */
+  // TODO(@gwicho38): Review - reload
   async reload(): Promise<void> {
     try {
       const content = await fs.readFile(this.dataFile, 'utf-8');
@@ -157,6 +161,7 @@ export class LocalStorageAdapter {
   /**
    * Cleanup and flush on exit
    */
+  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     if (this.flushInterval) {
       clearInterval(this.flushInterval);
@@ -167,6 +172,7 @@ export class LocalStorageAdapter {
   /**
    * Generate a unique session ID
    */
+  // TODO(@gwicho38): Review - generateSessionId
   private generateSessionId(): string {
     return `lsh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -174,6 +180,7 @@ export class LocalStorageAdapter {
   /**
    * Generate a unique ID
    */
+  // TODO(@gwicho38): Review - generateId
   private generateId(): string {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -181,6 +188,7 @@ export class LocalStorageAdapter {
   /**
    * Save shell history entry
    */
+  // TODO(@gwicho38): Review - saveHistoryEntry
   async saveHistoryEntry(entry: Omit<ShellHistoryEntry, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
       const newEntry: ShellHistoryEntry = {
@@ -204,6 +212,7 @@ export class LocalStorageAdapter {
   /**
    * Get shell history entries
    */
+  // TODO(@gwicho38): Review - getHistoryEntries
   async getHistoryEntries(limit: number = 100, offset: number = 0): Promise<ShellHistoryEntry[]> {
     try {
       const filtered = this.data.shell_history.filter(entry =>
@@ -227,6 +236,7 @@ export class LocalStorageAdapter {
   /**
    * Save shell job
    */
+  // TODO(@gwicho38): Review - saveJob
   async saveJob(job: Omit<ShellJob, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
       const newJob: ShellJob = {
@@ -250,6 +260,7 @@ export class LocalStorageAdapter {
   /**
    * Update shell job status
    */
+  // TODO(@gwicho38): Review - updateJobStatus
   async updateJobStatus(jobId: string, status: ShellJob['status'], exitCode?: number): Promise<boolean> {
     try {
       const job = this.data.shell_jobs.find(j =>
@@ -282,6 +293,7 @@ export class LocalStorageAdapter {
   /**
    * Get active jobs
    */
+  // TODO(@gwicho38): Review - getActiveJobs
   async getActiveJobs(): Promise<ShellJob[]> {
     try {
       return this.data.shell_jobs
@@ -303,6 +315,7 @@ export class LocalStorageAdapter {
   /**
    * Save shell configuration
    */
+  // TODO(@gwicho38): Review - saveConfiguration
   async saveConfiguration(config: Omit<ShellConfiguration, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
       // Find existing config
@@ -336,6 +349,7 @@ export class LocalStorageAdapter {
   /**
    * Get shell configuration
    */
+  // TODO(@gwicho38): Review - getConfiguration
   async getConfiguration(key?: string): Promise<ShellConfiguration[]> {
     try {
       let filtered = this.data.shell_configuration.filter(config =>
@@ -356,6 +370,7 @@ export class LocalStorageAdapter {
   /**
    * Save shell alias
    */
+  // TODO(@gwicho38): Review - saveAlias
   async saveAlias(alias: Omit<ShellAlias, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
       const existingIndex = this.data.shell_aliases.findIndex(a =>
@@ -388,6 +403,7 @@ export class LocalStorageAdapter {
   /**
    * Get shell aliases
    */
+  // TODO(@gwicho38): Review - getAliases
   async getAliases(): Promise<ShellAlias[]> {
     try {
       return this.data.shell_aliases.filter(alias =>
@@ -403,6 +419,7 @@ export class LocalStorageAdapter {
   /**
    * Save shell function
    */
+  // TODO(@gwicho38): Review - saveFunction
   async saveFunction(func: Omit<ShellFunction, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     try {
       const existingIndex = this.data.shell_functions.findIndex(f =>
@@ -435,6 +452,7 @@ export class LocalStorageAdapter {
   /**
    * Get shell functions
    */
+  // TODO(@gwicho38): Review - getFunctions
   async getFunctions(): Promise<ShellFunction[]> {
     try {
       return this.data.shell_functions.filter(func =>
@@ -450,6 +468,7 @@ export class LocalStorageAdapter {
   /**
    * Start a new shell session
    */
+  // TODO(@gwicho38): Review - startSession
   async startSession(workingDirectory: string, environmentVariables: Record<string, string>): Promise<boolean> {
     try {
       const newSession = {
@@ -477,6 +496,7 @@ export class LocalStorageAdapter {
   /**
    * End the current shell session
    */
+  // TODO(@gwicho38): Review - endSession
   async endSession(): Promise<boolean> {
     try {
       const session = this.data.shell_sessions.find(s =>
@@ -503,6 +523,7 @@ export class LocalStorageAdapter {
   /**
    * Test storage connectivity (always succeeds for local storage)
    */
+  // TODO(@gwicho38): Review - testConnection
   async testConnection(): Promise<boolean> {
     try {
       await fs.access(this.dataDir);
@@ -515,6 +536,7 @@ export class LocalStorageAdapter {
   /**
    * Get session ID
    */
+  // TODO(@gwicho38): Review - getSessionId
   getSessionId(): string {
     return this.sessionId;
   }
@@ -522,6 +544,7 @@ export class LocalStorageAdapter {
   /**
    * Get latest rows from all tables
    */
+  // TODO(@gwicho38): Review - getLatestRows
   async getLatestRows(limit: number = 5): Promise<{
     [tableName: string]: Record<string, unknown>[]
   }> {
@@ -587,6 +610,7 @@ export class LocalStorageAdapter {
   /**
    * Get latest rows from a specific table
    */
+  // TODO(@gwicho38): Review - getLatestRowsFromTable
   async getLatestRowsFromTable(tableName: string, limit: number = 5): Promise<Record<string, unknown>[]> {
     try {
       const validTables = [

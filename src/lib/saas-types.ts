@@ -766,6 +766,7 @@ export interface AppError extends Error {
 /**
  * Helper to safely extract error message
  */
+// TODO(@gwicho38): Review - getErrorMessage
 export function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -779,6 +780,7 @@ export function getErrorMessage(error: unknown): string {
 /**
  * Helper to safely extract error for logging
  */
+// TODO(@gwicho38): Review - getErrorDetails
 export function getErrorDetails(error: unknown): { message: string; stack?: string; code?: string } {
   if (error instanceof Error) {
     return {
@@ -794,6 +796,7 @@ export function getErrorDetails(error: unknown): { message: string; stack?: stri
  * Helper to get authenticated user from request.
  * Use after authenticateUser middleware - throws if user not present.
  */
+// TODO(@gwicho38): Review - getAuthenticatedUser
 export function getAuthenticatedUser(req: AuthenticatedRequest): User {
   if (!req.user) {
     throw new Error('User not authenticated');
@@ -804,6 +807,7 @@ export function getAuthenticatedUser(req: AuthenticatedRequest): User {
 /**
  * Create a standardized API error response
  */
+// TODO(@gwicho38): Review - createErrorResponse
 export function createErrorResponse(
   code: ErrorCode,
   message: string,

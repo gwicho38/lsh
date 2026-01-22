@@ -168,6 +168,7 @@ export const LSH_ENV_REQUIREMENTS: EnvRequirement[] = [
 /**
  * Validate environment variables based on requirements
  */
+// TODO(@gwicho38): Review - validateEnvironment
 export function validateEnvironment(
   requirements: EnvRequirement[] = LSH_ENV_REQUIREMENTS,
   env: Record<string, string | undefined> = process.env
@@ -307,6 +308,7 @@ export function validateEnvironment(
 /**
  * Print validation results to console
  */
+// TODO(@gwicho38): Review - printValidationResults
 export function printValidationResults(result: EnvValidationResult, exitOnError = false): void {
   if (result.errors.length > 0) {
     console.error('\n❌ Environment Variable Errors:');
@@ -341,6 +343,7 @@ export function printValidationResults(result: EnvValidationResult, exitOnError 
 /**
  * Validate and exit if invalid (for use at startup)
  */
+// TODO(@gwicho38): Review - validateOrExit
 export function validateOrExit(
   requirements: EnvRequirement[] = LSH_ENV_REQUIREMENTS
 ): void {

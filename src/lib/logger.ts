@@ -63,6 +63,7 @@ const colors = {
 /**
  * Get log level from environment variable
  */
+// TODO(@gwicho38): Review - getLogLevelFromEnv
 function getLogLevelFromEnv(): LogLevel {
   const level = process.env[ENV_VARS.LSH_LOG_LEVEL]?.toUpperCase();
   switch (level) {
@@ -100,6 +101,7 @@ export class Logger {
   /**
    * Create a child logger with a specific context
    */
+  // TODO(@gwicho38): Review - child
   child(context: string): Logger {
     return new Logger({
       ...this.config,
@@ -110,6 +112,7 @@ export class Logger {
   /**
    * Set log level dynamically
    */
+  // TODO(@gwicho38): Review - setLevel
   setLevel(level: LogLevel): void {
     this.config.level = level;
   }
@@ -117,6 +120,7 @@ export class Logger {
   /**
    * Check if a log level is enabled
    */
+  // TODO(@gwicho38): Review - isLevelEnabled
   private isLevelEnabled(level: LogLevel): boolean {
     return level >= this.config.level;
   }
@@ -124,6 +128,7 @@ export class Logger {
   /**
    * Format timestamp
    */
+  // TODO(@gwicho38): Review - formatTimestamp
   private formatTimestamp(): string {
     const now = new Date();
     return now.toISOString();
@@ -132,6 +137,7 @@ export class Logger {
   /**
    * Get level name string
    */
+  // TODO(@gwicho38): Review - getLevelName
   private getLevelName(level: LogLevel): string {
     switch (level) {
       case LogLevel.DEBUG:
@@ -150,6 +156,7 @@ export class Logger {
   /**
    * Get color for log level
    */
+  // TODO(@gwicho38): Review - getLevelColor
   private getLevelColor(level: LogLevel): string {
     switch (level) {
       case LogLevel.DEBUG:
@@ -168,6 +175,7 @@ export class Logger {
   /**
    * Format log entry as JSON
    */
+  // TODO(@gwicho38): Review - formatJSON
   private formatJSON(entry: LogEntry): string {
     const obj: Record<string, unknown> = {
       timestamp: entry.timestamp.toISOString(),
@@ -197,6 +205,7 @@ export class Logger {
   /**
    * Format log entry as text
    */
+  // TODO(@gwicho38): Review - formatText
   private formatText(entry: LogEntry): string {
     const parts: string[] = [];
 
@@ -240,6 +249,7 @@ export class Logger {
   /**
    * Core logging method
    */
+  // TODO(@gwicho38): Review - log
   private log(level: LogLevel, message: string, metadata?: Record<string, unknown>, error?: Error): void {
     if (!this.isLevelEnabled(level)) {
       return;
@@ -277,6 +287,7 @@ export class Logger {
   /**
    * Debug level logging
    */
+  // TODO(@gwicho38): Review - debug
   debug(message: string, metadata?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, message, metadata);
   }
@@ -284,6 +295,7 @@ export class Logger {
   /**
    * Info level logging
    */
+  // TODO(@gwicho38): Review - info
   info(message: string, metadata?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, message, metadata);
   }
@@ -291,6 +303,7 @@ export class Logger {
   /**
    * Warning level logging
    */
+  // TODO(@gwicho38): Review - warn
   warn(message: string, metadata?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, message, metadata);
   }
@@ -298,6 +311,7 @@ export class Logger {
   /**
    * Error level logging
    */
+  // TODO(@gwicho38): Review - error
   error(message: string, error?: Error | unknown, metadata?: Record<string, unknown>): void {
     const err = error instanceof Error ? error : undefined;
     const errorMetadata = error && !(error instanceof Error) ? { error } : undefined;
@@ -313,6 +327,7 @@ export const logger = new Logger();
 /**
  * Create a logger with a specific context
  */
+// TODO(@gwicho38): Review - createLogger
 export function createLogger(context: string, config?: Partial<LoggerConfig>): Logger {
   return new Logger({
     ...config,

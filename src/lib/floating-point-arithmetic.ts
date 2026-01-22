@@ -20,6 +20,7 @@ export class FloatingPointArithmetic {
   /**
    * Evaluate arithmetic expression with floating point support
    */
+  // TODO(@gwicho38): Review - evaluate
   public evaluate(expression: string): number {
     try {
       // Clean and validate expression
@@ -44,6 +45,7 @@ export class FloatingPointArithmetic {
   /**
    * Set precision for floating point results
    */
+  // TODO(@gwicho38): Review - setPrecision
   public setPrecision(precision: number): void {
     this.precision = Math.max(0, Math.min(15, precision));
   }
@@ -51,6 +53,7 @@ export class FloatingPointArithmetic {
   /**
    * Get current precision
    */
+  // TODO(@gwicho38): Review - getPrecision
   public getPrecision(): number {
     return this.precision;
   }
@@ -58,6 +61,7 @@ export class FloatingPointArithmetic {
   /**
    * Add a custom math function
    */
+  // TODO(@gwicho38): Review - addMathFunction
   public addMathFunction(func: MathFunction): void {
     this.mathFunctions.set(func.name, func);
   }
@@ -65,6 +69,7 @@ export class FloatingPointArithmetic {
   /**
    * Get available math functions
    */
+  // TODO(@gwicho38): Review - getAvailableFunctions
   public getAvailableFunctions(): string[] {
     return Array.from(this.mathFunctions.keys());
   }
@@ -72,6 +77,7 @@ export class FloatingPointArithmetic {
   /**
    * Setup built-in math functions
    */
+  // TODO(@gwicho38): Review - setupMathFunctions
   private setupMathFunctions(): void {
     // Basic trigonometric functions
     this.addMathFunction({ name: 'sin', func: Math.sin, arity: 1 });
@@ -130,6 +136,7 @@ export class FloatingPointArithmetic {
   /**
    * Clean expression by removing whitespace and validating characters
    */
+  // TODO(@gwicho38): Review - cleanExpression
   private cleanExpression(expression: string): string {
     // Remove whitespace
     const cleaned = expression.replace(/\s/g, '');
@@ -145,6 +152,7 @@ export class FloatingPointArithmetic {
   /**
    * Replace variables in expression (placeholder for future variable support)
    */
+  // TODO(@gwicho38): Review - replaceVariables
   private replaceVariables(expression: string): string {
     // For now, just return the expression as-is
     // In a full implementation, this would replace variables like $x with their values
@@ -154,6 +162,7 @@ export class FloatingPointArithmetic {
   /**
    * Replace function calls with their results
    */
+  // TODO(@gwicho38): Review - replaceFunctions
   private replaceFunctions(expression: string): string {
     let result = expression;
     
@@ -185,6 +194,7 @@ export class FloatingPointArithmetic {
   /**
    * Parse function arguments
    */
+  // TODO(@gwicho38): Review - parseFunctionArguments
   private parseFunctionArguments(argsStr: string): number[] {
     if (!argsStr.trim()) return [];
     
@@ -219,6 +229,7 @@ export class FloatingPointArithmetic {
   /**
    * Evaluate the mathematical expression
    */
+  // TODO(@gwicho38): Review - evaluateExpression
   private evaluateExpression(expression: string): number {
     try {
       // Use Function constructor for safe evaluation
@@ -239,6 +250,7 @@ export class FloatingPointArithmetic {
   /**
    * Round number to specified precision
    */
+  // TODO(@gwicho38): Review - roundToPrecision
   private roundToPrecision(num: number): number {
     const factor = Math.pow(10, this.precision);
     return Math.round(num * factor) / factor;
@@ -247,6 +259,7 @@ export class FloatingPointArithmetic {
   /**
    * Format number with specified precision
    */
+  // TODO(@gwicho38): Review - formatNumber
   public formatNumber(num: number, precision?: number): string {
     const prec = precision !== undefined ? precision : this.precision;
     return num.toFixed(prec);
@@ -255,6 +268,7 @@ export class FloatingPointArithmetic {
   /**
    * Check if a string represents a valid floating point number
    */
+  // TODO(@gwicho38): Review - isValidFloat
   public isValidFloat(str: string): boolean {
     const num = parseFloat(str);
     return !isNaN(num) && isFinite(num);
@@ -263,6 +277,7 @@ export class FloatingPointArithmetic {
   /**
    * Convert string to floating point number
    */
+  // TODO(@gwicho38): Review - parseFloat
   public parseFloat(str: string): number {
     const num = parseFloat(str);
     if (isNaN(num)) {
@@ -274,6 +289,7 @@ export class FloatingPointArithmetic {
   /**
    * Get mathematical constants
    */
+  // TODO(@gwicho38): Review - getConstants
   public getConstants(): Record<string, number> {
     return {
       pi: Math.PI,
@@ -290,6 +306,7 @@ export class FloatingPointArithmetic {
   /**
    * Evaluate expression with error handling
    */
+  // TODO(@gwicho38): Review - safeEvaluate
   public safeEvaluate(expression: string): { success: boolean; result?: number; error?: string } {
     try {
       const result = this.evaluate(expression);
