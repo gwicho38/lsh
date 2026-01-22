@@ -11,6 +11,9 @@ import * as readline from 'readline';
 import { getGitRepoInfo } from '../../lib/git-utils.js';
 import { ENV_VARS } from '../../constants/index.js';
 
+// TODO(@gwicho38): Review - init_secrets
+
+// TODO(@gwicho38): Review - init_secrets
 export async function init_secrets(program: Command) {
   // Push secrets to cloud
   program
@@ -738,6 +741,7 @@ API_KEY=
   /**
    * Detect if file should use 'export' prefix based on file type
    */
+  // TODO(@gwicho38): Review - shouldUseExport
   function shouldUseExport(filePath: string): boolean {
     const filename = path.basename(filePath);
     const ext = path.extname(filePath);
@@ -769,6 +773,7 @@ API_KEY=
   /**
    * Format a line based on file type
    */
+  // TODO(@gwicho38): Review - formatEnvLine
   function formatEnvLine(key: string, value: string, filePath: string): string {
     const needsQuotes = /[\s#]/.test(value);
     const quotedValue = needsQuotes ? `"${value}"` : value;
@@ -782,6 +787,7 @@ API_KEY=
   /**
    * Set a single secret value
    */
+  // TODO(@gwicho38): Review - setSingleSecret
   async function setSingleSecret(envPath: string, key: string, value: string): Promise<void> {
     // Validate key format
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
@@ -830,6 +836,7 @@ API_KEY=
   /**
    * Batch upsert secrets from stdin
    */
+  // TODO(@gwicho38): Review - batchSetSecrets
   async function batchSetSecrets(envPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
       let inputData = '';

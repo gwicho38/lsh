@@ -24,6 +24,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
     super('Daemon');
   }
 
+  // TODO(@gwicho38): Review - register
+
+  // TODO(@gwicho38): Review - register
   async register(program: Command): Promise<void> {
     const daemonCmd = this.createCommand(program, 'daemon', 'LSH daemon management commands');
 
@@ -32,6 +35,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
     this.registerDatabaseCommands(daemonCmd);
   }
 
+  // TODO(@gwicho38): Review - registerDaemonControlCommands
+
+  // TODO(@gwicho38): Review - registerDaemonControlCommands
   private registerDaemonControlCommands(daemonCmd: Command): void {
     // Status command
     this.addSubcommand(daemonCmd, {
@@ -127,6 +133,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
+  // TODO(@gwicho38): Review - registerJobManagementCommands
+
+  // TODO(@gwicho38): Review - registerJobManagementCommands
   private registerJobManagementCommands(daemonCmd: Command): void {
     const jobCmd = daemonCmd
       .command('job')
@@ -322,6 +331,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
+  // TODO(@gwicho38): Review - registerDatabaseCommands
+
+  // TODO(@gwicho38): Review - registerDatabaseCommands
   private registerDatabaseCommands(daemonCmd: Command): void {
     const dbCmd = daemonCmd
       .command('db')
@@ -514,6 +526,9 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
+  // TODO(@gwicho38): Review - cleanupDaemon
+
+  // TODO(@gwicho38): Review - cleanupDaemon
   private async cleanupDaemon(force: boolean = false): Promise<void> {
     this.logInfo('LSH Daemon Cleanup');
     this.logInfo('====================');

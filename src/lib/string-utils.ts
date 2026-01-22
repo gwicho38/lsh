@@ -21,6 +21,7 @@
  * // Returns: "Job 12345 not found"
  * ```
  */
+// TODO(@gwicho38): Review - formatMessage
 export function formatMessage(
   template: string,
   vars: Record<string, string | number | boolean>
@@ -55,6 +56,7 @@ export function formatMessage(
  * // Or: "/tmp/lsh-job-daemon-default.sock" (if USER env var is not set)
  * ```
  */
+// TODO(@gwicho38): Review - formatPath
 export function formatPath(
   pathTemplate: string,
   fallbacks: Record<string, string> = {}
@@ -95,6 +97,7 @@ export function formatPath(
  * // Returns: "This is a very lo..."
  * ```
  */
+// TODO(@gwicho38): Review - truncate
 export function truncate(str: string, maxLength: number = 50, ellipsis: string = '...'): string {
   // Validate that maxLength is greater than ellipsis length
   if (maxLength < ellipsis.length) {
@@ -119,6 +122,7 @@ export function truncate(str: string, maxLength: number = 50, ellipsis: string =
  * // Returns: "test\\.file"
  * ```
  */
+// TODO(@gwicho38): Review - escapeRegex
 export function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -138,6 +142,7 @@ export function escapeRegex(str: string): string {
  * pluralize(2, 'query', 'queries');  // "2 queries"
  * ```
  */
+// TODO(@gwicho38): Review - pluralize
 export function pluralize(count: number, singular: string, plural?: string): string {
   const pluralForm = plural || `${singular}s`;
   return `${count} ${count === 1 ? singular : pluralForm}`;

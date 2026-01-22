@@ -18,6 +18,7 @@ const PBKDF2_ITERATIONS = 100000;
  * Get master encryption key from environment
  * This key is used to encrypt/decrypt team encryption keys
  */
+// TODO(@gwicho38): Review - getMasterKey
 function getMasterKey(): Buffer {
   const masterKeyHex = process.env[ENV_VARS.LSH_MASTER_KEY] || process.env[ENV_VARS.LSH_SECRETS_KEY];
 
@@ -51,6 +52,7 @@ export class EncryptionService {
   /**
    * Generate a new encryption key for a team
    */
+  // TODO(@gwicho38): Review - generateTeamKey
   async generateTeamKey(teamId: string, createdBy: string): Promise<EncryptionKey> {
     // Generate random key
     const teamKey = randomBytes(KEY_LENGTH);
@@ -88,6 +90,7 @@ export class EncryptionService {
   /**
    * Rotate team encryption key
    */
+  // TODO(@gwicho38): Review - rotateTeamKey
   async rotateTeamKey(teamId: string, rotatedBy: string): Promise<EncryptionKey> {
     // Get current key version
     const { data: currentKeys } = await this.supabase
@@ -143,6 +146,7 @@ export class EncryptionService {
   /**
    * Get active encryption key for a team
    */
+  // TODO(@gwicho38): Review - getTeamKey
   async getTeamKey(teamId: string): Promise<EncryptionKey | null> {
     const { data, error } = await this.supabase
       .from('encryption_keys')
@@ -161,6 +165,7 @@ export class EncryptionService {
   /**
    * Get decrypted team key (for encryption/decryption operations)
    */
+  // TODO(@gwicho38): Review - getDecryptedTeamKey
   async getDecryptedTeamKey(teamId: string): Promise<Buffer> {
     const key = await this.getTeamKey(teamId);
     if (!key) {
@@ -173,6 +178,7 @@ export class EncryptionService {
   /**
    * Encrypt data with team's key
    */
+  // TODO(@gwicho38): Review - encryptForTeam
   async encryptForTeam(teamId: string, data: string): Promise<string> {
     const teamKey = await this.getDecryptedTeamKey(teamId);
 
@@ -191,6 +197,7 @@ export class EncryptionService {
   /**
    * Decrypt data with team's key
    */
+  // TODO(@gwicho38): Review - decryptForTeam
   async decryptForTeam(teamId: string, encryptedData: string): Promise<string> {
     const teamKey = await this.getDecryptedTeamKey(teamId);
 
@@ -214,6 +221,7 @@ export class EncryptionService {
   /**
    * Encrypt team key with master key
    */
+  // TODO(@gwicho38): Review - encryptWithMasterKey
   private encryptWithMasterKey(teamKey: Buffer): string {
     const iv = randomBytes(IV_LENGTH);
     const cipher = createCipheriv(ALGORITHM, this.masterKey, iv);
@@ -228,6 +236,7 @@ export class EncryptionService {
   /**
    * Decrypt team key with master key
    */
+  // TODO(@gwicho38): Review - decryptWithMasterKey
   private decryptWithMasterKey(encryptedKey: string): Buffer {
     const parts = encryptedKey.split(':');
     if (parts.length !== 2) {
@@ -248,6 +257,7 @@ export class EncryptionService {
    * Map database key to EncryptionKey type
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
+  // TODO(@gwicho38): Review - mapDbKeyToKey
   private mapDbKeyToKey(dbKey: any): EncryptionKey {
     return {
       id: dbKey.id,

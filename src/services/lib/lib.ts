@@ -1,6 +1,9 @@
 import { Command } from "commander";
 import { getFiles } from "../../util/lib.util.js";
 
+// TODO(@gwicho38): Review - parseCommands
+
+// TODO(@gwicho38): Review - parseCommands
 async function parseCommands(files: string[]) {
   const commands = {};
 
@@ -18,6 +21,9 @@ async function parseCommands(files: string[]) {
   return commands;
 }
 
+// TODO(@gwicho38): Review - loadCommands
+
+// TODO(@gwicho38): Review - loadCommands
 export async function loadCommands() {
   const files = await getFiles();
   const cmdMap = await parseCommands(files);
@@ -25,6 +31,10 @@ export async function loadCommands() {
 }
 
 
+// TODO(@gwicho38): Review - init_lib
+
+
+// TODO(@gwicho38): Review - init_lib
 export async function init_lib(program: Command) {
   const lib = program
     .command("lib")

@@ -19,6 +19,7 @@ export interface DaemonClientConfig {
 /**
  * Default socket path for the daemon (cross-platform)
  */
+// TODO(@gwicho38): Review - getDefaultSocketPath
 export function getDefaultSocketPath(): string {
   const platformPaths = getPlatformPaths('lsh');
   return platformPaths.socketPath;
@@ -27,6 +28,7 @@ export function getDefaultSocketPath(): string {
 /**
  * Get default user ID (cross-platform)
  */
+// TODO(@gwicho38): Review - getDefaultUserId
 export function getDefaultUserId(): string {
   const platformPaths = getPlatformPaths('lsh');
   return platformPaths.user;
@@ -165,6 +167,7 @@ export async function withDaemonClientForUser<T>(
  * @param socketPath - Optional custom socket path
  * @returns true if daemon is running
  */
+// TODO(@gwicho38): Review - isDaemonRunning
 export function isDaemonRunning(socketPath?: string): boolean {
   const client = new DaemonClient(socketPath || getDefaultSocketPath());
   return client.isDaemonRunning();
@@ -176,6 +179,7 @@ export function isDaemonRunning(socketPath?: string): boolean {
  * @param config - Optional configuration
  * @returns Configured DaemonClient instance
  */
+// TODO(@gwicho38): Review - createDaemonClient
 export function createDaemonClient(config: DaemonClientConfig = {}): DaemonClient {
   const socketPath = config.socketPath || getDefaultSocketPath();
   const userId = config.userId;

@@ -29,6 +29,7 @@ selfCommand.description('Manage and update the LSH application');
 /**
  * Parse version string to tuple for comparison
  */
+// TODO(@gwicho38): Review - parseVersion
 function parseVersion(version: string): number[] {
   return version
     .replace(/^v/, '')
@@ -40,6 +41,7 @@ function parseVersion(version: string): number[] {
  * Compare two version strings
  * Returns: -1 if v1 < v2, 0 if equal, 1 if v1 > v2
  */
+// TODO(@gwicho38): Review - compareVersions
 function compareVersions(v1: string, v2: string): number {
   const parts1 = parseVersion(v1);
   const parts2 = parseVersion(v2);
@@ -58,6 +60,7 @@ function compareVersions(v1: string, v2: string): number {
 /**
  * Get current version from package.json
  */
+// TODO(@gwicho38): Review - getCurrentVersion
 function getCurrentVersion(): string {
   try {
     const packageJsonPath = path.join(__dirname, '../../package.json');
@@ -71,6 +74,7 @@ function getCurrentVersion(): string {
 /**
  * Fetch latest version from npm registry
  */
+// TODO(@gwicho38): Review - fetchLatestVersion
 async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: string } | null> {
   return new Promise((resolve, reject) => {
     const options = {
@@ -122,6 +126,7 @@ async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: st
 /**
  * Check GitHub Actions CI status for a specific version tag
  */
+// TODO(@gwicho38): Review - checkCIStatus
 async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?: string }> {
   return new Promise((resolve) => {
     const options = {
@@ -149,6 +154,7 @@ async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?
             const runs = ghData.workflow_runs || [];
 
             // Find the most recent workflow run for main branch
+            // TODO(@gwicho38): Review - mainRuns
             const mainRuns = (runs as GitHubWorkflowRun[]).filter((run) =>
               run.head_branch === 'main' && run.status === 'completed'
             );

@@ -70,6 +70,7 @@ export class SecretsManager {
   /**
    * Check if running in global mode
    */
+  // TODO(@gwicho38): Review - isGlobalMode
   isGlobalMode(): boolean {
     return this.globalMode;
   }
@@ -77,6 +78,7 @@ export class SecretsManager {
   /**
    * Get the home directory path
    */
+  // TODO(@gwicho38): Review - getHomeDir
   getHomeDir(): string {
     return this.homeDir;
   }
@@ -84,6 +86,7 @@ export class SecretsManager {
   /**
    * Resolve file path - in global mode, resolves relative to $HOME
    */
+  // TODO(@gwicho38): Review - resolveFilePath
   resolveFilePath(filePath: string): string {
     if (this.globalMode && !path.isAbsolute(filePath)) {
       return path.join(this.homeDir, filePath);
@@ -95,6 +98,7 @@ export class SecretsManager {
    * Cleanup resources (stop timers, close connections)
    * Call this when done to allow process to exit
    */
+  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     // IPFS storage doesn't need cleanup
   }
@@ -102,6 +106,7 @@ export class SecretsManager {
   /**
    * Get default encryption key from environment or machine
    */
+  // TODO(@gwicho38): Review - getDefaultEncryptionKey
   private getDefaultEncryptionKey(): string {
     // Check for explicit key
     const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
@@ -121,6 +126,7 @@ export class SecretsManager {
   /**
    * Encrypt a value
    */
+  // TODO(@gwicho38): Review - encrypt
   private encrypt(text: string): string {
     const iv = crypto.randomBytes(16);
     const key = Buffer.from(this.encryptionKey, 'hex');
@@ -135,6 +141,7 @@ export class SecretsManager {
   /**
    * Decrypt a value
    */
+  // TODO(@gwicho38): Review - decrypt
   private decrypt(text: string): string {
     try {
       const parts = text.split(':');
@@ -171,6 +178,7 @@ export class SecretsManager {
   /**
    * Parse .env file into key-value pairs
    */
+  // TODO(@gwicho38): Review - parseEnvFile
   private parseEnvFile(content: string): Record<string, string> {
     const env: Record<string, string> = {};
     const lines = content.split('\n');
@@ -204,6 +212,7 @@ export class SecretsManager {
    * Filter out LSH-internal keys that should not be synced
    * These keys are host-specific and syncing them would cause conflicts
    */
+  // TODO(@gwicho38): Review - filterLshInternalKeys
   private filterLshInternalKeys(env: Record<string, string>): Record<string, string> {
     const filtered: Record<string, string> = {};
     const excludedKeys = new Set([
@@ -234,6 +243,7 @@ export class SecretsManager {
   /**
    * Format env vars as .env file content
    */
+  // TODO(@gwicho38): Review - formatEnvFile
   private formatEnvFile(vars: Record<string, string>): string {
     return Object.entries(vars)
       .map(([key, value]) => {
@@ -248,6 +258,7 @@ export class SecretsManager {
   /**
    * Detect destructive changes (filled secrets becoming empty)
    */
+  // TODO(@gwicho38): Review - detectDestructiveChanges
   private detectDestructiveChanges(
     cloudSecrets: Record<string, string>,
     localSecrets: Record<string, string>
@@ -271,6 +282,7 @@ export class SecretsManager {
   /**
    * Format error message for destructive changes
    */
+  // TODO(@gwicho38): Review - formatDestructiveChangesError
   private formatDestructiveChangesError(
     destructive: Array<{ key: string; cloudValue: string; localValue: string }>
   ): string {
@@ -299,6 +311,7 @@ export class SecretsManager {
   /**
    * Push local .env to Supabase
    */
+  // TODO(@gwicho38): Review - push
   async push(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     if (!fs.existsSync(envFilePath)) {
       throw new Error(`File not found: ${envFilePath}`);
@@ -394,6 +407,7 @@ export class SecretsManager {
   /**
    * Pull .env from IPFS
    */
+  // TODO(@gwicho38): Review - pull
   async pull(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     // Validate filename pattern for custom files
     const filename = path.basename(envFilePath);
@@ -478,6 +492,7 @@ export class SecretsManager {
   /**
    * List all stored environments
    */
+  // TODO(@gwicho38): Review - listEnvironments
   async listEnvironments(): Promise<string[]> {
     const allMetadata = this.storage.listEnvironments();
     const envs = new Set<string>();
@@ -492,6 +507,7 @@ export class SecretsManager {
   /**
    * List all tracked .env files
    */
+  // TODO(@gwicho38): Review - listAllFiles
   async listAllFiles(): Promise<Array<{ filename: string; environment: string; updated: string }>> {
     const allMetadata = this.storage.listEnvironments();
 
@@ -507,6 +523,7 @@ export class SecretsManager {
   /**
    * Show secrets (masked)
    */
+  // TODO(@gwicho38): Review - show
   async show(environment: string = 'dev', format: 'env' | 'json' | 'yaml' | 'toml' | 'export' = 'env'): Promise<void> {
     // Get secrets from IPFS storage
     const secrets = await this.storage.pull(
@@ -546,6 +563,7 @@ export class SecretsManager {
   /**
    * Get status of secrets for an environment
    */
+  // TODO(@gwicho38): Review - status
   async status(envFilePath: string = '.env', environment: string = 'dev'): Promise<{
     localExists: boolean;
     localKeys: number;
@@ -614,6 +632,7 @@ export class SecretsManager {
    * v2.0: In git repo, default is repo name; otherwise 'dev'
    * Global mode: always returns 'dev' (which resolves to 'global' namespace)
    */
+  // TODO(@gwicho38): Review - getDefaultEnvironment
   public getDefaultEnvironment(): string {
     // Global mode uses simple 'dev' which maps to 'global' namespace
     if (this.globalMode) {
@@ -642,6 +661,7 @@ export class SecretsManager {
    * - Named env in repo: returns repo_env (e.g., repo_staging)
    * - Any env outside repo: returns env as-is
    */
+  // TODO(@gwicho38): Review - getRepoAwareEnvironment
   private getRepoAwareEnvironment(environment: string): string {
     // Global mode uses 'global' namespace
     if (this.globalMode) {
@@ -664,6 +684,7 @@ export class SecretsManager {
   /**
    * Generate encryption key if not set
    */
+  // TODO(@gwicho38): Review - ensureEncryptionKey
   private async ensureEncryptionKey(): Promise<boolean> {
     if (process.env[ENV_VARS.LSH_SECRETS_KEY]) {
       return true; // Key already set
@@ -715,6 +736,7 @@ export class SecretsManager {
   /**
    * Create .env from .env.example if available
    */
+  // TODO(@gwicho38): Review - createEnvFromExample
   private async createEnvFromExample(envFilePath: string): Promise<boolean> {
     const examplePath = hasEnvExample(process.cwd());
 
@@ -772,6 +794,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
   /**
    * Generate shell export commands for loading .env file
    */
+  // TODO(@gwicho38): Review - generateExportCommands
   private generateExportCommands(envFilePath: string): string {
     if (!fs.existsSync(envFilePath)) {
       return '# No .env file found\n';
@@ -817,6 +840,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
    * Smart sync command - automatically set up and synchronize secrets
    * This is the new enhanced sync that does everything automatically
    */
+  // TODO(@gwicho38): Review - smartSync
   async smartSync(envFilePath: string = '.env', environment: string = 'dev', autoExecute: boolean = true, loadMode: boolean = false, force: boolean = false, forceRekey: boolean = false): Promise<void> {
     // In load mode, suppress all logger output to prevent zsh glob interpretation
     // Save original level and restore at the end
@@ -1062,6 +1086,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
   /**
    * Show instructions for loading secrets
    */
+  // TODO(@gwicho38): Review - showLoadInstructions
   private showLoadInstructions(envFilePath: string): void {
     console.log('📝 To load secrets in your current shell:');
     console.log();
@@ -1079,6 +1104,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
   /**
    * Sync command - check status and suggest actions (legacy, kept for compatibility)
    */
+  // TODO(@gwicho38): Review - sync
   async sync(envFilePath: string = '.env', environment: string = 'dev'): Promise<void> {
     console.log(`\n🔍 Checking secrets status for environment: ${environment}\n`);
 
@@ -1166,6 +1192,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
   /**
    * Log sync operation to IPFS for immutable record
    */
+  // TODO(@gwicho38): Review - logToIPFS
   private async logToIPFS(action: 'push' | 'pull' | 'sync' | 'create', environment: string, keysCount: number): Promise<void> {
     try {
       const ipfsLogger = new IPFSSyncLogger();

@@ -131,6 +131,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Record the start of a job execution
    */
+  // TODO(@gwicho38): Review - recordJobStart
   recordJobStart(job: JobSpec, executionId?: string): JobExecutionRecord {
     const record: JobExecutionRecord = {
       executionId: executionId || this.generateExecutionId(),
@@ -171,6 +172,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Record job output (stdout/stderr)
    */
+  // TODO(@gwicho38): Review - recordJobOutput
   recordJobOutput(executionId: string, type: 'stdout' | 'stderr', data: string): void {
     const record = this.findRecordByExecutionId(executionId);
     if (!record) return;
@@ -195,6 +197,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Record job completion
    */
+  // TODO(@gwicho38): Review - recordJobCompletion
   recordJobCompletion(
     executionId: string,
     status: JobExecutionRecord['status'],
@@ -230,6 +233,7 @@ export class JobRegistry extends BaseJobManager {
    * Get execution history for a job - overrides BaseJobManager
    * Returns JobExecutionRecord[] which is compatible with BaseJobExecution[]
    */
+  // TODO(@gwicho38): Review - getJobHistory
   async getJobHistory(jobId: string, limit: number = 50): Promise<JobExecutionRecord[]> {
     const records = this.records.get(jobId) || [];
     return limit ? records.slice(0, limit) : records;
@@ -239,6 +243,7 @@ export class JobRegistry extends BaseJobManager {
    * Get job statistics - overrides BaseJobManager
    * Returns JobStatistics which is compatible with BaseJobStatistics
    */
+  // TODO(@gwicho38): Review - getJobStatistics
   async getJobStatistics(jobId: string): Promise<JobStatistics> {
     const stats = this.statistics.get(jobId);
     if (!stats) {
@@ -250,6 +255,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Get all job statistics
    */
+  // TODO(@gwicho38): Review - getAllStatistics
   getAllStatistics(): JobStatistics[] {
     return Array.from(this.statistics.values());
   }
@@ -257,6 +263,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Search job executions
    */
+  // TODO(@gwicho38): Review - searchExecutions
   searchExecutions(criteria: {
     jobId?: string;
     status?: string[];
@@ -338,6 +345,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Generate execution report
    */
+  // TODO(@gwicho38): Review - generateReport
   async generateReport(options: {
     jobId?: string;
     timeRange?: { from: Date; to: Date };
@@ -377,6 +385,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Clean old records - overrides BaseJobManager
    */
+  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - this.config.metricsRetentionDays);
@@ -419,6 +428,7 @@ export class JobRegistry extends BaseJobManager {
   /**
    * Export registry data
    */
+  // TODO(@gwicho38): Review - export
   export(filePath: string, format: 'json' | 'csv' = 'json'): void {
     const allRecords = Array.from(this.records.values()).flat();
 
@@ -436,6 +446,9 @@ export class JobRegistry extends BaseJobManager {
     fs.writeFileSync(filePath, content);
   }
 
+  // TODO(@gwicho38): Review - addRecord
+
+  // TODO(@gwicho38): Review - addRecord
   private addRecord(record: JobExecutionRecord): void {
     const jobRecords = this.records.get(record.jobId) || [];
     jobRecords.unshift(record); // Add to beginning (newest first)
@@ -463,6 +476,9 @@ export class JobRegistry extends BaseJobManager {
     }
   }
 
+  // TODO(@gwicho38): Review - findRecordByExecutionId
+
+  // TODO(@gwicho38): Review - findRecordByExecutionId
   private findRecordByExecutionId(executionId: string): JobExecutionRecord | undefined {
     for (const records of this.records.values()) {
       const record = records.find(r => r.executionId === executionId);
@@ -471,6 +487,9 @@ export class JobRegistry extends BaseJobManager {
     return undefined;
   }
 
+  // TODO(@gwicho38): Review - updateJobStatistics
+
+  // TODO(@gwicho38): Review - updateJobStatistics
   private updateJobStatistics(record: JobExecutionRecord): void {
     const stats = this.statistics.get(record.jobId) || this.createInitialStatistics(record);
 
@@ -525,6 +544,9 @@ export class JobRegistry extends BaseJobManager {
     this.statistics.set(record.jobId, stats);
   }
 
+  // TODO(@gwicho38): Review - createInitialStatistics
+
+  // TODO(@gwicho38): Review - createInitialStatistics
   private createInitialStatistics(record: JobExecutionRecord): JobStatistics {
     return {
       jobId: record.jobId,
@@ -546,6 +568,9 @@ export class JobRegistry extends BaseJobManager {
     };
   }
 
+  // TODO(@gwicho38): Review - updateFailureAnalysis
+
+  // TODO(@gwicho38): Review - updateFailureAnalysis
   private updateFailureAnalysis(stats: JobStatistics, record: JobExecutionRecord): void {
     if (!record.errorMessage) return;
 
@@ -573,6 +598,9 @@ export class JobRegistry extends BaseJobManager {
     stats.commonFailures = stats.commonFailures.slice(0, 10);
   }
 
+  // TODO(@gwicho38): Review - calculateTrend
+
+  // TODO(@gwicho38): Review - calculateTrend
   private calculateTrend(jobId: string): 'improving' | 'degrading' | 'stable' {
     const records = this.records.get(jobId) || [];
     if (records.length < 5) return 'stable';
@@ -597,6 +625,9 @@ export class JobRegistry extends BaseJobManager {
     }
   }
 
+  // TODO(@gwicho38): Review - recordResourceUsage
+
+  // TODO(@gwicho38): Review - recordResourceUsage
   private recordResourceUsage(record: JobExecutionRecord): void {
     if (!record.pid) return;
 
@@ -616,10 +647,16 @@ export class JobRegistry extends BaseJobManager {
     }
   }
 
+  // TODO(@gwicho38): Review - generateExecutionId
+
+  // TODO(@gwicho38): Review - generateExecutionId
   private generateExecutionId(): string {
     return `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  // TODO(@gwicho38): Review - generateTextReport
+
+  // TODO(@gwicho38): Review - generateTextReport
   private generateTextReport(records: JobExecutionRecord[]): string {
     let report = `Job Execution Report\n`;
     report += `Generated: ${new Date().toISOString()}\n`;
@@ -643,6 +680,9 @@ export class JobRegistry extends BaseJobManager {
     return report;
   }
 
+  // TODO(@gwicho38): Review - generateCSVReport
+
+  // TODO(@gwicho38): Review - generateCSVReport
   private generateCSVReport(records: JobExecutionRecord[]): string {
     const headers = [
       'executionId', 'jobId', 'jobName', 'command', 'startTime', 'endTime',
@@ -672,12 +712,18 @@ export class JobRegistry extends BaseJobManager {
     return csv;
   }
 
+  // TODO(@gwicho38): Review - ensureLogDirectory
+
+  // TODO(@gwicho38): Review - ensureLogDirectory
   private ensureLogDirectory(): void {
     if (!fs.existsSync(this.config.outputLogDir)) {
       fs.mkdirSync(this.config.outputLogDir, { recursive: true });
     }
   }
 
+  // TODO(@gwicho38): Review - loadRegistry
+
+  // TODO(@gwicho38): Review - loadRegistry
   private loadRegistry(): void {
     try {
       if (fs.existsSync(this.config.registryFile)) {
@@ -712,6 +758,9 @@ export class JobRegistry extends BaseJobManager {
     }
   }
 
+  // TODO(@gwicho38): Review - saveRegistry
+
+  // TODO(@gwicho38): Review - saveRegistry
   private saveRegistry(): void {
     try {
       const data = {
@@ -730,6 +779,7 @@ export class JobRegistry extends BaseJobManager {
    * Start job - implements BaseJobManager abstract method
    * JobRegistry is read-only, so this records the start event
    */
+  // TODO(@gwicho38): Review - startJob
   async startJob(jobId: string): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {
@@ -749,6 +799,7 @@ export class JobRegistry extends BaseJobManager {
    * Stop job - implements BaseJobManager abstract method
    * JobRegistry is read-only, so this records the stop event
    */
+  // TODO(@gwicho38): Review - stopJob
   async stopJob(jobId: string, _signal?: string): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {

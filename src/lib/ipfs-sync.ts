@@ -68,6 +68,7 @@ export class IPFSSync {
   /**
    * Check if IPFS daemon is running and accessible
    */
+  // TODO(@gwicho38): Review - checkDaemon
   async checkDaemon(): Promise<boolean> {
     try {
       const response = await fetch(`${this.LOCAL_IPFS_API}/id`, {
@@ -83,6 +84,7 @@ export class IPFSSync {
   /**
    * Get IPFS daemon info
    */
+  // TODO(@gwicho38): Review - getDaemonInfo
   async getDaemonInfo(): Promise<{ peerId: string; version: string } | null> {
     try {
       const response = await fetch(`${this.LOCAL_IPFS_API}/id`, {
@@ -108,6 +110,7 @@ export class IPFSSync {
    * Upload data to IPFS via local daemon
    * Returns CID if successful, null on failure
    */
+  // TODO(@gwicho38): Review - upload
   async upload(data: Buffer, filename: string, metadata?: { environment?: string; gitRepo?: string }): Promise<string | null> {
     const isDaemonRunning = await this.checkDaemon();
     if (!isDaemonRunning) {
@@ -164,6 +167,7 @@ export class IPFSSync {
    * Download data from IPFS
    * Tries local daemon first, then falls back to public gateways
    */
+  // TODO(@gwicho38): Review - download
   async download(cid: string): Promise<Buffer | null> {
     // Try local daemon first (fastest if available)
     try {
@@ -207,6 +211,7 @@ export class IPFSSync {
   /**
    * Verify a CID is accessible (from any source)
    */
+  // TODO(@gwicho38): Review - verifyCid
   async verifyCid(cid: string): Promise<{ available: boolean; source?: string }> {
     // Check local daemon first
     const isDaemonRunning = await this.checkDaemon();
@@ -249,6 +254,7 @@ export class IPFSSync {
   /**
    * Pin a CID to local IPFS node
    */
+  // TODO(@gwicho38): Review - pin
   async pin(cid: string): Promise<boolean> {
     const isDaemonRunning = await this.checkDaemon();
     if (!isDaemonRunning) {
@@ -278,6 +284,7 @@ export class IPFSSync {
   /**
    * Unpin a CID from local IPFS node
    */
+  // TODO(@gwicho38): Review - unpin
   async unpin(cid: string): Promise<boolean> {
     const isDaemonRunning = await this.checkDaemon();
     if (!isDaemonRunning) {
@@ -307,6 +314,7 @@ export class IPFSSync {
   /**
    * Get sync history
    */
+  // TODO(@gwicho38): Review - getHistory
   async getHistory(limit?: number): Promise<SyncHistoryEntry[]> {
     try {
       if (!fs.existsSync(this.historyPath)) {
@@ -330,6 +338,7 @@ export class IPFSSync {
   /**
    * Save entry to sync history
    */
+  // TODO(@gwicho38): Review - saveToHistory
   private async saveToHistory(entry: SyncHistoryEntry): Promise<void> {
     try {
       let history: SyncHistoryEntry[] = [];
@@ -357,6 +366,7 @@ export class IPFSSync {
   /**
    * Get the latest CID for a specific repo/environment from history
    */
+  // TODO(@gwicho38): Review - getLatestCid
   async getLatestCid(gitRepo?: string, environment?: string): Promise<string | null> {
     const history = await this.getHistory();
 
@@ -374,6 +384,7 @@ export class IPFSSync {
   /**
    * Clear sync history
    */
+  // TODO(@gwicho38): Review - clearHistory
   async clearHistory(): Promise<void> {
     try {
       if (fs.existsSync(this.historyPath)) {
@@ -389,6 +400,7 @@ export class IPFSSync {
   /**
    * Get public gateway URLs for a CID
    */
+  // TODO(@gwicho38): Review - getGatewayUrls
   getGatewayUrls(cid: string): string[] {
     return this.GATEWAYS.map(template => template.replace('{cid}', cid));
   }
@@ -400,6 +412,7 @@ let ipfsSyncInstance: IPFSSync | null = null;
 /**
  * Get singleton IPFSSync instance
  */
+// TODO(@gwicho38): Review - getIPFSSync
 export function getIPFSSync(): IPFSSync {
   if (!ipfsSyncInstance) {
     ipfsSyncInstance = new IPFSSync();

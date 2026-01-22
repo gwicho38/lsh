@@ -21,6 +21,7 @@ export interface GitRepoInfo {
 /**
  * Check if a directory is inside a git repository
  */
+// TODO(@gwicho38): Review - isInGitRepo
 export function isInGitRepo(dir: string = process.cwd()): boolean {
   try {
     execSync('git rev-parse --is-inside-work-tree', {
@@ -37,6 +38,7 @@ export function isInGitRepo(dir: string = process.cwd()): boolean {
 /**
  * Get git repository root path
  */
+// TODO(@gwicho38): Review - getGitRootPath
 export function getGitRootPath(dir: string = process.cwd()): string | undefined {
   try {
     const output = execSync('git rev-parse --show-toplevel', {
@@ -53,6 +55,7 @@ export function getGitRootPath(dir: string = process.cwd()): string | undefined 
 /**
  * Get git remote URL
  */
+// TODO(@gwicho38): Review - getGitRemoteUrl
 export function getGitRemoteUrl(dir: string = process.cwd()): string | undefined {
   try {
     const output = execSync('git remote get-url origin', {
@@ -69,6 +72,7 @@ export function getGitRemoteUrl(dir: string = process.cwd()): string | undefined
 /**
  * Extract repository name from git remote URL or directory name
  */
+// TODO(@gwicho38): Review - extractRepoName
 export function extractRepoName(remoteUrl?: string, rootPath?: string): string | undefined {
   if (remoteUrl) {
     // Extract from URL patterns:
@@ -91,6 +95,7 @@ export function extractRepoName(remoteUrl?: string, rootPath?: string): string |
 /**
  * Get current git branch
  */
+// TODO(@gwicho38): Review - getCurrentBranch
 export function getCurrentBranch(dir: string = process.cwd()): string | undefined {
   try {
     const output = execSync('git rev-parse --abbrev-ref HEAD', {
@@ -107,6 +112,7 @@ export function getCurrentBranch(dir: string = process.cwd()): string | undefine
 /**
  * Get comprehensive git repository information
  */
+// TODO(@gwicho38): Review - getGitRepoInfo
 export function getGitRepoInfo(dir: string = process.cwd()): GitRepoInfo {
   const isGitRepo = isInGitRepo(dir);
 
@@ -131,6 +137,7 @@ export function getGitRepoInfo(dir: string = process.cwd()): GitRepoInfo {
 /**
  * Check if .env.example exists in the repo
  */
+// TODO(@gwicho38): Review - hasEnvExample
 export function hasEnvExample(dir: string = process.cwd()): string | undefined {
   const patterns = ['.env.example', '.env.sample', '.env.template'];
 
@@ -147,6 +154,7 @@ export function hasEnvExample(dir: string = process.cwd()): string | undefined {
 /**
  * Check if .gitignore exists and contains .env
  */
+// TODO(@gwicho38): Review - isEnvIgnored
 export function isEnvIgnored(dir: string = process.cwd()): boolean {
   const gitignorePath = path.join(dir, '.gitignore');
 
@@ -177,6 +185,7 @@ export function isEnvIgnored(dir: string = process.cwd()): boolean {
 /**
  * Add .env to .gitignore if not already present
  */
+// TODO(@gwicho38): Review - ensureEnvInGitignore
 export function ensureEnvInGitignore(dir: string = process.cwd()): void {
   const gitignorePath = path.join(dir, '.gitignore');
 

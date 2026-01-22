@@ -25,6 +25,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Get version from package.json
+// TODO(@gwicho38): Review - getVersion
 function getVersion(): string {
   try {
     const packageJsonPath = path.join(__dirname, '../package.json');
@@ -100,6 +101,7 @@ program
 /**
  * Calculate string similarity (Levenshtein distance)
  */
+// TODO(@gwicho38): Review - similarity
 function similarity(s1: string, s2: string): number {
   const longer = s1.length > s2.length ? s1 : s2;
   const shorter = s1.length > s2.length ? s2 : s1;
@@ -110,6 +112,9 @@ function similarity(s1: string, s2: string): number {
   return (longer.length - editDistance) / longer.length;
 }
 
+// TODO(@gwicho38): Review - levenshtein
+
+// TODO(@gwicho38): Review - levenshtein
 function levenshtein(s1: string, s2: string): number {
   const costs: number[] = [];
   for (let i = 0; i <= s1.length; i++) {
@@ -134,6 +139,7 @@ function levenshtein(s1: string, s2: string): number {
 /**
  * Find similar commands for suggestions
  */
+// TODO(@gwicho38): Review - findSimilarCommands
 function findSimilarCommands(input: string, validCommands: string[]): string[] {
   const similarities = validCommands
     .map(cmd => ({ cmd, score: similarity(input, cmd) }))
@@ -250,6 +256,7 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 /**
  * Show detailed help
  */
+// TODO(@gwicho38): Review - showDetailedHelp
 function showDetailedHelp(): void {
   console.log('LSH - Encrypted Secrets Manager');
   console.log('================================');
