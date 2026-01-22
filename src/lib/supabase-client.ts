@@ -43,6 +43,7 @@ export class SupabaseClient {
   /**
    * Get the Supabase client instance
    */
+  // TODO(@gwicho38): Review - getClient
   public getClient() {
     return this.client;
   }
@@ -50,6 +51,7 @@ export class SupabaseClient {
   /**
    * Test database connectivity
    */
+  // TODO(@gwicho38): Review - testConnection
   public async testConnection(): Promise<boolean> {
     try {
       const { error } = await this.client
@@ -67,6 +69,7 @@ export class SupabaseClient {
   /**
    * Get database connection info
    */
+  // TODO(@gwicho38): Review - getConnectionInfo
   public getConnectionInfo() {
     return {
       url: this.config.url,
@@ -80,6 +83,9 @@ export class SupabaseClient {
 let _supabaseClient: SupabaseClient | null = null;
 let _clientInitializationFailed = false;
 
+// TODO(@gwicho38): Review - getDefaultClient
+
+// TODO(@gwicho38): Review - getDefaultClient
 function getDefaultClient(): SupabaseClient | null {
   if (_clientInitializationFailed) {
     return null;
@@ -100,11 +106,13 @@ function getDefaultClient(): SupabaseClient | null {
 /**
  * Check if Supabase is configured and available
  */
+// TODO(@gwicho38): Review - isSupabaseConfigured
 export function isSupabaseConfigured(): boolean {
   return !!(process.env[ENV_VARS.SUPABASE_URL] && process.env[ENV_VARS.SUPABASE_ANON_KEY]);
 }
 
 export const supabaseClient = {
+  // TODO(@gwicho38): Review - getClient
   getClient() {
     const client = getDefaultClient();
     if (!client) {
@@ -112,6 +120,7 @@ export const supabaseClient = {
     }
     return client.getClient();
   },
+  // TODO(@gwicho38): Review - testConnection
   async testConnection() {
     const client = getDefaultClient();
     if (!client) {
@@ -119,6 +128,7 @@ export const supabaseClient = {
     }
     return client.testConnection();
   },
+  // TODO(@gwicho38): Review - getConnectionInfo
   getConnectionInfo() {
     const client = getDefaultClient();
     if (!client) {
@@ -130,6 +140,7 @@ export const supabaseClient = {
     }
     return client.getConnectionInfo();
   },
+  // TODO(@gwicho38): Review - isAvailable
   isAvailable() {
     return getDefaultClient() !== null;
   }
@@ -140,6 +151,7 @@ export const supabaseClient = {
  * Uses environment variables for configuration
  * @throws {Error} If SUPABASE_URL or SUPABASE_ANON_KEY are not set
  */
+// TODO(@gwicho38): Review - getSupabaseClient
 export function getSupabaseClient() {
   const url = process.env[ENV_VARS.SUPABASE_URL];
   const key = process.env[ENV_VARS.SUPABASE_ANON_KEY];

@@ -26,6 +26,9 @@ export interface CommandDictionary {
   [filename: string]: Function[];
 }
 
+// TODO(@gwicho38): Review - getFiles
+
+// TODO(@gwicho38): Review - getFiles
 export async function getFiles() {
   // Build path relative to this file's location
   // This file is at dist/util/lib.util.js, so services/lib is at ../services/lib/

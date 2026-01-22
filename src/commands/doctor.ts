@@ -24,6 +24,7 @@ interface HealthCheck {
 /**
  * Register doctor commands
  */
+// TODO(@gwicho38): Review - registerDoctorCommands
 export function registerDoctorCommands(program: Command): void {
   program
     .command('doctor')
@@ -45,6 +46,7 @@ export function registerDoctorCommands(program: Command): void {
 /**
  * Get the base directory for .env files
  */
+// TODO(@gwicho38): Review - getBaseDir
 function getBaseDir(globalMode?: boolean): string {
   return globalMode ? os.homedir() : process.cwd();
 }
@@ -52,6 +54,7 @@ function getBaseDir(globalMode?: boolean): string {
 /**
  * Run comprehensive health check
  */
+// TODO(@gwicho38): Review - runHealthCheck
 async function runHealthCheck(options: { global?: boolean; verbose?: boolean; json?: boolean }): Promise<void> {
   const baseDir = getBaseDir(options.global);
 
@@ -110,6 +113,7 @@ async function runHealthCheck(options: { global?: boolean; verbose?: boolean; js
 /**
  * Check platform compatibility
  */
+// TODO(@gwicho38): Review - checkPlatform
 async function checkPlatform(verbose?: boolean): Promise<HealthCheck> {
   const info = getPlatformInfo();
 
@@ -129,6 +133,7 @@ async function checkPlatform(verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check .env file
  */
+// TODO(@gwicho38): Review - checkEnvFile
 async function checkEnvFile(verbose?: boolean, baseDir?: string): Promise<HealthCheck> {
   try {
     const envPath = path.join(baseDir || process.cwd(), '.env');
@@ -155,6 +160,7 @@ async function checkEnvFile(verbose?: boolean, baseDir?: string): Promise<Health
 /**
  * Check encryption key
  */
+// TODO(@gwicho38): Review - checkEncryptionKey
 async function checkEncryptionKey(verbose?: boolean, baseDir?: string): Promise<HealthCheck> {
   try {
     const envPath = path.join(baseDir || process.cwd(), '.env');
@@ -212,6 +218,7 @@ async function checkEncryptionKey(verbose?: boolean, baseDir?: string): Promise<
 /**
  * Check storage backend configuration
  */
+// TODO(@gwicho38): Review - checkStorageBackend
 async function checkStorageBackend(verbose?: boolean, baseDir?: string): Promise<HealthCheck[]> {
   const checks: HealthCheck[] = [];
 
@@ -292,6 +299,7 @@ async function checkStorageBackend(verbose?: boolean, baseDir?: string): Promise
 /**
  * Test Supabase connection
  */
+// TODO(@gwicho38): Review - testSupabaseConnection
 async function testSupabaseConnection(
   url: string,
   key: string,
@@ -343,6 +351,7 @@ async function testSupabaseConnection(
 /**
  * Check if in git repository
  */
+// TODO(@gwicho38): Review - checkGitRepository
 async function checkGitRepository(_verbose?: boolean): Promise<HealthCheck> {
   try {
     const gitPath = path.join(process.cwd(), '.git');
@@ -381,6 +390,7 @@ async function checkGitRepository(_verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check IPFS client installation
  */
+// TODO(@gwicho38): Review - checkIPFSClient
 async function checkIPFSClient(verbose?: boolean): Promise<HealthCheck> {
   try {
     const manager = new IPFSClientManager();
@@ -415,6 +425,7 @@ async function checkIPFSClient(verbose?: boolean): Promise<HealthCheck> {
 /**
  * Check file permissions
  */
+// TODO(@gwicho38): Review - checkPermissions
 async function checkPermissions(verbose?: boolean, _baseDir?: string): Promise<HealthCheck> {
   try {
     const paths = getPlatformPaths();
@@ -452,6 +463,7 @@ async function checkPermissions(verbose?: boolean, _baseDir?: string): Promise<H
 /**
  * Mask sensitive parts of connection string
  */
+// TODO(@gwicho38): Review - maskConnectionString
 function maskConnectionString(url: string): string {
   try {
     const parsed = new URL(url);
@@ -467,6 +479,7 @@ function maskConnectionString(url: string): string {
 /**
  * Get summary statistics
  */
+// TODO(@gwicho38): Review - getSummary
 function getSummary(checks: HealthCheck[]): {
   total: number;
   passed: number;
@@ -486,6 +499,7 @@ function getSummary(checks: HealthCheck[]): {
 /**
  * Display results in terminal
  */
+// TODO(@gwicho38): Review - displayResults
 function displayResults(checks: HealthCheck[]): void {
   for (const check of checks) {
     let icon: string;
@@ -522,6 +536,7 @@ function displayResults(checks: HealthCheck[]): void {
 /**
  * Display recommendations
  */
+// TODO(@gwicho38): Review - displayRecommendations
 function displayRecommendations(checks: HealthCheck[]): void {
   const summary = getSummary(checks);
   const hasIssues = summary.failed > 0 || summary.warned > 0;

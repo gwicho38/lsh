@@ -66,6 +66,7 @@ export class IPFSSecretsStorage {
   /**
    * Initialize async parts
    */
+  // TODO(@gwicho38): Review - initialize
   async initialize(): Promise<void> {
     // Ensure directories exist
     if (!fs.existsSync(this.cacheDir)) {
@@ -79,6 +80,7 @@ export class IPFSSecretsStorage {
   /**
    * Store secrets on IPFS
    */
+  // TODO(@gwicho38): Review - push
   async push(
     secrets: Secret[],
     environment: string,
@@ -164,6 +166,7 @@ export class IPFSSecretsStorage {
   /**
    * Retrieve secrets from IPFS
    */
+  // TODO(@gwicho38): Review - pull
   async pull(
     environment: string,
     encryptionKey: string,
@@ -259,6 +262,7 @@ export class IPFSSecretsStorage {
   /**
    * Check if secrets exist for environment
    */
+  // TODO(@gwicho38): Review - exists
   exists(environment: string, gitRepo?: string): boolean {
     const metadataKey = this.getMetadataKey(gitRepo, environment);
     return !!this.metadata[metadataKey];
@@ -267,6 +271,7 @@ export class IPFSSecretsStorage {
   /**
    * Get metadata for environment
    */
+  // TODO(@gwicho38): Review - getMetadata
   getMetadata(environment: string, gitRepo?: string): IPFSSecretsMetadata | undefined {
     const metadataKey = this.getMetadataKey(gitRepo, environment);
     return this.metadata[metadataKey];
@@ -275,6 +280,7 @@ export class IPFSSecretsStorage {
   /**
    * List all environments
    */
+  // TODO(@gwicho38): Review - listEnvironments
   listEnvironments(): IPFSSecretsMetadata[] {
     return Object.values(this.metadata);
   }
@@ -282,6 +288,7 @@ export class IPFSSecretsStorage {
   /**
    * Delete local cached secrets for an environment
    */
+  // TODO(@gwicho38): Review - deleteLocal
   async deleteLocal(environment: string, gitRepo?: string): Promise<void> {
     const metadataKey = this.getMetadataKey(gitRepo, environment);
     const metadata = this.metadata[metadataKey];
@@ -307,6 +314,7 @@ export class IPFSSecretsStorage {
   /**
    * Encrypt secrets using AES-256
    */
+  // TODO(@gwicho38): Review - encryptSecrets
   private encryptSecrets(secrets: Secret[], encryptionKey: string): string {
     const data = JSON.stringify(secrets);
     const key = crypto.createHash('sha256').update(encryptionKey).digest();
@@ -323,6 +331,7 @@ export class IPFSSecretsStorage {
   /**
    * Decrypt secrets using AES-256
    */
+  // TODO(@gwicho38): Review - decryptSecrets
   private decryptSecrets(encryptedData: string, encryptionKey: string): Secret[] {
     try {
       const [ivHex, encrypted] = encryptedData.split(':');
@@ -358,6 +367,7 @@ export class IPFSSecretsStorage {
   /**
    * Generate IPFS-compatible CID from content
    */
+  // TODO(@gwicho38): Review - generateCID
   private generateCID(content: string): string {
     const hash = crypto.createHash('sha256').update(content).digest('hex');
     // Format like IPFS CIDv1 (bafkreixxx...)
@@ -367,6 +377,7 @@ export class IPFSSecretsStorage {
   /**
    * Store encrypted data locally
    */
+  // TODO(@gwicho38): Review - storeLocally
   private async storeLocally(cid: string, encryptedData: string, _environment: string): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
 
@@ -381,6 +392,7 @@ export class IPFSSecretsStorage {
   /**
    * Load encrypted data from local cache
    */
+  // TODO(@gwicho38): Review - loadLocally
   private async loadLocally(cid: string): Promise<string | null> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
 
@@ -397,6 +409,7 @@ export class IPFSSecretsStorage {
   /**
    * Get metadata key for environment
    */
+  // TODO(@gwicho38): Review - getMetadataKey
   private getMetadataKey(gitRepo: string | undefined, environment: string): string {
     return gitRepo ? `${gitRepo}_${environment}` : environment;
   }
@@ -404,6 +417,7 @@ export class IPFSSecretsStorage {
   /**
    * Load metadata from disk
    */
+  // TODO(@gwicho38): Review - loadMetadata
   private loadMetadata(): Record<string, IPFSSecretsMetadata> {
     if (!fs.existsSync(this.metadataPath)) {
       return {};
@@ -420,6 +434,7 @@ export class IPFSSecretsStorage {
   /**
    * Load metadata from disk asynchronously
    */
+  // TODO(@gwicho38): Review - loadMetadataAsync
   private async loadMetadataAsync(): Promise<Record<string, IPFSSecretsMetadata>> {
     try {
       await fsPromises.access(this.metadataPath);
@@ -438,6 +453,7 @@ export class IPFSSecretsStorage {
   /**
    * Save metadata to disk
    */
+  // TODO(@gwicho38): Review - saveMetadata
   private async saveMetadata(): Promise<void> {
     // Ensure parent directory exists
     const parentDir = path.dirname(this.metadataPath);

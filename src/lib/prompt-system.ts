@@ -48,6 +48,7 @@ export class PromptSystem {
   /**
    * Expand prompt string with ZSH-style sequences
    */
+  // TODO(@gwicho38): Review - expandPrompt
   public expandPrompt(prompt: string, context?: Partial<PromptContext>): string {
     const ctx = { ...this.context, ...context };
     let result = prompt;
@@ -94,6 +95,7 @@ export class PromptSystem {
   /**
    * Set current theme
    */
+  // TODO(@gwicho38): Review - setTheme
   public setTheme(themeName: string): boolean {
     if (this.themes.has(themeName)) {
       this.currentTheme = themeName;
@@ -105,6 +107,7 @@ export class PromptSystem {
   /**
    * Get current theme
    */
+  // TODO(@gwicho38): Review - getCurrentTheme
   public getCurrentTheme(): string {
     return this.currentTheme;
   }
@@ -112,6 +115,7 @@ export class PromptSystem {
   /**
    * Get current prompt
    */
+  // TODO(@gwicho38): Review - getCurrentPrompt
   public getCurrentPrompt(context?: Partial<PromptContext>): string {
     const theme = this.themes.get(this.currentTheme);
     if (!theme) return '$ ';
@@ -122,6 +126,7 @@ export class PromptSystem {
   /**
    * Get current right prompt
    */
+  // TODO(@gwicho38): Review - getCurrentRPrompt
   public getCurrentRPrompt(context?: Partial<PromptContext>): string {
     const theme = this.themes.get(this.currentTheme);
     if (!theme || !theme.rprompt) return '';
@@ -132,6 +137,7 @@ export class PromptSystem {
   /**
    * Add a custom theme
    */
+  // TODO(@gwicho38): Review - addTheme
   public addTheme(theme: PromptTheme): void {
     this.themes.set(theme.name, theme);
   }
@@ -139,6 +145,7 @@ export class PromptSystem {
   /**
    * Get all available themes
    */
+  // TODO(@gwicho38): Review - getAvailableThemes
   public getAvailableThemes(): string[] {
     return Array.from(this.themes.keys());
   }
@@ -146,6 +153,7 @@ export class PromptSystem {
   /**
    * Get theme information
    */
+  // TODO(@gwicho38): Review - getThemeInfo
   public getThemeInfo(themeName: string): PromptTheme | undefined {
     return this.themes.get(themeName);
   }
@@ -153,6 +161,7 @@ export class PromptSystem {
   /**
    * Update prompt context
    */
+  // TODO(@gwicho38): Review - updateContext
   public updateContext(updates: Partial<PromptContext>): void {
     this.context = { ...this.context, ...updates };
   }
@@ -160,6 +169,7 @@ export class PromptSystem {
   /**
    * Create default context
    */
+  // TODO(@gwicho38): Review - createDefaultContext
   private createDefaultContext(): PromptContext {
     return {
       user: os.userInfo().username,
@@ -175,6 +185,7 @@ export class PromptSystem {
   /**
    * Setup default themes
    */
+  // TODO(@gwicho38): Review - setupDefaultThemes
   private setupDefaultThemes(): void {
     // Default theme
     this.addTheme({
@@ -247,6 +258,7 @@ export class PromptSystem {
   /**
    * Format path with tilde expansion
    */
+  // TODO(@gwicho38): Review - formatPath
   private formatPath(cwd: string, home: string): string {
     if (cwd.startsWith(home)) {
       return '~' + cwd.substring(home.length);
@@ -257,6 +269,7 @@ export class PromptSystem {
   /**
    * Format time according to pattern
    */
+  // TODO(@gwicho38): Review - formatTime
   private formatTime(time: Date, pattern: string): string {
     const hours = time.getHours();
     const minutes = time.getMinutes();
@@ -288,6 +301,7 @@ export class PromptSystem {
   /**
    * Format git status
    */
+  // TODO(@gwicho38): Review - formatGitStatus
   private formatGitStatus(status: string): string {
     switch (status) {
       case 'clean': return '✓';
@@ -302,6 +316,7 @@ export class PromptSystem {
   /**
    * Expand conditional sequences
    */
+  // TODO(@gwicho38): Review - expandConditionalSequences
   private expandConditionalSequences(prompt: string, context: PromptContext): string {
     // Handle %(condition.true-text.false-text)
     const conditionalRegex = /%\(([^)]+)\)/g;
@@ -320,6 +335,7 @@ export class PromptSystem {
   /**
    * Evaluate condition for conditional sequences
    */
+  // TODO(@gwicho38): Review - evaluateCondition
   private evaluateCondition(condition: string, context: PromptContext): boolean {
     switch (condition) {
       case '?': return context.exitCode === 0;
@@ -335,6 +351,7 @@ export class PromptSystem {
   /**
    * Expand color sequences
    */
+  // TODO(@gwicho38): Review - expandColorSequences
   private expandColorSequences(prompt: string): string {
     // Handle %F{color} and %f
     const colorRegex = /%F\{([^}]+)\}/g;
@@ -364,6 +381,7 @@ export class PromptSystem {
   /**
    * Get color code for color name
    */
+  // TODO(@gwicho38): Review - getColorCode
   private getColorCode(color: string): string {
     const colors: Record<string, string> = {
       black: '\x1b[30m',
@@ -383,6 +401,7 @@ export class PromptSystem {
   /**
    * Get background color code for color name
    */
+  // TODO(@gwicho38): Review - getBackgroundColorCode
   private getBackgroundColorCode(color: string): string {
     const colors: Record<string, string> = {
       black: '\x1b[40m',

@@ -140,6 +140,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Create a top-level command
    */
+  // TODO(@gwicho38): Review - createCommand
   protected createCommand(
     program: Command,
     name: string,
@@ -153,6 +154,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Add a subcommand with automatic error handling
    */
+  // TODO(@gwicho38): Review - addSubcommand
   protected addSubcommand(
     parent: Command,
     config: SubcommandConfig
@@ -246,6 +248,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Check if daemon is running
    */
+  // TODO(@gwicho38): Review - isDaemonRunning
   protected isDaemonRunning(): boolean {
     return isDaemonRunning();
   }
@@ -253,6 +256,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Log success message
    */
+  // TODO(@gwicho38): Review - logSuccess
   protected logSuccess(message: string, data?: unknown): void {
     this.logger.info(message);
     if (data !== undefined) {
@@ -277,6 +281,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Log error message
    */
+  // TODO(@gwicho38): Review - logError
   protected logError(message: string, error?: Error | unknown): void {
     if (error instanceof Error) {
       this.logger.error(message, error);
@@ -290,6 +295,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Log info message
    */
+  // TODO(@gwicho38): Review - logInfo
   protected logInfo(message: string): void {
     this.logger.info(message);
   }
@@ -297,6 +303,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Log warning message
    */
+  // TODO(@gwicho38): Review - logWarning
   protected logWarning(message: string): void {
     this.logger.warn(message);
   }
@@ -304,6 +311,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Parse JSON from string with error handling
    */
+  // TODO(@gwicho38): Review - parseJSON
   protected parseJSON<T = unknown>(jsonString: string, context: string = 'JSON'): T {
     try {
       return JSON.parse(jsonString) as T;
@@ -315,6 +323,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Parse comma-separated tags
    */
+  // TODO(@gwicho38): Review - parseTags
   protected parseTags(tagsString: string): string[] {
     return tagsString.split(',').map(t => t.trim()).filter(t => t.length > 0);
   }
@@ -322,6 +331,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Format job schedule for display
    */
+  // TODO(@gwicho38): Review - formatSchedule
   protected formatSchedule(schedule: ScheduleConfig | undefined): string {
     if (schedule?.cron) {
       return schedule.cron;
@@ -335,6 +345,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Validate required options
    */
+  // TODO(@gwicho38): Review - validateRequired
   protected validateRequired(
     options: Record<string, unknown>,
     required: string[],
@@ -351,6 +362,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Create a standardized job specification from options
    */
+  // TODO(@gwicho38): Review - createJobSpec
   protected createJobSpec(options: JobSpecOptions): Partial<JobSpec> {
     return {
       id: options.id || `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -374,6 +386,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Display job information
    */
+  // TODO(@gwicho38): Review - displayJob
   protected displayJob(job: Partial<JobSpec>): void {
     this.logInfo(`  ${job.id}: ${job.name}`);
     this.logInfo(`    Command: ${job.command}`);
@@ -388,6 +401,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Display multiple jobs
    */
+  // TODO(@gwicho38): Review - displayJobs
   protected displayJobs(jobs: Array<Partial<JobSpec>>): void {
     this.logInfo(`Jobs (${jobs.length} total):`);
     jobs.forEach(job => {
@@ -399,6 +413,7 @@ export abstract class BaseCommandRegistrar {
   /**
    * Display job report
    */
+  // TODO(@gwicho38): Review - displayJobReport
   protected displayJobReport(report: JobReport): void {
     this.logInfo(`Job Report: ${report.jobId || 'N/A'}`);
     this.logInfo(`  Executions: ${report.executions}`);

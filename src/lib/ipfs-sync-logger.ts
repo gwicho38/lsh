@@ -67,6 +67,7 @@ export class IPFSSyncLogger {
   /**
    * Check if IPFS sync is enabled
    */
+  // TODO(@gwicho38): Review - isEnabled
   isEnabled(): boolean {
     return process.env[ENV_VARS.DISABLE_IPFS_SYNC] !== 'true';
   }
@@ -75,6 +76,7 @@ export class IPFSSyncLogger {
    * Record a sync operation to IPFS
    * Returns the IPFS CID (Content Identifier)
    */
+  // TODO(@gwicho38): Review - recordSync
   async recordSync(data: Partial<SyncRecord>): Promise<string> {
     if (!this.isEnabled()) {
       return '';
@@ -127,6 +129,7 @@ export class IPFSSyncLogger {
   /**
    * Read a record by CID
    */
+  // TODO(@gwicho38): Review - readRecord
   async readRecord(cid: string): Promise<SyncRecord | null> {
     const recordPath = this.getRecordPath(cid);
 
@@ -141,6 +144,7 @@ export class IPFSSyncLogger {
   /**
    * Get all records for a repo/environment
    */
+  // TODO(@gwicho38): Review - getAllRecords
   async getAllRecords(repo?: string, env?: string): Promise<SyncRecord[]> {
     const repoEnv = repo && env ? this.getRepoEnvKey(repo, env) : null;
 
@@ -171,6 +175,7 @@ export class IPFSSyncLogger {
   /**
    * Get sync log for a specific repo/env
    */
+  // TODO(@gwicho38): Review - getSyncLog
   getSyncLog(repo?: string, env?: string): SyncLogEntry[] {
     if (repo && env) {
       const key = this.getRepoEnvKey(repo, env);
@@ -188,6 +193,7 @@ export class IPFSSyncLogger {
   /**
    * Generate a content-addressed ID (like IPFS CID)
    */
+  // TODO(@gwicho38): Review - generateContentId
   private generateContentId(record: SyncRecord): string {
     const content = JSON.stringify(record);
     const hash = crypto.createHash('sha256').update(content).digest('hex');
@@ -198,6 +204,7 @@ export class IPFSSyncLogger {
   /**
    * Store record locally (acts as IPFS cache)
    */
+  // TODO(@gwicho38): Review - storeRecordLocally
   private async storeRecordLocally(cid: string, record: SyncRecord): Promise<void> {
     const recordPath = this.getRecordPath(cid);
     const recordDir = path.dirname(recordPath);
@@ -212,6 +219,7 @@ export class IPFSSyncLogger {
   /**
    * Get path for storing a record
    */
+  // TODO(@gwicho38): Review - getRecordPath
   private getRecordPath(cid: string): string {
     const lshDir = path.join(os.homedir(), '.lsh');
     const ipfsDir = path.join(lshDir, 'ipfs');
@@ -221,6 +229,7 @@ export class IPFSSyncLogger {
   /**
    * Get repo/env key for indexing
    */
+  // TODO(@gwicho38): Review - getRepoEnvKey
   private getRepoEnvKey(repo: string | undefined, env: string): string {
     return repo ? `${repo}_${env}` : env;
   }
@@ -228,6 +237,7 @@ export class IPFSSyncLogger {
   /**
    * Load sync log from disk
    */
+  // TODO(@gwicho38): Review - loadSyncLog
   private loadSyncLog(): SyncLog {
     if (!fs.existsSync(this.syncLogPath)) {
       return {};
@@ -244,6 +254,7 @@ export class IPFSSyncLogger {
   /**
    * Save sync log to disk
    */
+  // TODO(@gwicho38): Review - saveSyncLog
   private saveSyncLog(): void {
     fs.writeFileSync(
       this.syncLogPath,
@@ -255,6 +266,7 @@ export class IPFSSyncLogger {
   /**
    * Get encryption key fingerprint
    */
+  // TODO(@gwicho38): Review - getKeyFingerprint
   private getKeyFingerprint(): string {
     const key = process.env[ENV_VARS.LSH_SECRETS_KEY] || 'default';
     return `sha256:${crypto.createHash('sha256').update(key).digest('hex').substring(0, 16)}`;
@@ -263,6 +275,7 @@ export class IPFSSyncLogger {
   /**
    * Get machine ID (anonymized)
    */
+  // TODO(@gwicho38): Review - getMachineId
   private getMachineId(): string {
     const hostname = os.hostname();
     const username = os.userInfo().username;
@@ -273,6 +286,7 @@ export class IPFSSyncLogger {
   /**
    * Get LSH version
    */
+  // TODO(@gwicho38): Review - getLSHVersion
   private async getLSHVersion(): Promise<string> {
     try {
       const packageJsonPath = path.join(process.cwd(), 'package.json');

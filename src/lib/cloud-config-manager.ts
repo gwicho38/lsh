@@ -51,6 +51,7 @@ export class CloudConfigManager {
   /**
    * Load local configuration file
    */
+  // TODO(@gwicho38): Review - loadLocalConfig
   private loadLocalConfig(): void {
     try {
       if (fs.existsSync(this.options.localConfigPath)) {
@@ -74,6 +75,7 @@ export class CloudConfigManager {
   /**
    * Save local configuration file
    */
+  // TODO(@gwicho38): Review - saveLocalConfig
   private saveLocalConfig(): void {
     try {
       const config: Record<string, unknown> = {};
@@ -90,6 +92,7 @@ export class CloudConfigManager {
   /**
    * Get type of a value
    */
+  // TODO(@gwicho38): Review - getType
   private getType(value: unknown): ConfigValue['type'] {
     if (typeof value === 'string') return 'string';
     if (typeof value === 'number') return 'number';
@@ -102,6 +105,7 @@ export class CloudConfigManager {
   /**
    * Initialize cloud synchronization
    */
+  // TODO(@gwicho38): Review - initializeCloudSync
   private async initializeCloudSync(): Promise<void> {
     try {
       const isConnected = await this.databasePersistence.testConnection();
@@ -120,6 +124,7 @@ export class CloudConfigManager {
   /**
    * Load configuration from cloud
    */
+  // TODO(@gwicho38): Review - loadCloudConfig
   private async loadCloudConfig(): Promise<void> {
     try {
       const cloudConfigs = await this.databasePersistence.getConfiguration();
@@ -144,6 +149,7 @@ export class CloudConfigManager {
   /**
    * Parse configuration value based on type
    */
+  // TODO(@gwicho38): Review - parseConfigValue
   private parseConfigValue(value: string, type: ConfigValue['type']): unknown {
     try {
       switch (type) {
@@ -168,6 +174,7 @@ export class CloudConfigManager {
   /**
    * Serialize configuration value to string
    */
+  // TODO(@gwicho38): Review - serializeConfigValue
   private serializeConfigValue(value: unknown, type: ConfigValue['type']): string {
     switch (type) {
       case 'string':
@@ -185,6 +192,7 @@ export class CloudConfigManager {
   /**
    * Merge cloud and local configurations
    */
+  // TODO(@gwicho38): Review - mergeConfigurations
   private mergeConfigurations(): void {
     // Cloud config takes precedence for non-local overrides
     this.cloudConfig.forEach((cloudValue, key) => {
@@ -197,6 +205,7 @@ export class CloudConfigManager {
   /**
    * Start periodic synchronization timer
    */
+  // TODO(@gwicho38): Review - startSyncTimer
   private startSyncTimer(): void {
     this.syncTimer = setInterval(() => {
       this.syncToCloud();
@@ -206,6 +215,7 @@ export class CloudConfigManager {
   /**
    * Stop synchronization timer
    */
+  // TODO(@gwicho38): Review - stopSyncTimer
   private stopSyncTimer(): void {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
@@ -216,6 +226,7 @@ export class CloudConfigManager {
   /**
    * Synchronize local configuration to cloud
    */
+  // TODO(@gwicho38): Review - syncToCloud
   private async syncToCloud(): Promise<void> {
     if (!this.options.enableCloudSync) {
       return;
@@ -270,6 +281,7 @@ export class CloudConfigManager {
   /**
    * Get all configuration keys
    */
+  // TODO(@gwicho38): Review - getKeys
   public getKeys(): string[] {
     return Array.from(this.localConfig.keys());
   }
@@ -277,6 +289,7 @@ export class CloudConfigManager {
   /**
    * Get all configuration entries
    */
+  // TODO(@gwicho38): Review - getAll
   public getAll(): ConfigValue[] {
     return Array.from(this.localConfig.values());
   }
@@ -284,6 +297,7 @@ export class CloudConfigManager {
   /**
    * Check if configuration key exists
    */
+  // TODO(@gwicho38): Review - has
   public has(key: string): boolean {
     return this.localConfig.has(key);
   }
@@ -291,6 +305,7 @@ export class CloudConfigManager {
   /**
    * Delete configuration key
    */
+  // TODO(@gwicho38): Review - delete
   public delete(key: string): void {
     this.localConfig.delete(key);
     this.saveLocalConfig();
@@ -306,6 +321,7 @@ export class CloudConfigManager {
   /**
    * Reset configuration to defaults
    */
+  // TODO(@gwicho38): Review - reset
   public reset(): void {
     this.localConfig.clear();
     this.saveLocalConfig();
@@ -320,6 +336,7 @@ export class CloudConfigManager {
   /**
    * Export configuration to JSON
    */
+  // TODO(@gwicho38): Review - export
   public export(): string {
     const config: Record<string, unknown> = {};
     this.localConfig.forEach((configValue, key) => {
@@ -331,6 +348,7 @@ export class CloudConfigManager {
   /**
    * Import configuration from JSON
    */
+  // TODO(@gwicho38): Review - import
   public import(configJson: string): void {
     try {
       const config = JSON.parse(configJson);
@@ -346,6 +364,7 @@ export class CloudConfigManager {
   /**
    * Get configuration statistics
    */
+  // TODO(@gwicho38): Review - getStats
   public getStats(): {
     totalKeys: number;
     localKeys: number;
@@ -368,6 +387,7 @@ export class CloudConfigManager {
   /**
    * Enable or disable cloud sync
    */
+  // TODO(@gwicho38): Review - setCloudSyncEnabled
   public setCloudSyncEnabled(enabled: boolean): void {
     this.options.enableCloudSync = enabled;
     
@@ -381,6 +401,7 @@ export class CloudConfigManager {
   /**
    * Cleanup resources
    */
+  // TODO(@gwicho38): Review - destroy
   public destroy(): void {
     this.stopSyncTimer();
     if (this.options.enableCloudSync) {

@@ -184,6 +184,7 @@ export class LSHError extends Error {
   /**
    * Serialize error for logging or API response.
    */
+  // TODO(@gwicho38): Review - toJSON
   toJSON(): Record<string, unknown> {
     return {
       name: this.name,
@@ -199,6 +200,7 @@ export class LSHError extends Error {
   /**
    * Create user-friendly string representation.
    */
+  // TODO(@gwicho38): Review - toString
   toString(): string {
     const contextStr = this.context ? ` (${JSON.stringify(this.context)})` : '';
     return `[${this.code}] ${this.message}${contextStr}`;
@@ -222,6 +224,7 @@ export class LSHError extends Error {
  * }
  * ```
  */
+// TODO(@gwicho38): Review - extractErrorMessage
 export function extractErrorMessage(error: unknown): string {
   if (error instanceof LSHError) {
     return error.toString();
@@ -251,6 +254,7 @@ export function extractErrorMessage(error: unknown): string {
  * }
  * ```
  */
+// TODO(@gwicho38): Review - extractErrorDetails
 export function extractErrorDetails(error: unknown): {
   message: string;
   stack?: string;
@@ -292,6 +296,7 @@ export function extractErrorDetails(error: unknown): {
  * }
  * ```
  */
+// TODO(@gwicho38): Review - isLSHError
 export function isLSHError(error: unknown, code?: ErrorCode): error is LSHError {
   if (!(error instanceof LSHError)) return false;
   if (code && error.code !== code) return false;
@@ -311,6 +316,7 @@ export function isLSHError(error: unknown, code?: ErrorCode): error is LSHError 
  * }
  * ```
  */
+// TODO(@gwicho38): Review - wrapAsLSHError
 export function wrapAsLSHError(
   error: unknown,
   code: ErrorCode = ErrorCodes.INTERNAL_ERROR,
@@ -345,6 +351,7 @@ export function wrapAsLSHError(
  * Get default HTTP status code for an error code.
  * Used by LSHError constructor and API responses.
  */
+// TODO(@gwicho38): Review - getDefaultStatusCode
 function getDefaultStatusCode(code: ErrorCode): number {
   // 400 Bad Request
   if (code.startsWith('VALIDATION_')) return 400;
@@ -401,6 +408,7 @@ function getDefaultStatusCode(code: ErrorCode): number {
 /**
  * Create a not found error.
  */
+// TODO(@gwicho38): Review - notFoundError
 export function notFoundError(
   resource: string,
   id?: string,
@@ -413,6 +421,7 @@ export function notFoundError(
 /**
  * Create an already exists error.
  */
+// TODO(@gwicho38): Review - alreadyExistsError
 export function alreadyExistsError(
   resource: string,
   identifier?: string,
@@ -431,6 +440,7 @@ export function alreadyExistsError(
 /**
  * Create a validation error.
  */
+// TODO(@gwicho38): Review - validationError
 export function validationError(
   message: string,
   field?: string,
@@ -442,6 +452,7 @@ export function validationError(
 /**
  * Create an unauthorized error.
  */
+// TODO(@gwicho38): Review - unauthorizedError
 export function unauthorizedError(message = 'Unauthorized', context?: Record<string, unknown>): LSHError {
   return new LSHError(ErrorCodes.AUTH_UNAUTHORIZED, message, context);
 }
@@ -449,6 +460,7 @@ export function unauthorizedError(message = 'Unauthorized', context?: Record<str
 /**
  * Create a forbidden error.
  */
+// TODO(@gwicho38): Review - forbiddenError
 export function forbiddenError(
   message = 'Insufficient permissions',
   context?: Record<string, unknown>

@@ -8,12 +8,15 @@ import { Command } from 'commander';
 /**
  * Generate bash completion script
  */
+// TODO(@gwicho38): Review - generateBashCompletion
 function generateBashCompletion(): string {
   return `# lsh bash completion script
 # Source this file or add to ~/.bashrc:
 #   source <(lsh completion bash)
 # Or save to completion directory:
 #   lsh completion bash > /etc/bash_completion.d/lsh
+
+// TODO(@gwicho38): Review - _lsh_completion
 
 _lsh_completion() {
     local cur prev words cword
@@ -209,6 +212,7 @@ complete -F _lsh_completion lsh
 /**
  * Generate zsh completion script
  */
+// TODO(@gwicho38): Review - generateZshCompletion
 function generateZshCompletion(): string {
   return `#compdef lsh
 # lsh zsh completion script
@@ -218,6 +222,8 @@ function generateZshCompletion(): string {
 # Make sure ~/.zsh/completions is in your fpath:
 #   fpath=(~/.zsh/completions $fpath)
 #   autoload -Uz compinit && compinit
+
+// TODO(@gwicho38): Review - _lsh
 
 _lsh() {
     local -a commands
@@ -360,6 +366,7 @@ _lsh "$@"
 /**
  * Register completion commands
  */
+// TODO(@gwicho38): Review - registerCompletionCommands
 export function registerCompletionCommands(program: Command): void {
   program
     .command('completion <shell>')

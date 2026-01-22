@@ -38,6 +38,7 @@ export class CompletionSystem {
   /**
    * Register a completion function for a specific command
    */
+  // TODO(@gwicho38): Review - registerCompletion
   public registerCompletion(command: string, func: CompletionFunction): void {
     this.completionFunctions.set(command, func);
   }
@@ -45,6 +46,7 @@ export class CompletionSystem {
   /**
    * Register a default completion function
    */
+  // TODO(@gwicho38): Review - registerDefaultCompletion
   public registerDefaultCompletion(func: CompletionFunction): void {
     this.defaultCompletions.push(func);
   }
@@ -52,6 +54,7 @@ export class CompletionSystem {
   /**
    * Get completions for the current context
    */
+  // TODO(@gwicho38): Review - getCompletions
   public async getCompletions(context: CompletionContext): Promise<CompletionCandidate[]> {
     if (!this.isEnabled) return [];
 
@@ -87,6 +90,7 @@ export class CompletionSystem {
   /**
    * Enable/disable completion
    */
+  // TODO(@gwicho38): Review - setEnabled
   public setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
   }
@@ -94,6 +98,7 @@ export class CompletionSystem {
   /**
    * Setup default completion functions
    */
+  // TODO(@gwicho38): Review - setupDefaultCompletions
   private setupDefaultCompletions(): void {
     // File and directory completion
     this.registerDefaultCompletion(async (context) => {
@@ -123,6 +128,7 @@ export class CompletionSystem {
   /**
    * Complete files and directories
    */
+  // TODO(@gwicho38): Review - completeFilesAndDirectories
   private async completeFilesAndDirectories(context: CompletionContext): Promise<CompletionCandidate[]> {
     const candidates: CompletionCandidate[] = [];
     const currentWord = context.currentWord;
@@ -168,9 +174,11 @@ export class CompletionSystem {
   /**
    * Complete commands from PATH
    */
+  // TODO(@gwicho38): Review - completeCommands
   private async completeCommands(context: CompletionContext): Promise<CompletionCandidate[]> {
     const candidates: CompletionCandidate[] = [];
     const pattern = context.currentWord;
+    // TODO(@gwicho38): Review - pathDirs
     const pathDirs = (context.env.PATH || '').split(':').filter(dir => dir);
 
     // Add built-in commands
@@ -217,6 +225,7 @@ export class CompletionSystem {
   /**
    * Complete variables
    */
+  // TODO(@gwicho38): Review - completeVariables
   private async completeVariables(context: CompletionContext): Promise<CompletionCandidate[]> {
     const candidates: CompletionCandidate[] = [];
     const pattern = context.currentWord.substring(1); // Remove $
@@ -238,6 +247,7 @@ export class CompletionSystem {
   /**
    * Setup built-in command completions
    */
+  // TODO(@gwicho38): Review - setupBuiltinCompletions
   private setupBuiltinCompletions(): void {
     // cd completion
     this.registerCompletion('cd', async (context) => {
@@ -282,6 +292,7 @@ export class CompletionSystem {
   /**
    * Complete directories only
    */
+  // TODO(@gwicho38): Review - completeDirectories
   private async completeDirectories(context: CompletionContext): Promise<CompletionCandidate[]> {
     const candidates: CompletionCandidate[] = [];
     const currentWord = context.currentWord;
@@ -320,6 +331,7 @@ export class CompletionSystem {
   /**
    * Complete test command options
    */
+  // TODO(@gwicho38): Review - completeTestOptions
   private async completeTestOptions(context: CompletionContext): Promise<CompletionCandidate[]> {
     const testOptions = [
       { word: '-f', description: 'File exists and is regular file' },
@@ -353,6 +365,7 @@ export class CompletionSystem {
   /**
    * Complete job IDs (placeholder - would integrate with job manager)
    */
+  // TODO(@gwicho38): Review - completeJobIds
   private async completeJobIds(_context: CompletionContext): Promise<CompletionCandidate[]> {
     // This would integrate with the job manager to get actual job IDs
     return [
@@ -365,6 +378,7 @@ export class CompletionSystem {
   /**
    * Check if a pattern matches a string
    */
+  // TODO(@gwicho38): Review - matchesPattern
   private matchesPattern(str: string, pattern: string): boolean {
     if (!pattern) return true;
     
@@ -375,6 +389,7 @@ export class CompletionSystem {
   /**
    * Check if a file is executable
    */
+  // TODO(@gwicho38): Review - isExecutable
   private isExecutable(filePath: string): boolean {
     try {
       fs.accessSync(filePath, fs.constants.X_OK);
@@ -387,6 +402,7 @@ export class CompletionSystem {
   /**
    * Filter and sort completion candidates
    */
+  // TODO(@gwicho38): Review - filterAndSortCandidates
   private filterAndSortCandidates(
     candidates: CompletionCandidate[],
     _currentWord: string

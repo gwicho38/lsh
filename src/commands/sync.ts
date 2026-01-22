@@ -19,6 +19,7 @@ import { ENV_VARS } from '../constants/index.js';
 /**
  * Register sync commands
  */
+// TODO(@gwicho38): Review - registerSyncCommands
 export function registerSyncCommands(program: Command): void {
   const syncCommand = program
     .command('sync')

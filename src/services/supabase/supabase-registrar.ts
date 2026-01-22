@@ -23,6 +23,9 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
     super('SupabaseService');
   }
 
+  // TODO(@gwicho38): Review - register
+
+  // TODO(@gwicho38): Review - register
   async register(program: Command): Promise<void> {
     const supabaseCmd = this.createCommand(program, 'supabase', 'Supabase database management commands');
 
@@ -31,6 +34,9 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
     this.registerMLCommands(supabaseCmd);
   }
 
+  // TODO(@gwicho38): Review - registerConnectionCommands
+
+  // TODO(@gwicho38): Review - registerConnectionCommands
   private registerConnectionCommands(supabaseCmd: Command): void {
     // Test connection
     this.addSubcommand(supabaseCmd, {
@@ -100,6 +106,9 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
+  // TODO(@gwicho38): Review - registerDataCommands
+
+  // TODO(@gwicho38): Review - registerDataCommands
   private registerDataCommands(supabaseCmd: Command): void {
     // History management
     this.addSubcommand(supabaseCmd, {
@@ -268,6 +277,9 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
+  // TODO(@gwicho38): Review - registerMLCommands
+
+  // TODO(@gwicho38): Review - registerMLCommands
   private registerMLCommands(supabaseCmd: Command): void {
     // ML Training Jobs
     this.addSubcommand(supabaseCmd, {

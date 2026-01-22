@@ -59,6 +59,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Load predefined job templates
    */
+  // TODO(@gwicho38): Review - loadTemplates
   private loadTemplates(): void {
     const templates: CronJobTemplate[] = [
       {
@@ -121,6 +122,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Connect to daemon
    */
+  // TODO(@gwicho38): Review - connect
   public async connect(): Promise<boolean> {
     try {
       return await this.daemonClient.connect();
@@ -133,6 +135,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Disconnect from daemon
    */
+  // TODO(@gwicho38): Review - disconnect
   public disconnect(): void {
     this.daemonClient.disconnect();
   }
@@ -140,6 +143,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Create a job from template
    */
+  // TODO(@gwicho38): Review - createJobFromTemplate
   public async createJobFromTemplate(templateId: string, customizations?: Partial<CronJobSpec>): Promise<any> {
     const template = this.templates.get(templateId);
     if (!template) {
@@ -170,6 +174,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Create a custom job
    */
+  // TODO(@gwicho38): Review - createCustomJob
   public async createCustomJob(jobSpec: CronJobSpec): Promise<any> {
     return await this.daemonClient.createDatabaseCronJob({
       ...jobSpec,
@@ -180,6 +185,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * List all available templates
    */
+  // TODO(@gwicho38): Review - listTemplates
   public listTemplates(): CronJobTemplate[] {
     return Array.from(this.templates.values());
   }
@@ -187,6 +193,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Get template by ID
    */
+  // TODO(@gwicho38): Review - getTemplate
   public getTemplate(templateId: string): CronJobTemplate | undefined {
     return this.templates.get(templateId);
   }
@@ -195,6 +202,7 @@ export class CronJobManager extends BaseJobManager {
    * List all jobs - overrides BaseJobManager to use daemon client
    * Returns jobs from daemon rather than storage layer
    */
+  // TODO(@gwicho38): Review - listJobs
   async listJobs(filter?: Record<string, unknown>): Promise<BaseJobSpec[]> {
     const daemonJobs = await this.daemonClient.listJobs(filter);
     // Daemon jobs are compatible with BaseJobSpec structure
@@ -204,6 +212,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Get job execution report
    */
+  // TODO(@gwicho38): Review - getJobReport
   public async getJobReport(jobId: string): Promise<JobExecutionReport> {
     // Try to get historical data from database if available, otherwise use current job info
     // Using any[] because getJobHistory returns ShellJob (snake_case properties)
@@ -272,6 +281,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Get all job reports
    */
+  // TODO(@gwicho38): Review - getAllJobReports
   public async getAllJobReports(): Promise<JobExecutionReport[]> {
     const jobs = await this.daemonClient.listJobs();
     const reports: JobExecutionReport[] = [];
@@ -292,6 +302,7 @@ export class CronJobManager extends BaseJobManager {
    * Start a job - implements BaseJobManager abstract method
    * Delegates to daemon client and updates status
    */
+  // TODO(@gwicho38): Review - startJob
   async startJob(jobId: string): Promise<BaseJobSpec> {
     // Delegate to daemon
     const daemonResult = await this.daemonClient.startJob(jobId);
@@ -309,6 +320,7 @@ export class CronJobManager extends BaseJobManager {
    * Stop a job - implements BaseJobManager abstract method
    * Delegates to daemon client and updates status
    */
+  // TODO(@gwicho38): Review - stopJob
   async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<BaseJobSpec> {
     // Delegate to daemon
     await this.daemonClient.stopJob(jobId, signal);
@@ -324,6 +336,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Remove a job - overrides BaseJobManager to use daemon client
    */
+  // TODO(@gwicho38): Review - removeJob
   async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
     const result = await this.daemonClient.removeJob(jobId, force);
 
@@ -343,6 +356,7 @@ export class CronJobManager extends BaseJobManager {
    * Get job information - overrides BaseJobManager to use daemon client
    * Returns job from daemon rather than storage layer
    */
+  // TODO(@gwicho38): Review - getJob
   async getJob(jobId: string): Promise<BaseJobSpec | null> {
     const daemonJob = await this.daemonClient.getJob(jobId);
     // Daemon job is compatible with BaseJobSpec structure
@@ -352,6 +366,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Get daemon status
    */
+  // TODO(@gwicho38): Review - getDaemonStatus
   public async getDaemonStatus(): Promise<any> {
     return await this.daemonClient.getStatus();
   }
@@ -359,6 +374,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Generate comprehensive job report
    */
+  // TODO(@gwicho38): Review - generateComprehensiveReport
   public async generateComprehensiveReport(): Promise<string> {
     const daemonStatus = await this.getDaemonStatus();
     const jobReports = await this.getAllJobReports();
@@ -405,6 +421,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Export job data
    */
+  // TODO(@gwicho38): Review - exportJobData
   public async exportJobData(format: 'json' | 'csv' = 'json'): Promise<string> {
     const jobs = await this.daemonClient.listJobs();
     const jobReports = await this.getAllJobReports();
@@ -428,6 +445,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Check if daemon is running
    */
+  // TODO(@gwicho38): Review - isDaemonRunning
   public isDaemonRunning(): boolean {
     return this.daemonClient.isDaemonRunning();
   }
@@ -435,6 +453,7 @@ export class CronJobManager extends BaseJobManager {
   /**
    * Check if connected to daemon
    */
+  // TODO(@gwicho38): Review - isConnected
   public isConnected(): boolean {
     return this.daemonClient.isConnected();
   }

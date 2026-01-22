@@ -15,6 +15,7 @@ import { ENV_VARS } from '../constants/index.js';
 /**
  * Get user's preferred editor
  */
+// TODO(@gwicho38): Review - getEditor
 function getEditor(): string {
   return process.env[ENV_VARS.VISUAL] || process.env[ENV_VARS.EDITOR] || 'vi';
 }
@@ -22,6 +23,7 @@ function getEditor(): string {
 /**
  * Open config file in user's editor
  */
+// TODO(@gwicho38): Review - openInEditor
 async function openInEditor(filePath: string): Promise<void> {
   const editor = getEditor();
 
@@ -48,6 +50,7 @@ async function openInEditor(filePath: string): Promise<void> {
 /**
  * Register config commands
  */
+// TODO(@gwicho38): Review - registerConfigCommands
 export function registerConfigCommands(program: Command): void {
   const config = program
     .command('config')
