@@ -17,56 +17,26 @@
 import { timingSafeEqual, createHmac } from 'crypto';
 
 /**
- * Constant-time string comparison to prevent timing attacks.
+ * Internal helper: Performs constant-time comparison with padding for unequal lengths.
  *
- * Returns false if strings have different lengths (this leaks length info,
- * which is acceptable for most use cases). For length-hiding comparison,
- * use constantTimeHmacCompare instead.
+ * On length mismatch, pads the shorter buffer with zeros and performs a dummy
+ * constant-time comparison before returning false. This avoids obvious early-return
+ * timing differences, though the return value still leaks length inequality.
  *
- * @param a - First string to compare
- * @param b - Second string to compare
- * @returns true if strings are equal, false otherwise
+ * @internal
  */
-export function constantTimeStringCompare(a: string, b: string): boolean {
-  // Convert to buffers first to get actual byte lengths
-  const bufA = Buffer.from(a, 'utf8');
-  const bufB = Buffer.from(b, 'utf8');
-
-  // Different byte lengths - cannot use timingSafeEqual directly
-  // Return false in constant time relative to the shorter buffer
-  if (bufA.length !== bufB.length) {
-    // Still do a timing-safe comparison to avoid early return timing leak
-    const maxLen = Math.max(bufA.length, bufB.length);
-    const paddedA = bufA.length < maxLen
-      ? Buffer.concat([bufA, Buffer.alloc(maxLen - bufA.length)])
-      : bufA;
-    const paddedB = bufB.length < maxLen
-      ? Buffer.concat([bufB, Buffer.alloc(maxLen - bufB.length)])
-      : bufB;
-    timingSafeEqual(paddedA, paddedB);
-    return false;
-  }
-
-  return timingSafeEqual(bufA, bufB);
-}
-
-/**
- * Constant-time buffer comparison.
- *
- * @param a - First buffer to compare
- * @param b - Second buffer to compare
- * @returns true if buffers are equal, false otherwise
- */
-export function constantTimeBufferCompare(a: Buffer, b: Buffer): boolean {
+function constantTimeEqualWithPadding(a: Buffer, b: Buffer): boolean {
   if (a.length !== b.length) {
-    // Perform dummy comparison to maintain constant time
-    const padded = a.length < b.length
-      ? Buffer.concat([a, Buffer.alloc(b.length - a.length)])
+    const maxLen = Math.max(a.length, b.length);
+    const paddedA = a.length < maxLen
+      ? Buffer.concat([a, Buffer.alloc(maxLen - a.length)])
       : a;
-    const target = a.length < b.length
-      ? b
-      : Buffer.concat([b, Buffer.alloc(a.length - b.length)]);
-    timingSafeEqual(padded, target);
+    const paddedB = b.length < maxLen
+      ? Buffer.concat([b, Buffer.alloc(maxLen - b.length)])
+      : b;
+
+    // Dummy comparison to maintain constant time
+    timingSafeEqual(paddedA, paddedB);
     return false;
   }
 
@@ -74,11 +44,44 @@ export function constantTimeBufferCompare(a: Buffer, b: Buffer): boolean {
 }
 
 /**
+ * Constant-time string comparison to prevent timing attacks.
+ *
+ * On length mismatch, still performs a dummy constant-time comparison
+ * (with zero-padding) and returns false. This leaks length information
+ * via the return value, but avoids obvious early-return timing differences.
+ * For fully length-hiding comparison, use constantTimeHmacCompare instead.
+ *
+ * @param a - First string to compare
+ * @param b - Second string to compare
+ * @returns true if strings are equal, false otherwise
+ */
+export function constantTimeStringCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, 'utf8');
+  const bufB = Buffer.from(b, 'utf8');
+  return constantTimeEqualWithPadding(bufA, bufB);
+}
+
+/**
+ * Constant-time buffer comparison.
+ *
+ * On length mismatch, still performs a dummy constant-time comparison
+ * (with zero-padding) and returns false. This leaks length information
+ * via the return value, but avoids obvious early-return timing differences.
+ *
+ * @param a - First buffer to compare
+ * @param b - Second buffer to compare
+ * @returns true if buffers are equal, false otherwise
+ */
+export function constantTimeBufferCompare(a: Buffer, b: Buffer): boolean {
+  return constantTimeEqualWithPadding(a, b);
+}
+
+/**
  * HMAC-based constant-time comparison that also hides length information.
  *
  * This is useful when you want to compare values without revealing
  * whether length differences exist. Both values are hashed with HMAC
- * before comparison.
+ * before comparison, producing fixed-length outputs.
  *
  * @param a - First value to compare
  * @param b - Second value to compare
@@ -95,6 +98,9 @@ export function constantTimeHmacCompare(a: string, b: string, key: string): bool
 /**
  * Verify an HMAC signature in constant time.
  *
+ * Computes the expected HMAC and compares it directly as buffers,
+ * avoiding intermediate string handling for better security.
+ *
  * @param payload - The payload that was signed
  * @param signature - The HMAC signature to verify (hex encoded)
  * @param secret - The secret key used to create the HMAC
@@ -109,16 +115,21 @@ export function verifyHmacSignature(
 ): boolean {
   const expectedHmac = createHmac(algorithm, secret)
     .update(payload)
-    .digest('hex');
+    .digest();
 
-  return constantTimeStringCompare(signature, expectedHmac);
+  // Convert signature from hex to buffer for direct comparison
+  const signatureBuffer = Buffer.from(signature, 'hex');
+
+  return constantTimeBufferCompare(signatureBuffer, expectedHmac);
 }
 
 /**
  * Verify an API key in constant time.
  *
  * Normalizes both keys (trim whitespace, normalize unicode)
- * before comparison.
+ * before comparison. This is appropriate for text-based API keys.
+ * For opaque binary tokens, use constantTimeStringCompare or
+ * constantTimeBufferCompare directly without normalization.
  *
  * @param providedKey - The API key provided by the client
  * @param storedKey - The stored/expected API key
