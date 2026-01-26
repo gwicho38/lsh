@@ -16,9 +16,10 @@
 /**
  * Constant-time string comparison to prevent timing attacks.
  *
- * Returns false if strings have different lengths (this leaks length info,
- * which is acceptable for most use cases). For length-hiding comparison,
- * use constantTimeHmacCompare instead.
+ * On length mismatch, still performs a dummy constant-time comparison
+ * (with zero-padding) and returns false. This leaks length information
+ * via the return value, but avoids obvious early-return timing differences.
+ * For fully length-hiding comparison, use constantTimeHmacCompare instead.
  *
  * @param a - First string to compare
  * @param b - Second string to compare
@@ -27,6 +28,10 @@
 export declare function constantTimeStringCompare(a: string, b: string): boolean;
 /**
  * Constant-time buffer comparison.
+ *
+ * On length mismatch, still performs a dummy constant-time comparison
+ * (with zero-padding) and returns false. This leaks length information
+ * via the return value, but avoids obvious early-return timing differences.
  *
  * @param a - First buffer to compare
  * @param b - Second buffer to compare
@@ -38,7 +43,7 @@ export declare function constantTimeBufferCompare(a: Buffer, b: Buffer): boolean
  *
  * This is useful when you want to compare values without revealing
  * whether length differences exist. Both values are hashed with HMAC
- * before comparison.
+ * before comparison, producing fixed-length outputs.
  *
  * @param a - First value to compare
  * @param b - Second value to compare
@@ -48,6 +53,9 @@ export declare function constantTimeBufferCompare(a: Buffer, b: Buffer): boolean
 export declare function constantTimeHmacCompare(a: string, b: string, key: string): boolean;
 /**
  * Verify an HMAC signature in constant time.
+ *
+ * Computes the expected HMAC and compares it directly as buffers,
+ * avoiding intermediate string handling for better security.
  *
  * @param payload - The payload that was signed
  * @param signature - The HMAC signature to verify (hex encoded)
@@ -60,7 +68,9 @@ export declare function verifyHmacSignature(payload: string, signature: string, 
  * Verify an API key in constant time.
  *
  * Normalizes both keys (trim whitespace, normalize unicode)
- * before comparison.
+ * before comparison. This is appropriate for text-based API keys.
+ * For opaque binary tokens, use constantTimeStringCompare or
+ * constantTimeBufferCompare directly without normalization.
  *
  * @param providedKey - The API key provided by the client
  * @param storedKey - The stored/expected API key

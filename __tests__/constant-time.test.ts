@@ -173,28 +173,29 @@ describe('Constant-Time Comparison Utilities', () => {
 
     it('should complete in similar time for different inputs', () => {
       const iterations = 1000;
-      const key = 'correct-key-12345';
+      // Use a test value that won't trigger false positive secret detection
+      const testValue = 'test-comparison-value';
 
-      // Time comparisons with correct key
+      // Time comparisons with correct value
       const startCorrect = process.hrtime.bigint();
       for (let i = 0; i < iterations; i++) {
-        constantTimeStringCompare(key, key);
+        constantTimeStringCompare(testValue, testValue);
       }
       const correctTime = Number(process.hrtime.bigint() - startCorrect);
 
-      // Time comparisons with completely wrong key (same length)
-      const wrongKey = 'xxxxxxxxxxxxxxxx';
+      // Time comparisons with completely wrong value (same length)
+      const wrongValue = 'xxxxxxxxxxxxxxxxxxxxx';
       const startWrong = process.hrtime.bigint();
       for (let i = 0; i < iterations; i++) {
-        constantTimeStringCompare(wrongKey, key);
+        constantTimeStringCompare(wrongValue, testValue);
       }
       const wrongTime = Number(process.hrtime.bigint() - startWrong);
 
-      // Time comparisons with partially matching key
-      const partialKey = 'correct-xxxxxxxx';
+      // Time comparisons with partially matching value
+      const partialValue = 'test-xxxxxxxxxxxxxxxx';
       const startPartial = process.hrtime.bigint();
       for (let i = 0; i < iterations; i++) {
-        constantTimeStringCompare(partialKey, key);
+        constantTimeStringCompare(partialValue, testValue);
       }
       const partialTime = Number(process.hrtime.bigint() - startPartial);
 
