@@ -1,66 +1,96 @@
 # ClawdBot Session Progress - lsh-framework
-# Session Date: 2026-01-27
+# Session Date: 2026-01-27 (Continued)
 
 ## Session Summary
 
 ### Completed Tasks
 
 #### P0 Tasks
-1. **Test Suite** - All tests passing (1057 passed, 28 skipped)
+1. **Test Suite** - All tests passing (1075 tests across 47 suites)
 2. **Security Audit** - 0 npm vulnerabilities
-3. **CLI Verification** - Working correctly
-4. **GitHub Issue Review** - All 6 open issues reviewed (#108-#113)
+3. **CLI Verification** - Working correctly (`lsh --help`, `lsh doctor`, `lsh self version`)
+4. **GitHub Issue Review** - All open issues reviewed
 
-#### Issue #109 - Constant-Time Comparison (Security)
-- **PR #114 Status**: Open, awaiting human approval to merge
-  - CI passing, all checks green
-  - Sourcery AI code review addressed
-- **Phase 2 Analysis Completed** (2026-01-27):
-  - Audited codebase for timing-vulnerable comparisons
-  - Posted analysis to issue #109: https://github.com/gwicho38/lsh/issues/109#issuecomment-3804502496
-  - **Finding**: Current codebase is already secure:
-    - Password verification uses `bcrypt.compare()` (constant-time by design)
-    - JWT verification uses `jsonwebtoken` library (cryptographically secure)
-    - Token lookups happen in database, not application code
-  - **Recommendation**: Constant-time utilities ready for future use when:
-    - Stripe webhook verification is properly implemented (currently a stub)
-    - Custom API key authentication is added
-    - Additional webhook receivers (GitHub, GitLab, Jenkins) are built
+#### PR #117 - Stricter ESLint Rules (UPDATED)
+- **Branch**: `fix/issue-112-stricter-eslint`
+- **Status**: Open, CI passing
+- **URL**: https://github.com/gwicho38/lsh/pull/117
+- **Updates This Session**:
+  - Created centralized `safe-eval.ts` utility for all `new Function` usage
+  - Added strict input validation for mathematical expressions:
+    - Whitelist only digits, operators, parentheses, and safe patterns
+    - Block dangerous patterns: eval, Function, import, require, etc.
+    - Block prototype pollution: constructor, __proto__, prototype
+    - Block string literals and property access
+  - Updated `floating-point-arithmetic.ts` to use validated evaluator
+  - Updated `lshd.ts` to use centralized `isMainModule()`
+  - Improved documentation for `require-atomic-updates` suppressions
+  - Added 18 new tests for safe-eval utilities
+- **Addresses**: Sourcery AI review feedback on security concerns
+
+#### PR #118 - ADR Process (UPDATED)
+- **Branch**: `docs/issue-111-adr-process`
+- **Status**: Open, CI passing
+- **URL**: https://github.com/gwicho38/lsh/pull/118
+- **Updates This Session**:
+  - Fixed ADR numbering logic to use basename only
+  - Added overwrite protection for existing ADR files
+  - Escape sed metacharacters in title for special character handling
+  - Added `mkdir -p` to ensure ADR directory exists
+  - Clarified coverage target discrepancy in testing strategy ADR
+  - Fixed false positive API key pattern in encryption standards ADR
+- **Addresses**: Sourcery AI review feedback on PR #118
+
+#### PRs Awaiting Merge (All CI Passing)
+| PR | Branch | Description |
+|----|--------|-------------|
+| #118 | docs/issue-111-adr-process | ADR infrastructure and 6 key architecture decisions |
+| #117 | fix/issue-112-stricter-eslint | Stricter ESLint rules with safe-eval utility |
+| #116 | fix/issue-110-validation-patterns | Unified validation framework |
+| #115 | feat/issue-108-optimized-scheduler | Priority queue-based job scheduler |
 
 ### Open Issues Status
 | Issue | Title | Priority | Status |
 |-------|-------|----------|--------|
-| #113 | MONITORING: Add performance monitoring | P2 | Open |
-| #112 | MAINTENANCE: Enable stricter ESLint rules | P2 | Open |
-| #111 | ARCHITECTURE: Implement ADR process | P2 | Open |
-| #110 | MAINTENABILITY: Extract validation patterns | P2 | Open |
-| #109 | SECURITY: Constant-time comparison | P1 | PR #114 (awaiting merge) |
-| #108 | PERFORMANCE: Optimize job scheduling | P1 | Open |
-
-### Uncommitted Files (Not Part of Current Work)
-- `CLAUDE.md` - CI/CD workflow documentation additions (useful)
-- `types/lib/database-schema.d.ts` - TODO comments in SQL string (should revert)
-- `AGENTS.md` - Agent documentation (untracked)
-- `AGENT_PROMPT.md` - Agent prompt (untracked)
+| #113 | MONITORING: Add performance monitoring | P2 | Open (not started) |
+| #112 | MAINTENANCE: Enable stricter ESLint rules | P2 | PR #117 (awaiting merge) |
+| #111 | ARCHITECTURE: Implement ADR process | P2 | PR #118 (awaiting merge) |
+| #110 | MAINTAINABILITY: Extract validation patterns | P2 | PR #116 (awaiting merge) |
+| #108 | PERFORMANCE: Optimize job scheduling | P1 | PR #115 (awaiting merge) |
 
 ### Current Version
 - npm: 3.1.19
 - package.json: 3.1.19
 
-### Notes
-- Jest has a known async handle warning that doesn't affect tests
-- PR #114 provides the constant-time utilities foundation
-- Phase 3-4 of issue #109 (applying utilities) not needed - codebase already secure
-- `saas-billing.ts:verifyWebhookSignature()` is a stub - when properly implemented, use constant-time utils
+### New Files Created This Session
+- `src/lib/safe-eval.ts` - Centralized safe evaluation utilities
+- `src/__tests__/safe-eval.test.ts` - Tests for safe-eval (18 tests)
 
-### Next Session Priorities
-1. Wait for PR #114 to be merged by repo owner
-2. Consider implementing Stripe webhook verification properly (currently a stub)
-3. Issue #108 (daemon optimization) is a good candidate for next major work
-4. Issue #110 (validation patterns) could help reduce code duplication
+### Session Verification Checklist
+- [x] All tests passing (1075 tests)
+- [x] Security audit clean (0 vulnerabilities)
+- [x] Lint passing (0 errors, 738 warnings - pre-existing)
+- [x] Build successful
+- [x] CI/CD pipeline passing for all PRs
+- [x] Progress file updated
+- [x] GitHub issues triaged
+- [x] Sourcery review comments addressed on PR #117 and #118
 
-### Previous Session (2026-01-26)
-- Created `src/lib/constant-time.ts` with timing-attack-resistant functions
-- Added comprehensive test suite (`__tests__/constant-time.test.ts`) with 24 tests
-- Fixed 2 high severity npm vulnerabilities (qs/body-parser DoS)
-- Created PR #114: https://github.com/gwicho38/lsh/pull/114
+### Next Priorities
+1. Wait for PRs #115, #116, #117, #118 to be merged by repo owner
+2. After merges: consider version bump and npm publish
+3. Issue #113 (performance monitoring) - next implementation priority
+
+### Technical Notes
+
+#### Safe-Eval Utility
+The new `safe-eval.ts` module centralizes all intentional uses of the Function constructor:
+- `isValidMathExpression()` - Validates expressions contain only safe characters
+- `evaluateMathExpression()` - Safely evaluates pre-validated math expressions
+- `isMainModule()` - ESM/CJS compatible main module detection
+
+Security features:
+- Blocks eval, Function, import, require, globalThis, window, process
+- Blocks prototype pollution (__proto__, constructor, prototype)
+- Blocks string literals and property access with strings
+- Uses strict mode in evaluated expressions
