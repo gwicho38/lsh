@@ -71,7 +71,39 @@ export default [
     },
     rules: {
       ...js.configs.recommended.rules,
+
+      // ====================================
+      // SECURITY RULES
+      // Prevent dangerous JavaScript patterns that can lead to vulnerabilities
+      // ====================================
+      'no-eval': 'error', // Prevent eval() which can execute arbitrary code
+      'no-implied-eval': 'error', // Prevent setTimeout/setInterval with string args
+      'no-new-func': 'error', // Prevent new Function() constructor
+      'no-script-url': 'error', // Prevent javascript: URLs
+
+      // ====================================
+      // CORE BEST PRACTICES
+      // Enforce modern JavaScript patterns and prevent common mistakes
+      // ====================================
+      'no-var': 'error', // Enforce let/const over var
+      'prefer-const': 'error', // Prefer const for variables that aren't reassigned
+      'no-debugger': 'error', // Prevent debugger statements in production
+      'no-duplicate-imports': 'error', // Prevent duplicate import statements
+      'no-unused-expressions': 'error', // Prevent expressions without side effects
+
+      // ====================================
+      // ARRAY AND PROMISE PATTERNS
+      // Prevent common async and array handling mistakes
+      // ====================================
+      'array-callback-return': 'error', // Require return in array methods (map, filter, etc.)
+      'no-promise-executor-return': 'error', // Prevent returning values from Promise executor
+      'no-await-in-loop': 'warn', // Warn about await in loops (may be intentional)
+      'require-atomic-updates': 'error', // Prevent race conditions with await
+
+      // ====================================
+      // UNUSED VARIABLE HANDLING
       // Disable base rule as it conflicts with TypeScript rule
+      // ====================================
       'no-unused-vars': 'off',
       // Allow unused variables/args that start with underscore
       '@typescript-eslint/no-unused-vars': ['error', {
@@ -79,12 +111,18 @@ export default [
         varsIgnorePattern: '^_',
         caughtErrorsIgnorePattern: '^_'
       }],
-      '@typescript-eslint/no-explicit-any': 'warn',
+
+      // ====================================
+      // TYPESCRIPT STRICTNESS (Non-type-aware rules)
+      // Gradually improve type safety
+      // ====================================
+      '@typescript-eslint/no-explicit-any': 'warn', // Warn about explicit any types
+
+      // ====================================
+      // CONSOLE AND DEBUGGING
+      // Control console usage in production code
+      // ====================================
       'no-console': ['warn', { allow: ['warn', 'error'] }],
-      'no-debugger': 'error',
-      'no-duplicate-imports': 'error',
-      'no-unused-expressions': 'error',
-      'prefer-const': 'error',
       /**
        * Custom LSH ESLint Rule: no-hardcoded-strings
        *
