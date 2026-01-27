@@ -6,6 +6,7 @@
 import { EventEmitter } from 'events';
 import { JobSpec } from '../lib/job-manager.js';
 import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
+import { SchedulerMetrics } from '../lib/optimized-job-scheduler.js';
 /**
  * IPC Message structure for daemon communication
  */
@@ -34,6 +35,7 @@ export interface DaemonConfig {
     apiKey?: string;
     enableWebhooks?: boolean;
     webhookEndpoints?: string[];
+    useOptimizedScheduler?: boolean;
 }
 export declare class LSHJobDaemon extends EventEmitter {
     private config;
@@ -44,7 +46,17 @@ export declare class LSHJobDaemon extends EventEmitter {
     private ipcServer?;
     private lastRunTimes;
     private logger;
+    private optimizedScheduler?;
     constructor(config?: Partial<DaemonConfig>);
+    /**
+     * Initialize the optimized job scheduler (Issue #108)
+     * Uses a priority queue-based approach for O(log n) scheduling vs O(n) linear scan
+     */
+    private initializeOptimizedScheduler;
+    /**
+     * Execute a scheduled job (used by optimized scheduler)
+     */
+    private executeScheduledJob;
     /**
      * Start the daemon
      */
@@ -60,7 +72,9 @@ export declare class LSHJobDaemon extends EventEmitter {
     /**
      * Get daemon status
      */
-    getStatus(): Promise<DaemonStatus>;
+    getStatus(): Promise<DaemonStatus & {
+        scheduler?: SchedulerMetrics;
+    }>;
     /**
      * Add a job to the daemon
      */
@@ -101,6 +115,16 @@ export declare class LSHJobDaemon extends EventEmitter {
     private isDaemonRunning;
     private killExistingDaemons;
     private startJobScheduler;
+    /**
+     * Start the optimized priority queue-based scheduler (Issue #108)
+     * Uses O(log n) operations instead of O(n) linear scans
+     */
+    private startOptimizedScheduler;
+    /**
+     * Start the legacy interval-based scheduler
+     * Uses O(n) linear scan every checkInterval milliseconds
+     */
+    private startLegacyScheduler;
     private checkScheduledJobs;
     private shouldRunByCron;
     private matchesCronField;
