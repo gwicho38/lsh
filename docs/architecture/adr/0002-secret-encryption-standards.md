@@ -144,7 +144,7 @@ export function decryptSecret(ciphertext: string, key: string): string {
 ```bash
 # Generate a new encryption key
 lsh key
-# Output: LSH_SECRETS_KEY=a1b2c3d4...64_hex_chars
+# Output: LSH_SECRETS_KEY=<your-64-character-hex-key>
 
 # Or use OpenSSL
 openssl rand -hex 32

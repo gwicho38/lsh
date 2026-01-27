@@ -49,7 +49,7 @@ Key characteristics:
 - Framework: Jest with `ts-jest`
 - Mocking: Jest built-in mocks + custom fixtures
 - Structure: Tests adjacent to source or in `src/__tests__/`
-- Coverage target: 70%+ for new code
+- Coverage target: 70%+ for new code (Jest thresholds set to 50% as hard minimum; aim for 70%+ on new/changed code)
 - CI: All tests must pass before merge
 
 ## Consequences
