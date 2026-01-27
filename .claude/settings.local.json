@@ -163,7 +163,8 @@
       "Bash(git pull:*)",
       "Bash(gh secret set:*)",
       "Bash(gh run rerun:*)",
-      "WebFetch(domain:ipfs.io)"
+      "WebFetch(domain:ipfs.io)",
+      "Bash(git merge:*)"
     ],
     "deny": [],
     "ask": []
