@@ -907,6 +907,43 @@ A comprehensive code analysis revealed the following priority areas:
 
 ---
 
+### Task 36: Type Safety - saas-billing.ts
+**Priority**: HIGH → COMPLETE
+**Category**: 📝 Typing & Type Safety
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `saas-billing.ts` had 8 `any` types in webhook handlers and mapper functions
+2. Stripe webhook event types were untyped (`any`)
+3. Database record mapper functions used `any` parameters
+
+**Implementation**:
+- Added imports for database types: `DbSubscriptionRecord`, `DbInvoiceRecord`
+- Added imports for Stripe event types: `StripeCheckoutSession`, `StripeSubscriptionEvent`, `StripeInvoiceEvent`
+- Created `StripeWebhookEvent` interface for typed webhook handling
+- Replaced 8 `any` types:
+  - `verifyWebhookSignature`: `any` → `StripeWebhookEvent`
+  - `handleCheckoutCompleted`: `any` → `StripeCheckoutSession`
+  - `handleSubscriptionUpdated`: `any` → `StripeSubscriptionEvent`
+  - `handleSubscriptionDeleted`: `any` → `StripeSubscriptionEvent`
+  - `handleInvoicePaid`: `any` → `StripeInvoiceEvent`
+  - `handleInvoicePaymentFailed`: `any` → `StripeInvoiceEvent`
+  - `mapDbSubscriptionToSubscription`: `any` → `DbSubscriptionRecord`
+  - `mapDbInvoiceToInvoice`: `any` → `DbInvoiceRecord`
+- Added type assertions in switch cases for proper narrowing
+- Fixed nullable property handling (`priceId`, `paid_at`)
+
+**Files Modified**:
+- `src/lib/saas-billing.ts` - Replaced 8 `any` types with proper Stripe and DB types
+
+**Verification**:
+- ✅ Build passes
+- ✅ All 245 saas/utility tests pass
+- ✅ `any` count reduced from 26 to 18
+
+---
+
 ## Backlog (Discovered Issues)
 
 | Issue | Category | Severity | File(s) |
@@ -927,18 +964,18 @@ A comprehensive code analysis revealed the following priority areas:
 - `constants/index.ts` - Intentional validation error for template strings
 - `__tests__/integration/database.test.ts` - Test file mock error
 
-**Next Priority**: Type safety improvements (26 `any` types remaining across 11 files).
+**Next Priority**: Type safety improvements (18 `any` types remaining across 6 files).
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 35
+- **Tasks Completed**: 36
 - **Tests Added**: 633 (588 + 19 saas-types + 26 utility)
-- **Files Modified**: 76
-- **Commits**: 35
+- **Files Modified**: 77
+- **Commits**: 36
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
-- **Type Safety**: Started (5 `any` types removed, 26 remaining)
+- **Type Safety**: In progress (13 `any` types removed, 18 remaining)
 
 ---
 
