@@ -213,13 +213,27 @@ export class EnhancedHistorySystem extends HistorySystem {
           exitCode: entry.exit_code,
         }));
 
-      // Merge and deduplicate results
-      const allResults = [...localResults, ...cloudResults];
-      const uniqueResults = allResults.filter((entry, index, arr) => 
-        arr.findIndex(e => e.command === entry.command && e.timestamp === entry.timestamp) === index
-      );
+      // Merge and deduplicate results using a Map for O(n) complexity
+      // Previously used filter + findIndex which was O(n²)
+      const seenKeys = new Map<string, HistoryEntry>();
 
-      return uniqueResults.slice(0, limit);
+      // Process local results first (higher priority)
+      for (const entry of localResults) {
+        const key = `${entry.command}_${entry.timestamp}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.set(key, entry);
+        }
+      }
+
+      // Add cloud results that don't exist locally
+      for (const entry of cloudResults) {
+        const key = `${entry.command}_${entry.timestamp}`;
+        if (!seenKeys.has(key)) {
+          seenKeys.set(key, entry);
+        }
+      }
+
+      return Array.from(seenKeys.values()).slice(0, limit);
     } catch (error) {
       console.error('Failed to search cloud history:', error);
       return localResults;
