@@ -6,13 +6,15 @@
 import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import type {
-  User,
-  LoginInput,
-  SignupInput,
-  AuthToken,
-  AuthSession,
-  Organization,
+import {
+  type User,
+  type LoginInput,
+  type SignupInput,
+  type AuthToken,
+  type AuthSession,
+  type Organization,
+  type VerifiedTokenResult,
+  validateJwtPayload,
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
@@ -96,27 +98,45 @@ export function generateRefreshToken(userId: string): string {
 }
 
 /**
- * Verify and decode JWT token
+ * Verify and decode JWT token with runtime validation.
+ *
+ * This function performs both cryptographic verification (via jsonwebtoken)
+ * and structural validation (via validateJwtPayload) to ensure type safety.
+ *
+ * @param token - JWT string to verify
+ * @returns Validated token payload with proper typing
+ * @throws Error if token is invalid, expired, or has unexpected structure
+ *
+ * @example
+ * ```typescript
+ * const { userId, email, type } = verifyToken(bearerToken);
+ * if (type === 'access' && email) {
+ *   // Access token logic
+ * }
+ * ```
  */
 // TODO(@gwicho38): Review - verifyToken
-export function verifyToken(token: string): { userId: string; email?: string; type: string } {
+export function verifyToken(token: string): VerifiedTokenResult {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
     throw new Error('LSH_JWT_SECRET is not set');
   }
 
   try {
+    // jwt.verify returns JwtPayload | string, we need to validate the structure
     const decoded = jwt.verify(token, secret, {
       issuer: 'lsh-saas',
       audience: 'lsh-api',
-    }) as any;
+    });
 
-    return {
-      userId: decoded.sub,
-      email: decoded.email,
-      type: decoded.type,
-    };
-  } catch (_error) {
+    // Validate payload structure and get properly typed result
+    return validateJwtPayload(decoded);
+  } catch (error) {
+    // Re-throw validation errors with original message for debugging
+    if (error instanceof Error && error.message.startsWith('Invalid')) {
+      throw error;
+    }
+    // Generic error for JWT library errors (expired, bad signature, etc.)
     throw new Error('Invalid or expired token');
   }
 }
