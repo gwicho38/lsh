@@ -11,6 +11,12 @@ import {
   BaseJobExecution,
 } from './base-job-manager.js';
 import DatabasePersistence from './database-persistence.js';
+import type { ShellJob } from './database-schema.js';
+
+/**
+ * Type for shell job creation (all fields except auto-generated ones).
+ */
+type ShellJobInput = Omit<ShellJob, 'id' | 'created_at' | 'updated_at'>;
 
 export class DatabaseJobStorage implements JobStorage {
   private persistence: DatabasePersistence;
@@ -25,20 +31,23 @@ export class DatabaseJobStorage implements JobStorage {
 
   // TODO(@gwicho38): Review - save
   async save(job: BaseJobSpec): Promise<void> {
-    // Map BaseJobSpec to database format
-    const dbJob = {
+    // Map BaseJobSpec to database format (ShellJob structure)
+    const dbJob: ShellJobInput = {
       job_id: job.id,
+      session_id: `job-storage-${Date.now()}`,
       command: job.command,
-      started_at: job.startedAt?.toISOString(),
+      working_directory: process.cwd(),
+      started_at: job.startedAt?.toISOString() || new Date().toISOString(),
       completed_at: job.completedAt?.toISOString(),
-      status: job.status,
+      status: job.status as ShellJob['status'],
+      pid: job.pid,
       exit_code: job.exitCode,
       output: job.stdout,
       error: job.stderr,
     };
 
     // Save using available method
-    await this.persistence.saveJob(dbJob as any);
+    await this.persistence.saveJob(dbJob);
   }
 
   async get(_jobId: string): Promise<BaseJobSpec | null> {
@@ -107,18 +116,21 @@ export class DatabaseJobStorage implements JobStorage {
   async update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void> {
     // Update by saving again (upsert behavior)
     if (updates.command) {
-      const dbJob = {
+      const dbJob: ShellJobInput = {
         job_id: jobId,
+        session_id: `job-storage-${Date.now()}`,
         command: updates.command,
-        started_at: updates.startedAt?.toISOString(),
+        working_directory: process.cwd(),
+        started_at: updates.startedAt?.toISOString() || new Date().toISOString(),
         completed_at: updates.completedAt?.toISOString(),
-        status: updates.status || 'running',
+        status: (updates.status || 'running') as ShellJob['status'],
+        pid: updates.pid,
         exit_code: updates.exitCode,
         output: updates.stdout,
         error: updates.stderr,
       };
 
-      await this.persistence.saveJob(dbJob as any);
+      await this.persistence.saveJob(dbJob);
     }
   }
 
@@ -134,19 +146,21 @@ export class DatabaseJobStorage implements JobStorage {
 
   // TODO(@gwicho38): Review - saveExecution
   async saveExecution(execution: BaseJobExecution): Promise<void> {
-    // Map to database format and save as job
-    const dbJob = {
+    // Map to database format and save as job (ShellJob structure)
+    const dbJob: ShellJobInput = {
       job_id: execution.jobId,
+      session_id: `execution-${Date.now()}`,
       command: execution.command,
+      working_directory: process.cwd(),
       started_at: execution.startTime.toISOString(),
       completed_at: execution.endTime?.toISOString(),
-      status: execution.status,
+      status: execution.status as ShellJob['status'],
       exit_code: execution.exitCode,
       output: execution.stdout,
       error: execution.stderr || execution.errorMessage,
     };
 
-    await this.persistence.saveJob(dbJob as any);
+    await this.persistence.saveJob(dbJob);
   }
 
   // TODO(@gwicho38): Review - getExecutions
