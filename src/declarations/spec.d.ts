@@ -1,3 +1,3 @@
 interface Spec {
-  data?: [any];
+  data?: [unknown];
 }
