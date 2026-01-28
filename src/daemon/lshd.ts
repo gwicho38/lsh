@@ -18,6 +18,8 @@ import { createLogger } from '../lib/logger.js';
 import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
 import { getPlatformPaths } from '../lib/platform-utils.js';
 import { ENV_VARS, DEFAULTS, ERRORS } from '../constants/index.js';
+import { OptimizedJobScheduler, SchedulerMetrics } from '../lib/optimized-job-scheduler.js';
+import { BaseJobSpec } from '../lib/base-job-manager.js';
 
 const execAsync = promisify(exec);
 
@@ -51,6 +53,7 @@ export interface DaemonConfig {
   apiKey?: string;
   enableWebhooks?: boolean;
   webhookEndpoints?: string[];
+  useOptimizedScheduler?: boolean;
 }
 
 export class LSHJobDaemon extends EventEmitter {
@@ -62,6 +65,7 @@ export class LSHJobDaemon extends EventEmitter {
   private ipcServer?: net.Server; // IPC server (Unix sockets or Named Pipes)
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
   private logger = createLogger('LSHJobDaemon');
+  private optimizedScheduler?: OptimizedJobScheduler; // Priority queue scheduler (Issue #108)
 
   constructor(config?: Partial<DaemonConfig>) {
     super();
@@ -82,12 +86,65 @@ export class LSHJobDaemon extends EventEmitter {
       apiPort: parseInt(process.env[ENV_VARS.LSH_API_PORT] || String(DEFAULTS.API_PORT)),
       apiKey: process.env[ENV_VARS.LSH_API_KEY],
       enableWebhooks: process.env[ENV_VARS.LSH_ENABLE_WEBHOOKS] === 'true',
+      useOptimizedScheduler: process.env[ENV_VARS.LSH_USE_OPTIMIZED_SCHEDULER] === 'true',
       ...config
     };
 
     this.jobManager = new JobManager(this.config.jobsFile);
     this.setupLogging();
     this.setupIPC();
+
+    // Initialize optimized scheduler if enabled (Issue #108)
+    if (this.config.useOptimizedScheduler) {
+      this.initializeOptimizedScheduler();
+    }
+  }
+
+  /**
+   * Initialize the optimized job scheduler (Issue #108)
+   * Uses a priority queue-based approach for O(log n) scheduling vs O(n) linear scan
+   */
+  private initializeOptimizedScheduler(): void {
+    this.optimizedScheduler = new OptimizedJobScheduler({
+      minCheckInterval: DEFAULTS.SCHEDULER_MIN_CHECK_INTERVAL_MS,
+      maxCheckInterval: DEFAULTS.SCHEDULER_MAX_CHECK_INTERVAL_MS,
+      dueBuffer: DEFAULTS.SCHEDULER_DUE_BUFFER_MS,
+      debug: process.env[ENV_VARS.LSH_LOG_LEVEL] === 'debug',
+    });
+
+    // Handle jobs that are due
+    this.optimizedScheduler.on('jobDue', async (job: BaseJobSpec) => {
+      try {
+        await this.executeScheduledJob(job as JobSpec);
+      } catch (error) {
+        this.log('ERROR', `Failed to execute scheduled job ${job.id}: ${(error as Error).message}`);
+      }
+    });
+
+    this.log('INFO', 'Optimized job scheduler initialized (Issue #108)');
+  }
+
+  /**
+   * Execute a scheduled job (used by optimized scheduler)
+   */
+  private async executeScheduledJob(job: JobSpec): Promise<void> {
+    // For completed cron jobs, reset to created status before starting
+    if (job.schedule?.cron && job.status === 'completed') {
+      job.status = 'created';
+      job.completedAt = undefined;
+      job.stdout = '';
+      job.stderr = '';
+      await (this.jobManager as unknown as { persistJobs(): Promise<void> }).persistJobs();
+      this.log('INFO', `Reset completed job for recurring execution: ${job.id} (${job.name})`);
+    }
+
+    this.log('INFO', `Started scheduled job: ${job.id} (${job.name})`);
+    await this.jobManager.startJob(job.id);
+
+    // Schedule next run for interval jobs
+    if (job.schedule?.interval) {
+      job.schedule.nextRun = new Date(Date.now() + job.schedule.interval);
+    }
   }
 
   /**
@@ -157,6 +214,11 @@ export class LSHJobDaemon extends EventEmitter {
       clearInterval(this.checkTimer);
     }
 
+    // Stop optimized scheduler if enabled (Issue #108)
+    if (this.optimizedScheduler) {
+      this.optimizedScheduler.stop();
+    }
+
     // Stop all running jobs gracefully
     await this.stopAllJobs();
 
@@ -198,12 +260,12 @@ export class LSHJobDaemon extends EventEmitter {
    * Get daemon status
    */
   // TODO(@gwicho38): Review - getStatus
-  async getStatus(): Promise<DaemonStatus> {
+  async getStatus(): Promise<DaemonStatus & { scheduler?: SchedulerMetrics }> {
     const stats = this.jobManager.getJobStats();
     const uptime = process.uptime();
 
     const memUsage = process.memoryUsage();
-    return {
+    const status: DaemonStatus & { scheduler?: SchedulerMetrics } = {
       running: this.isRunning,
       pid: process.pid,
       uptime,
@@ -220,6 +282,13 @@ export class LSHJobDaemon extends EventEmitter {
         failed: stats.failed
       }
     };
+
+    // Include scheduler metrics if optimized scheduler is enabled (Issue #108)
+    if (this.optimizedScheduler) {
+      status.scheduler = this.optimizedScheduler.getMetrics();
+    }
+
+    return status;
   }
 
   /**
@@ -229,6 +298,12 @@ export class LSHJobDaemon extends EventEmitter {
   async addJob(jobSpec: Partial<JobSpec>): Promise<JobSpec> {
     this.log('INFO', `Adding job: ${jobSpec.name || 'unnamed'}`);
     const job = await this.jobManager.createJob(jobSpec);
+
+    // Add to optimized scheduler if enabled (Issue #108)
+    if (this.optimizedScheduler && job.schedule) {
+      this.optimizedScheduler.addJob(job);
+    }
+
     return job as JobSpec;
   }
 
@@ -407,6 +482,12 @@ export class LSHJobDaemon extends EventEmitter {
   // TODO(@gwicho38): Review - removeJob
   async removeJob(jobId: string, force = false): Promise<boolean> {
     this.log('INFO', `Removing job: ${jobId}, force: ${force}`);
+
+    // Remove from optimized scheduler if enabled (Issue #108)
+    if (this.optimizedScheduler) {
+      this.optimizedScheduler.removeJob(jobId);
+    }
+
     return await this.jobManager.removeJob(jobId, force);
   }
 
@@ -468,21 +549,70 @@ export class LSHJobDaemon extends EventEmitter {
   // TODO(@gwicho38): Review - startJobScheduler
   private startJobScheduler(): void {
     try {
-      this.log('INFO', `📅 Starting job scheduler with ${this.config.checkInterval}ms interval`);
-      this.checkTimer = setInterval(() => {
-        try {
-          this.checkScheduledJobs();
-          this.cleanupCompletedJobs();
-          this.rotateLogs();
-        } catch (error) {
-          this.log('ERROR', `❌ Scheduler error: ${error.message}`);
-        }
-      }, this.config.checkInterval);
-      this.log('INFO', `✅ Job scheduler started successfully`);
+      // Use optimized scheduler if enabled (Issue #108)
+      if (this.config.useOptimizedScheduler && this.optimizedScheduler) {
+        this.startOptimizedScheduler();
+      } else {
+        this.startLegacyScheduler();
+      }
     } catch (error) {
-      this.log('ERROR', `❌ Failed to start job scheduler: ${error.message}`);
+      this.log('ERROR', `❌ Failed to start job scheduler: ${(error as Error).message}`);
       throw error;
     }
+  }
+
+  /**
+   * Start the optimized priority queue-based scheduler (Issue #108)
+   * Uses O(log n) operations instead of O(n) linear scans
+   */
+  private async startOptimizedScheduler(): Promise<void> {
+    if (!this.optimizedScheduler) {
+      return;
+    }
+
+    this.log('INFO', '📅 Starting OPTIMIZED job scheduler (Issue #108)');
+
+    // Load existing jobs into the scheduler
+    const jobs = await this.jobManager.listJobs({ status: ['created', 'completed'] });
+    for (const job of jobs) {
+      if (job.schedule) {
+        this.optimizedScheduler.addJob(job);
+      }
+    }
+
+    // Start the scheduler
+    this.optimizedScheduler.start();
+
+    // Still run cleanup and log rotation on the legacy interval
+    this.checkTimer = setInterval(() => {
+      try {
+        this.cleanupCompletedJobs();
+        this.rotateLogs();
+      } catch (error) {
+        this.log('ERROR', `❌ Maintenance error: ${(error as Error).message}`);
+      }
+    }, this.config.checkInterval);
+
+    const metrics = this.optimizedScheduler.getMetrics();
+    this.log('INFO', `✅ Optimized scheduler started with ${metrics.totalJobs} scheduled jobs`);
+  }
+
+  /**
+   * Start the legacy interval-based scheduler
+   * Uses O(n) linear scan every checkInterval milliseconds
+   */
+  private startLegacyScheduler(): void {
+    this.log('INFO', `📅 Starting LEGACY job scheduler with ${this.config.checkInterval}ms interval`);
+    this.checkTimer = setInterval(() => {
+      try {
+        this.checkScheduledJobs();
+        this.cleanupCompletedJobs();
+        this.rotateLogs();
+      } catch (error) {
+        this.log('ERROR', `❌ Scheduler error: ${(error as Error).message}`);
+      }
+    }, this.config.checkInterval);
+    this.log('INFO', `✅ Legacy scheduler started successfully`);
   }
 
   // TODO(@gwicho38): Review - checkScheduledJobs
