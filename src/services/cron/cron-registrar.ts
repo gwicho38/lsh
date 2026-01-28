@@ -5,6 +5,7 @@
 
 import { Command } from 'commander';
 import { BaseCommandRegistrar } from '../../lib/base-command-registrar.js';
+import { LSHError, ErrorCodes } from '../../lib/lsh-error.js';
 
 /**
  * Type helper to extract options from commander command
@@ -134,7 +135,11 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
         });
 
         if (!job) {
-          throw new Error(`Job ${jobId} not found`);
+          throw new LSHError(
+            ErrorCodes.JOB_NOT_FOUND,
+            `Job ${jobId} not found`,
+            { jobId }
+          );
         }
 
         this.logInfo(`Job Information: ${jobId}`);
