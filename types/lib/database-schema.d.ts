@@ -2,6 +2,10 @@
  * Database Schema Definitions for LSH
  * Defines tables and types for shell data persistence
  */
+/**
+ * Valid types for ML hyperparameter values
+ */
+export type HyperparameterValue = string | number | boolean | string[] | number[];
 export interface ShellHistoryEntry {
     id: string;
     user_id?: string;
@@ -94,7 +98,7 @@ export interface MLTrainingJob {
     model_type: string;
     dataset_name: string;
     status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
-    hyperparameters: Record<string, any>;
+    hyperparameters: Record<string, HyperparameterValue>;
     feature_names: string[];
     target_variable: string;
     train_rmse?: number;
@@ -114,7 +118,7 @@ export interface MLTrainingJob {
     duration_ms?: number;
     error_message?: string;
     notes?: string;
-    metadata_json?: Record<string, any>;
+    metadata_json?: Record<string, unknown>;
     created_at: string;
     updated_at: string;
 }
@@ -148,7 +152,7 @@ export interface MLFeatureSet {
     features: Array<{
         name: string;
         type: 'lag' | 'ma' | 'volatility' | 'pct_change' | 'technical' | 'custom';
-        params?: Record<string, any>;
+        params?: Record<string, HyperparameterValue>;
         importance?: number;
     }>;
     feature_count: number;
@@ -167,7 +171,7 @@ export interface MLPrediction {
     predicted_value: number;
     actual_value?: number;
     confidence_score?: number;
-    features_json: Record<string, any>;
+    features_json: Record<string, HyperparameterValue>;
     residual?: number;
     absolute_error?: number;
     created_at: string;
