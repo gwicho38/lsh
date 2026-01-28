@@ -15,6 +15,11 @@ import { encryptionService } from './saas-encryption.js';
 import { auditLogger } from './saas-audit.js';
 import { organizationService } from './saas-organizations.js';
 import { TABLES } from '../constants/index.js';
+import {
+  LSHError,
+  ErrorCodes,
+  extractErrorMessage,
+} from './lsh-error.js';
 
 /**
  * Secrets Service
@@ -36,7 +41,11 @@ export class SecretsService {
       // Auto-create encryption key for team
       const team = await this.getTeamById(input.teamId);
       if (!team) {
-        throw new Error('Team not found');
+        throw new LSHError(
+          ErrorCodes.RESOURCE_NOT_FOUND,
+          'Team not found',
+          { resource: 'team', teamId: input.teamId }
+        );
       }
       encryptionKey = await encryptionService.generateTeamKey(input.teamId, input.createdBy);
     }
@@ -62,7 +71,11 @@ export class SecretsService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create secret: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to create secret',
+        { teamId: input.teamId, key: input.key, environment: input.environment, dbError: error.message }
+      );
     }
 
     // Audit log
@@ -139,7 +152,11 @@ export class SecretsService {
     const { data, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to get secrets: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get secrets',
+        { teamId, environment, dbError: error.message }
+      );
     }
 
     const secrets = (data || []).map(this.mapDbSecretToSecret);
@@ -155,7 +172,10 @@ export class SecretsService {
             );
             return { ...secret, encryptedValue: decryptedValue };
           } catch (error) {
-            console.error(`Failed to decrypt secret ${secret.id}:`, error);
+            // Log decryption error but return the encrypted secret
+            // This allows bulk operations to continue despite individual failures
+            const errorMessage = extractErrorMessage(error);
+            console.error(`Failed to decrypt secret ${secret.id}: ${errorMessage}`);
             return secret;
           }
         })
@@ -172,7 +192,11 @@ export class SecretsService {
   async updateSecret(id: string, input: UpdateSecretInput): Promise<Secret> {
     const secret = await this.getSecretById(id);
     if (!secret) {
-      throw new Error('Secret not found');
+      throw new LSHError(
+        ErrorCodes.SECRETS_NOT_FOUND,
+        'Secret not found',
+        { secretId: id }
+      );
     }
 
     const updateData: {
@@ -215,7 +239,11 @@ export class SecretsService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update secret: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to update secret',
+        { secretId: id, dbError: error.message }
+      );
     }
 
     // Audit log
@@ -243,7 +271,11 @@ export class SecretsService {
   async deleteSecret(id: string, deletedBy: string): Promise<void> {
     const secret = await this.getSecretById(id);
     if (!secret) {
-      throw new Error('Secret not found');
+      throw new LSHError(
+        ErrorCodes.SECRETS_NOT_FOUND,
+        'Secret not found',
+        { secretId: id }
+      );
     }
 
     const { error } = await this.supabase
@@ -255,7 +287,11 @@ export class SecretsService {
       .eq('id', id);
 
     if (error) {
-      throw new Error(`Failed to delete secret: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to delete secret',
+        { secretId: id, dbError: error.message }
+      );
     }
 
     // Audit log
@@ -287,7 +323,11 @@ export class SecretsService {
       .eq('team_id', teamId);
 
     if (error) {
-      throw new Error(`Failed to get secrets summary: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get secrets summary',
+        { teamId, dbError: error.message }
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row from view
@@ -422,12 +462,20 @@ export class SecretsService {
   private async checkSecretsLimit(teamId: string): Promise<void> {
     const team = await this.getTeamById(teamId);
     if (!team) {
-      throw new Error('Team not found');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Team not found',
+        { resource: 'team', teamId }
+      );
     }
 
     const org = await organizationService.getOrganizationById(team.organization_id);
     if (!org) {
-      throw new Error('Organization not found');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Organization not found',
+        { resource: 'organization', organizationId: team.organization_id }
+      );
     }
 
     const usage = await organizationService.getUsageSummary(team.organization_id);
@@ -435,8 +483,16 @@ export class SecretsService {
     const limits = TIER_LIMITS[org.subscriptionTier];
 
     if (usage.secretCount >= limits.secrets) {
-      throw new Error(
-        'TIER_LIMIT_EXCEEDED: Secret limit reached. Please upgrade your plan.'
+      throw new LSHError(
+        ErrorCodes.BILLING_TIER_LIMIT_EXCEEDED,
+        'Secret limit reached. Please upgrade your plan.',
+        {
+          teamId,
+          organizationId: team.organization_id,
+          currentCount: usage.secretCount,
+          limit: limits.secrets,
+          tier: org.subscriptionTier,
+        }
       );
     }
   }
