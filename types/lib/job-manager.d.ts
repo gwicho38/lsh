@@ -44,6 +44,18 @@ export interface SystemProcess {
     startTime: Date;
     status: string;
 }
+/**
+ * Job monitoring metrics returned by monitorJob
+ */
+export interface JobMonitoring {
+    pid: number;
+    ppid: number;
+    cpu: number;
+    memory: number;
+    elapsed: string;
+    state: string;
+    timestamp: Date;
+}
 export declare class JobManager extends BaseJobManager {
     private nextJobId;
     private persistenceFile;
@@ -97,7 +109,7 @@ export declare class JobManager extends BaseJobManager {
     /**
      * Monitor a job's resource usage
      */
-    monitorJob(jobId: string): Promise<any>;
+    monitorJob(jobId: string): Promise<JobMonitoring | null>;
     /**
      * Get system processes
      */

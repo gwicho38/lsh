@@ -59,6 +59,19 @@ export interface SystemProcess {
   status: string;
 }
 
+/**
+ * Job monitoring metrics returned by monitorJob
+ */
+export interface JobMonitoring {
+  pid: number;
+  ppid: number;
+  cpu: number;
+  memory: number;
+  elapsed: string;
+  state: string;
+  timestamp: Date;
+}
+
 export class JobManager extends BaseJobManager {
   private nextJobId = 1;
   private persistenceFile: string;
@@ -322,7 +335,7 @@ export class JobManager extends BaseJobManager {
    * Monitor a job's resource usage
    */
   // TODO(@gwicho38): Review - monitorJob
-  async monitorJob(jobId: string): Promise<any> {
+  async monitorJob(jobId: string): Promise<JobMonitoring | null> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
       throw new Error(`Job ${jobId} not found`);
