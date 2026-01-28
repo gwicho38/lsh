@@ -6,6 +6,7 @@
 import type { Request } from 'express';
 import type { AuditLog, CreateAuditLogInput, AuditAction, ResourceType } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 // ============================================================================
 // RETRY AND FALLBACK CONFIGURATION
@@ -367,7 +368,11 @@ export class AuditLogger {
     const { data, count, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to get audit logs: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        `Failed to get audit logs: ${error.message}`,
+        { organizationId, dbError: error.message }
+      );
     }
 
     return {
@@ -396,7 +401,11 @@ export class AuditLogger {
       .limit(limit);
 
     if (error) {
-      throw new Error(`Failed to get resource logs: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        `Failed to get resource logs: ${error.message}`,
+        { organizationId, resourceType, resourceId, dbError: error.message }
+      );
     }
 
     return (data || []).map(this.mapDbLogToLog);
@@ -441,7 +450,11 @@ export class AuditLogger {
     const { data, count, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to get team logs: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        `Failed to get team logs: ${error.message}`,
+        { teamId, dbError: error.message }
+      );
     }
 
     return {
@@ -489,7 +502,11 @@ export class AuditLogger {
     const { data, count, error } = await query;
 
     if (error) {
-      throw new Error(`Failed to get user logs: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        `Failed to get user logs: ${error.message}`,
+        { userId, dbError: error.message }
+      );
     }
 
     return {
@@ -513,7 +530,11 @@ export class AuditLogger {
       .lt('timestamp', cutoffDate.toISOString());
 
     if (error) {
-      throw new Error(`Failed to delete old logs: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        `Failed to delete old logs: ${error.message}`,
+        { organizationId, retentionDays, dbError: error.message }
+      );
     }
 
     return count || 0;
