@@ -15,6 +15,20 @@ import DatabasePersistence from './database-persistence.js';
 import { DEFAULTS } from '../constants/index.js';
 import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
+/**
+ * Represents job data from either getJobHistory (ShellJob) or getJob (JobSpec).
+ * Properties use fallbacks to handle both snake_case (ShellJob) and camelCase (JobSpec) naming.
+ */
+interface JobHistoryEntry {
+  status: 'running' | 'stopped' | 'completed' | 'failed' | 'created' | 'killed' | 'paused';
+  duration_ms?: number;
+  startedAt?: string | Date;
+  createdAt?: string | Date;
+  started_at?: string;
+  error?: string;
+  stderr?: string;
+}
+
 export interface CronJobTemplate {
   id: string;
   name: string;
@@ -220,10 +234,8 @@ export class CronJobManager extends BaseJobManager {
   // TODO(@gwicho38): Review - getJobReport
   public async getJobReport(jobId: string): Promise<JobExecutionReport> {
     // Try to get historical data from database if available, otherwise use current job info
-    // Using any[] because getJobHistory returns ShellJob (snake_case properties)
-    // but getJob returns JobSpec (camelCase properties), and this code handles both
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let jobs: any[] = [];
+    // JobHistoryEntry handles both ShellJob (snake_case) and JobSpec (camelCase) properties
+    let jobs: JobHistoryEntry[] = [];
 
     try {
       jobs = await this.daemonClient.getJobHistory(jobId, 1000);
@@ -241,21 +253,23 @@ export class CronJobManager extends BaseJobManager {
     const successRate = executions > 0 ? (successes / executions) * 100 : 0;
 
     const durations = jobs
-      .filter(job => job.duration_ms)
+      .filter((job): job is JobHistoryEntry & { duration_ms: number } => job.duration_ms !== undefined)
       .map(job => job.duration_ms);
     const averageDuration = durations.length > 0
       ? durations.reduce((sum, duration) => sum + duration, 0) / durations.length
       : 0;
 
-    const lastExecution = jobs.length > 0 ? (jobs[0].startedAt || jobs[0].createdAt || jobs[0].started_at)
-      ? new Date(jobs[0].startedAt || jobs[0].createdAt || jobs[0].started_at)
-      : undefined : undefined;
-    const lastSuccess = jobs.find(job => job.status === 'completed')
-      ? new Date(jobs.find(job => job.status === 'completed')!.startedAt || jobs.find(job => job.status === 'completed')!.createdAt || jobs.find(job => job.status === 'completed')!.started_at)
-      : undefined;
-    const lastFailure = jobs.find(job => job.status === 'failed')
-      ? new Date(jobs.find(job => job.status === 'failed')!.startedAt || jobs.find(job => job.status === 'failed')!.createdAt || jobs.find(job => job.status === 'failed')!.started_at)
-      : undefined;
+    // Helper to get timestamp from job entry
+    const getJobTimestamp = (job: JobHistoryEntry): Date | undefined => {
+      const ts = job.startedAt || job.createdAt || job.started_at;
+      return ts ? new Date(ts) : undefined;
+    };
+
+    const lastExecution = jobs.length > 0 ? getJobTimestamp(jobs[0]) : undefined;
+    const completedJob = jobs.find(job => job.status === 'completed');
+    const lastSuccess = completedJob ? getJobTimestamp(completedJob) : undefined;
+    const failedJob = jobs.find(job => job.status === 'failed');
+    const lastFailure = failedJob ? getJobTimestamp(failedJob) : undefined;
 
     // Analyze common errors
     const errorCounts = new Map<string, number>();

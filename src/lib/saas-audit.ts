@@ -5,6 +5,7 @@
 
 import type { Request } from 'express';
 import type { AuditLog, CreateAuditLogInput, AuditAction, ResourceType } from './saas-types.js';
+import type { DbAuditLogRecord } from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { LSHError, ErrorCodes } from './lsh-error.js';
 
@@ -543,16 +544,15 @@ export class AuditLogger {
   /**
    * Map database log to AuditLog type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbLogToLog
-  private mapDbLogToLog(dbLog: any): AuditLog {
+  private mapDbLogToLog(dbLog: DbAuditLogRecord): AuditLog {
     return {
       id: dbLog.id,
       organizationId: dbLog.organization_id,
       teamId: dbLog.team_id,
       userId: dbLog.user_id,
       userEmail: dbLog.user_email,
-      action: dbLog.action,
+      action: dbLog.action as AuditAction,
       resourceType: dbLog.resource_type,
       resourceId: dbLog.resource_id,
       ipAddress: dbLog.ip_address,
