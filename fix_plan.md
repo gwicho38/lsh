@@ -907,6 +907,37 @@ A comprehensive code analysis revealed the following priority areas:
 
 ---
 
+### Task 37: Type Safety - saas-auth.ts
+**Priority**: HIGH → COMPLETE
+**Category**: 📝 Typing & Type Safety
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `saas-auth.ts` had 3 `any` types in mapper functions and join results
+2. Organization member join results were untyped
+3. Database record mappers used `any` parameters
+
+**Implementation**:
+- Added imports for database types: `DbUserRecord`, `DbOrganizationRecord`
+- Created `DbOrgMemberJoinResult` interface for Supabase join queries
+- Replaced 3 `any` types:
+  - `getUserOrganizations` map callback: `any` → `DbOrgMemberJoinResult`
+  - `mapDbUserToUser`: `any` → `DbUserRecord`
+  - `mapDbOrgToOrg`: `any` → `DbOrganizationRecord`
+- Added filter to handle nullable organizations in join results
+- Cast settings to `Record<string, unknown>` for type compatibility
+
+**Files Modified**:
+- `src/lib/saas-auth.ts` - Replaced 3 `any` types with proper DB types
+
+**Verification**:
+- ✅ Build passes
+- ✅ All 245 saas/utility tests pass
+- ✅ `any` count reduced from 18 to 15 (now 7 in source, 2 in tests)
+
+---
+
 ### Task 36: Type Safety - saas-billing.ts
 **Priority**: HIGH → COMPLETE
 **Category**: 📝 Typing & Type Safety
@@ -964,18 +995,18 @@ A comprehensive code analysis revealed the following priority areas:
 - `constants/index.ts` - Intentional validation error for template strings
 - `__tests__/integration/database.test.ts` - Test file mock error
 
-**Next Priority**: Type safety improvements (18 `any` types remaining across 6 files).
+**Next Priority**: Type safety improvements (5 `any` types remaining across 4 source files).
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 36
+- **Tasks Completed**: 37
 - **Tests Added**: 633 (588 + 19 saas-types + 26 utility)
-- **Files Modified**: 77
-- **Commits**: 36
+- **Files Modified**: 78
+- **Commits**: 37
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
-- **Type Safety**: In progress (13 `any` types removed, 18 remaining)
+- **Type Safety**: In progress (16 `any` types removed, 7 remaining - 5 in source, 2 in test file)
 
 ---
 
