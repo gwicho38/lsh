@@ -3,6 +3,13 @@
  * Provides security validation for shell commands
  */
 
+import {
+  DANGEROUS_PATTERNS,
+  WARNING_PATTERNS,
+  SUSPICIOUS_CHECKS,
+} from '../constants/validation.js';
+import { ERRORS } from '../constants/errors.js';
+
 export interface CommandValidationResult {
   isValid: boolean;
   warnings: string[];
@@ -16,52 +23,6 @@ export interface ValidationOptions {
   requireWhitelist?: boolean;
   whitelist?: string[];
 }
-
-/**
- * Dangerous command patterns that should trigger warnings or blocks
- */
-const DANGEROUS_PATTERNS = [
-  // System modification
-  { pattern: /rm\s+-rf\s+\/(?!\w)/i, message: 'Attempting to delete root filesystem', level: 'critical' as const },
-  { pattern: /mkfs/i, message: 'Filesystem formatting command detected', level: 'critical' as const },
-  { pattern: /dd\s+.*of=/i, message: 'Direct disk write detected', level: 'critical' as const },
-
-  // Privilege escalation
-  { pattern: /sudo\s+su/i, message: 'Privilege escalation attempt', level: 'high' as const },
-  { pattern: /sudo\s+.*passwd/i, message: 'Password modification attempt', level: 'high' as const },
-
-  // Network exfiltration
-  { pattern: /curl\s+.*\|\s*bash/i, message: 'Remote code execution via curl', level: 'critical' as const },
-  { pattern: /wget\s+.*\|\s*sh/i, message: 'Remote code execution via wget', level: 'critical' as const },
-  { pattern: /nc\s+.*-e/i, message: 'Reverse shell attempt with netcat', level: 'critical' as const },
-
-  // Data exfiltration
-  { pattern: /cat\s+\/etc\/shadow/i, message: 'Attempting to read shadow password file', level: 'critical' as const },
-  { pattern: /cat\s+\/etc\/passwd/i, message: 'Attempting to read user account file', level: 'high' as const },
-  { pattern: /\.ssh\/id_rsa/i, message: 'Attempting to access SSH private keys', level: 'critical' as const },
-
-  // Process manipulation
-  { pattern: /kill\s+-9\s+1\b/i, message: 'Attempting to kill init process', level: 'critical' as const },
-  { pattern: /pkill\s+-9\s+.*sshd/i, message: 'Attempting to kill SSH daemon', level: 'high' as const },
-
-  // Obfuscation attempts
-  { pattern: /\$\(.*base64.*\)/i, message: 'Base64 encoded command detected', level: 'high' as const },
-  { pattern: /eval.*\$\(/i, message: 'Dynamic command evaluation detected', level: 'high' as const },
-  // eslint-disable-next-line no-control-regex
-  { pattern: /\x00/i, message: 'Null byte injection detected', level: 'critical' as const },
-];
-
-/**
- * Patterns that should trigger warnings but might be legitimate
- */
-const WARNING_PATTERNS = [
-  { pattern: /rm\s+-rf/i, message: 'Recursive deletion command' },
-  { pattern: /sudo/i, message: 'Elevated privileges requested' },
-  { pattern: /chmod\s+777/i, message: 'Overly permissive file permissions' },
-  { pattern: />\s*\/dev\/sda/i, message: 'Writing to disk device' },
-  { pattern: /curl\s+.*-k/i, message: 'Insecure SSL certificate validation disabled' },
-  { pattern: /:\(\)\{.*:\|:.*\}/i, message: 'Fork bomb pattern detected' },
-];
 
 /**
  * Validate a shell command for security issues
@@ -88,21 +49,21 @@ export function validateCommand(
   // Basic validation
   if (!command || typeof command !== 'string') {
     result.isValid = false;
-    result.errors.push('Command must be a non-empty string');
+    result.errors.push(ERRORS.COMMAND_EMPTY_STRING);
     result.riskLevel = 'high';
     return result;
   }
 
   if (command.trim().length === 0) {
     result.isValid = false;
-    result.errors.push('Command cannot be empty or whitespace only');
+    result.errors.push(ERRORS.COMMAND_WHITESPACE_ONLY);
     result.riskLevel = 'high';
     return result;
   }
 
   if (command.length > maxLength) {
     result.isValid = false;
-    result.errors.push(`Command exceeds maximum length of ${maxLength} characters`);
+    result.errors.push(ERRORS.COMMAND_TOO_LONG.replace('${maxLength}', String(maxLength)));
     result.riskLevel = 'high';
     return result;
   }
@@ -112,21 +73,22 @@ export function validateCommand(
     const commandName = command.trim().split(/\s+/)[0];
     if (!whitelist.includes(commandName)) {
       result.isValid = false;
-      result.errors.push(`Command '${commandName}' is not in whitelist`);
+      result.errors.push(ERRORS.COMMAND_NOT_WHITELISTED.replace('${commandName}', commandName));
       result.riskLevel = 'high';
       return result;
     }
   }
 
-  // Check for dangerous patterns
-  for (const { pattern, message, level } of DANGEROUS_PATTERNS) {
+  // Check for dangerous patterns (imported from constants/validation.ts)
+  for (const { pattern, description, riskLevel } of DANGEROUS_PATTERNS) {
     if (pattern.test(command)) {
+      const level = riskLevel as 'low' | 'medium' | 'high' | 'critical';
       if (!allowDangerousCommands) {
         result.isValid = false;
-        result.errors.push(`BLOCKED: ${message}`);
+        result.errors.push(`BLOCKED: ${description}`);
         result.riskLevel = level;
       } else {
-        result.warnings.push(`${message} (allowed by configuration)`);
+        result.warnings.push(`${description} (allowed by configuration)`);
         if (level === 'critical' || level === 'high') {
           result.riskLevel = level;
         }
@@ -134,43 +96,19 @@ export function validateCommand(
     }
   }
 
-  // Check for warning patterns
-  for (const { pattern, message } of WARNING_PATTERNS) {
+  // Check for warning patterns (imported from constants/validation.ts)
+  for (const { pattern, description } of WARNING_PATTERNS) {
     if (pattern.test(command)) {
-      result.warnings.push(message);
+      result.warnings.push(description);
       if (result.riskLevel === 'low') {
         result.riskLevel = 'medium';
       }
     }
   }
 
-  // Additional checks for suspicious patterns
-  const suspiciousChecks = [
-    {
-      test: () => (command.match(/;/g) || []).length > 5,
-      message: 'Excessive command chaining detected',
-      level: 'medium' as const
-    },
-    {
-      test: () => (command.match(/\|/g) || []).length > 3,
-      message: 'Excessive pipe usage detected',
-      level: 'medium' as const
-    },
-    {
-      test: () => /\$\([^)]*\$\(/.test(command),
-      message: 'Nested command substitution detected',
-      level: 'high' as const
-    },
-    {
-      // eslint-disable-next-line no-control-regex
-      test: () => /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(command),
-      message: 'Control characters detected in command',
-      level: 'high' as const
-    }
-  ];
-
-  for (const check of suspiciousChecks) {
-    if (check.test()) {
+  // Additional checks for suspicious patterns (imported from constants/validation.ts)
+  for (const check of SUSPICIOUS_CHECKS) {
+    if (check.test(command)) {
       result.warnings.push(check.message);
       if (check.level === 'high' && result.riskLevel !== 'critical') {
         result.riskLevel = check.level;
