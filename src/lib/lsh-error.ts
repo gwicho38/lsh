@@ -51,6 +51,7 @@ export const ErrorCodes = {
   AUTH_EMAIL_ALREADY_EXISTS: 'AUTH_EMAIL_ALREADY_EXISTS',
   AUTH_INVALID_TOKEN: 'AUTH_INVALID_TOKEN',
   AUTH_TOKEN_EXPIRED: 'AUTH_TOKEN_EXPIRED',
+  AUTH_TOKEN_ALREADY_USED: 'AUTH_TOKEN_ALREADY_USED',
   AUTH_FORBIDDEN: 'AUTH_FORBIDDEN',
   AUTH_INSUFFICIENT_PERMISSIONS: 'AUTH_INSUFFICIENT_PERMISSIONS',
 
@@ -363,6 +364,7 @@ function getDefaultStatusCode(code: ErrorCode): number {
   if (code === ErrorCodes.AUTH_INVALID_CREDENTIALS) return 401;
   if (code === ErrorCodes.AUTH_INVALID_TOKEN) return 401;
   if (code === ErrorCodes.AUTH_TOKEN_EXPIRED) return 401;
+  if (code === ErrorCodes.AUTH_TOKEN_ALREADY_USED) return 401;
 
   // 402 Payment Required
   if (code === ErrorCodes.BILLING_PAYMENT_REQUIRED) return 402;
