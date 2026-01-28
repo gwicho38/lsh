@@ -1,23 +1,159 @@
 /**
  * LSH SaaS Audit Logging Service
- * Comprehensive audit trail for all actions
+ * Comprehensive audit trail for all actions with retry and fallback support
  */
 
 import type { Request } from 'express';
 import type { AuditLog, CreateAuditLogInput, AuditAction, ResourceType } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 
+// ============================================================================
+// RETRY AND FALLBACK CONFIGURATION
+// ============================================================================
+
+/** Maximum retry attempts for failed audit logs */
+const MAX_RETRY_ATTEMPTS = 3;
+
+/** Base delay for exponential backoff (ms) */
+const BASE_RETRY_DELAY_MS = 100;
+
+/** Maximum delay between retries (ms) */
+const MAX_RETRY_DELAY_MS = 2000;
+
+/** Maximum number of entries in fallback queue */
+const MAX_FALLBACK_QUEUE_SIZE = 1000;
+
+/** Interval for processing fallback queue (ms) */
+const FALLBACK_PROCESS_INTERVAL_MS = 60000; // 1 minute
+
+// ============================================================================
+// TYPES
+// ============================================================================
+
 /**
- * Audit Logger Service
+ * Audit log entry with metadata for retry tracking
+ */
+interface QueuedAuditEntry {
+  /** Original input */
+  input: CreateAuditLogInput;
+  /** Number of retry attempts */
+  attempts: number;
+  /** Timestamp of first failure */
+  firstFailedAt: Date;
+  /** Timestamp of last attempt */
+  lastAttemptAt: Date;
+  /** Last error message */
+  lastError?: string;
+}
+
+/**
+ * Audit logging statistics
+ */
+export interface AuditLogStats {
+  /** Total logs written successfully */
+  successCount: number;
+  /** Total logs that failed permanently */
+  failedCount: number;
+  /** Logs currently in retry queue */
+  queuedCount: number;
+  /** Logs recovered from fallback */
+  recoveredCount: number;
+}
+
+// ============================================================================
+// AUDIT LOGGER SERVICE
+// ============================================================================
+
+/**
+ * Audit Logger Service with retry logic and fallback storage
  */
 export class AuditLogger {
   private supabase = getSupabaseClient();
 
+  /** In-memory fallback queue for failed audit entries */
+  private fallbackQueue: QueuedAuditEntry[] = [];
+
+  /** Statistics for monitoring */
+  private stats: AuditLogStats = {
+    successCount: 0,
+    failedCount: 0,
+    queuedCount: 0,
+    recoveredCount: 0,
+  };
+
+  /** Timer for background queue processing */
+  private processTimer: ReturnType<typeof setInterval> | null = null;
+
+  /** Whether the logger is initialized */
+  private initialized = false;
+
   /**
-   * Log an audit event
+   * Initialize the audit logger and start background processing.
+   * Call this once at application startup.
+   */
+  initialize(): void {
+    if (this.initialized) {
+      return;
+    }
+
+    // Start background processing of fallback queue
+    this.processTimer = setInterval(() => {
+      this.processFallbackQueue().catch((err) => {
+        console.error('Error processing audit fallback queue:', err);
+      });
+    }, FALLBACK_PROCESS_INTERVAL_MS);
+
+    this.initialized = true;
+  }
+
+  /**
+   * Shutdown the audit logger gracefully.
+   * Attempts to flush remaining queue entries.
+   */
+  async shutdown(): Promise<void> {
+    if (this.processTimer) {
+      clearInterval(this.processTimer);
+      this.processTimer = null;
+    }
+
+    // Attempt to flush remaining entries
+    if (this.fallbackQueue.length > 0) {
+      console.log(`Flushing ${this.fallbackQueue.length} audit entries on shutdown...`);
+      await this.processFallbackQueue();
+    }
+
+    this.initialized = false;
+  }
+
+  /**
+   * Log an audit event with retry support.
+   *
+   * This method will:
+   * 1. Attempt to write immediately to the database
+   * 2. On failure, retry with exponential backoff
+   * 3. If all retries fail, queue for background processing
+   *
+   * Audit logging failures never throw - they are handled gracefully
+   * to avoid breaking the main operation.
    */
   // TODO(@gwicho38): Review - log
   async log(input: CreateAuditLogInput): Promise<void> {
+    const success = await this.attemptLog(input, 0);
+
+    if (!success) {
+      // Queue for background retry
+      this.addToFallbackQueue(input, 'Initial attempt failed');
+    }
+  }
+
+  /**
+   * Attempt to log with retries and exponential backoff.
+   *
+   * @param input - Audit log input
+   * @param attempt - Current attempt number (0-indexed)
+   * @returns true if successful, false if all retries exhausted
+   */
+  private async attemptLog(input: CreateAuditLogInput, attempt: number): Promise<boolean> {
     try {
       const { error } = await this.supabase.from('audit_logs').insert({
         organization_id: input.organizationId,
@@ -36,13 +172,145 @@ export class AuditLogger {
       });
 
       if (error) {
-        console.error('Failed to write audit log:', error);
-        // Don't throw - audit logging should not break the main operation
+        return await this.handleLogError(input, attempt, error.message);
       }
+
+      this.stats.successCount++;
+      return true;
     } catch (error) {
-      console.error('Audit logging error:', error);
-      // Don't throw - audit logging should not break the main operation
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return await this.handleLogError(input, attempt, message);
     }
+  }
+
+  /**
+   * Handle a logging error with retry logic.
+   */
+  private async handleLogError(
+    input: CreateAuditLogInput,
+    attempt: number,
+    errorMessage: string
+  ): Promise<boolean> {
+    const nextAttempt = attempt + 1;
+
+    if (nextAttempt >= MAX_RETRY_ATTEMPTS) {
+      // All retries exhausted
+      console.error(
+        `Audit log failed after ${MAX_RETRY_ATTEMPTS} attempts:`,
+        errorMessage,
+        { action: input.action, resourceType: input.resourceType }
+      );
+      return false;
+    }
+
+    // Calculate delay with exponential backoff and jitter
+    const baseDelay = BASE_RETRY_DELAY_MS * Math.pow(2, attempt);
+    const jitter = Math.random() * 50;
+    const delay = Math.min(baseDelay + jitter, MAX_RETRY_DELAY_MS);
+
+    // Wait and retry
+    await this.sleep(delay);
+    return this.attemptLog(input, nextAttempt);
+  }
+
+  /**
+   * Add entry to fallback queue for background processing.
+   */
+  private addToFallbackQueue(input: CreateAuditLogInput, errorMessage: string): void {
+    // Check queue size limit
+    if (this.fallbackQueue.length >= MAX_FALLBACK_QUEUE_SIZE) {
+      // Remove oldest entry to make room
+      const dropped = this.fallbackQueue.shift();
+      if (dropped) {
+        this.stats.failedCount++;
+        console.error(
+          'Audit fallback queue full - dropping oldest entry:',
+          { action: dropped.input.action, firstFailedAt: dropped.firstFailedAt }
+        );
+      }
+    }
+
+    const now = new Date();
+    this.fallbackQueue.push({
+      input,
+      attempts: MAX_RETRY_ATTEMPTS, // Already tried initial retries
+      firstFailedAt: now,
+      lastAttemptAt: now,
+      lastError: errorMessage,
+    });
+
+    this.stats.queuedCount++;
+  }
+
+  /**
+   * Process the fallback queue in the background.
+   * Called periodically by the timer.
+   */
+  async processFallbackQueue(): Promise<void> {
+    if (this.fallbackQueue.length === 0) {
+      return;
+    }
+
+    const toProcess = [...this.fallbackQueue];
+    this.fallbackQueue = [];
+
+    for (const entry of toProcess) {
+      const success = await this.attemptLog(entry.input, 0);
+
+      if (success) {
+        this.stats.recoveredCount++;
+        this.stats.queuedCount = Math.max(0, this.stats.queuedCount - 1);
+      } else {
+        // Check if entry is too old (24 hours)
+        const age = Date.now() - entry.firstFailedAt.getTime();
+        if (age > 24 * 60 * 60 * 1000) {
+          this.stats.failedCount++;
+          this.stats.queuedCount = Math.max(0, this.stats.queuedCount - 1);
+          console.error(
+            'Audit log permanently failed - entry too old:',
+            { action: entry.input.action, age: Math.round(age / 1000 / 60) + ' minutes' }
+          );
+        } else {
+          // Re-queue for another attempt
+          entry.attempts++;
+          entry.lastAttemptAt = new Date();
+          this.fallbackQueue.push(entry);
+        }
+      }
+    }
+  }
+
+  /**
+   * Get current audit logging statistics.
+   */
+  getStats(): AuditLogStats {
+    return { ...this.stats };
+  }
+
+  /**
+   * Get current fallback queue size.
+   */
+  getQueueSize(): number {
+    return this.fallbackQueue.length;
+  }
+
+  /**
+   * Reset statistics (for testing).
+   */
+  resetStats(): void {
+    this.stats = {
+      successCount: 0,
+      failedCount: 0,
+      queuedCount: 0,
+      recoveredCount: 0,
+    };
+  }
+
+  /**
+   * Helper to sleep for a given duration.
+   */
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
