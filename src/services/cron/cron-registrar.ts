@@ -88,7 +88,7 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
         this.logInfo(`  Job ID: ${result.id}`);
         this.logInfo(`  Name: ${result.name}`);
         this.logInfo(`  Command: ${result.command}`);
-        this.logInfo(`  Schedule: ${result.schedule.cron}`);
+        this.logInfo(`  Schedule: ${result.schedule?.cron || 'N/A'}`);
       }
     });
   }

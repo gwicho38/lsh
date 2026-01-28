@@ -11,6 +11,7 @@ import {
 } from './base-job-manager.js';
 import DatabaseJobStorage from './job-storage-database.js';
 import DaemonClient, { CronJobSpec } from './daemon-client.js';
+import { JobSpec } from './job-manager.js';
 import DatabasePersistence from './database-persistence.js';
 import { DEFAULTS } from '../constants/index.js';
 
@@ -144,7 +145,7 @@ export class CronJobManager extends BaseJobManager {
    * Create a job from template
    */
   // TODO(@gwicho38): Review - createJobFromTemplate
-  public async createJobFromTemplate(templateId: string, customizations?: Partial<CronJobSpec>): Promise<any> {
+  public async createJobFromTemplate(templateId: string, customizations?: Partial<CronJobSpec>): Promise<JobSpec> {
     const template = this.templates.get(templateId);
     if (!template) {
       throw new Error(`Template ${templateId} not found`);
@@ -175,7 +176,7 @@ export class CronJobManager extends BaseJobManager {
    * Create a custom job
    */
   // TODO(@gwicho38): Review - createCustomJob
-  public async createCustomJob(jobSpec: CronJobSpec): Promise<any> {
+  public async createCustomJob(jobSpec: CronJobSpec): Promise<JobSpec> {
     return await this.daemonClient.createDatabaseCronJob({
       ...jobSpec,
       databaseSync: true,
