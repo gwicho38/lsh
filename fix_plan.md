@@ -25,6 +25,38 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 11: Error Handling Standardization (saas-organizations.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `saas-organizations.ts` used plain `Error` instead of `LSHError` class
+2. Custom error codes embedded in message strings (e.g., `'ALREADY_EXISTS: ...'`)
+3. No structured error context for debugging
+4. Inconsistent patterns across OrganizationService and TeamService
+
+**Implementation**:
+- Replaced 22 `throw new Error()` calls with `throw new LSHError()`
+- Added appropriate error codes:
+  - `RESOURCE_ALREADY_EXISTS` for slug conflicts (organization, team, member)
+  - `RESOURCE_NOT_FOUND` for missing organizations/teams
+  - `DB_QUERY_FAILED` for all database operations
+  - `BILLING_TIER_LIMIT_EXCEEDED` for member limit exceeded
+- Added context objects with relevant debugging info (organizationId, teamId, userId, slug, dbError, tier)
+
+**Files Modified**:
+- `src/lib/saas-organizations.ts` - Standardized all error handling
+- `src/__tests__/saas-organizations-errors.test.ts` (NEW - 30 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 30 new error handling tests pass
+
+---
+
 ### Task 10: Error Handling Standardization (saas-secrets.ts)
 **Priority**: MEDIUM → COMPLETE
 **Category**: 🏗️ Robustness / 📝 Typing
@@ -361,15 +393,15 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Next Priority
 
-**Continue Error Message Standardization** - `saas-billing.ts`, `saas-email.ts`, and `saas-secrets.ts` are now standardized. Continue with `saas-organizations.ts`. Also consider standardizing `database-persistence.ts` which has 19 catch blocks.
+**Continue Error Message Standardization** - `saas-billing.ts`, `saas-email.ts`, `saas-secrets.ts`, and `saas-organizations.ts` are now standardized. Continue with `database-persistence.ts` which has 19 catch blocks and 2 throw new Error calls.
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 10
-- **Tests Added**: 225 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors)
-- **Files Modified**: 22
-- **Commits**: 11
+- **Tasks Completed**: 11
+- **Tests Added**: 255 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors + 30 Organizations Errors)
+- **Files Modified**: 24
+- **Commits**: 12
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 
 ---

@@ -18,6 +18,7 @@ import type {
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
 import { TABLES } from '../constants/index.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 /**
  * Generate URL-friendly slug from name
@@ -62,7 +63,11 @@ export class OrganizationService {
       .single();
 
     if (existing) {
-      throw new Error('ALREADY_EXISTS: Organization slug already taken');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_ALREADY_EXISTS,
+        'Organization slug already taken',
+        { slug, resource: 'organization' }
+      );
     }
 
     // Create organization
@@ -78,7 +83,11 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create organization: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to create organization',
+        { name: input.name, slug, dbError: error.message }
+      );
     }
 
     // Add owner as first member
@@ -164,7 +173,11 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update organization: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to update organization',
+        { organizationId: id, dbError: error.message }
+      );
     }
 
     return this.mapDbOrgToOrg(org);
@@ -181,7 +194,11 @@ export class OrganizationService {
       .eq('id', id);
 
     if (error) {
-      throw new Error(`Failed to delete organization: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to delete organization',
+        { organizationId: id, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -212,7 +229,11 @@ export class OrganizationService {
       .single();
 
     if (existing) {
-      throw new Error('ALREADY_EXISTS: User is already a member');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_ALREADY_EXISTS,
+        'User is already a member',
+        { organizationId: params.organizationId, userId: params.userId, resource: 'member' }
+      );
     }
 
     // Check tier limits
@@ -231,7 +252,11 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to add member: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to add member',
+        { organizationId: params.organizationId, userId: params.userId, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -265,7 +290,11 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update member role: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to update member role',
+        { organizationId, userId, newRole, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -292,7 +321,11 @@ export class OrganizationService {
       .eq('user_id', userId);
 
     if (error) {
-      throw new Error(`Failed to remove member: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to remove member',
+        { organizationId, userId, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -315,7 +348,11 @@ export class OrganizationService {
       .eq('organization_id', organizationId);
 
     if (error) {
-      throw new Error(`Failed to get members: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get members',
+        { organizationId, dbError: error.message }
+      );
     }
 
     return (data || []).map(this.mapDbMemberDetailedToMemberDetailed);
@@ -367,7 +404,11 @@ export class OrganizationService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to get usage summary: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get usage summary',
+        { organizationId, dbError: error.message }
+      );
     }
 
     return {
@@ -392,7 +433,11 @@ export class OrganizationService {
   }> {
     const org = await this.getOrganizationById(organizationId);
     if (!org) {
-      throw new Error('NOT_FOUND: Organization not found');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Organization not found',
+        { organizationId, resource: 'organization' }
+      );
     }
 
     const usage = await this.getUsageSummary(organizationId);
@@ -430,15 +475,26 @@ export class OrganizationService {
     const org = await this.getOrganizationById(organizationId);
 
     if (!org) {
-      throw new Error('NOT_FOUND: Organization not found');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Organization not found',
+        { organizationId, resource: 'organization' }
+      );
     }
 
     const { TIER_LIMITS } = await import('./saas-types.js');
     const limits = TIER_LIMITS[org.subscriptionTier];
 
     if (usage.memberCount >= limits.teamMembers) {
-      throw new Error(
-        'TIER_LIMIT_EXCEEDED: Team member limit reached. Please upgrade your plan.'
+      throw new LSHError(
+        ErrorCodes.BILLING_TIER_LIMIT_EXCEEDED,
+        'Team member limit reached. Please upgrade your plan.',
+        {
+          organizationId,
+          currentCount: usage.memberCount,
+          limit: limits.teamMembers,
+          tier: org.subscriptionTier,
+        }
       );
     }
   }
@@ -579,7 +635,11 @@ export class TeamService {
       .single();
 
     if (existing) {
-      throw new Error('ALREADY_EXISTS: Team slug already taken in this organization');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_ALREADY_EXISTS,
+        'Team slug already taken in this organization',
+        { organizationId: input.organizationId, slug, resource: 'team' }
+      );
     }
 
     const { data: team, error } = await this.supabase
@@ -594,7 +654,11 @@ export class TeamService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create team: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to create team',
+        { organizationId: input.organizationId, name: input.name, slug, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -642,7 +706,11 @@ export class TeamService {
       .order('created_at', { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to get teams: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get teams',
+        { organizationId, dbError: error.message }
+      );
     }
 
     return (teams || []).map(this.mapDbTeamToTeam);
@@ -665,7 +733,11 @@ export class TeamService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to update team: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to update team',
+        { teamId: id, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -688,7 +760,11 @@ export class TeamService {
   async deleteTeam(id: string, deletedBy: string): Promise<void> {
     const team = await this.getTeamById(id);
     if (!team) {
-      throw new Error('NOT_FOUND: Team not found');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'Team not found',
+        { teamId: id, resource: 'team' }
+      );
     }
 
     const { error } = await this.supabase
@@ -697,7 +773,11 @@ export class TeamService {
       .eq('id', id);
 
     if (error) {
-      throw new Error(`Failed to delete team: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to delete team',
+        { teamId: id, dbError: error.message }
+      );
     }
 
     await auditLogger.log({
@@ -730,7 +810,11 @@ export class TeamService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to add team member: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to add team member',
+        { teamId, userId, role, dbError: error.message }
+      );
     }
 
     return this.mapDbTeamMemberToTeamMember(member);
@@ -748,7 +832,11 @@ export class TeamService {
       .eq('user_id', userId);
 
     if (error) {
-      throw new Error(`Failed to remove team member: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to remove team member',
+        { teamId, userId, dbError: error.message }
+      );
     }
   }
 
@@ -763,7 +851,11 @@ export class TeamService {
       .eq('team_id', teamId);
 
     if (error) {
-      throw new Error(`Failed to get team members: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get team members',
+        { teamId, dbError: error.message }
+      );
     }
 
     return data || [];
