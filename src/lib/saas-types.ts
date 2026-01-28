@@ -3,6 +3,8 @@
  * Mirrors the database schema for multi-tenant support
  */
 
+import { LSHError, ErrorCodes } from './lsh-error.js';
+
 // ============================================================================
 // SUBSCRIPTION TIERS & LIMITS
 // ============================================================================
@@ -789,14 +791,22 @@ export function isJwtRefreshTokenPayload(value: unknown): value is JwtRefreshTok
  */
 export function validateJwtPayload(decoded: unknown): VerifiedTokenResult {
   if (!isJwtPayloadBase(decoded)) {
-    throw new Error('Invalid token payload: missing required fields (sub, type)');
+    throw new LSHError(
+      ErrorCodes.AUTH_INVALID_TOKEN,
+      'Invalid token payload: missing required fields (sub, type)',
+      { decodedType: typeof decoded }
+    );
   }
 
   const payload = decoded as JwtPayloadBase;
 
   if (payload.type === 'access') {
     if (!isJwtAccessTokenPayload(decoded)) {
-      throw new Error('Invalid access token payload: missing email field');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_TOKEN,
+        'Invalid access token payload: missing email field',
+        { tokenType: 'access', userId: payload.sub }
+      );
     }
     return {
       userId: payload.sub,
@@ -812,7 +822,11 @@ export function validateJwtPayload(decoded: unknown): VerifiedTokenResult {
     };
   }
 
-  throw new Error(`Invalid token type: ${payload.type}`);
+  throw new LSHError(
+    ErrorCodes.AUTH_INVALID_TOKEN,
+    `Invalid token type: ${payload.type}`,
+    { tokenType: payload.type, expectedTypes: ['access', 'refresh'] }
+  );
 }
 
 // ============================================================================
@@ -979,7 +993,11 @@ export function getErrorDetails(error: unknown): { message: string; stack?: stri
 // TODO(@gwicho38): Review - getAuthenticatedUser
 export function getAuthenticatedUser(req: AuthenticatedRequest): User {
   if (!req.user) {
-    throw new Error('User not authenticated');
+    throw new LSHError(
+      ErrorCodes.AUTH_UNAUTHORIZED,
+      'User not authenticated',
+      { hint: 'Request must pass through authenticateUser middleware first' }
+    );
   }
   return req.user;
 }
