@@ -25,6 +25,40 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 42: Test Coverage - lsh-error.ts (Core Error Handling)
+**Priority**: HIGH → COMPLETE
+**Category**: 🧪 Testing / 🏗️ Robustness
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `lsh-error.ts` core error handling module needed comprehensive testing
+2. Error code constants, status code mapping, factory functions untested
+3. Error utilities (extractErrorMessage, isLSHError, wrapAsLSHError) needed coverage
+
+**Implementation**:
+Added 84 comprehensive tests covering:
+- ErrorCodes constants (auth, secrets, DB, daemon, job, API, config, validation, billing, resource)
+- LSHError class construction, timestamps, instanceof checks, stack traces
+- HTTP status code mapping (400, 401, 402, 403, 404, 409, 429, 501, 503, 504, 500)
+- toJSON serialization and toString formatting
+- extractErrorMessage for LSHError, Error, string, objects, primitives
+- extractErrorDetails with full context extraction
+- isLSHError type guard with code matching
+- wrapAsLSHError for wrapping foreign errors
+- Factory functions (notFoundError, alreadyExistsError, validationError, unauthorizedError, forbiddenError)
+- Integration scenarios (try-catch patterns, error chaining)
+
+**Files Modified**:
+- `src/__tests__/lsh-error.test.ts` (NEW - 84 tests)
+
+**Verification**:
+- ✅ All 84 tests pass
+- ✅ Lint passes
+- ✅ Core error handling fully covered
+
+---
+
 ### Task 41: Test Coverage - constant-time.ts (Timing Attack Prevention)
 **Priority**: HIGH → COMPLETE
 **Category**: 🧪 Testing / 🔒 Security
@@ -1132,14 +1166,14 @@ Added 76 comprehensive tests covering:
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 41
-- **Tests Added**: 827 (633 + 76 command-validator + 43 env-validator + 75 constant-time)
-- **Files Modified**: 85
-- **Commits**: 41
+- **Tasks Completed**: 42
+- **Tests Added**: 911 (633 + 76 command-validator + 43 env-validator + 75 constant-time + 84 lsh-error)
+- **Files Modified**: 86
+- **Commits**: 42
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
 - **Type Safety**: 100% complete (19 `any` types removed from source, only 2 remain in test file)
-- **Test Coverage**: In progress (command-validator.ts, env-validator.ts, constant-time.ts fully covered)
+- **Test Coverage**: In progress (command-validator.ts, env-validator.ts, constant-time.ts, lsh-error.ts fully covered)
 
 ---
 
