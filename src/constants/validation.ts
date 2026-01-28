@@ -47,38 +47,38 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     riskLevel: RISK_LEVELS.HIGH,
   },
 
-  // High risk - Remote code execution
+  // Critical risk - Remote code execution
   {
     pattern: /curl\s+.*\|\s*bash/i,
     description: ERRORS.REMOTE_EXEC_CURL,
-    riskLevel: RISK_LEVELS.HIGH,
+    riskLevel: RISK_LEVELS.CRITICAL,
   },
   {
     pattern: /wget\s+.*\|\s*sh/i,
     description: ERRORS.REMOTE_EXEC_WGET,
-    riskLevel: RISK_LEVELS.HIGH,
+    riskLevel: RISK_LEVELS.CRITICAL,
   },
   {
     pattern: /nc\s+.*-e/i,
     description: ERRORS.REVERSE_SHELL,
-    riskLevel: RISK_LEVELS.HIGH,
+    riskLevel: RISK_LEVELS.CRITICAL,
   },
 
-  // High risk - Sensitive file access
+  // Critical risk - Sensitive file access
   {
     pattern: /cat\s+\/etc\/shadow/i,
     description: ERRORS.READ_SHADOW,
-    riskLevel: RISK_LEVELS.HIGH,
+    riskLevel: RISK_LEVELS.CRITICAL,
   },
   {
     pattern: /cat\s+\/etc\/passwd/i,
     description: ERRORS.READ_PASSWD,
-    riskLevel: RISK_LEVELS.MEDIUM,
+    riskLevel: RISK_LEVELS.HIGH,
   },
   {
     pattern: /\.ssh\/id_rsa/i,
     description: ERRORS.ACCESS_SSH_KEY,
-    riskLevel: RISK_LEVELS.HIGH,
+    riskLevel: RISK_LEVELS.CRITICAL,
   },
 
   // High risk - Process killing
@@ -93,53 +93,79 @@ export const DANGEROUS_PATTERNS: DangerousPattern[] = [
     riskLevel: RISK_LEVELS.HIGH,
   },
 
-  // Medium risk - Obfuscation attempts
+  // High risk - Obfuscation attempts
   {
     pattern: /\$\(.*base64.*\)/i,
     description: ERRORS.BASE64_COMMAND,
-    riskLevel: RISK_LEVELS.MEDIUM,
+    riskLevel: RISK_LEVELS.HIGH,
   },
   {
     pattern: /eval.*\$\(/i,
     description: ERRORS.DYNAMIC_EVAL,
-    riskLevel: RISK_LEVELS.MEDIUM,
+    riskLevel: RISK_LEVELS.HIGH,
   },
   {
     // Detect null byte injection attacks (legitimate security pattern)
     // eslint-disable-next-line no-control-regex
     pattern: /\x00/i,
     description: ERRORS.NULL_BYTE,
-    riskLevel: RISK_LEVELS.HIGH,
+    riskLevel: RISK_LEVELS.CRITICAL,
   },
 ];
 
 export const WARNING_PATTERNS: WarningPattern[] = [
   {
-    pattern: /sudo\s+/i,
-    description: 'Command uses sudo (elevated privileges)',
-  },
-  {
     pattern: /rm\s+-rf/i,
-    description: 'Force recursive deletion - use with caution',
+    description: ERRORS.RECURSIVE_DELETE,
   },
   {
-    pattern: />\s*\/dev\/(sd[a-z]|hd[a-z]|nvme[0-9])/i,
-    description: 'Direct disk device access',
+    pattern: /sudo/i,
+    description: ERRORS.SUDO_ELEVATED,
   },
   {
     pattern: /chmod\s+777/i,
-    description: 'Setting world-writable permissions',
+    description: ERRORS.CHMOD_777,
   },
   {
-    pattern: /curl.*\|/i,
-    description: 'Piping curl output to another command',
+    pattern: />\s*\/dev\/sda/i,
+    description: ERRORS.DISK_WRITE,
   },
   {
-    pattern: /wget.*\|/i,
-    description: 'Piping wget output to another command',
+    pattern: /curl\s+.*-k/i,
+    description: ERRORS.INSECURE_SSL,
   },
   {
-    pattern: /exec\s+/i,
-    description: 'Using exec to replace current process',
+    pattern: /:\(\)\{.*:\|:.*\}/i,
+    description: ERRORS.FORK_BOMB,
+  },
+];
+
+export interface SuspiciousCheck {
+  test: (command: string) => boolean;
+  message: string;
+  level: 'medium' | 'high';
+}
+
+export const SUSPICIOUS_CHECKS: SuspiciousCheck[] = [
+  {
+    test: (command: string) => (command.match(/;/g) || []).length > 5,
+    message: ERRORS.EXCESSIVE_CHAINING,
+    level: 'medium',
+  },
+  {
+    test: (command: string) => (command.match(/\|/g) || []).length > 3,
+    message: ERRORS.EXCESSIVE_PIPES,
+    level: 'medium',
+  },
+  {
+    test: (command: string) => /\$\([^)]*\$\(/.test(command),
+    message: ERRORS.NESTED_SUBSTITUTION,
+    level: 'high',
+  },
+  {
+    // eslint-disable-next-line no-control-regex
+    test: (command: string) => /[\x00-\x08\x0B\x0C\x0E-\x1F]/.test(command),
+    message: ERRORS.CONTROL_CHARS,
+    level: 'high',
   },
 ];
