@@ -8,6 +8,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { DEFAULTS } from '../constants/index.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 export interface CloudConfigOptions {
   userId?: string;
@@ -357,7 +358,11 @@ export class CloudConfigManager {
       });
     } catch (error) {
       console.error('Failed to import configuration:', error);
-      throw new Error('Invalid configuration JSON');
+      throw new LSHError(
+        ErrorCodes.CONFIG_PARSE_ERROR,
+        'Invalid configuration JSON',
+        { parseError: extractErrorMessage(error), inputLength: configJson.length }
+      );
     }
   }
 
