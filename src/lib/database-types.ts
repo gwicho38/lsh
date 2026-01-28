@@ -51,7 +51,7 @@ export interface DbOrganizationRecord {
  * Organization settings stored in the settings JSONB column.
  * Extend this as new settings are added.
  */
-export interface DbOrganizationSettings {
+export interface DbOrganizationSettings extends Record<string, unknown> {
   /** UI theme preference */
   theme?: 'light' | 'dark' | 'system';
   /** Email notification preferences */
@@ -509,6 +509,17 @@ export interface DbOrganizationUsageSummaryRecord {
 // ============================================================================
 
 /**
+ * Stripe webhook event wrapper.
+ * All Stripe webhook events have this structure with a type and data.object payload.
+ */
+export interface StripeWebhookEvent {
+  type: string;
+  data: {
+    object: StripeCheckoutSession | StripeSubscriptionEvent | StripeInvoiceEvent;
+  };
+}
+
+/**
  * Stripe checkout session object (from checkout.session.completed webhook).
  * Partial type - only includes fields we use.
  */
@@ -564,6 +575,20 @@ export interface StripeInvoiceEvent {
   subscription_metadata?: {
     organization_id?: string;
   };
+}
+
+// ============================================================================
+// JOIN RESULT TYPES
+// ============================================================================
+
+/**
+ * Result from joining organization_members with organizations.
+ * Used when fetching a user's organizations.
+ * Note: Supabase returns joined relations as arrays even for single records.
+ */
+export interface DbOrgMemberWithOrg {
+  organization_id: string;
+  organizations: DbOrganizationRecord[];
 }
 
 // ============================================================================

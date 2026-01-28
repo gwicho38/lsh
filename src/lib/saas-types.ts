@@ -483,9 +483,9 @@ export interface CreateAuditLogInput {
   resourceId?: string;
   ipAddress?: string;
   userAgent?: string;
-  metadata?: Record<string, any>;
-  oldValue?: Record<string, any>;
-  newValue?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+  oldValue?: Record<string, unknown>;
+  newValue?: Record<string, unknown>;
 }
 
 // ============================================================================
@@ -661,6 +661,27 @@ export interface AuthToken {
   accessToken: string;
   refreshToken?: string;
   expiresIn: number;
+}
+
+/**
+ * JWT payload structure for LSH SaaS tokens.
+ * Decoded from access tokens.
+ */
+export interface JwtPayload {
+  /** Subject (user ID) */
+  sub: string;
+  /** User email */
+  email: string;
+  /** Token type: 'access' | 'refresh' */
+  type: 'access' | 'refresh';
+  /** Issued at timestamp */
+  iat?: number;
+  /** Expiration timestamp */
+  exp?: number;
+  /** Issuer */
+  iss?: string;
+  /** Audience */
+  aud?: string;
 }
 
 export interface AuthSession {
