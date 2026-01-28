@@ -304,6 +304,79 @@ export class DatabasePersistence {
   }
 
   /**
+   * Get a specific job by its job_id
+   */
+  public async getJobById(jobId: string): Promise<ShellJob | null> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.getJobById(jobId);
+    }
+
+    try {
+      let query = this.client!
+        .from('shell_jobs')
+        .select('*')
+        .eq('job_id', jobId);
+
+      // Only filter by user_id if it's not undefined
+      if (this.userId !== undefined) {
+        query = query.eq('user_id', this.userId);
+      } else {
+        query = query.is('user_id', null);
+      }
+
+      const { data, error } = await query.single();
+
+      if (error) {
+        // Don't log PGRST116 (row not found) as an error
+        if (error.code !== 'PGRST116') {
+          console.error('Failed to get job by ID:', error);
+        }
+        return null;
+      }
+
+      return data || null;
+    } catch (error) {
+      console.error('Error getting job by ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a job by its job_id
+   */
+  public async deleteJob(jobId: string): Promise<boolean> {
+    if (this.useLocalStorage && this.localStorage) {
+      return this.localStorage.deleteJob(jobId);
+    }
+
+    try {
+      let query = this.client!
+        .from('shell_jobs')
+        .delete()
+        .eq('job_id', jobId);
+
+      // Only filter by user_id if it's not undefined
+      if (this.userId !== undefined) {
+        query = query.eq('user_id', this.userId);
+      } else {
+        query = query.is('user_id', null);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error('Failed to delete job:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      return false;
+    }
+  }
+
+  /**
    * Save shell configuration
    */
   // TODO(@gwicho38): Review - saveConfiguration

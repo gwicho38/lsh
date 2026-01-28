@@ -72,6 +72,14 @@ export declare class LocalStorageAdapter {
      */
     getActiveJobs(): Promise<ShellJob[]>;
     /**
+     * Get a specific job by its job_id
+     */
+    getJobById(jobId: string): Promise<ShellJob | null>;
+    /**
+     * Delete a job by its job_id
+     */
+    deleteJob(jobId: string): Promise<boolean>;
+    /**
      * Save shell configuration
      */
     saveConfiguration(config: Omit<ShellConfiguration, 'id' | 'created_at' | 'updated_at'>): Promise<boolean>;

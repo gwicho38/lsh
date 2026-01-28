@@ -9,7 +9,7 @@ export declare class DatabaseJobStorage implements JobStorage {
     private userId?;
     constructor(userId?: string);
     save(job: BaseJobSpec): Promise<void>;
-    get(_jobId: string): Promise<BaseJobSpec | null>;
+    get(jobId: string): Promise<BaseJobSpec | null>;
     list(_filter?: BaseJobFilter): Promise<BaseJobSpec[]>;
     private mapDbStatusToJobStatus;
     update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void>;
