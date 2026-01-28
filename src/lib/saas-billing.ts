@@ -11,6 +11,11 @@ import type {
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
 import { ENV_VARS } from '../constants/index.js';
+import {
+  LSHError,
+  ErrorCodes,
+  extractErrorMessage,
+} from './lsh-error.js';
 
 /**
  * Stripe Pricing IDs (set via environment variables)
@@ -41,7 +46,11 @@ export class BillingService {
     organizationId: string;
   }): Promise<string> {
     if (!this.stripeSecretKey) {
-      throw new Error('STRIPE_SECRET_KEY not configured');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'STRIPE_SECRET_KEY not configured',
+        { envVar: 'STRIPE_SECRET_KEY' }
+      );
     }
 
     const formData = new URLSearchParams();
@@ -61,8 +70,12 @@ export class BillingService {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to create Stripe customer: ${error}`);
+      const errorText = await response.text();
+      throw new LSHError(
+        ErrorCodes.BILLING_STRIPE_ERROR,
+        'Failed to create Stripe customer',
+        { stripeError: errorText, email: params.email, statusCode: response.status }
+      );
     }
 
     const customer = await response.json();
@@ -89,7 +102,11 @@ export class BillingService {
     customerId?: string;
   }): Promise<{ sessionId: string; url: string }> {
     if (!this.stripeSecretKey) {
-      throw new Error('STRIPE_SECRET_KEY not configured');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'STRIPE_SECRET_KEY not configured',
+        { envVar: 'STRIPE_SECRET_KEY' }
+      );
     }
 
     // Get price ID
@@ -97,7 +114,11 @@ export class BillingService {
     const priceId = STRIPE_PRICE_IDS[priceKey];
 
     if (!priceId) {
-      throw new Error(`No Stripe price configured for ${params.tier} ${params.billingPeriod}`);
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        `No Stripe price configured for ${params.tier} ${params.billingPeriod}`,
+        { tier: params.tier, billingPeriod: params.billingPeriod, priceKey }
+      );
     }
 
     const formData = new URLSearchParams();
@@ -123,8 +144,17 @@ export class BillingService {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to create checkout session: ${error}`);
+      const errorText = await response.text();
+      throw new LSHError(
+        ErrorCodes.BILLING_STRIPE_ERROR,
+        'Failed to create checkout session',
+        {
+          stripeError: errorText,
+          tier: params.tier,
+          billingPeriod: params.billingPeriod,
+          statusCode: response.status,
+        }
+      );
     }
 
     const session = await response.json();
@@ -141,7 +171,11 @@ export class BillingService {
   // TODO(@gwicho38): Review - createPortalSession
   async createPortalSession(customerId: string, returnUrl: string): Promise<string> {
     if (!this.stripeSecretKey) {
-      throw new Error('STRIPE_SECRET_KEY not configured');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'STRIPE_SECRET_KEY not configured',
+        { envVar: 'STRIPE_SECRET_KEY' }
+      );
     }
 
     const formData = new URLSearchParams();
@@ -158,8 +192,12 @@ export class BillingService {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to create portal session: ${error}`);
+      const errorText = await response.text();
+      throw new LSHError(
+        ErrorCodes.BILLING_STRIPE_ERROR,
+        'Failed to create portal session',
+        { stripeError: errorText, customerId, statusCode: response.status }
+      );
     }
 
     const session = await response.json();
@@ -172,7 +210,11 @@ export class BillingService {
   // TODO(@gwicho38): Review - handleWebhook
   async handleWebhook(payload: string, signature: string): Promise<void> {
     if (!this.stripeWebhookSecret) {
-      throw new Error('STRIPE_WEBHOOK_SECRET not configured');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'STRIPE_WEBHOOK_SECRET not configured',
+        { envVar: 'STRIPE_WEBHOOK_SECRET' }
+      );
     }
 
     // Verify webhook signature
@@ -231,8 +273,12 @@ export class BillingService {
     // For now, just parse the payload
     try {
       return JSON.parse(payload);
-    } catch (_error) {
-      throw new Error('Invalid webhook payload');
+    } catch (error) {
+      throw new LSHError(
+        ErrorCodes.API_WEBHOOK_VERIFICATION_FAILED,
+        'Invalid webhook payload: failed to parse JSON',
+        { parseError: extractErrorMessage(error) }
+      );
     }
   }
 
@@ -511,7 +557,11 @@ export class BillingService {
       .order('invoice_date', { ascending: false });
 
     if (error) {
-      throw new Error(`Failed to get invoices: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get invoices',
+        { organizationId, dbError: error.message }
+      );
     }
 
     return (data || []).map(this.mapDbInvoiceToInvoice);
