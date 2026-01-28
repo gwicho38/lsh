@@ -14,6 +14,7 @@ import { BaseJobManager, BaseJobSpec } from '../lib/base-job-manager.js';
 import MemoryJobStorage from '../lib/job-storage-memory.js';
 import { JobSpec } from '../lib/job-manager.js';
 import { ENV_VARS, DEFAULTS, PATHS } from '../constants/index.js';
+import { LSHError, ErrorCodes } from '../lib/lsh-error.js';
 
 export interface JobExecutionRecord {
   executionId: string;
@@ -247,7 +248,11 @@ export class JobRegistry extends BaseJobManager {
   async getJobStatistics(jobId: string): Promise<JobStatistics> {
     const stats = this.statistics.get(jobId);
     if (!stats) {
-      throw new Error(`No statistics found for job ${jobId}`);
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        `No statistics found for job ${jobId}`,
+        { jobId, resource: 'statistics' }
+      );
     }
     return stats;
   }
@@ -783,7 +788,11 @@ export class JobRegistry extends BaseJobManager {
   async startJob(jobId: string): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {
-      throw new Error(`Job ${jobId} not found in registry`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found in registry`,
+        { jobId, location: 'registry' }
+      );
     }
 
     // Record execution start
@@ -803,7 +812,11 @@ export class JobRegistry extends BaseJobManager {
   async stopJob(jobId: string, _signal?: string): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {
-      throw new Error(`Job ${jobId} not found in registry`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found in registry`,
+        { jobId, location: 'registry' }
+      );
     }
 
     // Update job status
