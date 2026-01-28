@@ -5,6 +5,7 @@
 
 import { createClient, SupabaseClient as SupabaseClientType } from '@supabase/supabase-js';
 import { ENV_VARS } from '../constants/index.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 // Supabase configuration from environment variables
 // IMPORTANT: These must be set in .env or environment
@@ -26,8 +27,13 @@ export class SupabaseClient {
     const databaseUrl = config?.databaseUrl || process.env[ENV_VARS.DATABASE_URL];
 
     if (!url || !anonKey) {
-      throw new Error(
-        'Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'Supabase configuration missing',
+        {
+          missingVars: [!url && 'SUPABASE_URL', !anonKey && 'SUPABASE_ANON_KEY'].filter(Boolean),
+          hint: 'Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables'
+        }
       );
     }
 
@@ -116,7 +122,11 @@ export const supabaseClient = {
   getClient() {
     const client = getDefaultClient();
     if (!client) {
-      throw new Error('Supabase client not initialized. Using local storage fallback.');
+      throw new LSHError(
+        ErrorCodes.DB_CONNECTION_FAILED,
+        'Supabase client not initialized',
+        { hint: 'Local storage fallback is available' }
+      );
     }
     return client.getClient();
   },
@@ -157,8 +167,13 @@ export function getSupabaseClient() {
   const key = process.env[ENV_VARS.SUPABASE_ANON_KEY];
 
   if (!url || !key) {
-    throw new Error(
-      'Supabase configuration missing. Please set SUPABASE_URL and SUPABASE_ANON_KEY environment variables.'
+    throw new LSHError(
+      ErrorCodes.CONFIG_MISSING_ENV_VAR,
+      'Supabase configuration missing',
+      {
+        missingVars: [!url && 'SUPABASE_URL', !key && 'SUPABASE_ANON_KEY'].filter(Boolean),
+        hint: 'Set SUPABASE_URL and SUPABASE_ANON_KEY environment variables'
+      }
     );
   }
 
