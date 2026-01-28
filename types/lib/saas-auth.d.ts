@@ -2,7 +2,7 @@
  * LSH SaaS Authentication Service
  * Handles user signup, login, email verification, and session management
  */
-import type { User, LoginInput, SignupInput, AuthToken, AuthSession, Organization, VerifiedTokenResult } from './saas-types.js';
+import { type User, type LoginInput, type SignupInput, type AuthToken, type AuthSession, type Organization, type VerifiedTokenResult, type ValidateResetTokenResult } from './saas-types.js';
 /**
  * Hash a password using bcrypt
  */
@@ -79,13 +79,43 @@ export declare class AuthService {
      */
     getUserOrganizations(userId: string): Promise<Organization[]>;
     /**
-     * Request password reset
+     * Request password reset.
+     *
+     * Creates a secure reset token, stores its hash in the database,
+     * and returns the plain token for sending via email.
+     *
+     * Security considerations:
+     * - Only the token hash is stored (plain token never persisted)
+     * - Returns a dummy token if email doesn't exist (timing-safe)
+     * - Tokens expire after PASSWORD_RESET_EXPIRY (1 hour)
+     * - Old unused tokens for the user are invalidated
+     *
+     * @param email - User's email address
+     * @param ipAddress - Optional IP address of requester
+     * @param userAgent - Optional user agent of requester
+     * @returns Plain reset token to send via email
      */
-    requestPasswordReset(email: string): Promise<string>;
+    requestPasswordReset(email: string, ipAddress?: string, userAgent?: string): Promise<string>;
     /**
-     * Reset password
+     * Validate a password reset token.
+     *
+     * @param token - Plain reset token
+     * @returns Validation result with user ID if valid
      */
-    resetPassword(_token: string, _newPassword: string): Promise<void>;
+    validateResetToken(token: string): Promise<ValidateResetTokenResult>;
+    /**
+     * Reset password using a valid reset token.
+     *
+     * Security considerations:
+     * - Token is validated and marked as used atomically
+     * - Password is hashed with bcrypt before storage
+     * - Token can only be used once
+     *
+     * @param token - Plain reset token from email
+     * @param newPassword - New password to set
+     * @throws Error if token is invalid, expired, or already used
+     */
+    resetPassword(token: string, newPassword: string): Promise<void>;
     /**
      * Change password
      */

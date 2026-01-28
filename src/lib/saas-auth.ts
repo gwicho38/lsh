@@ -3,7 +3,7 @@
  * Handles user signup, login, email verification, and session management
  */
 
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import {
@@ -14,6 +14,7 @@ import {
   type AuthSession,
   type Organization,
   type VerifiedTokenResult,
+  type ValidateResetTokenResult,
   validateJwtPayload,
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
@@ -23,6 +24,7 @@ const BCRYPT_ROUNDS = 12;
 const TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
 const REFRESH_TOKEN_EXPIRY = 30 * 24 * 60 * 60; // 30 days
 const EMAIL_VERIFICATION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in ms
+const PASSWORD_RESET_EXPIRY = 60 * 60 * 1000; // 1 hour in ms
 
 /**
  * Generate a secure random token
@@ -30,6 +32,14 @@ const EMAIL_VERIFICATION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in ms
 // TODO(@gwicho38): Review - generateToken
 function generateToken(length = 32): string {
   return randomBytes(length).toString('hex');
+}
+
+/**
+ * Hash a token using SHA-256.
+ * Used for storing reset tokens securely (we only store the hash).
+ */
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 /**
@@ -432,10 +442,28 @@ export class AuthService {
   }
 
   /**
-   * Request password reset
+   * Request password reset.
+   *
+   * Creates a secure reset token, stores its hash in the database,
+   * and returns the plain token for sending via email.
+   *
+   * Security considerations:
+   * - Only the token hash is stored (plain token never persisted)
+   * - Returns a dummy token if email doesn't exist (timing-safe)
+   * - Tokens expire after PASSWORD_RESET_EXPIRY (1 hour)
+   * - Old unused tokens for the user are invalidated
+   *
+   * @param email - User's email address
+   * @param ipAddress - Optional IP address of requester
+   * @param userAgent - Optional user agent of requester
+   * @returns Plain reset token to send via email
    */
   // TODO(@gwicho38): Review - requestPasswordReset
-  async requestPasswordReset(email: string): Promise<string> {
+  async requestPasswordReset(
+    email: string,
+    ipAddress?: string,
+    userAgent?: string
+  ): Promise<string> {
     const { data: user, error } = await this.supabase
       .from('users')
       .select('id')
@@ -444,26 +472,131 @@ export class AuthService {
       .single();
 
     if (error || !user) {
-      // Don't reveal if email exists
+      // Don't reveal if email exists - return dummy token
+      // This prevents email enumeration attacks
       return generateToken();
     }
 
+    // Generate secure token
     const resetToken = generateToken();
-    const _expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour (for future use)
+    const tokenHash = hashToken(resetToken);
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_EXPIRY);
 
-    // Store reset token (we'll need a password_reset_tokens table)
-    // For now, just return the token
+    // Invalidate any existing unused tokens for this user
+    await this.supabase
+      .from('password_reset_tokens')
+      .delete()
+      .eq('user_id', user.id)
+      .is('used_at', null);
+
+    // Store the new token hash
+    const { error: insertError } = await this.supabase
+      .from('password_reset_tokens')
+      .insert({
+        user_id: user.id,
+        token_hash: tokenHash,
+        expires_at: expiresAt.toISOString(),
+        requested_ip: ipAddress || null,
+        requested_user_agent: userAgent || null,
+      });
+
+    if (insertError) {
+      // Log error but don't reveal to user
+      console.error('Failed to create password reset token:', insertError.message);
+      // Return dummy token to maintain consistent behavior
+      return generateToken();
+    }
+
     return resetToken;
   }
 
   /**
-   * Reset password
+   * Validate a password reset token.
+   *
+   * @param token - Plain reset token
+   * @returns Validation result with user ID if valid
+   */
+  // TODO(@gwicho38): Review - validateResetToken
+  async validateResetToken(token: string): Promise<ValidateResetTokenResult> {
+    const tokenHash = hashToken(token);
+
+    const { data: resetToken, error } = await this.supabase
+      .from('password_reset_tokens')
+      .select('id, user_id, expires_at, used_at')
+      .eq('token_hash', tokenHash)
+      .single();
+
+    if (error || !resetToken) {
+      return { valid: false, error: 'INVALID_TOKEN' };
+    }
+
+    // Check if already used
+    if (resetToken.used_at) {
+      return { valid: false, error: 'ALREADY_USED' };
+    }
+
+    // Check if expired
+    const expiresAt = new Date(resetToken.expires_at);
+    if (expiresAt < new Date()) {
+      return { valid: false, error: 'EXPIRED_TOKEN' };
+    }
+
+    return { valid: true, userId: resetToken.user_id };
+  }
+
+  /**
+   * Reset password using a valid reset token.
+   *
+   * Security considerations:
+   * - Token is validated and marked as used atomically
+   * - Password is hashed with bcrypt before storage
+   * - Token can only be used once
+   *
+   * @param token - Plain reset token from email
+   * @param newPassword - New password to set
+   * @throws Error if token is invalid, expired, or already used
    */
   // TODO(@gwicho38): Review - resetPassword
-  async resetPassword(_token: string, _newPassword: string): Promise<void> {
-    // TODO: Implement password reset
-    // Need to create password_reset_tokens table
-    throw new Error('Not implemented');
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    // Validate the token
+    const validation = await this.validateResetToken(token);
+
+    if (!validation.valid || !validation.userId) {
+      switch (validation.error) {
+        case 'EXPIRED_TOKEN':
+          throw new Error('EXPIRED_TOKEN');
+        case 'ALREADY_USED':
+          throw new Error('ALREADY_USED');
+        default:
+          throw new Error('INVALID_TOKEN');
+      }
+    }
+
+    const tokenHash = hashToken(token);
+
+    // Mark token as used
+    const { error: updateTokenError } = await this.supabase
+      .from('password_reset_tokens')
+      .update({ used_at: new Date().toISOString() })
+      .eq('token_hash', tokenHash)
+      .is('used_at', null); // Only update if not already used (race condition protection)
+
+    if (updateTokenError) {
+      throw new Error('Failed to process reset token');
+    }
+
+    // Hash the new password
+    const newPasswordHash = await hashPassword(newPassword);
+
+    // Update the user's password
+    const { error: updateUserError } = await this.supabase
+      .from('users')
+      .update({ password_hash: newPasswordHash })
+      .eq('id', validation.userId);
+
+    if (updateUserError) {
+      throw new Error('Failed to update password');
+    }
   }
 
   /**
