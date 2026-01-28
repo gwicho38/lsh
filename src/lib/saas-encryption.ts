@@ -7,6 +7,7 @@ import { randomBytes, createCipheriv, createDecipheriv, createHash, pbkdf2Sync }
 import type { EncryptionKey } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 const ALGORITHM = 'aes-256-cbc';
 const KEY_LENGTH = 32; // 256 bits
@@ -23,8 +24,10 @@ function getMasterKey(): Buffer {
   const masterKeyHex = process.env[ENV_VARS.LSH_MASTER_KEY] || process.env[ENV_VARS.LSH_SECRETS_KEY];
 
   if (!masterKeyHex) {
-    throw new Error(
-      'LSH_MASTER_KEY or LSH_SECRETS_KEY environment variable must be set for encryption'
+    throw new LSHError(
+      ErrorCodes.CONFIG_MISSING_ENV_VAR,
+      'LSH_MASTER_KEY or LSH_SECRETS_KEY environment variable must be set for encryption',
+      { required: ['LSH_MASTER_KEY', 'LSH_SECRETS_KEY'] }
     );
   }
 
@@ -75,7 +78,11 @@ export class EncryptionService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create encryption key: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.SECRETS_ENCRYPTION_FAILED,
+        `Failed to create encryption key: ${error.message}`,
+        { teamId, dbError: error.message }
+      );
     }
 
     // Update team to use this key
@@ -131,7 +138,11 @@ export class EncryptionService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to rotate encryption key: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.SECRETS_ROTATION_FAILED,
+        `Failed to rotate encryption key: ${error.message}`,
+        { teamId, newVersion, dbError: error.message }
+      );
     }
 
     // Update team
@@ -169,7 +180,11 @@ export class EncryptionService {
   async getDecryptedTeamKey(teamId: string): Promise<Buffer> {
     const key = await this.getTeamKey(teamId);
     if (!key) {
-      throw new Error('No active encryption key found for team');
+      throw new LSHError(
+        ErrorCodes.SECRETS_KEY_NOT_FOUND,
+        'No active encryption key found for team',
+        { teamId }
+      );
     }
 
     return this.decryptWithMasterKey(key.encryptedKey);
@@ -204,7 +219,11 @@ export class EncryptionService {
     // Split IV and encrypted data
     const parts = encryptedData.split(':');
     if (parts.length !== 2) {
-      throw new Error('Invalid encrypted data format');
+      throw new LSHError(
+        ErrorCodes.SECRETS_DECRYPTION_FAILED,
+        'Invalid encrypted data format',
+        { teamId, expectedFormat: 'iv:encryptedData', actualParts: parts.length }
+      );
     }
 
     const iv = Buffer.from(parts[0], 'hex');
@@ -240,7 +259,11 @@ export class EncryptionService {
   private decryptWithMasterKey(encryptedKey: string): Buffer {
     const parts = encryptedKey.split(':');
     if (parts.length !== 2) {
-      throw new Error('Invalid encrypted key format');
+      throw new LSHError(
+        ErrorCodes.SECRETS_DECRYPTION_FAILED,
+        'Invalid encrypted key format',
+        { expectedFormat: 'iv:encryptedKey', actualParts: parts.length }
+      );
     }
 
     const iv = Buffer.from(parts[0], 'hex');
