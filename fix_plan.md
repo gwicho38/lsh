@@ -25,6 +25,40 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 44: Test Coverage - format-utils.ts (Secret Export Formatting)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🧪 Testing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `format-utils.ts` secret formatting functions needed comprehensive testing
+2. Multiple output format converters (env, json, yaml, toml, export) untested
+3. Masking and namespace detection logic not covered
+
+**Implementation**:
+Added 61 comprehensive tests covering:
+- `maskSecret`: Short/long values, unicode, special characters
+- `maskSecrets`: Array masking, key preservation
+- `detectNamespaces`: Prefix grouping, single-item handling, root keys
+- `formatAsEnv`: KEY=value format, special chars, empty values
+- `formatAsJSON`: JSON object output, escaping, pretty print
+- `formatAsYAML`: YAML format, numeric strings, multiline values
+- `formatAsTOML`: TOML sections, namespace grouping, quote escaping
+- `formatAsExport`: Shell export statements, single quote escaping
+- `formatSecrets`: Format selection, auto-masking behavior, error handling
+- Integration scenarios (CI/CD secrets, database grouping)
+
+**Files Modified**:
+- `src/__tests__/format-utils.test.ts` (NEW - 61 tests)
+
+**Verification**:
+- ✅ All 61 tests pass
+- ✅ Lint passes
+- ✅ Secret formatting fully covered
+
+---
+
 ### Task 43: Test Coverage - string-utils.ts (String Utilities)
 **Priority**: MEDIUM → COMPLETE
 **Category**: 🧪 Testing
@@ -1195,14 +1229,14 @@ Added 76 comprehensive tests covering:
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 43
-- **Tests Added**: 985 (633 + 76 command-validator + 43 env-validator + 75 constant-time + 84 lsh-error + 74 string-utils)
-- **Files Modified**: 87
-- **Commits**: 43
+- **Tasks Completed**: 44
+- **Tests Added**: 1046 (633 + 76 command-validator + 43 env-validator + 75 constant-time + 84 lsh-error + 74 string-utils + 61 format-utils)
+- **Files Modified**: 88
+- **Commits**: 44
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
 - **Type Safety**: 100% complete (19 `any` types removed from source, only 2 remain in test file)
-- **Test Coverage**: In progress (command-validator.ts, env-validator.ts, constant-time.ts, lsh-error.ts, string-utils.ts fully covered)
+- **Test Coverage**: In progress (command-validator.ts, env-validator.ts, constant-time.ts, lsh-error.ts, string-utils.ts, format-utils.ts fully covered)
 
 ---
 
