@@ -11,7 +11,7 @@ import { billingService } from '../lib/saas-billing.js';
 import { auditLogger, getIpFromRequest } from '../lib/saas-audit.js';
 import { emailService } from '../lib/saas-email.js';
 import { secretsService } from '../lib/saas-secrets.js';
-import type { AuthenticatedRequest } from '../lib/saas-types.js';
+import type { AuthenticatedRequest, AuditAction } from '../lib/saas-types.js';
 import { getErrorMessage, getAuthenticatedUser } from '../lib/saas-types.js'; // eslint-disable-line no-duplicate-imports
 
 /**
@@ -869,7 +869,7 @@ export function setupSaaSApiRoutes(app: Application) {
         const result = await auditLogger.getOrganizationLogs(req.params.organizationId, {
           limit: parseInt(limit as string),
           offset: parseInt(offset as string),
-          action: action as any,
+          action: action as AuditAction | undefined,
           userId: userId as string,
           teamId: teamId as string,
           startDate: startDate ? new Date(startDate as string) : undefined,
