@@ -374,6 +374,75 @@ export interface CreateApiKeyInput {
 export interface ApiKeyWithSecret extends ApiKey {
     secret: string;
 }
+/**
+ * Base JWT payload with standard claims.
+ * All LSH JWTs include these fields.
+ */
+export interface JwtPayloadBase {
+    /** Subject - User ID (UUID) */
+    sub: string;
+    /** Token type discriminator */
+    type: 'access' | 'refresh';
+    /** Issuer - always 'lsh-saas' */
+    iss?: string;
+    /** Audience - always 'lsh-api' */
+    aud?: string | string[];
+    /** Issued at (Unix timestamp) */
+    iat?: number;
+    /** Expiration time (Unix timestamp) */
+    exp?: number;
+}
+/**
+ * Access token payload - includes user email for API usage.
+ */
+export interface JwtAccessTokenPayload extends JwtPayloadBase {
+    type: 'access';
+    /** User email address */
+    email: string;
+}
+/**
+ * Refresh token payload - minimal claims for token rotation.
+ */
+export interface JwtRefreshTokenPayload extends JwtPayloadBase {
+    type: 'refresh';
+}
+/**
+ * Union type for all valid JWT payloads.
+ */
+export type JwtPayload = JwtAccessTokenPayload | JwtRefreshTokenPayload;
+/**
+ * Decoded and validated token result.
+ * Returned by verifyToken after validation.
+ */
+export interface VerifiedTokenResult {
+    /** User ID from token subject */
+    userId: string;
+    /** User email (only present in access tokens) */
+    email?: string;
+    /** Token type */
+    type: 'access' | 'refresh';
+}
+/**
+ * Type guard: Check if value is a valid JWT payload base
+ */
+export declare function isJwtPayloadBase(value: unknown): value is JwtPayloadBase;
+/**
+ * Type guard: Check if payload is an access token
+ */
+export declare function isJwtAccessTokenPayload(value: unknown): value is JwtAccessTokenPayload;
+/**
+ * Type guard: Check if payload is a refresh token
+ */
+export declare function isJwtRefreshTokenPayload(value: unknown): value is JwtRefreshTokenPayload;
+/**
+ * Validate a decoded JWT payload and return typed result.
+ * Throws if payload is invalid.
+ *
+ * @param decoded - Raw decoded JWT from jsonwebtoken
+ * @returns Validated token result with proper types
+ * @throws Error if payload doesn't match expected shape
+ */
+export declare function validateJwtPayload(decoded: unknown): VerifiedTokenResult;
 export interface LoginInput {
     email: string;
     password: string;

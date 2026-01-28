@@ -636,6 +636,136 @@ export interface ApiKeyWithSecret extends ApiKey {
 }
 
 // ============================================================================
+// JWT PAYLOADS
+// ============================================================================
+
+/**
+ * Base JWT payload with standard claims.
+ * All LSH JWTs include these fields.
+ */
+export interface JwtPayloadBase {
+  /** Subject - User ID (UUID) */
+  sub: string;
+  /** Token type discriminator */
+  type: 'access' | 'refresh';
+  /** Issuer - always 'lsh-saas' */
+  iss?: string;
+  /** Audience - always 'lsh-api' */
+  aud?: string | string[];
+  /** Issued at (Unix timestamp) */
+  iat?: number;
+  /** Expiration time (Unix timestamp) */
+  exp?: number;
+}
+
+/**
+ * Access token payload - includes user email for API usage.
+ */
+export interface JwtAccessTokenPayload extends JwtPayloadBase {
+  type: 'access';
+  /** User email address */
+  email: string;
+}
+
+/**
+ * Refresh token payload - minimal claims for token rotation.
+ */
+export interface JwtRefreshTokenPayload extends JwtPayloadBase {
+  type: 'refresh';
+}
+
+/**
+ * Union type for all valid JWT payloads.
+ */
+export type JwtPayload = JwtAccessTokenPayload | JwtRefreshTokenPayload;
+
+/**
+ * Decoded and validated token result.
+ * Returned by verifyToken after validation.
+ */
+export interface VerifiedTokenResult {
+  /** User ID from token subject */
+  userId: string;
+  /** User email (only present in access tokens) */
+  email?: string;
+  /** Token type */
+  type: 'access' | 'refresh';
+}
+
+/**
+ * Type guard: Check if value is a valid JWT payload base
+ */
+export function isJwtPayloadBase(value: unknown): value is JwtPayloadBase {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const obj = value as Record<string, unknown>;
+  return (
+    typeof obj.sub === 'string' &&
+    obj.sub.length > 0 &&
+    (obj.type === 'access' || obj.type === 'refresh')
+  );
+}
+
+/**
+ * Type guard: Check if payload is an access token
+ */
+export function isJwtAccessTokenPayload(value: unknown): value is JwtAccessTokenPayload {
+  if (!isJwtPayloadBase(value)) {
+    return false;
+  }
+  // Value is now known to be JwtPayloadBase, check for access-specific fields
+  const obj = value as unknown as Record<string, unknown>;
+  return obj.type === 'access' && typeof obj.email === 'string' && (obj.email as string).length > 0;
+}
+
+/**
+ * Type guard: Check if payload is a refresh token
+ */
+export function isJwtRefreshTokenPayload(value: unknown): value is JwtRefreshTokenPayload {
+  if (!isJwtPayloadBase(value)) {
+    return false;
+  }
+  return (value as JwtPayloadBase).type === 'refresh';
+}
+
+/**
+ * Validate a decoded JWT payload and return typed result.
+ * Throws if payload is invalid.
+ *
+ * @param decoded - Raw decoded JWT from jsonwebtoken
+ * @returns Validated token result with proper types
+ * @throws Error if payload doesn't match expected shape
+ */
+export function validateJwtPayload(decoded: unknown): VerifiedTokenResult {
+  if (!isJwtPayloadBase(decoded)) {
+    throw new Error('Invalid token payload: missing required fields (sub, type)');
+  }
+
+  const payload = decoded as JwtPayloadBase;
+
+  if (payload.type === 'access') {
+    if (!isJwtAccessTokenPayload(decoded)) {
+      throw new Error('Invalid access token payload: missing email field');
+    }
+    return {
+      userId: payload.sub,
+      email: (decoded as JwtAccessTokenPayload).email,
+      type: 'access',
+    };
+  }
+
+  if (payload.type === 'refresh') {
+    return {
+      userId: payload.sub,
+      type: 'refresh',
+    };
+  }
+
+  throw new Error(`Invalid token type: ${payload.type}`);
+}
+
+// ============================================================================
 // AUTH & SESSION
 // ============================================================================
 

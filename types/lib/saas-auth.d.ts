@@ -2,7 +2,7 @@
  * LSH SaaS Authentication Service
  * Handles user signup, login, email verification, and session management
  */
-import type { User, LoginInput, SignupInput, AuthToken, AuthSession, Organization } from './saas-types.js';
+import type { User, LoginInput, SignupInput, AuthToken, AuthSession, Organization, VerifiedTokenResult } from './saas-types.js';
 /**
  * Hash a password using bcrypt
  */
@@ -20,13 +20,24 @@ export declare function generateAccessToken(userId: string, email: string): stri
  */
 export declare function generateRefreshToken(userId: string): string;
 /**
- * Verify and decode JWT token
+ * Verify and decode JWT token with runtime validation.
+ *
+ * This function performs both cryptographic verification (via jsonwebtoken)
+ * and structural validation (via validateJwtPayload) to ensure type safety.
+ *
+ * @param token - JWT string to verify
+ * @returns Validated token payload with proper typing
+ * @throws Error if token is invalid, expired, or has unexpected structure
+ *
+ * @example
+ * ```typescript
+ * const { userId, email, type } = verifyToken(bearerToken);
+ * if (type === 'access' && email) {
+ *   // Access token logic
+ * }
+ * ```
  */
-export declare function verifyToken(token: string): {
-    userId: string;
-    email?: string;
-    type: string;
-};
+export declare function verifyToken(token: string): VerifiedTokenResult;
 /**
  * Authentication Service
  */
