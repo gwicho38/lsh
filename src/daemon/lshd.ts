@@ -252,7 +252,9 @@ export class LSHJobDaemon extends EventEmitter {
   // TODO(@gwicho38): Review - restart
   async restart(): Promise<void> {
     await this.stop();
-    await new Promise(resolve => setTimeout(resolve, DEFAULTS.DAEMON_RESTART_DELAY_MS));
+    await new Promise<void>(resolve => {
+      setTimeout(resolve, DEFAULTS.DAEMON_RESTART_DELAY_MS);
+    });
     await this.start();
   }
 
@@ -1055,8 +1057,9 @@ const cliLogger = createLogger('LSHDaemonCLI');
 // TODO(@gwicho38): Review - isMainModule
 const isMainModule = (): boolean => {
   try {
-    // Use Function constructor to avoid parse-time errors with import.meta
-     
+    // Use Function constructor to avoid parse-time errors with import.meta in CommonJS/Jest environments.
+    // This is intentional - import.meta cannot be accessed directly in all environments.
+    // eslint-disable-next-line no-new-func
     const getImportMetaUrl = new Function('return import.meta.url');
     const metaUrl = getImportMetaUrl();
     return metaUrl === `file://${process.argv[1]}`;

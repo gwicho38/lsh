@@ -46,7 +46,9 @@ describe('PerformanceProfiler', () => {
       profiler.startProfile('test-profile');
 
       // Simulate some work
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
 
       const result = profiler.endProfile('test-profile');
 
@@ -110,10 +112,14 @@ describe('PerformanceProfiler', () => {
     it('should track relative time for checkpoints', async () => {
       profiler.startProfile('timing-test');
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
       profiler.checkpoint('timing-test', 'after-10ms');
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
       profiler.checkpoint('timing-test', 'after-20ms');
 
       const result = profiler.endProfile('timing-test');
@@ -229,7 +235,9 @@ describe('PerformanceProfiler', () => {
     it('should track average duration', async () => {
       for (let i = 0; i < 3; i++) {
         profiler.startProfile(`timed-${i}`);
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
         profiler.endProfile(`timed-${i}`);
       }
 
@@ -240,11 +248,15 @@ describe('PerformanceProfiler', () => {
 
     it('should track longest profile', async () => {
       profiler.startProfile('short');
-      await new Promise((resolve) => setTimeout(resolve, 5));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 5);
+      });
       profiler.endProfile('short');
 
       profiler.startProfile('long');
-      await new Promise((resolve) => setTimeout(resolve, 20));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 20);
+      });
       profiler.endProfile('long');
 
       const stats = profiler.getStats();
@@ -382,7 +394,9 @@ describe('PerformanceProfiler', () => {
         const { result, profile } = await profileAsync(
           'async-test',
           async () => {
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
             return 'success';
           },
           { test: true }

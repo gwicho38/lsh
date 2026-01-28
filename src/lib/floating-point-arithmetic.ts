@@ -232,8 +232,10 @@ export class FloatingPointArithmetic {
   // TODO(@gwicho38): Review - evaluateExpression
   private evaluateExpression(expression: string): number {
     try {
-      // Use Function constructor for safe evaluation
-      // This is a simplified approach - a full implementation would use a proper parser
+      // Use Function constructor for safe evaluation of mathematical expressions.
+      // This is intentional - we need dynamic expression evaluation for the calculator.
+      // A production implementation should use a proper expression parser for better security.
+      // eslint-disable-next-line no-new-func
       const func = new Function(`return ${expression}`);
       const result = func();
       
