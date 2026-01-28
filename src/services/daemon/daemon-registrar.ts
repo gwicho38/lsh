@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { getPlatformPaths } from '../../lib/platform-utils.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from '../../lib/lsh-error.js';
 
 const execAsync = promisify(exec);
 
@@ -162,7 +163,11 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       action: async (options: unknown) => {
         const opts = options as CommandOptions;
         if (!opts.name || !opts.command || (!opts.schedule && !opts.interval)) {
-          throw new Error('Missing required options: --name, --command, and (--schedule or --interval)');
+          throw new LSHError(
+            ErrorCodes.VALIDATION_REQUIRED_FIELD,
+            'Missing required options: --name, --command, and (--schedule or --interval)',
+            { required: ['--name', '--command', '--schedule OR --interval'], provided: { name: opts.name, command: opts.command, schedule: opts.schedule, interval: opts.interval } }
+          );
         }
 
         const jobSpec = this.createJobSpec(opts as unknown as import('../../lib/base-command-registrar.js').JobSpecOptions);
@@ -255,8 +260,7 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 this.logInfo(`  Output: ${preview}${result.output.length > 100 ? '...' : ''}`);
               }
             } catch (error) {
-              const err = error as Error;
-              this.logError(`  ${job.name} failed: ${err.message || err}`);
+              this.logError(`  ${job.name} failed: ${extractErrorMessage(error)}`);
             }
           }
         }, { forUser: true });
@@ -312,7 +316,11 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
         });
 
         if (!job) {
-          throw new Error(`Job ${jobId} not found`);
+          throw new LSHError(
+            ErrorCodes.JOB_NOT_FOUND,
+            `Job ${jobId} not found`,
+            { jobId }
+          );
         }
 
         this.logInfo(`Job Information: ${jobId}`);
@@ -448,7 +456,11 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
           const job = jobs.find(j => j.id === jobId);
 
           if (!job) {
-            throw new Error(`Job ${jobId} not found in daemon registry`);
+            throw new LSHError(
+              ErrorCodes.JOB_NOT_FOUND,
+              `Job ${jobId} not found in daemon registry`,
+              { jobId, location: 'daemon registry' }
+            );
           }
 
           this.logInfo(`Job Status: ${job.name} (${jobId})`);
@@ -510,8 +522,7 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
               this.logSuccess(`  Synced ${job.name} (${job.id}) - status: ${dbStatus}`);
               syncCount++;
             } catch (error) {
-              const err = error as Error;
-              this.logError(`  Failed to sync ${job.name}: ${err.message}`);
+              this.logError(`  Failed to sync ${job.name}: ${extractErrorMessage(error)}`);
             }
           }
 
@@ -589,8 +600,7 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 this.logSuccess(`Removed: ${socket}`);
               }
             } catch (error) {
-              const err = error as Error;
-              this.logWarning(`Could not remove: ${socket} (${err.message})`);
+              this.logWarning(`Could not remove: ${socket} (${extractErrorMessage(error)})`);
             }
           }
         } else {
@@ -617,8 +627,7 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 this.logSuccess(`Removed: ${pidFile}`);
               }
             } catch (error) {
-              const err = error as Error;
-              this.logWarning(`Could not remove: ${pidFile} (${err.message})`);
+              this.logWarning(`Could not remove: ${pidFile} (${extractErrorMessage(error)})`);
             }
           }
         } else {
@@ -669,8 +678,11 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
       }
 
     } catch (error) {
-      const err = error as Error;
-      throw new Error(`Cleanup failed: ${err.message}`);
+      throw new LSHError(
+        ErrorCodes.DAEMON_STOP_FAILED,
+        `Cleanup failed: ${extractErrorMessage(error)}`,
+        { operation: 'cleanup' }
+      );
     }
   }
 }
