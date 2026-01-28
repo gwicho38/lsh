@@ -20,6 +20,7 @@ import {
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
 import { validateEmail, validatePassword } from './input-validator.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 const BCRYPT_ROUNDS = 12;
 const TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -66,7 +67,11 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 export function generateAccessToken(userId: string, email: string): string {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
-    throw new Error('LSH_JWT_SECRET is not set');
+    throw new LSHError(
+      ErrorCodes.CONFIG_MISSING_ENV_VAR,
+      'LSH_JWT_SECRET is not set',
+      { envVar: 'LSH_JWT_SECRET' }
+    );
   }
 
   return jwt.sign(
@@ -91,7 +96,11 @@ export function generateAccessToken(userId: string, email: string): string {
 export function generateRefreshToken(userId: string): string {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
-    throw new Error('LSH_JWT_SECRET is not set');
+    throw new LSHError(
+      ErrorCodes.CONFIG_MISSING_ENV_VAR,
+      'LSH_JWT_SECRET is not set',
+      { envVar: 'LSH_JWT_SECRET' }
+    );
   }
 
   return jwt.sign(
@@ -130,7 +139,11 @@ export function generateRefreshToken(userId: string): string {
 export function verifyToken(token: string): VerifiedTokenResult {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
-    throw new Error('LSH_JWT_SECRET is not set');
+    throw new LSHError(
+      ErrorCodes.CONFIG_MISSING_ENV_VAR,
+      'LSH_JWT_SECRET is not set',
+      { envVar: 'LSH_JWT_SECRET' }
+    );
   }
 
   try {
@@ -148,7 +161,11 @@ export function verifyToken(token: string): VerifiedTokenResult {
       throw error;
     }
     // Generic error for JWT library errors (expired, bad signature, etc.)
-    throw new Error('Invalid or expired token');
+    throw new LSHError(
+      ErrorCodes.AUTH_INVALID_TOKEN,
+      'Invalid or expired token',
+      { originalError: extractErrorMessage(error) }
+    );
   }
 }
 
@@ -166,7 +183,11 @@ export class AuthService {
     // Validate email format
     const emailValidation = validateEmail(input.email, { blockDisposable: true });
     if (!emailValidation.valid) {
-      throw new Error(`INVALID_EMAIL: ${emailValidation.message}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        emailValidation.message || 'Invalid email format',
+        { field: 'email', email: input.email }
+      );
     }
 
     // Validate password strength
@@ -192,7 +213,11 @@ export class AuthService {
             return 'Invalid password';
         }
       });
-      throw new Error(`INVALID_PASSWORD: ${errorMessages.join(', ')}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        errorMessages.join(', '),
+        { field: 'password', errors: passwordValidation.errors }
+      );
     }
 
     // Check if email already exists
@@ -203,7 +228,11 @@ export class AuthService {
       .single();
 
     if (existingUser) {
-      throw new Error('EMAIL_ALREADY_EXISTS');
+      throw new LSHError(
+        ErrorCodes.AUTH_EMAIL_ALREADY_EXISTS,
+        'Email already exists',
+        { email: emailValidation.normalized }
+      );
     }
 
     // Hash password
@@ -229,7 +258,11 @@ export class AuthService {
       .single();
 
     if (error) {
-      throw new Error(`Failed to create user: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to create user',
+        { dbError: error.message, code: error.code }
+      );
     }
 
     return {
@@ -250,13 +283,21 @@ export class AuthService {
       .single();
 
     if (error || !user) {
-      throw new Error('INVALID_TOKEN');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_TOKEN,
+        'Invalid verification token',
+        { resource: 'email_verification' }
+      );
     }
 
     // Check if token expired
     const expiresAt = new Date(user.email_verification_expires_at);
     if (expiresAt < new Date()) {
-      throw new Error('INVALID_TOKEN');
+      throw new LSHError(
+        ErrorCodes.AUTH_TOKEN_EXPIRED,
+        'Verification token has expired',
+        { resource: 'email_verification', expiresAt: expiresAt.toISOString() }
+      );
     }
 
     // Mark email as verified
@@ -272,7 +313,11 @@ export class AuthService {
       .single();
 
     if (updateError) {
-      throw new Error('Failed to verify email');
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to verify email',
+        { dbError: updateError.message, userId: user.id }
+      );
     }
 
     return this.mapDbUserToUser(updatedUser);
@@ -290,11 +335,19 @@ export class AuthService {
       .single();
 
     if (error || !user) {
-      throw new Error('NOT_FOUND');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'User not found',
+        { resource: 'user', email }
+      );
     }
 
     if (user.email_verified) {
-      throw new Error('Email already verified');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_CONFLICT,
+        'Email already verified',
+        { email, userId: user.id }
+      );
     }
 
     // Generate new token
@@ -321,7 +374,11 @@ export class AuthService {
     const emailValidation = validateEmail(input.email, { blockDisposable: false });
     if (!emailValidation.valid) {
       // Don't reveal if email format was the issue - use generic error
-      throw new Error('INVALID_CREDENTIALS');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'Invalid credentials',
+        {}
+      );
     }
 
     // Find user
@@ -333,22 +390,38 @@ export class AuthService {
       .single();
 
     if (error || !user) {
-      throw new Error('INVALID_CREDENTIALS');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'Invalid credentials',
+        {}
+      );
     }
 
     // Verify password
     if (!user.password_hash) {
-      throw new Error('INVALID_CREDENTIALS');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'Invalid credentials',
+        {}
+      );
     }
 
     const isValidPassword = await verifyPassword(input.password, user.password_hash);
     if (!isValidPassword) {
-      throw new Error('INVALID_CREDENTIALS');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'Invalid credentials',
+        {}
+      );
     }
 
     // Check if email is verified
     if (!user.email_verified) {
-      throw new Error('EMAIL_NOT_VERIFIED');
+      throw new LSHError(
+        ErrorCodes.AUTH_EMAIL_NOT_VERIFIED,
+        'Email not verified',
+        { email: user.email }
+      );
     }
 
     // Update last login
@@ -394,7 +467,11 @@ export class AuthService {
       .single();
 
     if (error || !user) {
-      throw new Error('INVALID_TOKEN');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_TOKEN,
+        'Invalid refresh token',
+        { resource: 'refresh_token' }
+      );
     }
 
     const accessToken = generateAccessToken(userId, user.email);
@@ -474,7 +551,11 @@ export class AuthService {
       .is('organizations.deleted_at', null);
 
     if (error) {
-      throw new Error(`Failed to get user organizations: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to get user organizations',
+        { dbError: error.message, userId }
+      );
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB join result
@@ -628,7 +709,11 @@ export class AuthService {
             return 'Invalid password';
         }
       });
-      throw new Error(`INVALID_PASSWORD: ${errorMessages.join(', ')}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        errorMessages.join(', '),
+        { field: 'password', errors: passwordValidation.errors }
+      );
     }
 
     // Validate the token
@@ -637,11 +722,23 @@ export class AuthService {
     if (!validation.valid || !validation.userId) {
       switch (validation.error) {
         case 'EXPIRED_TOKEN':
-          throw new Error('EXPIRED_TOKEN');
+          throw new LSHError(
+            ErrorCodes.AUTH_TOKEN_EXPIRED,
+            'Password reset token has expired',
+            { resource: 'password_reset' }
+          );
         case 'ALREADY_USED':
-          throw new Error('ALREADY_USED');
+          throw new LSHError(
+            ErrorCodes.AUTH_TOKEN_ALREADY_USED,
+            'Password reset token has already been used',
+            { resource: 'password_reset' }
+          );
         default:
-          throw new Error('INVALID_TOKEN');
+          throw new LSHError(
+            ErrorCodes.AUTH_INVALID_TOKEN,
+            'Invalid password reset token',
+            { resource: 'password_reset' }
+          );
       }
     }
 
@@ -655,7 +752,11 @@ export class AuthService {
       .is('used_at', null); // Only update if not already used (race condition protection)
 
     if (updateTokenError) {
-      throw new Error('Failed to process reset token');
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to process reset token',
+        { dbError: updateTokenError.message }
+      );
     }
 
     // Hash the new password
@@ -668,7 +769,11 @@ export class AuthService {
       .eq('id', validation.userId);
 
     if (updateUserError) {
-      throw new Error('Failed to update password');
+      throw new LSHError(
+        ErrorCodes.DB_QUERY_FAILED,
+        'Failed to update password',
+        { dbError: updateUserError.message, userId: validation.userId }
+      );
     }
   }
 
@@ -684,17 +789,29 @@ export class AuthService {
       .single();
 
     if (error || !user) {
-      throw new Error('NOT_FOUND');
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        'User not found',
+        { resource: 'user', userId }
+      );
     }
 
     // Verify current password
     if (!user.password_hash) {
-      throw new Error('No password set');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'No password set for this account',
+        { userId }
+      );
     }
 
     const isValid = await verifyPassword(currentPassword, user.password_hash);
     if (!isValid) {
-      throw new Error('INVALID_CREDENTIALS');
+      throw new LSHError(
+        ErrorCodes.AUTH_INVALID_CREDENTIALS,
+        'Invalid current password',
+        {}
+      );
     }
 
     // Hash new password
