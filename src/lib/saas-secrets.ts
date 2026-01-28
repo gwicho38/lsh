@@ -10,6 +10,7 @@ import {
   type UpdateSecretInput,
   type SecretSummary,
 } from './saas-types.js';
+import type { DbSecretRecord, DbSecretsSummaryRecord, DbTeamRecord } from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { encryptionService } from './saas-encryption.js';
 import { auditLogger } from './saas-audit.js';
@@ -290,8 +291,7 @@ export class SecretsService {
       throw new Error(`Failed to get secrets summary: ${error.message}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row from view
-    return (data || []).map((row: any) => ({
+    return (data || []).map((row: DbSecretsSummaryRecord) => ({
       teamId: row.team_id,
       teamName: row.team_name,
       environment: row.environment,
@@ -452,7 +452,7 @@ export class SecretsService {
    * @see DbTeamRecord in database-types.ts for return shape
    */
   // TODO(@gwicho38): Review - getTeamById
-  private async getTeamById(teamId: string): Promise<any> {
+  private async getTeamById(teamId: string): Promise<DbTeamRecord | null> {
     const { data } = await this.supabase
       .from('teams')
       .select('*')
@@ -485,9 +485,8 @@ export class SecretsService {
    * @see DbSecretRecord in database-types.ts for input shape
    * @see Secret in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbSecretToSecret
-  private mapDbSecretToSecret(dbSecret: any): Secret {
+  private mapDbSecretToSecret(dbSecret: DbSecretRecord): Secret {
     return {
       id: dbSecret.id,
       teamId: dbSecret.team_id,

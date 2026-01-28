@@ -5,6 +5,7 @@
 
 import { randomBytes, createCipheriv, createDecipheriv, createHash, pbkdf2Sync } from 'crypto';
 import type { EncryptionKey } from './saas-types.js';
+import type { DbEncryptionKeyRecord } from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
 
@@ -256,9 +257,8 @@ export class EncryptionService {
   /**
    * Map database key to EncryptionKey type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbKeyToKey
-  private mapDbKeyToKey(dbKey: any): EncryptionKey {
+  private mapDbKeyToKey(dbKey: DbEncryptionKeyRecord): EncryptionKey {
     return {
       id: dbKey.id,
       teamId: dbKey.team_id,

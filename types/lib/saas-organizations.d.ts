@@ -3,6 +3,7 @@
  * Handles organizations, teams, members, and RBAC
  */
 import type { Organization, CreateOrganizationInput, Team, CreateTeamInput, OrganizationMember, OrganizationMemberDetailed, OrganizationRole, TeamMember, TeamRole, OrganizationUsageSummary } from './saas-types.js';
+import type { DbTeamMemberDetailedRecord } from './database-types.js';
 /**
  * Organization Service
  */
@@ -172,7 +173,7 @@ export declare class TeamService {
     /**
      * Get team members
      */
-    getTeamMembers(teamId: string): Promise<any[]>;
+    getTeamMembers(teamId: string): Promise<DbTeamMemberDetailedRecord[]>;
     /**
      * Transform Supabase team record to domain model.
      *
