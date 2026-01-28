@@ -3,9 +3,11 @@
  * Verifies LSHError is thrown with correct error codes
  */
 
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 // Mock fetch for Resend API calls
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
+const mockFetch = jest.fn() as jest.Mock;
+global.fetch = mockFetch as unknown as typeof fetch;
 
 import { EmailService } from '../lib/saas-email.js';
 import { LSHError, ErrorCodes } from '../lib/lsh-error.js';

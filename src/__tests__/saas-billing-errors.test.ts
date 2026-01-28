@@ -3,6 +3,8 @@
  * Verifies LSHError is thrown with correct error codes
  */
 
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 // Mock dependencies
 jest.mock('../lib/supabase-client.js', () => ({
   getSupabaseClient: jest.fn(() => ({
