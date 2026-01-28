@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { getPlatformPaths } from '../../lib/platform-utils.js';
+import type { CronJobSpec } from '../../lib/daemon-client.js';
 
 const execAsync = promisify(exec);
 
@@ -503,10 +504,10 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
                 id: job.id,
                 name: job.name,
                 command: job.command,
-                schedule: job.schedule,
+                schedule: job.schedule as CronJobSpec['schedule'],
                 enabled: true,
                 databaseSync: true
-              } as any, dbStatus);
+              }, dbStatus);
               this.logSuccess(`  Synced ${job.name} (${job.id}) - status: ${dbStatus}`);
               syncCount++;
             } catch (error) {

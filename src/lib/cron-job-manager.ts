@@ -10,7 +10,7 @@ import {
   BaseJobSpec,
 } from './base-job-manager.js';
 import DatabaseJobStorage from './job-storage-database.js';
-import DaemonClient, { CronJobSpec } from './daemon-client.js';
+import DaemonClient, { CronJobSpec, DaemonStatus } from './daemon-client.js';
 import { JobSpec } from './job-manager.js';
 import DatabasePersistence from './database-persistence.js';
 import { DEFAULTS } from '../constants/index.js';
@@ -368,7 +368,7 @@ export class CronJobManager extends BaseJobManager {
    * Get daemon status
    */
   // TODO(@gwicho38): Review - getDaemonStatus
-  public async getDaemonStatus(): Promise<any> {
+  public async getDaemonStatus(): Promise<DaemonStatus> {
     return await this.daemonClient.getStatus();
   }
 
@@ -387,7 +387,7 @@ export class CronJobManager extends BaseJobManager {
     report += `## Daemon Status\n`;
     report += `- PID: ${daemonStatus.pid}\n`;
     report += `- Uptime: ${Math.floor(daemonStatus.uptime / 60)} minutes\n`;
-    report += `- Memory Usage: ${Math.round(daemonStatus.memoryUsage.heapUsed / 1024 / 1024)} MB\n`;
+    report += `- Memory Usage: ${Math.round((daemonStatus.memoryUsage?.heapUsed || 0) / 1024 / 1024)} MB\n`;
     report += `- Total Jobs: ${jobs.length}\n`;
     report += `- Running Jobs: ${jobs.filter(j => j.status === 'running').length}\n\n`;
 
