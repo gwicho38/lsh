@@ -17,6 +17,7 @@ import { registerMigrateCommand } from './commands/migrate.js';
 import { registerContextCommand } from './commands/context.js';
 import { init_secrets } from './services/secrets/secrets.js';
 import { loadGlobalConfigSync } from './lib/config-manager.js';
+import { CLI_TEXT, CLI_HELP } from './constants/ui.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -39,61 +40,61 @@ function getVersion(): string {
 const program = new Command();
 
 program
-  .name('lsh')
-  .description('LSH - Simple, cross-platform encrypted secrets manager')
+  .name(CLI_TEXT.NAME)
+  .description(CLI_TEXT.DESCRIPTION)
   .version(getVersion())
   .showSuggestionAfterError(true)
-  .showHelpAfterError('(add --help for additional information)')
+  .showHelpAfterError(CLI_TEXT.HELP_AFTER_ERROR)
   .allowUnknownOption(false)
   .enablePositionalOptions();
 
 // Main action - show help by default
 program
-  .option('-v, --verbose', 'Verbose output')
-  .option('-d, --debug', 'Debug mode')
+  .option(CLI_TEXT.OPTION_VERBOSE, CLI_TEXT.OPTION_VERBOSE_DESC)
+  .option(CLI_TEXT.OPTION_DEBUG, CLI_TEXT.OPTION_DEBUG_DESC)
   .action(async (_options) => {
     // No arguments - show secrets-focused help
-    console.log('LSH - Encrypted Secrets Manager');
+    console.log(CLI_HELP.TITLE);
     console.log('');
-    console.log('🔐 Secrets Management Commands:');
-    console.log('  init                    Interactive setup wizard (first-time setup)');
-    console.log('  doctor                  Check configuration and connectivity');
-    console.log('  sync                    Check sync status & get recommendations');
-    console.log('  push                    Upload .env to encrypted cloud storage');
-    console.log('  pull                    Download .env from cloud storage');
-    console.log('  list                    List secrets in current local .env file');
-    console.log('  env [name]              List/view cloud environments');
-    console.log('  key                     Generate encryption key');
-    console.log('  create                  Create new .env file');
-    console.log('  get <key>               Get a specific secret value (--all for all)');
-    console.log('  set <key> <value>       Set a specific secret value');
-    console.log('  delete                  Delete .env file');
-    console.log('  status                  Get detailed secrets status');
+    console.log(CLI_HELP.SECTION_SECRETS);
+    console.log(CLI_HELP.CMD_INIT);
+    console.log(CLI_HELP.CMD_DOCTOR);
+    console.log(CLI_HELP.CMD_SYNC);
+    console.log(CLI_HELP.CMD_PUSH);
+    console.log(CLI_HELP.CMD_PULL);
+    console.log(CLI_HELP.CMD_LIST);
+    console.log(CLI_HELP.CMD_ENV);
+    console.log(CLI_HELP.CMD_KEY);
+    console.log(CLI_HELP.CMD_CREATE);
+    console.log(CLI_HELP.CMD_GET);
+    console.log(CLI_HELP.CMD_SET);
+    console.log(CLI_HELP.CMD_DELETE);
+    console.log(CLI_HELP.CMD_STATUS);
     console.log('');
-    console.log('🔄 IPFS Sync:');
-    console.log('  sync init               Full IPFS setup (install, init, start)');
-    console.log('  sync push               Push secrets to IPFS → get CID');
-    console.log('  sync pull <cid>         Pull secrets by CID');
-    console.log('  sync status             Check IPFS and sync status');
-    console.log('  sync start/stop         Control IPFS daemon');
+    console.log(CLI_HELP.SECTION_IPFS);
+    console.log(CLI_HELP.CMD_SYNC_INIT);
+    console.log(CLI_HELP.CMD_SYNC_PUSH);
+    console.log(CLI_HELP.CMD_SYNC_PULL);
+    console.log(CLI_HELP.CMD_SYNC_STATUS);
+    console.log(CLI_HELP.CMD_SYNC_START_STOP);
     console.log('');
-    console.log('🚀 Quick Start:');
-    console.log('  lsh sync init                     # One-time IPFS setup');
-    console.log('  lsh sync push                     # Push secrets to IPFS');
-    console.log('  lsh sync pull <cid>               # Pull on another machine');
+    console.log(CLI_HELP.SECTION_QUICK_START);
+    console.log(CLI_HELP.QUICK_SYNC_INIT);
+    console.log(CLI_HELP.QUICK_SYNC_PUSH);
+    console.log(CLI_HELP.QUICK_SYNC_PULL);
     console.log('');
-    console.log('📚 More Commands:');
-    console.log('  config                  Manage LSH configuration (~/.config/lsh/lshrc)');
-    console.log('  self                    Self-management commands');
-    console.log('  --help                  Show all options');
+    console.log(CLI_HELP.SECTION_MORE);
+    console.log(CLI_HELP.CMD_CONFIG);
+    console.log(CLI_HELP.CMD_SELF);
+    console.log(CLI_HELP.CMD_HELP_OPT);
     console.log('');
-    console.log('📖 Documentation: https://github.com/gwicho38/lsh');
+    console.log(CLI_HELP.DOCS_LINK);
   });
 
 // Help subcommand
 program
   .command('help')
-  .description('Show detailed help')
+  .description(CLI_TEXT.HELP_DESCRIPTION)
   .action(() => {
     showDetailedHelp();
   });
@@ -196,14 +197,14 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
       // For suggestions, only use primary command names (not aliases)
       const primaryCommands = program.commands.map(cmd => cmd.name());
       const suggestions = findSimilarCommands(firstArg, primaryCommands);
-      console.error(`error: unknown command '${firstArg}'`);
+      console.error(`${CLI_TEXT.ERROR_UNKNOWN_COMMAND} '${firstArg}'`);
 
       if (suggestions.length > 0) {
-        console.error(`\nDid you mean one of these?`);
+        console.error(CLI_TEXT.DID_YOU_MEAN);
         suggestions.forEach(cmd => console.error(`    ${cmd}`));
       }
 
-      console.error(`\nRun 'lsh --help' to see available commands.`);
+      console.error(CLI_TEXT.RUN_HELP);
       process.exit(1);
     }
   }
@@ -212,7 +213,7 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   program.configureOutput({
     writeErr: (str) => {
       // Intercept error messages to add suggestions
-      if (str.includes('error: unknown command')) {
+      if (str.includes(CLI_TEXT.ERROR_UNKNOWN_COMMAND)) {
         const match = str.match(/unknown command '([^']+)'/);
         if (match) {
           const unknownCommand = match[1];
@@ -221,10 +222,10 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 
           process.stderr.write(str);
           if (suggestions.length > 0) {
-            process.stderr.write(`\nDid you mean one of these?\n`);
+            process.stderr.write(`${CLI_TEXT.DID_YOU_MEAN}\n`);
             suggestions.forEach(cmd => process.stderr.write(`    ${cmd}\n`));
           }
-          process.stderr.write(`\nRun 'lsh --help' to see available commands.\n`);
+          process.stderr.write(`${CLI_TEXT.RUN_HELP}\n`);
           return;
         }
       }
@@ -233,19 +234,19 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   });
 
   // Add custom error handler for unknown commands
-  program.on('command:*', (operands) => {
+  program.on(CLI_TEXT.EVENT_UNKNOWN_COMMAND, (operands) => {
     const unknownCommand = operands[0];
     const validCommands = program.commands.map(cmd => cmd.name());
     const suggestions = findSimilarCommands(unknownCommand, validCommands);
 
-    console.error(`error: unknown command '${unknownCommand}'`);
+    console.error(`${CLI_TEXT.ERROR_UNKNOWN_COMMAND} '${unknownCommand}'`);
 
     if (suggestions.length > 0) {
-      console.error(`\nDid you mean one of these?`);
+      console.error(CLI_TEXT.DID_YOU_MEAN);
       suggestions.forEach(cmd => console.error(`    ${cmd}`));
     }
 
-    console.error(`\nRun 'lsh --help' to see available commands.`);
+    console.error(CLI_TEXT.RUN_HELP);
     process.exit(1);
   });
 
@@ -258,56 +259,56 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
  */
 // TODO(@gwicho38): Review - showDetailedHelp
 function showDetailedHelp(): void {
-  console.log('LSH - Encrypted Secrets Manager');
-  console.log('================================');
+  console.log(CLI_HELP.TITLE);
+  console.log(CLI_HELP.SEPARATOR);
   console.log('');
-  console.log('Usage:');
-  console.log('  lsh                    Show help (default)');
-  console.log('  lsh init               Interactive setup wizard');
-  console.log('  lsh push               Push secrets to cloud');
-  console.log('  lsh pull               Pull secrets from cloud');
+  console.log(CLI_HELP.SECTION_USAGE);
+  console.log(CLI_HELP.USAGE_DEFAULT);
+  console.log(CLI_HELP.USAGE_INIT);
+  console.log(CLI_HELP.USAGE_PUSH);
+  console.log(CLI_HELP.USAGE_PULL);
   console.log('');
-  console.log('Main Commands:');
-  console.log('  init                   Interactive setup wizard (first-time)');
-  console.log('  doctor                 Health check & troubleshooting');
-  console.log('  env                    Show local .env file contents');
-  console.log('  key                    Generate encryption key');
-  console.log('  status                 Detailed status report');
+  console.log(CLI_HELP.SECTION_MAIN_COMMANDS);
+  console.log(CLI_HELP.MAIN_INIT);
+  console.log(CLI_HELP.MAIN_DOCTOR);
+  console.log(CLI_HELP.MAIN_ENV);
+  console.log(CLI_HELP.MAIN_KEY);
+  console.log(CLI_HELP.MAIN_STATUS);
   console.log('');
-  console.log('IPFS Sync:');
-  console.log('  sync init              Full IPFS setup (install, init, start)');
-  console.log('  sync push              Push secrets to IPFS → get CID');
-  console.log('  sync pull <cid>        Pull secrets by CID');
-  console.log('  sync status            Check IPFS client, daemon, and sync status');
-  console.log('  sync start             Start IPFS daemon');
-  console.log('  sync stop              Stop IPFS daemon');
-  console.log('  sync history           View sync history');
+  console.log(CLI_HELP.SECTION_IPFS);
+  console.log(CLI_HELP.DETAIL_SYNC_INIT);
+  console.log(CLI_HELP.DETAIL_SYNC_PUSH);
+  console.log(CLI_HELP.DETAIL_SYNC_PULL);
+  console.log(CLI_HELP.DETAIL_SYNC_STATUS);
+  console.log(CLI_HELP.DETAIL_SYNC_START);
+  console.log(CLI_HELP.DETAIL_SYNC_STOP);
+  console.log(CLI_HELP.DETAIL_SYNC_HISTORY);
   console.log('');
-  console.log('Self-Management:');
-  console.log('  self update            Update to latest version');
-  console.log('  self version           Show version information');
-  console.log('  self uninstall         Uninstall from system');
+  console.log(CLI_HELP.SECTION_SELF_MANAGEMENT);
+  console.log(CLI_HELP.SELF_UPDATE);
+  console.log(CLI_HELP.SELF_VERSION);
+  console.log(CLI_HELP.SELF_UNINSTALL);
   console.log('');
-  console.log('Examples:');
+  console.log(CLI_HELP.SECTION_EXAMPLES);
   console.log('');
-  console.log('  First-Time Setup:');
-  console.log('    lsh sync init                           # One-time IPFS setup');
-  console.log('    lsh doctor                              # Verify setup');
+  console.log(`  ${CLI_HELP.SECTION_FIRST_TIME}`);
+  console.log(CLI_HELP.EX_SYNC_INIT);
+  console.log(CLI_HELP.EX_DOCTOR);
   console.log('');
-  console.log('  Daily Usage:');
-  console.log('    lsh sync push                           # Push to IPFS → get CID');
-  console.log('    lsh sync pull <cid>                     # Pull by CID');
-  console.log('    lsh env --masked                        # View local secrets');
-  console.log('    lsh get API_KEY                         # Get specific secret');
-  console.log('    lsh set API_KEY newvalue                # Update secret');
+  console.log(`  ${CLI_HELP.SECTION_DAILY_USAGE}`);
+  console.log(CLI_HELP.EX_SYNC_PUSH);
+  console.log(CLI_HELP.EX_SYNC_PULL);
+  console.log(CLI_HELP.EX_ENV_MASKED);
+  console.log(CLI_HELP.EX_GET);
+  console.log(CLI_HELP.EX_SET);
   console.log('');
-  console.log('Features:');
-  console.log('  ✅ Cross-platform (Windows, macOS, Linux)');
-  console.log('  ✅ AES-256 encryption');
-  console.log('  ✅ Multi-environment support');
-  console.log('  ✅ Team collaboration');
-  console.log('  ✅ Automatic secret rotation');
-  console.log('  ✅ Git-aware namespacing');
+  console.log(CLI_HELP.SECTION_FEATURES);
+  console.log(CLI_HELP.FEATURE_CROSS_PLATFORM);
+  console.log(CLI_HELP.FEATURE_ENCRYPTION);
+  console.log(CLI_HELP.FEATURE_MULTI_ENV);
+  console.log(CLI_HELP.FEATURE_TEAM);
+  console.log(CLI_HELP.FEATURE_ROTATION);
+  console.log(CLI_HELP.FEATURE_GIT_AWARE);
   console.log('');
-  console.log('Need help? Visit https://github.com/gwicho38/lsh');
+  console.log(CLI_HELP.NEED_HELP);
 }
