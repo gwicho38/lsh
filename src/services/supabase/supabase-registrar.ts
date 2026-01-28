@@ -10,6 +10,7 @@ import DatabasePersistence from '../../lib/database-persistence.js';
 import CloudConfigManager from '../../lib/cloud-config-manager.js';
 import { CREATE_TABLES_SQL } from '../../lib/database-schema.js';
 import { TABLES } from '../../constants/index.js';
+import { LSHError, ErrorCodes } from '../../lib/lsh-error.js';
 
 /**
  * Type helper to extract options from commander command
@@ -51,7 +52,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
           const info = supabaseClient.getConnectionInfo();
           this.logInfo(`Connection info: ${JSON.stringify(info)}`);
         } else {
-          throw new Error('Supabase connection failed');
+          throw new LSHError(
+            ErrorCodes.DB_CONNECTION_FAILED,
+            'Supabase connection failed',
+            { operation: 'test' }
+          );
         }
       }
     });
@@ -70,7 +75,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
           this.logInfo('Note: Run the following SQL in your Supabase dashboard:');
           this.logInfo(CREATE_TABLES_SQL);
         } else {
-          throw new Error('Failed to initialize schema');
+          throw new LSHError(
+            ErrorCodes.DB_QUERY_FAILED,
+            'Failed to initialize database schema',
+            { operation: 'init' }
+          );
         }
       }
     });
@@ -90,7 +99,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         // Test connection first
         const isConnected = await persistence.testConnection();
         if (!isConnected) {
-          throw new Error('Cannot sync - database not available');
+          throw new LSHError(
+            ErrorCodes.DB_CONNECTION_FAILED,
+            'Cannot sync - database not available',
+            { operation: 'sync' }
+          );
         }
 
         // Sync configuration
@@ -237,7 +250,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
         // Test connection first
         const isConnected = await persistence.testConnection();
         if (!isConnected) {
-          throw new Error('Cannot fetch rows - database not available');
+          throw new LSHError(
+            ErrorCodes.DB_CONNECTION_FAILED,
+            'Cannot fetch rows - database not available',
+            { operation: 'rows' }
+          );
         }
 
         if (opts.table) {
@@ -307,7 +324,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
           const { data: jobs, error } = await query.limit(20);
 
           if (error) {
-            throw new Error(`Failed to fetch training jobs: ${error.message}`);
+            throw new LSHError(
+              ErrorCodes.DB_QUERY_FAILED,
+              `Failed to fetch training jobs: ${error.message}`,
+              { table: TABLES.ML_TRAINING_JOBS, dbError: error.message }
+            );
           }
 
           this.logInfo(`Training Jobs (${jobs?.length || 0}):`);
@@ -320,7 +341,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
           });
         } else if (opts.create) {
           if (!opts.modelType || !opts.dataset) {
-            throw new Error('Both --model-type and --dataset are required to create a job');
+            throw new LSHError(
+              ErrorCodes.VALIDATION_REQUIRED_FIELD,
+              'Both --model-type and --dataset are required to create a job',
+              { required: ['--model-type', '--dataset'], provided: { modelType: opts.modelType, dataset: opts.dataset } }
+            );
           }
 
           const { data, error } = await supabaseClient.getClient()
@@ -335,7 +360,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
             .select();
 
           if (error) {
-            throw new Error(`Failed to create training job: ${error.message}`);
+            throw new LSHError(
+              ErrorCodes.DB_QUERY_FAILED,
+              `Failed to create training job: ${error.message}`,
+              { table: 'ml_training_jobs', jobName: opts.create, dbError: error.message }
+            );
           }
 
           this.logSuccess(`Created training job: ${opts.create}`);
@@ -369,7 +398,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
           const { data: models, error } = await query.limit(20);
 
           if (error) {
-            throw new Error(`Failed to fetch models: ${error.message}`);
+            throw new LSHError(
+              ErrorCodes.DB_QUERY_FAILED,
+              `Failed to fetch models: ${error.message}`,
+              { table: TABLES.ML_MODELS, dbError: error.message }
+            );
           }
 
           this.logInfo(`ML Models (${models?.length || 0}):`);
@@ -404,7 +437,11 @@ export class SupabaseCommandRegistrar extends BaseCommandRegistrar {
             .limit(20);
 
           if (error) {
-            throw new Error(`Failed to fetch features: ${error.message}`);
+            throw new LSHError(
+              ErrorCodes.DB_QUERY_FAILED,
+              `Failed to fetch features: ${error.message}`,
+              { table: TABLES.ML_FEATURES, dbError: error.message }
+            );
           }
 
           this.logInfo(`ML Features (${features?.length || 0}):`);
