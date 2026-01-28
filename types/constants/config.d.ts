@@ -28,6 +28,7 @@ export declare const ENV_VARS: {
     readonly LSH_LOCAL_STORAGE_QUIET: "LSH_LOCAL_STORAGE_QUIET";
     readonly LSH_V1_COMPAT: "LSH_V1_COMPAT";
     readonly DISABLE_IPFS_SYNC: "DISABLE_IPFS_SYNC";
+    readonly LSH_USE_OPTIMIZED_SCHEDULER: "LSH_USE_OPTIMIZED_SCHEDULER";
     readonly LSH_LOG_LEVEL: "LSH_LOG_LEVEL";
     readonly LSH_LOG_FORMAT: "LSH_LOG_FORMAT";
     readonly NO_COLOR: "NO_COLOR";
@@ -69,6 +70,9 @@ export declare const DEFAULTS: {
     readonly KUBO_RELEASES_URL: "https://api.github.com/repos/ipfs/kubo/releases/latest";
     readonly DEFAULT_EMAIL_FROM: "noreply@lsh.dev";
     readonly CHECK_INTERVAL_MS: 2000;
+    readonly SCHEDULER_MIN_CHECK_INTERVAL_MS: 100;
+    readonly SCHEDULER_MAX_CHECK_INTERVAL_MS: 60000;
+    readonly SCHEDULER_DUE_BUFFER_MS: 50;
     readonly REQUEST_TIMEOUT_MS: 10000;
     readonly DAEMON_RESTART_DELAY_MS: 1000;
     readonly JOB_TIMEOUT_1H_MS: 3600000;
