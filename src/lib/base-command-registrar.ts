@@ -36,6 +36,7 @@ import { Command } from 'commander';
 import DaemonClient from './daemon-client.js';
 import CronJobManager from './cron-job-manager.js';
 import { createLogger, Logger } from './logger.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 import {
   withDaemonClient,
   withDaemonClientForUser,
@@ -316,7 +317,11 @@ export abstract class BaseCommandRegistrar {
     try {
       return JSON.parse(jsonString) as T;
     } catch (error) {
-      throw new Error(`Invalid ${context}: ${error instanceof Error ? error.message : String(error)}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Invalid ${context}`,
+        { input: jsonString.substring(0, 100), parseError: extractErrorMessage(error) }
+      );
     }
   }
 
@@ -353,8 +358,10 @@ export abstract class BaseCommandRegistrar {
   ): void {
     const missing = required.filter(key => !options[key]);
     if (missing.length > 0) {
-      throw new Error(
-        `Missing required options for ${commandName}: ${missing.map(k => `--${k}`).join(', ')}`
+      throw new LSHError(
+        ErrorCodes.VALIDATION_REQUIRED_FIELD,
+        `Missing required options for ${commandName}`,
+        { missingOptions: missing.map(k => `--${k}`), commandName }
       );
     }
   }
