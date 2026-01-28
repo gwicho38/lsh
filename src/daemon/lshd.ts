@@ -18,6 +18,7 @@ import { createLogger } from '../lib/logger.js';
 import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
 import { getPlatformPaths } from '../lib/platform-utils.js';
 import { ENV_VARS, DEFAULTS, ERRORS } from '../constants/index.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from '../lib/lsh-error.js';
 
 const execAsync = promisify(exec);
 
@@ -96,7 +97,11 @@ export class LSHJobDaemon extends EventEmitter {
   // TODO(@gwicho38): Review - start
   async start(): Promise<void> {
     if (this.isRunning) {
-      throw new Error('Daemon is already running');
+      throw new LSHError(
+        ErrorCodes.DAEMON_ALREADY_RUNNING,
+        'Daemon is already running',
+        { pid: process.pid }
+      );
     }
 
     // Validate environment variables
@@ -111,7 +116,11 @@ export class LSHJobDaemon extends EventEmitter {
     // Fail fast in production if validation fails
     if (!envValidation.isValid && process.env[ENV_VARS.NODE_ENV] === 'production') {
       this.log('ERROR', 'Environment validation failed in production');
-      throw new Error(ERRORS.INVALID_ENV_CONFIG);
+      throw new LSHError(
+        ErrorCodes.CONFIG_INVALID_VALUE,
+        ERRORS.INVALID_ENV_CONFIG,
+        { errors: envValidation.errors, environment: 'production' }
+      );
     }
 
     // Log warnings even in development
@@ -121,7 +130,11 @@ export class LSHJobDaemon extends EventEmitter {
 
     // Check if daemon is already running
     if (await this.isDaemonRunning()) {
-      throw new Error('Another daemon instance is already running');
+      throw new LSHError(
+        ErrorCodes.DAEMON_ALREADY_RUNNING,
+        'Another daemon instance is already running',
+        { pidFile: this.config.pidFile }
+      );
     }
 
     this.log('INFO', 'Starting LSH Job Daemon');
@@ -253,7 +266,11 @@ export class LSHJobDaemon extends EventEmitter {
       // Get the job details
       const job = await this.jobManager.getJob(jobId);
       if (!job) {
-        throw new Error(`Job ${jobId} not found`);
+        throw new LSHError(
+          ErrorCodes.JOB_NOT_FOUND,
+          `Job ${jobId} not found`,
+          { jobId }
+        );
       }
 
       // Validate command for security issues
@@ -265,7 +282,11 @@ export class LSHJobDaemon extends EventEmitter {
       if (!validation.isValid) {
         const errorMsg = `Command validation failed: ${validation.errors.join(', ')}`;
         this.log('ERROR', `${errorMsg} - Risk level: ${validation.riskLevel}`);
-        throw new Error(errorMsg);
+        throw new LSHError(
+          ErrorCodes.VALIDATION_COMMAND_INJECTION,
+          errorMsg,
+          { jobId, command: job.command, riskLevel: validation.riskLevel, errors: validation.errors }
+        );
       }
 
       // Log warnings if any
@@ -288,12 +309,13 @@ export class LSHJobDaemon extends EventEmitter {
         warnings: validation.warnings.length > 0 ? validation.warnings : undefined
       };
     } catch (error) {
-      this.log('ERROR', `Failed to trigger job ${jobId}: ${error.message}`);
+      const errorMsg = extractErrorMessage(error);
+      this.log('ERROR', `Failed to trigger job ${jobId}: ${errorMsg}`);
 
       return {
         success: false,
-        error: error.message,
-        output: error.stdout || error.stderr
+        error: errorMsg,
+        output: (error as { stdout?: string; stderr?: string }).stdout || (error as { stdout?: string; stderr?: string }).stderr
       };
     }
   }
@@ -396,7 +418,7 @@ export class LSHJobDaemon extends EventEmitter {
       // Default limit to prevent oversized responses
       return sanitizedJobs.slice(0, DEFAULTS.MAX_EVENTS_LIMIT);
     } catch (error) {
-      this.log('ERROR', `Failed to list jobs: ${error.message}`);
+      this.log('ERROR', `Failed to list jobs: ${extractErrorMessage(error)}`);
       return [];
     }
   }
@@ -475,12 +497,12 @@ export class LSHJobDaemon extends EventEmitter {
           this.cleanupCompletedJobs();
           this.rotateLogs();
         } catch (error) {
-          this.log('ERROR', `❌ Scheduler error: ${error.message}`);
+          this.log('ERROR', `❌ Scheduler error: ${extractErrorMessage(error)}`);
         }
       }, this.config.checkInterval);
       this.log('INFO', `✅ Job scheduler started successfully`);
     } catch (error) {
-      this.log('ERROR', `❌ Failed to start job scheduler: ${error.message}`);
+      this.log('ERROR', `❌ Failed to start job scheduler: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -549,7 +571,7 @@ export class LSHJobDaemon extends EventEmitter {
               job.schedule.nextRun = new Date(now.getTime() + job.schedule.interval);
             }
           } catch (error) {
-            this.log('ERROR', `❌ Failed to start scheduled job ${job.id}: ${error.message}`);
+            this.log('ERROR', `❌ Failed to start scheduled job ${job.id}: ${extractErrorMessage(error)}`);
           }
         }
       }
@@ -597,7 +619,7 @@ export class LSHJobDaemon extends EventEmitter {
 
       return true;
     } catch (error) {
-      this.log('ERROR', `Invalid cron expression: ${cronExpr} - ${error.message}`);
+      this.log('ERROR', `Invalid cron expression: ${cronExpr} - ${extractErrorMessage(error)}`);
       return false;
     }
   }
@@ -672,7 +694,7 @@ export class LSHJobDaemon extends EventEmitter {
         this.log('INFO', `🔄 Reset recurring job status: ${jobId} (${job.name}) for next scheduled run`);
       }
     } catch (error) {
-      this.log('ERROR', `Failed to reset recurring job status ${jobId}: ${error.message}`);
+      this.log('ERROR', `Failed to reset recurring job status ${jobId}: ${extractErrorMessage(error)}`);
     }
   }
 
@@ -697,7 +719,7 @@ export class LSHJobDaemon extends EventEmitter {
         await this.jobManager.killJob(job.id, 'SIGTERM');
         this.log('INFO', `Stopped job: ${job.id}`);
       } catch (error) {
-        this.log('ERROR', `Failed to stop job ${job.id}: ${error.message}`);
+        this.log('ERROR', `Failed to stop job ${job.id}: ${extractErrorMessage(error)}`);
       }
     }
   }
@@ -716,7 +738,7 @@ export class LSHJobDaemon extends EventEmitter {
 
     // Log uncaught exceptions
     process.on('uncaughtException', (error) => {
-      this.log('FATAL', `Uncaught exception: ${error.message}`);
+      this.log('FATAL', `Uncaught exception: ${extractErrorMessage(error)}`);
       this.log('FATAL', error.stack || '');
       if (this.config.autoRestart) {
         this.restart();
@@ -758,7 +780,7 @@ export class LSHJobDaemon extends EventEmitter {
         } catch (error) {
           socket.write(JSON.stringify({
             success: false,
-            error: error.message,
+            error: extractErrorMessage(error),
             id: messageId
           }));
         }
@@ -785,8 +807,9 @@ export class LSHJobDaemon extends EventEmitter {
       });
 
       this.ipcServer.on('error', (error) => {
-        this.log('ERROR', `IPC server error: ${error.message}`);
-        if (error.message.includes('EADDRINUSE')) {
+        const errorMsg = extractErrorMessage(error);
+        this.log('ERROR', `IPC server error: ${errorMsg}`);
+        if (errorMsg.includes('EADDRINUSE')) {
           this.log('INFO', 'Socket already in use, attempting cleanup...');
           try {
             fs.unlinkSync(this.config.socketPath);
@@ -795,7 +818,7 @@ export class LSHJobDaemon extends EventEmitter {
               this.ipcServer?.listen(this.config.socketPath);
             }, 1000);
           } catch (cleanupError) {
-            this.log('ERROR', `Failed to cleanup socket: ${cleanupError.message}`);
+            this.log('ERROR', `Failed to cleanup socket: ${extractErrorMessage(cleanupError)}`);
           }
         }
       });
@@ -832,7 +855,11 @@ export class LSHJobDaemon extends EventEmitter {
         await this.stop();
         return { message: 'Daemon stopped' };
       default:
-        throw new Error(`Unknown command: ${command}`);
+        throw new LSHError(
+          ErrorCodes.API_INVALID_REQUEST,
+          `Unknown command: ${command}`,
+          { command, validCommands: ['status', 'addJob', 'startJob', 'triggerJob', 'stopJob', 'listJobs', 'getJob', 'removeJob', 'restart', 'stop'] }
+        );
     }
   }
 
