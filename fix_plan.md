@@ -25,6 +25,41 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 40: Test Coverage - env-validator.ts (Startup Security)
+**Priority**: HIGH → COMPLETE
+**Category**: 🧪 Testing / 🔒 Security
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `env-validator.ts` had no direct test coverage
+2. Critical startup validation logic was untested
+3. Production security checks needed verification
+
+**Implementation**:
+Added 43 comprehensive tests covering:
+- Basic validation (required, optional, empty, whitespace)
+- Production requirements (conditional requirements)
+- API key requirements (LSH_API_KEY, LSH_JWT_SECRET validation)
+- Webhook requirements (GITHUB_WEBHOOK_SECRET)
+- Custom validation functions (success, failure, exceptions)
+- LSH_ENV_REQUIREMENTS validation (NODE_ENV, ports, URLs)
+- Default values and recommendations
+- Storage mode detection (local, PostgreSQL, Supabase)
+- Security warnings (dangerous commands in production)
+- Type structures (EnvValidationResult, EnvRequirement)
+- Edge cases (multiple errors, mixed validity)
+
+**Files Modified**:
+- `src/__tests__/env-validator.test.ts` (NEW - 43 tests)
+
+**Verification**:
+- ✅ All 43 tests pass
+- ✅ Lint passes
+- ✅ Startup validation fully covered
+
+---
+
 ### Task 39: Test Coverage - command-validator.ts (Security Critical)
 **Priority**: HIGH → COMPLETE
 **Category**: 🧪 Testing / 🔒 Security
@@ -1066,14 +1101,14 @@ Added 76 comprehensive tests covering:
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 39
-- **Tests Added**: 709 (633 + 76 command-validator)
-- **Files Modified**: 83
-- **Commits**: 39
+- **Tasks Completed**: 40
+- **Tests Added**: 752 (633 + 76 command-validator + 43 env-validator)
+- **Files Modified**: 84
+- **Commits**: 40
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
 - **Type Safety**: 100% complete (19 `any` types removed from source, only 2 remain in test file)
-- **Test Coverage**: In progress (command-validator.ts now fully covered)
+- **Test Coverage**: In progress (command-validator.ts and env-validator.ts fully covered)
 
 ---
 
