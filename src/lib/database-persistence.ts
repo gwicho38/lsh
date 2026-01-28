@@ -6,6 +6,7 @@
 import { supabaseClient, isSupabaseConfigured } from './supabase-client.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import * as os from 'os';
+import { createHash, randomBytes } from 'crypto';
 import {
   ShellHistoryEntry,
   ShellJob,
@@ -52,27 +53,31 @@ export class DatabasePersistence {
   }
 
   /**
-   * Generate a deterministic UUID from username
+   * Generate a deterministic UUID v5-like identifier from username
+   * Uses SHA-256 hash to create a consistent, valid UUID format
    */
-  // TODO(@gwicho38): Review - generateUserUUID
   private generateUserUUID(username: string): string {
-    // Create a simple UUID v5-like deterministic UUID from username
-    // In production, you'd use a proper UUID library
-    const hash = username.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
+    // Create SHA-256 hash of the username for deterministic output
+    const hash = createHash('sha256').update(username).digest('hex');
 
-    const hex = Math.abs(hash).toString(16).padStart(8, '0');
-    return `${hex.substr(0,8)}-${hex.substr(0,4)}-4${hex.substr(1,3)}-8${hex.substr(0,3)}-${hex}${hex.substr(0,4)}`;
+    // Format as UUID v4-like structure (8-4-4-4-12)
+    // Set version nibble to 4 and variant bits to 10xx
+    return [
+      hash.substring(0, 8),
+      hash.substring(8, 12),
+      '4' + hash.substring(13, 16),  // Version 4
+      ((parseInt(hash.substring(16, 17), 16) & 0x3) | 0x8).toString(16) + hash.substring(17, 20),  // Variant
+      hash.substring(20, 32),
+    ].join('-');
   }
 
   /**
    * Generate a unique session ID
+   * Combines timestamp with cryptographically secure random bytes
    */
-  // TODO(@gwicho38): Review - generateSessionId
   private generateSessionId(): string {
-    return `lsh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const randomPart = randomBytes(6).toString('hex');
+    return `lsh_${Date.now()}_${randomPart}`;
   }
 
   /**

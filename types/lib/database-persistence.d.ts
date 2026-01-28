@@ -11,11 +11,13 @@ export declare class DatabasePersistence {
     private useLocalStorage;
     constructor(userId?: string);
     /**
-     * Generate a deterministic UUID from username
+     * Generate a deterministic UUID v5-like identifier from username
+     * Uses SHA-256 hash to create a consistent, valid UUID format
      */
     private generateUserUUID;
     /**
      * Generate a unique session ID
+     * Combines timestamp with cryptographically secure random bytes
      */
     private generateSessionId;
     /**
