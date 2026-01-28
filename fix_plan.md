@@ -25,6 +25,163 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 19: Error Handling Standardization (base-job-manager.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `base-job-manager.ts` used 6 `throw new Error()` calls with inline messages
+2. Validation errors lacked structured error codes
+3. Job not found errors in multiple operations not properly categorized
+4. Resource conflict errors used generic messages
+
+**Implementation**:
+- Replaced all 6 `throw new Error()` calls with `throw new LSHError()`
+- Used appropriate error codes:
+  - `VALIDATION_REQUIRED_FIELD` (400) for missing name/command in validateJobSpec
+  - `JOB_NOT_FOUND` (404) for missing jobs in updateJob, updateJobStatus, getJobStatistics
+  - `RESOURCE_CONFLICT` (409) for running job removal without force flag
+- Added context objects with field, jobId, operation, targetStatus, force
+
+**Files Modified**:
+- `src/lib/base-job-manager.ts` - Standardized all error handling
+- `src/__tests__/base-job-manager-errors.test.ts` (NEW - 20 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 20 new error handling tests pass
+
+---
+
+### Task 18: Error Handling Standardization (lshd.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `lshd.ts` used 6 `throw new Error()` calls with inline messages
+2. Daemon lifecycle errors lacked structured error codes
+3. Job validation errors used generic error messages
+4. 12 `error.message` patterns needed safe extraction
+
+**Implementation**:
+- Replaced all 6 `throw new Error()` calls with `throw new LSHError()`
+- Used appropriate error codes:
+  - `DAEMON_ALREADY_RUNNING` (500) for daemon already running
+  - `CONFIG_INVALID_VALUE` (400) for environment validation failures
+  - `JOB_NOT_FOUND` (404) for missing jobs in triggerJob
+  - `VALIDATION_COMMAND_INJECTION` (400) for command validation failures
+  - `API_INVALID_REQUEST` (400) for unknown IPC commands
+- Added context objects with pid, pidFile, jobId, command, riskLevel, errors
+- Replaced 12 `error.message` patterns with `extractErrorMessage()`
+
+**Files Modified**:
+- `src/daemon/lshd.ts` - Standardized all error handling
+- `src/__tests__/lshd-errors.test.ts` (NEW - 17 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 17 new error handling tests pass
+
+---
+
+### Task 17: Error Handling Standardization (cron-job-manager.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `cron-job-manager.ts` used 1 `throw new Error()` call with inline message
+2. Template not found errors lacked structured error codes
+3. `console.error` used instead of structured logging
+
+**Implementation**:
+- Replaced `throw new Error()` with `throw new LSHError()` using RESOURCE_NOT_FOUND
+- Added context with templateId and availableTemplates array
+- Replaced `console.error` calls with `logger.error` using `extractErrorMessage()`
+
+**Files Modified**:
+- `src/lib/cron-job-manager.ts` - Standardized all error handling
+- `src/__tests__/cron-job-manager-errors.test.ts` (NEW - 11 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 11 new error handling tests pass
+
+---
+
+### Task 16: Error Handling Standardization (daemon-client.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `daemon-client.ts` used 7 `throw new Error()` / `reject(new Error())` calls
+2. Socket connection errors lacked structured error codes
+3. IPC timeout errors used generic messages
+4. Database persistence configuration errors not properly categorized
+
+**Implementation**:
+- Replaced all 7 error throws/rejects with `throw new LSHError()` / `reject(new LSHError())`
+- Used appropriate error codes:
+  - `DAEMON_NOT_RUNNING` (500) for missing socket, not connected
+  - `DAEMON_CONNECTION_FAILED` (500) for permission denied
+  - `DAEMON_IPC_ERROR` (500) for timeout, response errors
+  - `CONFIG_MISSING_ENV_VAR` (500) for missing database persistence
+- Added context objects with socketPath, command, timeoutMs, responseId
+- Used `extractErrorMessage()` for safe error extraction in catch blocks
+
+**Files Modified**:
+- `src/lib/daemon-client.ts` - Standardized all error handling
+- `src/__tests__/daemon-client-errors.test.ts` (NEW - 19 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 19 new error handling tests pass
+
+---
+
+### Task 15: Error Handling Standardization (job-manager.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `job-manager.ts` used 11 `throw new Error()` calls with inline messages
+2. Job not found errors lacked structured error codes
+3. Job already running/not running errors used generic errors
+4. Resume failures lacked proper error context
+
+**Implementation**:
+- Replaced all 11 `throw new Error()` calls with `throw new LSHError()`
+- Used appropriate error codes:
+  - `JOB_NOT_FOUND` (404) for missing jobs
+  - `JOB_ALREADY_RUNNING` (500) for jobs already running
+  - `JOB_STOP_FAILED` (500) for stop failures (not running, no process)
+  - `JOB_START_FAILED` (500) for resume failures (not paused, no process)
+- Added context objects with jobId, status, hasPid, hasProcess, originalError
+
+**Files Modified**:
+- `src/lib/job-manager.ts` - Standardized all error handling
+- `src/__tests__/job-manager-errors.test.ts` (NEW - 19 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 19 new error handling tests pass
+
+---
+
 ### Task 14: Error Handling Standardization (secrets-manager.ts)
 **Priority**: HIGH → COMPLETE
 **Category**: 🔒 Security / 🏗️ Robustness
@@ -481,6 +638,97 @@ A comprehensive code analysis revealed the following priority areas:
 
 ---
 
+## Recent Completed (This Loop)
+
+### Task 25: Error Handling Standardization (job-registry.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `job-registry.ts` used 3 `throw new Error()` calls with inline messages
+2. Statistics not found used generic error
+3. Job lookups in startJob/stopJob lacked proper error codes
+
+**Implementation**:
+- Replaced all 3 `throw new Error()` calls with `throw new LSHError()`
+- Used appropriate error codes:
+  - `RESOURCE_NOT_FOUND` (404) for missing statistics
+  - `JOB_NOT_FOUND` (404) for job lookup failures in startJob/stopJob
+- Added context objects with jobId, location, resource
+
+**Files Modified**:
+- `src/daemon/job-registry.ts` - Standardized all error handling
+- `src/__tests__/job-registry-errors.test.ts` (NEW - 14 tests)
+
+---
+
+### Task 24: Error Handling Standardization (cron-registrar.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 1 `throw new Error()` with `throw new LSHError()`
+- Used `JOB_NOT_FOUND` (404) for job lookup failures
+
+**Files Modified**:
+- `src/services/cron/cron-registrar.ts` - Standardized error handling
+- `src/__tests__/cron-registrar-errors.test.ts` (NEW - 9 tests)
+
+---
+
+### Task 23: Error Handling Standardization (daemon-registrar.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 4 `throw new Error()` with `throw new LSHError()`
+- Replaced 4 unsafe `(error as Error).message` with `extractErrorMessage()`
+- Used `VALIDATION_REQUIRED_FIELD`, `JOB_NOT_FOUND`, `DAEMON_STOP_FAILED`
+
+**Files Modified**:
+- `src/services/daemon/daemon-registrar.ts` - Standardized error handling
+- `src/__tests__/daemon-registrar-errors.test.ts` (NEW - 23 tests)
+
+---
+
+### Task 22: Error Handling Standardization (supabase-registrar.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 9 `throw new Error()` with `throw new LSHError()`
+- Used `DB_CONNECTION_FAILED` (503), `DB_QUERY_FAILED` (500), `VALIDATION_REQUIRED_FIELD` (400)
+
+**Files Modified**:
+- `src/services/supabase/supabase-registrar.ts` - Standardized error handling
+- `src/__tests__/supabase-registrar-errors.test.ts` (NEW - 24 tests)
+
+---
+
+### Task 21: Error Handling Standardization (saas-encryption.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 6 `throw new Error()` with `throw new LSHError()`
+- Used `CONFIG_MISSING_ENV_VAR`, `SECRETS_ENCRYPTION_FAILED`, `SECRETS_ROTATION_FAILED`, `SECRETS_KEY_NOT_FOUND`, `SECRETS_DECRYPTION_FAILED`
+
+**Files Modified**:
+- `src/lib/saas-encryption.ts` - Standardized error handling
+- `src/__tests__/saas-encryption-errors.test.ts` (NEW - 19 tests)
+
+---
+
 ## Backlog (Discovered Issues)
 
 | Issue | Category | Severity | File(s) |
@@ -497,15 +745,15 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Next Priority
 
-**Continue Error Message Standardization** - 6 files now standardized: `saas-billing.ts`, `saas-email.ts`, `saas-secrets.ts`, `saas-organizations.ts`, `database-persistence.ts`, and `saas-auth.ts`. Consider continuing with other files like `secrets-manager.ts`, `job-manager.ts`, or `cron-job-manager.ts`.
+**Continue Error Message Standardization** - 18 files now standardized. ~37 occurrences remain across 14 files. Highest priorities: `saas-audit.ts` (5), `saas-types.ts` (4), `floating-point-arithmetic.ts` (7), `ipfs-secrets-storage.ts` (3), `ipfs-client-manager.ts` (3).
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 14
-- **Tests Added**: 303 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors + 30 Organizations Errors + 15 Database Persistence Errors + 20 Auth Errors + 13 Secrets Manager Errors)
-- **Files Modified**: 31
-- **Commits**: 15
+- **Tasks Completed**: 25
+- **Tests Added**: 478 (389 + 19 saas-encryption + 24 supabase-registrar + 23 daemon-registrar + 9 cron-registrar + 14 job-registry)
+- **Files Modified**: 51
+- **Commits**: 25
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 
 ---
