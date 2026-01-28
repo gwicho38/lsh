@@ -17,9 +17,9 @@ export interface HistoryConfig {
     expireDuplicatesFirst: boolean;
 }
 export declare class HistorySystem {
-    private entries;
+    protected entries: HistoryEntry[];
     private currentIndex;
-    private config;
+    protected config: HistoryConfig;
     private isEnabled;
     constructor(config?: Partial<HistoryConfig>);
     /**
