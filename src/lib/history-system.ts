@@ -25,9 +25,9 @@ export interface HistoryConfig {
 }
 
 export class HistorySystem {
-  private entries: HistoryEntry[] = [];
+  protected entries: HistoryEntry[] = [];
   private currentIndex: number = -1;
-  private config: HistoryConfig;
+  protected config: HistoryConfig;
   private isEnabled: boolean = true;
 
   constructor(config?: Partial<HistoryConfig>) {

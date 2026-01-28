@@ -119,7 +119,7 @@ export class EnhancedHistorySystem extends HistorySystem {
     });
 
     // Update internal entries
-    (this as any).entries = mergedEntries;
+    this.entries = mergedEntries;
   }
 
   /**
