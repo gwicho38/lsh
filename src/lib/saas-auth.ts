@@ -17,10 +17,21 @@ import {
   type ValidateResetTokenResult,
   validateJwtPayload,
 } from './saas-types.js';
+import type { DbUserRecord, DbOrganizationRecord } from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
 import { validateEmail, validatePassword } from './input-validator.js';
 import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
+
+/**
+ * Join result from organization_members with organizations.
+ * Supabase returns the joined table as an array even for 1:1 relations.
+ * Used when fetching user's organizations.
+ */
+interface DbOrgMemberJoinResult {
+  organization_id: string;
+  organizations: DbOrganizationRecord[];
+}
 
 const BCRYPT_ROUNDS = 12;
 const TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -558,8 +569,9 @@ export class AuthService {
       );
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB join result
-    return (data || []).map((row: any) => this.mapDbOrgToOrg(row.organizations));
+    return (data || [])
+      .filter((row: DbOrgMemberJoinResult) => row.organizations && row.organizations.length > 0)
+      .map((row: DbOrgMemberJoinResult) => this.mapDbOrgToOrg(row.organizations[0]));
   }
 
   /**
@@ -846,9 +858,8 @@ export class AuthService {
    * @see DbUserRecord in database-types.ts for input shape
    * @see User in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbUserToUser
-  private mapDbUserToUser(dbUser: any): User {
+  private mapDbUserToUser(dbUser: DbUserRecord): User {
     return {
       id: dbUser.id,
       email: dbUser.email,
@@ -889,9 +900,8 @@ export class AuthService {
    * @see DbOrganizationRecord in database-types.ts for input shape
    * @see Organization in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbOrgToOrg
-  private mapDbOrgToOrg(dbOrg: any): Organization {
+  private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
     return {
       id: dbOrg.id,
       name: dbOrg.name,
@@ -904,7 +914,7 @@ export class AuthService {
       subscriptionExpiresAt: dbOrg.subscription_expires_at
         ? new Date(dbOrg.subscription_expires_at)
         : null,
-      settings: dbOrg.settings || {},
+      settings: (dbOrg.settings || {}) as Record<string, unknown>,
       deletedAt: dbOrg.deleted_at ? new Date(dbOrg.deleted_at) : null,
     };
   }
