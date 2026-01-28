@@ -17,13 +17,45 @@ A comprehensive code analysis revealed the following priority areas:
 3. **Missing Tests** - 95% of SaaS code has no test coverage
 
 #### Medium Priority Issues
-1. ~~Error message standardization~~ ✅ MOSTLY COMPLETE (6 files done: saas-billing, saas-email, saas-secrets, saas-organizations, database-persistence, saas-auth)
+1. ~~Error message standardization~~ ✅ MOSTLY COMPLETE (7 files done: saas-billing, saas-email, saas-secrets, saas-organizations, database-persistence, saas-auth, secrets-manager)
 2. ~~History merge algorithm efficiency~~ ✅ FIXED
 3. Email template input sanitization
 
 ---
 
 ## Completed
+
+### Task 14: Error Handling Standardization (secrets-manager.ts)
+**Priority**: HIGH → COMPLETE
+**Category**: 🔒 Security / 🏗️ Robustness
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `secrets-manager.ts` used 7 `throw new Error()` calls with inline messages
+2. Decryption errors lacked structured error codes
+3. File validation errors not properly categorized
+4. Destructive change detection used generic errors
+
+**Implementation**:
+- Replaced all 7 `throw new Error()` calls with `throw new LSHError()`
+- Used appropriate error codes:
+  - `SECRETS_DECRYPTION_FAILED` (500) for decryption failures
+  - `CONFIG_FILE_NOT_FOUND` (404) for missing .env files
+  - `VALIDATION_INVALID_FORMAT` (400) for invalid filename patterns
+  - `SECRETS_PUSH_FAILED` (500) for destructive changes detection
+  - `SECRETS_NOT_FOUND` (404) for missing environment secrets
+
+**Files Modified**:
+- `src/lib/secrets-manager.ts` - Standardized all error handling
+- `src/__tests__/secrets-manager-errors.test.ts` (NEW - 13 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 13 new error handling tests pass
+
+---
 
 ### Task 13: Error Handling Standardization (saas-auth.ts)
 **Priority**: HIGH → COMPLETE
@@ -470,10 +502,10 @@ A comprehensive code analysis revealed the following priority areas:
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 13
-- **Tests Added**: 290 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors + 30 Organizations Errors + 15 Database Persistence Errors + 20 Auth Errors)
-- **Files Modified**: 29
-- **Commits**: 14
+- **Tasks Completed**: 14
+- **Tests Added**: 303 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors + 30 Organizations Errors + 15 Database Persistence Errors + 20 Auth Errors + 13 Secrets Manager Errors)
+- **Files Modified**: 31
+- **Commits**: 15
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 
 ---

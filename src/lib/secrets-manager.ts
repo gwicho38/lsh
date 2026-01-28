@@ -11,6 +11,7 @@ import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo }
 import { IPFSSyncLogger } from './ipfs-sync-logger.js';
 import { IPFSSecretsStorage } from './ipfs-secrets-storage.js';
 import { ENV_VARS } from '../constants/index.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -146,7 +147,11 @@ export class SecretsManager {
     try {
       const parts = text.split(':');
       if (parts.length !== 2) {
-        throw new Error('Invalid encrypted format');
+        throw new LSHError(
+          ErrorCodes.SECRETS_DECRYPTION_FAILED,
+          'Invalid encrypted format',
+          { reason: 'Expected format is IV:ENCRYPTED_DATA' }
+        );
       }
 
       const iv = Buffer.from(parts[0], 'hex');
@@ -160,15 +165,20 @@ export class SecretsManager {
 
       return decrypted;
     } catch (error) {
+      // Re-throw LSHError as-is
+      if (error instanceof LSHError) {
+        throw error;
+      }
       const err = error as Error;
       if (err.message.includes('bad decrypt') || err.message.includes('wrong final block length')) {
-        throw new Error(
+        throw new LSHError(
+          ErrorCodes.SECRETS_DECRYPTION_FAILED,
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
           '  3. Generate a shared key with: lsh secrets key\n' +
-          '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + err.message
+          '  4. Add it to your .env: LSH_SECRETS_KEY=<key>',
+          { originalError: err.message, reason: 'key_mismatch' }
         );
       }
       throw err;
@@ -314,13 +324,21 @@ export class SecretsManager {
   // TODO(@gwicho38): Review - push
   async push(envFilePath: string = '.env', environment: string = 'dev', force: boolean = false): Promise<void> {
     if (!fs.existsSync(envFilePath)) {
-      throw new Error(`File not found: ${envFilePath}`);
+      throw new LSHError(
+        ErrorCodes.CONFIG_FILE_NOT_FOUND,
+        `File not found: ${envFilePath}`,
+        { filePath: envFilePath }
+      );
     }
 
     // Validate filename pattern for custom files
     const filename = path.basename(envFilePath);
     if (filename !== '.env' && !filename.startsWith('.env.')) {
-      throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Invalid filename: ${filename}. Must be '.env' or start with '.env.'`,
+        { filename, expectedPattern: '.env or .env.*' }
+      );
     }
 
     // Get the effective environment name (repo-aware)
@@ -366,7 +384,11 @@ export class SecretsManager {
 
           const destructive = this.detectDestructiveChanges(cloudEnv, env);
           if (destructive.length > 0) {
-            throw new Error(this.formatDestructiveChangesError(destructive));
+            throw new LSHError(
+              ErrorCodes.SECRETS_PUSH_FAILED,
+              this.formatDestructiveChangesError(destructive),
+              { destructiveChanges: destructive.map(d => d.key), count: destructive.length }
+            );
           }
         }
       } catch (error) {
@@ -412,7 +434,11 @@ export class SecretsManager {
     // Validate filename pattern for custom files
     const filename = path.basename(envFilePath);
     if (filename !== '.env' && !filename.startsWith('.env.')) {
-      throw new Error(`Invalid filename: ${filename}. Must be '.env' or start with '.env.'`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Invalid filename: ${filename}. Must be '.env' or start with '.env.'`,
+        { filename, expectedPattern: '.env or .env.*' }
+      );
     }
 
     const effectiveEnv = this.getRepoAwareEnvironment(environment);
@@ -427,9 +453,13 @@ export class SecretsManager {
     );
 
     if (secrets.length === 0) {
-      throw new Error(`No secrets found for environment: ${effectiveEnv}\n\n` +
+      throw new LSHError(
+        ErrorCodes.SECRETS_NOT_FOUND,
+        `No secrets found for environment: ${effectiveEnv}\n\n` +
         `💡 Tip: Check available environments with: lsh env\n` +
-        `   Or push secrets first with: lsh push --env ${environment}`);
+        `   Or push secrets first with: lsh push --env ${environment}`,
+        { environment: effectiveEnv, requestedEnvironment: environment }
+      );
     }
 
     // Preserve local LSH-internal keys before overwriting
