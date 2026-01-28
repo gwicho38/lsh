@@ -4,6 +4,11 @@
  */
 
 import { ENV_VARS } from '../constants/index.js';
+import {
+  LSHError,
+  ErrorCodes,
+  extractErrorMessage,
+} from './lsh-error.js';
 
 /**
  * Email Service Configuration
@@ -82,12 +87,32 @@ export class EmailService {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to send email: ${error}`);
+        const errorText = await response.text();
+        throw new LSHError(
+          ErrorCodes.SERVICE_UNAVAILABLE,
+          'Failed to send email via Resend API',
+          {
+            to: params.to,
+            subject: params.subject,
+            statusCode: response.status,
+            apiError: errorText,
+          }
+        );
       }
     } catch (error) {
-      console.error('Email send error:', error);
-      throw error;
+      // Re-throw LSHErrors as-is, wrap other errors
+      if (error instanceof LSHError) {
+        throw error;
+      }
+      throw new LSHError(
+        ErrorCodes.SERVICE_UNAVAILABLE,
+        'Email service error',
+        {
+          to: params.to,
+          subject: params.subject,
+          originalError: extractErrorMessage(error),
+        }
+      );
     }
   }
 
