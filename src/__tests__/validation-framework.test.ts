@@ -295,7 +295,9 @@ describe('Async Validation', () => {
         name: 'asyncCheck',
         validate: () => ({ passed: true }),
         validateAsync: async (value) => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, 10);
+          });
           return { passed: value.length > 2, error: 'Too short' };
         },
       };
@@ -311,7 +313,9 @@ describe('Async Validation', () => {
         name: 'asyncCheck',
         validate: () => ({ passed: true }),
         validateAsync: async () => {
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, 10);
+          });
           return { passed: false, error: 'Async check failed' };
         },
       };
@@ -462,7 +466,9 @@ describe('Schema Validation', () => {
         name: 'async',
         validate: () => ({ passed: true }),
         validateAsync: async (v) => {
-          await new Promise((r) => setTimeout(r, 10));
+          await new Promise<void>((r) => {
+            setTimeout(r, 10);
+          });
           return { passed: v.length > 0, error: 'Required' };
         },
       });
@@ -512,7 +518,9 @@ describe('Utility Functions', () => {
       const rule = createAsyncRule<string>(
         'asyncCheck',
         async (value) => {
-          await new Promise((r) => setTimeout(r, 10));
+          await new Promise<void>((r) => {
+            setTimeout(r, 10);
+          });
           return value.length > 0;
         },
         'Async check failed'

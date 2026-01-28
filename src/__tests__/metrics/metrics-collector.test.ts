@@ -163,7 +163,9 @@ describe('MetricsCollector', () => {
       const timer = collector.startTimer('test.timer');
 
       // Simulate some work
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
 
       const duration = timer.stop();
       expect(duration).toBeGreaterThanOrEqual(10);
@@ -176,10 +178,14 @@ describe('MetricsCollector', () => {
     it('should report elapsed time without stopping', async () => {
       const timer = collector.startTimer('test.timer');
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
       const elapsed1 = timer.elapsed();
 
-      await new Promise((resolve) => setTimeout(resolve, 10));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 10);
+      });
       const elapsed2 = timer.elapsed();
 
       expect(elapsed2).toBeGreaterThan(elapsed1);

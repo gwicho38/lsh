@@ -87,7 +87,8 @@ export async function authenticateUser(req: AuthenticatedRequest, res: Response,
       });
     }
 
-    // Attach user to request
+    // Attach user to request (safe - req is not reassigned, only augmented)
+    // eslint-disable-next-line require-atomic-updates
     req.user = user;
     next();
   } catch (error: unknown) {
@@ -131,6 +132,8 @@ export async function requireOrganizationMembership(req: AuthenticatedRequest, r
       });
     }
 
+    // Safe - req is not reassigned, only augmented with organization context
+    // eslint-disable-next-line require-atomic-updates
     req.organizationId = organizationId;
     next();
   } catch (error: unknown) {
