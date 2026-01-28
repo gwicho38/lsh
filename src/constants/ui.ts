@@ -171,3 +171,133 @@ export const MIGRATION_MESSAGES = {
 export const DEPRECATION_WARNINGS = {
   LIB_COMMANDS: '\x1b[33m⚠️  WARNING: "lsh lib" commands are deprecated as of v1.0.0\x1b[0m',
 } as const;
+
+/**
+ * CLI help text and command descriptions
+ */
+export const CLI_TEXT = {
+  // Program metadata
+  NAME: 'lsh',
+  DESCRIPTION: 'LSH - Simple, cross-platform encrypted secrets manager',
+  HELP_AFTER_ERROR: '(add --help for additional information)',
+
+  // Option descriptions
+  OPTION_VERBOSE: '-v, --verbose',
+  OPTION_VERBOSE_DESC: 'Verbose output',
+  OPTION_DEBUG: '-d, --debug',
+  OPTION_DEBUG_DESC: 'Debug mode',
+
+  // Help command
+  HELP_DESCRIPTION: 'Show detailed help',
+
+  // Error messages
+  ERROR_UNKNOWN_COMMAND: 'error: unknown command',
+  DID_YOU_MEAN: '\nDid you mean one of these?',
+  RUN_HELP: "\nRun 'lsh --help' to see available commands.",
+
+  // Commander event names
+  EVENT_UNKNOWN_COMMAND: 'command:*',
+} as const;
+
+/**
+ * Main help screen content
+ */
+export const CLI_HELP = {
+  TITLE: 'LSH - Encrypted Secrets Manager',
+  SEPARATOR: '================================',
+
+  // Section headers
+  SECTION_SECRETS: '🔐 Secrets Management Commands:',
+  SECTION_IPFS: '🔄 IPFS Sync:',
+  SECTION_QUICK_START: '🚀 Quick Start:',
+  SECTION_MORE: '📚 More Commands:',
+  SECTION_USAGE: 'Usage:',
+  SECTION_MAIN_COMMANDS: 'Main Commands:',
+  SECTION_SELF_MANAGEMENT: 'Self-Management:',
+  SECTION_EXAMPLES: 'Examples:',
+  SECTION_FEATURES: 'Features:',
+  SECTION_FIRST_TIME: 'First-Time Setup:',
+  SECTION_DAILY_USAGE: 'Daily Usage:',
+
+  // Secrets commands
+  CMD_INIT: '  init                    Interactive setup wizard (first-time setup)',
+  CMD_DOCTOR: '  doctor                  Check configuration and connectivity',
+  CMD_SYNC: '  sync                    Check sync status & get recommendations',
+  CMD_PUSH: '  push                    Upload .env to encrypted cloud storage',
+  CMD_PULL: '  pull                    Download .env from cloud storage',
+  CMD_LIST: '  list                    List secrets in current local .env file',
+  CMD_ENV: '  env [name]              List/view cloud environments',
+  CMD_KEY: '  key                     Generate encryption key',
+  CMD_CREATE: '  create                  Create new .env file',
+  CMD_GET: '  get <key>               Get a specific secret value (--all for all)',
+  CMD_SET: '  set <key> <value>       Set a specific secret value',
+  CMD_DELETE: '  delete                  Delete .env file',
+  CMD_STATUS: '  status                  Get detailed secrets status',
+
+  // IPFS commands
+  CMD_SYNC_INIT: '  sync init               Full IPFS setup (install, init, start)',
+  CMD_SYNC_PUSH: '  sync push               Push secrets to IPFS → get CID',
+  CMD_SYNC_PULL: '  sync pull <cid>         Pull secrets by CID',
+  CMD_SYNC_STATUS: '  sync status             Check IPFS and sync status',
+  CMD_SYNC_START_STOP: '  sync start/stop         Control IPFS daemon',
+
+  // Quick start commands
+  QUICK_SYNC_INIT: '  lsh sync init                     # One-time IPFS setup',
+  QUICK_SYNC_PUSH: '  lsh sync push                     # Push secrets to IPFS',
+  QUICK_SYNC_PULL: '  lsh sync pull <cid>               # Pull on another machine',
+
+  // More commands
+  CMD_CONFIG: '  config                  Manage LSH configuration (~/.config/lsh/lshrc)',
+  CMD_SELF: '  self                    Self-management commands',
+  CMD_HELP_OPT: '  --help                  Show all options',
+
+  // Documentation link
+  DOCS_LINK: '📖 Documentation: https://github.com/gwicho38/lsh',
+
+  // Detailed help - Usage
+  USAGE_DEFAULT: '  lsh                    Show help (default)',
+  USAGE_INIT: '  lsh init               Interactive setup wizard',
+  USAGE_PUSH: '  lsh push               Push secrets to cloud',
+  USAGE_PULL: '  lsh pull               Pull secrets from cloud',
+
+  // Detailed help - Main commands
+  MAIN_INIT: '  init                   Interactive setup wizard (first-time)',
+  MAIN_DOCTOR: '  doctor                 Health check & troubleshooting',
+  MAIN_ENV: '  env                    Show local .env file contents',
+  MAIN_KEY: '  key                    Generate encryption key',
+  MAIN_STATUS: '  status                 Detailed status report',
+
+  // Detailed help - IPFS Sync
+  DETAIL_SYNC_INIT: '  sync init              Full IPFS setup (install, init, start)',
+  DETAIL_SYNC_PUSH: '  sync push              Push secrets to IPFS → get CID',
+  DETAIL_SYNC_PULL: '  sync pull <cid>        Pull secrets by CID',
+  DETAIL_SYNC_STATUS: '  sync status            Check IPFS client, daemon, and sync status',
+  DETAIL_SYNC_START: '  sync start             Start IPFS daemon',
+  DETAIL_SYNC_STOP: '  sync stop              Stop IPFS daemon',
+  DETAIL_SYNC_HISTORY: '  sync history           View sync history',
+
+  // Detailed help - Self management
+  SELF_UPDATE: '  self update            Update to latest version',
+  SELF_VERSION: '  self version           Show version information',
+  SELF_UNINSTALL: '  self uninstall         Uninstall from system',
+
+  // Example commands
+  EX_SYNC_INIT: '    lsh sync init                           # One-time IPFS setup',
+  EX_DOCTOR: '    lsh doctor                              # Verify setup',
+  EX_SYNC_PUSH: '    lsh sync push                           # Push to IPFS → get CID',
+  EX_SYNC_PULL: '    lsh sync pull <cid>                     # Pull by CID',
+  EX_ENV_MASKED: '    lsh env --masked                        # View local secrets',
+  EX_GET: '    lsh get API_KEY                         # Get specific secret',
+  EX_SET: '    lsh set API_KEY newvalue                # Update secret',
+
+  // Features
+  FEATURE_CROSS_PLATFORM: '  ✅ Cross-platform (Windows, macOS, Linux)',
+  FEATURE_ENCRYPTION: '  ✅ AES-256 encryption',
+  FEATURE_MULTI_ENV: '  ✅ Multi-environment support',
+  FEATURE_TEAM: '  ✅ Team collaboration',
+  FEATURE_ROTATION: '  ✅ Automatic secret rotation',
+  FEATURE_GIT_AWARE: '  ✅ Git-aware namespacing',
+
+  // Footer
+  NEED_HELP: 'Need help? Visit https://github.com/gwicho38/lsh',
+} as const;

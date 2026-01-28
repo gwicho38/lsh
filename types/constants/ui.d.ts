@@ -137,3 +137,96 @@ export declare const MIGRATION_MESSAGES: {
 export declare const DEPRECATION_WARNINGS: {
     readonly LIB_COMMANDS: "\u001B[33m⚠️  WARNING: \"lsh lib\" commands are deprecated as of v1.0.0\u001B[0m";
 };
+/**
+ * CLI help text and command descriptions
+ */
+export declare const CLI_TEXT: {
+    readonly NAME: "lsh";
+    readonly DESCRIPTION: "LSH - Simple, cross-platform encrypted secrets manager";
+    readonly HELP_AFTER_ERROR: "(add --help for additional information)";
+    readonly OPTION_VERBOSE: "-v, --verbose";
+    readonly OPTION_VERBOSE_DESC: "Verbose output";
+    readonly OPTION_DEBUG: "-d, --debug";
+    readonly OPTION_DEBUG_DESC: "Debug mode";
+    readonly HELP_DESCRIPTION: "Show detailed help";
+    readonly ERROR_UNKNOWN_COMMAND: "error: unknown command";
+    readonly DID_YOU_MEAN: "\nDid you mean one of these?";
+    readonly RUN_HELP: "\nRun 'lsh --help' to see available commands.";
+    readonly EVENT_UNKNOWN_COMMAND: "command:*";
+};
+/**
+ * Main help screen content
+ */
+export declare const CLI_HELP: {
+    readonly TITLE: "LSH - Encrypted Secrets Manager";
+    readonly SEPARATOR: "================================";
+    readonly SECTION_SECRETS: "🔐 Secrets Management Commands:";
+    readonly SECTION_IPFS: "🔄 IPFS Sync:";
+    readonly SECTION_QUICK_START: "🚀 Quick Start:";
+    readonly SECTION_MORE: "📚 More Commands:";
+    readonly SECTION_USAGE: "Usage:";
+    readonly SECTION_MAIN_COMMANDS: "Main Commands:";
+    readonly SECTION_SELF_MANAGEMENT: "Self-Management:";
+    readonly SECTION_EXAMPLES: "Examples:";
+    readonly SECTION_FEATURES: "Features:";
+    readonly SECTION_FIRST_TIME: "First-Time Setup:";
+    readonly SECTION_DAILY_USAGE: "Daily Usage:";
+    readonly CMD_INIT: "  init                    Interactive setup wizard (first-time setup)";
+    readonly CMD_DOCTOR: "  doctor                  Check configuration and connectivity";
+    readonly CMD_SYNC: "  sync                    Check sync status & get recommendations";
+    readonly CMD_PUSH: "  push                    Upload .env to encrypted cloud storage";
+    readonly CMD_PULL: "  pull                    Download .env from cloud storage";
+    readonly CMD_LIST: "  list                    List secrets in current local .env file";
+    readonly CMD_ENV: "  env [name]              List/view cloud environments";
+    readonly CMD_KEY: "  key                     Generate encryption key";
+    readonly CMD_CREATE: "  create                  Create new .env file";
+    readonly CMD_GET: "  get <key>               Get a specific secret value (--all for all)";
+    readonly CMD_SET: "  set <key> <value>       Set a specific secret value";
+    readonly CMD_DELETE: "  delete                  Delete .env file";
+    readonly CMD_STATUS: "  status                  Get detailed secrets status";
+    readonly CMD_SYNC_INIT: "  sync init               Full IPFS setup (install, init, start)";
+    readonly CMD_SYNC_PUSH: "  sync push               Push secrets to IPFS → get CID";
+    readonly CMD_SYNC_PULL: "  sync pull <cid>         Pull secrets by CID";
+    readonly CMD_SYNC_STATUS: "  sync status             Check IPFS and sync status";
+    readonly CMD_SYNC_START_STOP: "  sync start/stop         Control IPFS daemon";
+    readonly QUICK_SYNC_INIT: "  lsh sync init                     # One-time IPFS setup";
+    readonly QUICK_SYNC_PUSH: "  lsh sync push                     # Push secrets to IPFS";
+    readonly QUICK_SYNC_PULL: "  lsh sync pull <cid>               # Pull on another machine";
+    readonly CMD_CONFIG: "  config                  Manage LSH configuration (~/.config/lsh/lshrc)";
+    readonly CMD_SELF: "  self                    Self-management commands";
+    readonly CMD_HELP_OPT: "  --help                  Show all options";
+    readonly DOCS_LINK: "📖 Documentation: https://github.com/gwicho38/lsh";
+    readonly USAGE_DEFAULT: "  lsh                    Show help (default)";
+    readonly USAGE_INIT: "  lsh init               Interactive setup wizard";
+    readonly USAGE_PUSH: "  lsh push               Push secrets to cloud";
+    readonly USAGE_PULL: "  lsh pull               Pull secrets from cloud";
+    readonly MAIN_INIT: "  init                   Interactive setup wizard (first-time)";
+    readonly MAIN_DOCTOR: "  doctor                 Health check & troubleshooting";
+    readonly MAIN_ENV: "  env                    Show local .env file contents";
+    readonly MAIN_KEY: "  key                    Generate encryption key";
+    readonly MAIN_STATUS: "  status                 Detailed status report";
+    readonly DETAIL_SYNC_INIT: "  sync init              Full IPFS setup (install, init, start)";
+    readonly DETAIL_SYNC_PUSH: "  sync push              Push secrets to IPFS → get CID";
+    readonly DETAIL_SYNC_PULL: "  sync pull <cid>        Pull secrets by CID";
+    readonly DETAIL_SYNC_STATUS: "  sync status            Check IPFS client, daemon, and sync status";
+    readonly DETAIL_SYNC_START: "  sync start             Start IPFS daemon";
+    readonly DETAIL_SYNC_STOP: "  sync stop              Stop IPFS daemon";
+    readonly DETAIL_SYNC_HISTORY: "  sync history           View sync history";
+    readonly SELF_UPDATE: "  self update            Update to latest version";
+    readonly SELF_VERSION: "  self version           Show version information";
+    readonly SELF_UNINSTALL: "  self uninstall         Uninstall from system";
+    readonly EX_SYNC_INIT: "    lsh sync init                           # One-time IPFS setup";
+    readonly EX_DOCTOR: "    lsh doctor                              # Verify setup";
+    readonly EX_SYNC_PUSH: "    lsh sync push                           # Push to IPFS → get CID";
+    readonly EX_SYNC_PULL: "    lsh sync pull <cid>                     # Pull by CID";
+    readonly EX_ENV_MASKED: "    lsh env --masked                        # View local secrets";
+    readonly EX_GET: "    lsh get API_KEY                         # Get specific secret";
+    readonly EX_SET: "    lsh set API_KEY newvalue                # Update secret";
+    readonly FEATURE_CROSS_PLATFORM: "  ✅ Cross-platform (Windows, macOS, Linux)";
+    readonly FEATURE_ENCRYPTION: "  ✅ AES-256 encryption";
+    readonly FEATURE_MULTI_ENV: "  ✅ Multi-environment support";
+    readonly FEATURE_TEAM: "  ✅ Team collaboration";
+    readonly FEATURE_ROTATION: "  ✅ Automatic secret rotation";
+    readonly FEATURE_GIT_AWARE: "  ✅ Git-aware namespacing";
+    readonly NEED_HELP: "Need help? Visit https://github.com/gwicho38/lsh";
+};
