@@ -10,6 +10,14 @@ import * as path from 'path';
 import * as readline from 'readline';
 import { getGitRepoInfo } from '../../lib/git-utils.js';
 import { ENV_VARS } from '../../constants/index.js';
+import type { OutputFormat } from '../../lib/format-utils.js';
+
+/**
+ * Type guard to check if a string is a valid OutputFormat.
+ */
+function isOutputFormat(value: string): value is OutputFormat {
+  return ['env', 'json', 'yaml', 'toml', 'export'].includes(value);
+}
 
 // TODO(@gwicho38): Review - init_secrets
 
@@ -124,11 +132,10 @@ export async function init_secrets(program: Command) {
 
         // Handle format output
         const format = options.format.toLowerCase();
-        const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
 
-        if (!validFormats.includes(format)) {
+        if (!isOutputFormat(format)) {
           console.error(`❌ Invalid format: ${format}`);
-          console.log(`Valid formats: ${validFormats.join(', ')}`);
+          console.log(`Valid formats: env, json, yaml, toml, export`);
           process.exit(1);
         }
 
@@ -138,7 +145,7 @@ export async function init_secrets(program: Command) {
         // Determine masking behavior
         const shouldMask = options.mask !== false ? undefined : false;
 
-        const output = formatSecrets(secrets, format as any, shouldMask);
+        const output = formatSecrets(secrets, format, shouldMask);
 
         // Only show header for default env format
         if (format === 'env') {
@@ -612,11 +619,10 @@ API_KEY=
         if (options.all) {
           // Handle format output
           const format = options.export ? 'export' : options.format.toLowerCase();
-          const validFormats = ['env', 'json', 'yaml', 'toml', 'export'];
 
-          if (!validFormats.includes(format)) {
+          if (!isOutputFormat(format)) {
             console.error(`❌ Invalid format: ${format}`);
-            console.log(`Valid formats: ${validFormats.join(', ')}`);
+            console.log(`Valid formats: env, json, yaml, toml, export`);
             process.exit(1);
           }
 
@@ -624,7 +630,7 @@ API_KEY=
           const { formatSecrets } = await import('../../lib/format-utils.js');
 
           // For get --all, always show full values (no masking)
-          const output = formatSecrets(secrets, format as any, false);
+          const output = formatSecrets(secrets, format, false);
           console.log(output);
           return;
         }
