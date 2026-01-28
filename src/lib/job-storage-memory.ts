@@ -10,6 +10,7 @@ import {
   BaseJobFilter,
   BaseJobExecution,
 } from './base-job-manager.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 export class MemoryJobStorage implements JobStorage {
   private jobs: Map<string, BaseJobSpec> = new Map();
@@ -53,7 +54,11 @@ export class MemoryJobStorage implements JobStorage {
   async update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void> {
     const job = this.jobs.get(jobId);
     if (!job) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId, operation: 'update' }
+      );
     }
 
     Object.assign(job, updates);

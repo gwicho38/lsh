@@ -5,6 +5,8 @@
  * constant template strings with dynamic values.
  */
 
+import { LSHError, ErrorCodes } from './lsh-error.js';
+
 /**
  * Format a template string by replacing ${varName} placeholders with values
  *
@@ -101,7 +103,11 @@ export function formatPath(
 export function truncate(str: string, maxLength: number = 50, ellipsis: string = '...'): string {
   // Validate that maxLength is greater than ellipsis length
   if (maxLength < ellipsis.length) {
-    throw new Error(`maxLength (${maxLength}) must be greater than or equal to ellipsis length (${ellipsis.length})`);
+    throw new LSHError(
+      ErrorCodes.VALIDATION_INVALID_FORMAT,
+      `maxLength (${maxLength}) must be greater than or equal to ellipsis length (${ellipsis.length})`,
+      { maxLength, ellipsisLength: ellipsis.length, ellipsis }
+    );
   }
 
   if (str.length <= maxLength) {

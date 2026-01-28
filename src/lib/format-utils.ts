@@ -6,6 +6,7 @@
 import yaml from 'js-yaml';
 // Note: We use manual TOML formatting for better control over output
 // import { stringify as stringifyToml } from 'smol-toml';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 export type OutputFormat = 'env' | 'json' | 'yaml' | 'toml' | 'export';
 
@@ -202,6 +203,10 @@ export function formatSecrets(
     case 'export':
       return formatAsExport(secretsToFormat);
     default:
-      throw new Error(`Unsupported format: ${format}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Unsupported format: ${format}`,
+        { format, supportedFormats: ['env', 'json', 'yaml', 'toml', 'export'] }
+      );
   }
 }

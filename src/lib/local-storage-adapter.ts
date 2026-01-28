@@ -14,6 +14,7 @@ import {
   ShellAlias,
   ShellFunction,
 } from './database-schema.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 export interface LocalStorageConfig {
   dataDir?: string;
@@ -662,7 +663,11 @@ export class LocalStorageAdapter {
       ];
 
       if (!validTables.includes(tableName)) {
-        throw new Error(`Invalid table name: ${tableName}`);
+        throw new LSHError(
+          ErrorCodes.VALIDATION_INVALID_FORMAT,
+          `Invalid table name: ${tableName}`,
+          { tableName, validTables }
+        );
       }
 
       const table = this.data[tableName as keyof StorageData] as Array<{ user_id?: string; created_at?: string }>;
