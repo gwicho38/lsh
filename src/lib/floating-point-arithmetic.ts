@@ -3,6 +3,8 @@
  * Provides ZSH-compatible floating point math support
  */
 
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
+
 export interface MathFunction {
   name: string;
   func: (x: number, y?: number) => number;
@@ -38,7 +40,11 @@ export class FloatingPointArithmetic {
       // Round to specified precision
       return this.roundToPrecision(result);
     } catch (error) {
-      throw new Error(`Arithmetic error: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Arithmetic error: ${extractErrorMessage(error)}`,
+        { expression, operation: 'evaluate' }
+      );
     }
   }
 
@@ -143,9 +149,13 @@ export class FloatingPointArithmetic {
     
     // Validate characters (allow numbers, operators, parentheses, function names, and dots)
     if (!/^[0-9+\-*/().,a-zA-Z_]+$/.test(cleaned)) {
-      throw new Error('Invalid characters in expression');
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        'Invalid characters in expression',
+        { expression, cleaned }
+      );
     }
-    
+
     return cleaned;
   }
 
@@ -175,13 +185,21 @@ export class FloatingPointArithmetic {
       
       const func = this.mathFunctions.get(funcName);
       if (!func) {
-        throw new Error(`Unknown function: ${funcName}`);
+        throw new LSHError(
+          ErrorCodes.RESOURCE_NOT_FOUND,
+          `Unknown function: ${funcName}`,
+          { functionName: funcName, availableFunctions: Array.from(this.mathFunctions.keys()) }
+        );
       }
-      
+
       const args = this.parseFunctionArguments(argsStr);
-      
+
       if (args.length !== func.arity) {
-        throw new Error(`Function ${funcName} expects ${func.arity} arguments, got ${args.length}`);
+        throw new LSHError(
+          ErrorCodes.VALIDATION_INVALID_FORMAT,
+          `Function ${funcName} expects ${func.arity} arguments, got ${args.length}`,
+          { functionName: funcName, expectedArity: func.arity, actualArity: args.length }
+        );
       }
       
       const funcResult = func.func(args[0], args[1]);
@@ -238,12 +256,20 @@ export class FloatingPointArithmetic {
       const result = func();
       
       if (typeof result !== 'number' || isNaN(result)) {
-        throw new Error('Invalid expression result');
+        throw new LSHError(
+          ErrorCodes.VALIDATION_INVALID_FORMAT,
+          'Invalid expression result',
+          { expression, resultType: typeof result }
+        );
       }
-      
+
       return result;
     } catch (error) {
-      throw new Error(`Expression evaluation failed: ${error.message}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Expression evaluation failed: ${extractErrorMessage(error)}`,
+        { expression }
+      );
     }
   }
 
@@ -281,7 +307,11 @@ export class FloatingPointArithmetic {
   public parseFloat(str: string): number {
     const num = parseFloat(str);
     if (isNaN(num)) {
-      throw new Error(`Invalid floating point number: ${str}`);
+      throw new LSHError(
+        ErrorCodes.VALIDATION_INVALID_FORMAT,
+        `Invalid floating point number: ${str}`,
+        { input: str }
+      );
     }
     return num;
   }
