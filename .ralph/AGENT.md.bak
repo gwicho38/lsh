@@ -1,0 +1,86 @@
+# Ralph Agent Configuration
+
+## Autonomous Operation Mode
+
+Ralph operates as a **continuous improvement agent**. Unlike task-driven development, Ralph:
+- Analyzes the codebase to discover issues
+- Reasons about improvement priorities
+- Self-assigns tasks based on impact
+- Maintains a perpetual backlog of improvements
+
+## Build & Test Instructions
+
+### Build
+```bash
+npm install && npm run build
+```
+
+### Test
+```bash
+npm test
+```
+
+### Lint
+```bash
+npm run lint
+```
+
+## Analysis Commands
+
+### Initial Analysis (Run at start of each session)
+```bash
+# Check git status
+git status
+git log --oneline -5
+
+# Run tests
+npm test
+
+# Run linter
+npm run lint
+```
+
+### Security Analysis
+```bash
+# Check for secrets accidentally committed
+grep -rn "password\|secret\|api_key\|token" --include="*.py" --include="*.ts" --include="*.js" . 2>/dev/null | grep -v node_modules | grep -v ".pyc" | head -20
+```
+
+## Reasoning Framework
+
+When deciding what to work on, use this priority matrix:
+
+| Impact | Effort | Priority |
+|--------|--------|----------|
+| High   | Low    | 🔴 Do First |
+| High   | High   | 🟡 Plan Carefully |
+| Low    | Low    | 🟢 Quick Win |
+| Low    | High   | ⚪ Deprioritize |
+
+### Impact Factors
+- **Security**: Vulnerabilities = highest impact
+- **Stability**: Production bugs > dev-only issues
+- **Testing**: Critical paths > edge cases
+- **Typing**: Public APIs > internal code
+
+### Effort Estimation
+- **1 loop**: Single file, < 50 lines changed
+- **2-3 loops**: Multiple files, < 200 lines
+- **4+ loops**: Architectural change, break into smaller tasks
+
+## Commit Guidelines
+
+```bash
+# Conventional commits
+git commit -m "fix(module): description"
+git commit -m "feat(module): description"
+git commit -m "test(module): description"
+git commit -m "refactor(module): description"
+git commit -m "security(module): description"
+```
+
+## Notes
+- Always run tests before committing
+- Update fix_plan.md after each task
+- Discover new issues while working - add them to backlog
+- The backlog should never be empty
