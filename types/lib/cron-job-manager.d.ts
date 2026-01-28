@@ -5,7 +5,7 @@
  * REFACTORED: Now extends BaseJobManager for unified job management interface
  */
 import { BaseJobManager, BaseJobSpec } from './base-job-manager.js';
-import { CronJobSpec } from './daemon-client.js';
+import { CronJobSpec, DaemonStatus } from './daemon-client.js';
 import { JobSpec } from './job-manager.js';
 export interface CronJobTemplate {
     id: string;
@@ -105,7 +105,7 @@ export declare class CronJobManager extends BaseJobManager {
     /**
      * Get daemon status
      */
-    getDaemonStatus(): Promise<any>;
+    getDaemonStatus(): Promise<DaemonStatus>;
     /**
      * Generate comprehensive job report
      */
