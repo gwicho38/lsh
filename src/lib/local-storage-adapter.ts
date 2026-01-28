@@ -313,6 +313,44 @@ export class LocalStorageAdapter {
   }
 
   /**
+   * Get a specific job by its job_id
+   */
+  async getJobById(jobId: string): Promise<ShellJob | null> {
+    try {
+      const job = this.data.shell_jobs.find(j =>
+        j.job_id === jobId &&
+        (this.userId ? j.user_id === this.userId : j.user_id === undefined || j.user_id === null)
+      );
+      return job || null;
+    } catch (error) {
+      console.error('Error getting job by ID:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a job by its job_id
+   */
+  async deleteJob(jobId: string): Promise<boolean> {
+    try {
+      const initialLength = this.data.shell_jobs.length;
+      this.data.shell_jobs = this.data.shell_jobs.filter(j =>
+        !(j.job_id === jobId &&
+          (this.userId ? j.user_id === this.userId : j.user_id === undefined || j.user_id === null))
+      );
+
+      const deleted = this.data.shell_jobs.length < initialLength;
+      if (deleted) {
+        this.markDirty();
+      }
+      return deleted;
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      return false;
+    }
+  }
+
+  /**
    * Save shell configuration
    */
   // TODO(@gwicho38): Review - saveConfiguration

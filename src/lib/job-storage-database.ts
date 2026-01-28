@@ -21,35 +21,51 @@ export class DatabaseJobStorage implements JobStorage {
     this.persistence = new DatabasePersistence(userId);
   }
 
-  // TODO(@gwicho38): Review - save
-
-  // TODO(@gwicho38): Review - save
   async save(job: BaseJobSpec): Promise<void> {
     // Map BaseJobSpec to database format
+    // Note: session_id is handled by DatabasePersistence
     const dbJob = {
       job_id: job.id,
       command: job.command,
-      started_at: job.startedAt?.toISOString(),
+      working_directory: process.cwd(),
+      session_id: '', // Will be overwritten by DatabasePersistence
+      started_at: job.startedAt?.toISOString() || new Date().toISOString(),
       completed_at: job.completedAt?.toISOString(),
-      status: job.status,
+      status: (job.status === 'created' ? 'running' : job.status) as 'running' | 'stopped' | 'completed' | 'failed',
       exit_code: job.exitCode,
       output: job.stdout,
       error: job.stderr,
     };
 
-    // Save using available method
-    await this.persistence.saveJob(dbJob as any);
+    await this.persistence.saveJob(dbJob);
   }
 
-  async get(_jobId: string): Promise<BaseJobSpec | null> {
-    // This would require adding a method to DatabasePersistence
-    // For now, return null and rely on list() filtering
-    return null;
+  async get(jobId: string): Promise<BaseJobSpec | null> {
+    const dbJob = await this.persistence.getJobById(jobId);
+    if (!dbJob) {
+      return null;
+    }
+
+    return {
+      id: dbJob.job_id,
+      name: dbJob.job_id,
+      command: dbJob.command,
+      status: this.mapDbStatusToJobStatus(dbJob.status),
+      createdAt: new Date(dbJob.created_at),
+      startedAt: new Date(dbJob.started_at),
+      completedAt: dbJob.completed_at ? new Date(dbJob.completed_at) : undefined,
+      user: this.userId,
+      tags: [],
+      priority: 5,
+      maxRetries: 3,
+      retryCount: 0,
+      databaseSync: true,
+      exitCode: dbJob.exit_code,
+      stdout: dbJob.output,
+      stderr: dbJob.error,
+    };
   }
 
-  // TODO(@gwicho38): Review - list
-
-  // TODO(@gwicho38): Review - list
   async list(_filter?: BaseJobFilter): Promise<BaseJobSpec[]> {
     // Get active jobs from database
     const dbJobs = await this.persistence.getActiveJobs();
@@ -60,7 +76,7 @@ export class DatabaseJobStorage implements JobStorage {
       name: dbJob.job_id, // Using job_id as name since name field doesn't exist
       command: dbJob.command,
       status: this.mapDbStatusToJobStatus(dbJob.status),
-      createdAt: new Date(dbJob.started_at),
+      createdAt: new Date(dbJob.created_at),
       startedAt: new Date(dbJob.started_at),
       completedAt: dbJob.completed_at ? new Date(dbJob.completed_at) : undefined,
       user: this.userId,
@@ -77,9 +93,6 @@ export class DatabaseJobStorage implements JobStorage {
     return jobs;
   }
 
-  // TODO(@gwicho38): Review - mapDbStatusToJobStatus
-
-  // TODO(@gwicho38): Review - mapDbStatusToJobStatus
   private mapDbStatusToJobStatus(dbStatus: string): BaseJobSpec['status'] {
     switch (dbStatus) {
       case 'running':
@@ -89,8 +102,6 @@ export class DatabaseJobStorage implements JobStorage {
         return 'completed';
       case 'stopped':
         return 'stopped';
-      case 'paused':
-        return 'paused';
       case 'failed':
       case 'timeout':
         return 'failed';
@@ -101,57 +112,51 @@ export class DatabaseJobStorage implements JobStorage {
     }
   }
 
-  // TODO(@gwicho38): Review - update
-
-  // TODO(@gwicho38): Review - update
   async update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void> {
-    // Update by saving again (upsert behavior)
-    if (updates.command) {
-      const dbJob = {
-        job_id: jobId,
-        command: updates.command,
-        started_at: updates.startedAt?.toISOString(),
-        completed_at: updates.completedAt?.toISOString(),
-        status: updates.status || 'running',
-        exit_code: updates.exitCode,
-        output: updates.stdout,
-        error: updates.stderr,
-      };
+    // Get existing job to merge updates
+    const existingJob = await this.persistence.getJobById(jobId);
+    if (!existingJob) {
+      console.warn(`Job ${jobId} not found for update`);
+      return;
+    }
 
-      await this.persistence.saveJob(dbJob as any);
+    // Update status if provided
+    if (updates.status) {
+      const mappedStatus = updates.status === 'created' ? 'running' : updates.status;
+      await this.persistence.updateJobStatus(
+        jobId,
+        mappedStatus as 'running' | 'stopped' | 'completed' | 'failed',
+        updates.exitCode
+      );
     }
   }
 
-  // TODO(@gwicho38): Review - delete
-
   async delete(jobId: string): Promise<void> {
-    // DatabasePersistence doesn't have a delete method yet
-    // This would need to be added
-    console.warn(`Delete not implemented for job ${jobId}`);
+    const deleted = await this.persistence.deleteJob(jobId);
+    if (!deleted) {
+      console.warn(`Failed to delete job ${jobId} or job not found`);
+    }
   }
 
-  // TODO(@gwicho38): Review - saveExecution
-
-  // TODO(@gwicho38): Review - saveExecution
   async saveExecution(execution: BaseJobExecution): Promise<void> {
     // Map to database format and save as job
+    // Note: session_id is handled by DatabasePersistence
     const dbJob = {
       job_id: execution.jobId,
       command: execution.command,
+      working_directory: process.cwd(),
+      session_id: '', // Will be overwritten by DatabasePersistence
       started_at: execution.startTime.toISOString(),
       completed_at: execution.endTime?.toISOString(),
-      status: execution.status,
+      status: (execution.status === 'timeout' ? 'failed' : execution.status) as 'running' | 'stopped' | 'completed' | 'failed',
       exit_code: execution.exitCode,
       output: execution.stdout,
       error: execution.stderr || execution.errorMessage,
     };
 
-    await this.persistence.saveJob(dbJob as any);
+    await this.persistence.saveJob(dbJob);
   }
 
-  // TODO(@gwicho38): Review - getExecutions
-
-  // TODO(@gwicho38): Review - getExecutions
   async getExecutions(jobId: string, limit: number = 50): Promise<BaseJobExecution[]> {
     // Get active jobs (no specific history method available yet)
     const dbJobs = await this.persistence.getActiveJobs();
@@ -175,9 +180,6 @@ export class DatabaseJobStorage implements JobStorage {
     }));
   }
 
-  // TODO(@gwicho38): Review - mapDbStatus
-
-  // TODO(@gwicho38): Review - mapDbStatus
   private mapDbStatus(dbStatus: string): BaseJobExecution['status'] {
     switch (dbStatus) {
       case 'running':
@@ -196,12 +198,9 @@ export class DatabaseJobStorage implements JobStorage {
     }
   }
 
-  // TODO(@gwicho38): Review - cleanup
-
-  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
-    // DatabasePersistence maintains its own connections
-    // No cleanup needed here
+    // Clean up database persistence resources
+    await this.persistence.cleanup();
   }
 }
 
