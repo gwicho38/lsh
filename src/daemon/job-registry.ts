@@ -104,6 +104,23 @@ export interface JobRegistryConfig {
   indexingEnabled: boolean;
 }
 
+/**
+ * Serialized version of JobExecutionRecord (dates as strings from JSON)
+ */
+interface SerializedJobExecutionRecord extends Omit<JobExecutionRecord, 'startTime' | 'endTime'> {
+  startTime: string;
+  endTime?: string;
+}
+
+/**
+ * Serialized version of JobStatistics (dates as strings from JSON)
+ */
+interface SerializedJobStatistics extends Omit<JobStatistics, 'lastExecution' | 'lastSuccess' | 'lastFailure'> {
+  lastExecution?: string;
+  lastSuccess?: string;
+  lastFailure?: string;
+}
+
 export class JobRegistry extends BaseJobManager {
   private config: JobRegistryConfig;
   private records = new Map<string, JobExecutionRecord[]>(); // jobId -> execution records
@@ -149,10 +166,10 @@ export class JobRegistry extends BaseJobManager {
       hostname: os.hostname(),
       tags: [...(job.tags || [])],
       priority: job.priority || 5,
-      scheduled: (job as any).type === 'scheduled',
+      scheduled: job.type === 'scheduled',
       retryCount: 0,
       pid: job.pid,
-      ppid: (job as any).ppid
+      ppid: job.ppid
     };
 
     // Store output logs in separate files for large outputs
@@ -732,7 +749,8 @@ export class JobRegistry extends BaseJobManager {
         // Restore records
         if (data.records) {
           for (const [jobId, records] of Object.entries(data.records)) {
-            this.records.set(jobId, (records as any[]).map(r => ({
+            const serializedRecords = records as SerializedJobExecutionRecord[];
+            this.records.set(jobId, serializedRecords.map(r => ({
               ...r,
               startTime: new Date(r.startTime),
               endTime: r.endTime ? new Date(r.endTime) : undefined
@@ -743,7 +761,7 @@ export class JobRegistry extends BaseJobManager {
         // Restore statistics
         if (data.statistics) {
           for (const [jobId, stats] of Object.entries(data.statistics)) {
-            const s = stats as any;
+            const s = stats as SerializedJobStatistics;
             this.statistics.set(jobId, {
               ...s,
               lastExecution: s.lastExecution ? new Date(s.lastExecution) : undefined,
