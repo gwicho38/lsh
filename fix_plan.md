@@ -25,6 +25,34 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 9: Error Handling Standardization (saas-email.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `saas-email.ts` used plain `Error` instead of `LSHError` class
+2. `console.error` used for error logging instead of structured errors
+3. Error context not preserved for debugging
+
+**Implementation**:
+- Replaced `throw new Error()` with `throw new LSHError()`
+- Used `ErrorCodes.SERVICE_UNAVAILABLE` for email API failures
+- Added context objects: `to`, `subject`, `statusCode`, `apiError`, `originalError`
+- Re-throw LSHErrors as-is, wrap other errors with `extractErrorMessage()`
+
+**Files Modified**:
+- `src/lib/saas-email.ts` - Standardized error handling
+- `src/__tests__/saas-email-errors.test.ts` (NEW - 10 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 10 new error handling tests pass
+
+---
+
 ### Task 8: Error Handling Standardization (saas-billing.ts)
 **Priority**: MEDIUM → COMPLETE
 **Category**: 🏗️ Robustness / 📝 Typing
