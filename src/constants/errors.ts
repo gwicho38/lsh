@@ -80,6 +80,18 @@ To fix this:
   BASE64_COMMAND: 'Base64 encoded command detected',
   DYNAMIC_EVAL: 'Dynamic command evaluation detected',
   NULL_BYTE: 'Null byte injection detected',
+
+  // Warning-level security messages (command validator)
+  RECURSIVE_DELETE: 'Recursive deletion command',
+  SUDO_ELEVATED: 'Elevated privileges requested',
+  CHMOD_777: 'Overly permissive file permissions',
+  DISK_WRITE: 'Writing to disk device',
+  INSECURE_SSL: 'Insecure SSL certificate validation disabled',
+  FORK_BOMB: 'Fork bomb pattern detected',
+  EXCESSIVE_CHAINING: 'Excessive command chaining detected',
+  EXCESSIVE_PIPES: 'Excessive pipe usage detected',
+  NESTED_SUBSTITUTION: 'Nested command substitution detected',
+  CONTROL_CHARS: 'Control characters detected in command',
 } as const;
 
 export const RISK_LEVELS = {
