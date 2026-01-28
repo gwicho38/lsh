@@ -19,6 +19,7 @@ import {
 } from './saas-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
+import { validateEmail, validatePassword } from './input-validator.js';
 
 const BCRYPT_ROUNDS = 12;
 const TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
@@ -162,11 +163,43 @@ export class AuthService {
    */
   // TODO(@gwicho38): Review - signup
   async signup(input: SignupInput): Promise<{ user: User; verificationToken: string }> {
+    // Validate email format
+    const emailValidation = validateEmail(input.email, { blockDisposable: true });
+    if (!emailValidation.valid) {
+      throw new Error(`INVALID_EMAIL: ${emailValidation.message}`);
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(input.password);
+    if (!passwordValidation.valid) {
+      const errorMessages = passwordValidation.errors.map((e) => {
+        switch (e) {
+          case 'TOO_SHORT':
+            return 'Password must be at least 8 characters';
+          case 'TOO_LONG':
+            return 'Password must be 72 characters or less';
+          case 'NO_LOWERCASE':
+            return 'Password must contain a lowercase letter';
+          case 'NO_UPPERCASE':
+            return 'Password must contain an uppercase letter';
+          case 'NO_DIGIT':
+            return 'Password must contain a digit';
+          case 'NO_SPECIAL':
+            return 'Password must contain a special character';
+          case 'COMMON_PASSWORD':
+            return 'Password is too common';
+          default:
+            return 'Invalid password';
+        }
+      });
+      throw new Error(`INVALID_PASSWORD: ${errorMessages.join(', ')}`);
+    }
+
     // Check if email already exists
     const { data: existingUser } = await this.supabase
       .from('users')
       .select('id')
-      .eq('email', input.email.toLowerCase())
+      .eq('email', emailValidation.normalized!)
       .single();
 
     if (existingUser) {
@@ -184,7 +217,7 @@ export class AuthService {
     const { data: user, error } = await this.supabase
       .from('users')
       .insert({
-        email: input.email.toLowerCase(),
+        email: emailValidation.normalized!,
         password_hash: passwordHash,
         first_name: input.firstName || null,
         last_name: input.lastName || null,
@@ -284,11 +317,18 @@ export class AuthService {
    */
   // TODO(@gwicho38): Review - login
   async login(input: LoginInput, ipAddress?: string): Promise<AuthSession> {
+    // Validate email format (basic check - don't block disposable for login)
+    const emailValidation = validateEmail(input.email, { blockDisposable: false });
+    if (!emailValidation.valid) {
+      // Don't reveal if email format was the issue - use generic error
+      throw new Error('INVALID_CREDENTIALS');
+    }
+
     // Find user
     const { data: user, error } = await this.supabase
       .from('users')
       .select('*')
-      .eq('email', input.email.toLowerCase())
+      .eq('email', emailValidation.normalized!)
       .is('deleted_at', null)
       .single();
 
@@ -464,10 +504,17 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string
   ): Promise<string> {
+    // Validate email format (don't block disposable - they might have signed up with one)
+    const emailValidation = validateEmail(email, { blockDisposable: false });
+    if (!emailValidation.valid) {
+      // Return dummy token to prevent enumeration (same as non-existent email)
+      return generateToken();
+    }
+
     const { data: user, error } = await this.supabase
       .from('users')
       .select('id')
-      .eq('email', email.toLowerCase())
+      .eq('email', emailValidation.normalized!)
       .is('deleted_at', null)
       .single();
 
@@ -558,6 +605,32 @@ export class AuthService {
    */
   // TODO(@gwicho38): Review - resetPassword
   async resetPassword(token: string, newPassword: string): Promise<void> {
+    // Validate password strength
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.valid) {
+      const errorMessages = passwordValidation.errors.map((e) => {
+        switch (e) {
+          case 'TOO_SHORT':
+            return 'Password must be at least 8 characters';
+          case 'TOO_LONG':
+            return 'Password must be 72 characters or less';
+          case 'NO_LOWERCASE':
+            return 'Password must contain a lowercase letter';
+          case 'NO_UPPERCASE':
+            return 'Password must contain an uppercase letter';
+          case 'NO_DIGIT':
+            return 'Password must contain a digit';
+          case 'NO_SPECIAL':
+            return 'Password must contain a special character';
+          case 'COMMON_PASSWORD':
+            return 'Password is too common';
+          default:
+            return 'Invalid password';
+        }
+      });
+      throw new Error(`INVALID_PASSWORD: ${errorMessages.join(', ')}`);
+    }
+
     // Validate the token
     const validation = await this.validateResetToken(token);
 
