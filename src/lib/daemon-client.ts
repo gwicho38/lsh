@@ -13,6 +13,7 @@ import { JobSpec } from './job-manager.js';
 import { ShellJob } from './database-schema.js';
 import { getPlatformPaths } from './platform-utils.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 export interface DaemonMessage {
   command: string;
@@ -124,7 +125,11 @@ export class DaemonClient extends EventEmitter {
 
       // Check if socket file exists
       if (!fs.existsSync(this.socketPath)) {
-        reject(new Error(`Daemon socket not found at ${this.socketPath}. Is the daemon running?`));
+        reject(new LSHError(
+          ErrorCodes.DAEMON_NOT_RUNNING,
+          `Daemon socket not found at ${this.socketPath}. Is the daemon running?`,
+          { socketPath: this.socketPath }
+        ));
         return;
       }
 
@@ -135,7 +140,11 @@ export class DaemonClient extends EventEmitter {
         const stats = fs.statSync(this.socketPath);
         const currentUid = process.getuid?.();
         const owner = currentUid !== undefined && stats.uid === currentUid ? 'you' : 'another user';
-        reject(new Error(`Permission denied to access socket at ${this.socketPath}. Socket is owned by ${owner}. You may need to start your own daemon with: lsh daemon start`));
+        reject(new LSHError(
+          ErrorCodes.DAEMON_CONNECTION_FAILED,
+          `Permission denied to access socket at ${this.socketPath}. Socket is owned by ${owner}. You may need to start your own daemon with: lsh daemon start`,
+          { socketPath: this.socketPath, owner }
+        ));
         return;
       }
 
@@ -279,7 +288,11 @@ export class DaemonClient extends EventEmitter {
   // TODO(@gwicho38): Review - sendMessage
   private async sendMessage(message: DaemonMessage): Promise<unknown> {
     if (!this.connected || !this.socket) {
-      throw new Error('Not connected to daemon');
+      throw new LSHError(
+        ErrorCodes.DAEMON_NOT_RUNNING,
+        'Not connected to daemon',
+        { connected: this.connected, hasSocket: !!this.socket }
+      );
     }
 
     const id = (++this.messageId).toString();
@@ -290,7 +303,11 @@ export class DaemonClient extends EventEmitter {
       const timeoutId = setTimeout(() => {
         if (this.pendingMessages.has(id)) {
           this.pendingMessages.delete(id);
-          reject(new Error(`Request timeout after 10 seconds for command: ${message.command}`));
+          reject(new LSHError(
+            ErrorCodes.DAEMON_IPC_ERROR,
+            `Request timeout after 10 seconds for command: ${message.command}`,
+            { command: message.command, timeoutMs: 10000 }
+          ));
         }
       }, 10000); // 10 second timeout
 
@@ -322,7 +339,11 @@ export class DaemonClient extends EventEmitter {
       if (response.success) {
         resolve(response.data);
       } else {
-        reject(new Error(response.error || 'Unknown error'));
+        reject(new LSHError(
+          ErrorCodes.DAEMON_IPC_ERROR,
+          response.error || 'Unknown error',
+          { responseId: response.id }
+        ));
       }
     }
   }
@@ -427,8 +448,7 @@ export class DaemonClient extends EventEmitter {
         });
       } catch (error) {
         // Don't fail the trigger if database save fails
-        const err = error as Error;
-        this.logger.warn(`Failed to save job execution to database: ${err.message}`);
+        this.logger.warn(`Failed to save job execution to database: ${extractErrorMessage(error)}`);
       }
     }
 
@@ -582,7 +602,11 @@ export class DaemonClient extends EventEmitter {
   // TODO(@gwicho38): Review - getJobHistory
   public async getJobHistory(jobId?: string, limit: number = 100): Promise<ShellJob[]> {
     if (!this.databasePersistence) {
-      throw new Error('Database persistence not configured');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'Database persistence not configured',
+        { required: 'userId', method: 'getJobHistory' }
+      );
     }
 
     const jobs = await this.databasePersistence.getActiveJobs();
@@ -600,7 +624,11 @@ export class DaemonClient extends EventEmitter {
   // TODO(@gwicho38): Review - getJobStatistics
   public async getJobStatistics(jobId?: string): Promise<JobStatistics> {
     if (!this.databasePersistence) {
-      throw new Error('Database persistence not configured');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'Database persistence not configured',
+        { required: 'userId', method: 'getJobStatistics' }
+      );
     }
 
     const jobs = await this.databasePersistence.getActiveJobs();

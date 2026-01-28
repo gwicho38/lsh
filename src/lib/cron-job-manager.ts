@@ -13,6 +13,7 @@ import DatabaseJobStorage from './job-storage-database.js';
 import DaemonClient, { CronJobSpec } from './daemon-client.js';
 import DatabasePersistence from './database-persistence.js';
 import { DEFAULTS } from '../constants/index.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 export interface CronJobTemplate {
   id: string;
@@ -127,7 +128,7 @@ export class CronJobManager extends BaseJobManager {
     try {
       return await this.daemonClient.connect();
     } catch (error) {
-      console.error('Failed to connect to daemon:', error);
+      this.logger.error(`Failed to connect to daemon: ${extractErrorMessage(error)}`);
       return false;
     }
   }
@@ -147,7 +148,11 @@ export class CronJobManager extends BaseJobManager {
   public async createJobFromTemplate(templateId: string, customizations?: Partial<CronJobSpec>): Promise<any> {
     const template = this.templates.get(templateId);
     if (!template) {
-      throw new Error(`Template ${templateId} not found`);
+      throw new LSHError(
+        ErrorCodes.RESOURCE_NOT_FOUND,
+        `Template ${templateId} not found`,
+        { templateId, availableTemplates: Array.from(this.templates.keys()) }
+      );
     }
 
     const jobSpec: CronJobSpec = {
@@ -291,7 +296,7 @@ export class CronJobManager extends BaseJobManager {
         const report = await this.getJobReport(job.id);
         reports.push(report);
       } catch (error) {
-        console.error(`Failed to get report for job ${job.id}:`, error);
+        this.logger.error(`Failed to get report for job ${job.id}: ${extractErrorMessage(error)}`);
       }
     }
 
