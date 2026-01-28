@@ -6,6 +6,7 @@
  */
 import { BaseJobManager, BaseJobSpec } from './base-job-manager.js';
 import { CronJobSpec } from './daemon-client.js';
+import { JobSpec } from './job-manager.js';
 export interface CronJobTemplate {
     id: string;
     name: string;
@@ -56,11 +57,11 @@ export declare class CronJobManager extends BaseJobManager {
     /**
      * Create a job from template
      */
-    createJobFromTemplate(templateId: string, customizations?: Partial<CronJobSpec>): Promise<any>;
+    createJobFromTemplate(templateId: string, customizations?: Partial<CronJobSpec>): Promise<JobSpec>;
     /**
      * Create a custom job
      */
-    createCustomJob(jobSpec: CronJobSpec): Promise<any>;
+    createCustomJob(jobSpec: CronJobSpec): Promise<JobSpec>;
     /**
      * List all available templates
      */
