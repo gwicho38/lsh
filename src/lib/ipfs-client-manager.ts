@@ -10,6 +10,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { createLogger } from './logger.js';
 import { getPlatformInfo } from './platform-utils.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 const execAsync = promisify(exec);
 const logger = createLogger('IPFSClientManager');
@@ -128,7 +129,11 @@ export class IPFSClientManager {
       } else if (platformInfo.platform === 'win32') {
         await this.installKuboWindows(version);
       } else {
-        throw new Error(`Unsupported platform: ${platformInfo.platform}`);
+        throw new LSHError(
+          ErrorCodes.NOT_IMPLEMENTED,
+          `Unsupported platform: ${platformInfo.platform}`,
+          { platform: platformInfo.platform, supportedPlatforms: ['darwin', 'linux', 'win32'] }
+        );
       }
 
       logger.info('✅ IPFS client installed successfully!');
@@ -140,8 +145,7 @@ export class IPFSClientManager {
         logger.info(`   Path: ${verifyInfo.path}`);
       }
     } catch (error) {
-      const err = error as Error;
-      logger.error(`❌ Installation failed: ${err.message}`);
+      logger.error(`❌ Installation failed: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -182,7 +186,11 @@ export class IPFSClientManager {
     const clientInfo = await this.detect();
 
     if (!clientInfo.installed) {
-      throw new Error('IPFS client not installed. Run: lsh ipfs install');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'IPFS client not installed',
+        { hint: 'Run: lsh ipfs install' }
+      );
     }
 
     const ipfsRepoPath = path.join(this.ipfsDir, 'repo');
@@ -204,8 +212,7 @@ export class IPFSClientManager {
       logger.info('✅ IPFS repository initialized');
       logger.info(`   Path: ${ipfsRepoPath}`);
     } catch (error) {
-      const err = error as Error;
-      logger.error(`❌ Initialization failed: ${err.message}`);
+      logger.error(`❌ Initialization failed: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -218,7 +225,11 @@ export class IPFSClientManager {
     const clientInfo = await this.detect();
 
     if (!clientInfo.installed) {
-      throw new Error('IPFS client not installed. Run: lsh ipfs install');
+      throw new LSHError(
+        ErrorCodes.CONFIG_MISSING_ENV_VAR,
+        'IPFS client not installed',
+        { hint: 'Run: lsh ipfs install' }
+      );
     }
 
     logger.info('🚀 Starting IPFS daemon...');
@@ -243,8 +254,7 @@ export class IPFSClientManager {
       logger.info('   API: http://localhost:5001');
       logger.info('   Gateway: http://localhost:8080');
     } catch (error) {
-      const err = error as Error;
-      logger.error(`❌ Failed to start daemon: ${err.message}`);
+      logger.error(`❌ Failed to start daemon: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -270,8 +280,7 @@ export class IPFSClientManager {
       fs.unlinkSync(pidPath);
       logger.info('✅ IPFS daemon stopped');
     } catch (error) {
-      const err = error as Error;
-      logger.error(`❌ Failed to stop daemon: ${err.message}`);
+      logger.error(`❌ Failed to stop daemon: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
