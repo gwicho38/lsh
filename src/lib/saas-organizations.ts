@@ -15,6 +15,13 @@ import type {
   TeamRole,
   OrganizationUsageSummary,
 } from './saas-types.js';
+import type {
+  DbOrganizationRecord,
+  DbOrganizationMemberRecord,
+  DbOrganizationMemberDetailedRecord,
+  DbTeamRecord,
+  DbTeamMemberRecord,
+} from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
 import { TABLES } from '../constants/index.js';
@@ -517,9 +524,8 @@ export class OrganizationService {
    * @see DbOrganizationRecord in database-types.ts for input shape
    * @see Organization in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbOrgToOrg
-  private mapDbOrgToOrg(dbOrg: any): Organization {
+  private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
     return {
       id: dbOrg.id,
       name: dbOrg.name,
@@ -532,7 +538,7 @@ export class OrganizationService {
       subscriptionExpiresAt: dbOrg.subscription_expires_at
         ? new Date(dbOrg.subscription_expires_at)
         : null,
-      settings: dbOrg.settings || {},
+      settings: (dbOrg.settings || {}) as Record<string, unknown>,
       deletedAt: dbOrg.deleted_at ? new Date(dbOrg.deleted_at) : null,
     };
   }
@@ -553,9 +559,8 @@ export class OrganizationService {
    * @see DbOrganizationMemberRecord in database-types.ts for input shape
    * @see OrganizationMember in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbMemberToMember
-  private mapDbMemberToMember(dbMember: any): OrganizationMember {
+  private mapDbMemberToMember(dbMember: DbOrganizationMemberRecord): OrganizationMember {
     return {
       id: dbMember.id,
       organizationId: dbMember.organization_id,
@@ -589,9 +594,8 @@ export class OrganizationService {
    * @see DbOrganizationMemberDetailedRecord in database-types.ts for input shape
    * @see OrganizationMemberDetailed in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row with joined user data
   // TODO(@gwicho38): Review - mapDbMemberDetailedToMemberDetailed
-  private mapDbMemberDetailedToMemberDetailed(dbMember: any): OrganizationMemberDetailed {
+  private mapDbMemberDetailedToMemberDetailed(dbMember: DbOrganizationMemberDetailedRecord): OrganizationMemberDetailed {
     return {
       id: dbMember.id,
       organizationId: dbMember.organization_id,
@@ -876,9 +880,8 @@ export class TeamService {
    * @see DbTeamRecord in database-types.ts for input shape
    * @see Team in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbTeamToTeam
-  private mapDbTeamToTeam(dbTeam: any): Team {
+  private mapDbTeamToTeam(dbTeam: DbTeamRecord): Team {
     return {
       id: dbTeam.id,
       organizationId: dbTeam.organization_id,
@@ -907,9 +910,8 @@ export class TeamService {
    * @see DbTeamMemberRecord in database-types.ts for input shape
    * @see TeamMember in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbTeamMemberToTeamMember
-  private mapDbTeamMemberToTeamMember(dbMember: any): TeamMember {
+  private mapDbTeamMemberToTeamMember(dbMember: DbTeamMemberRecord): TeamMember {
     return {
       id: dbMember.id,
       teamId: dbMember.team_id,
