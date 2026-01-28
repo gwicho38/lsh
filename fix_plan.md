@@ -25,6 +25,39 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 10: Error Handling Standardization (saas-secrets.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `saas-secrets.ts` used plain `Error` instead of `LSHError` class
+2. No error codes for programmatic handling
+3. Missing context information in errors
+4. Inconsistent error patterns across CRUD operations
+
+**Implementation**:
+- Replaced 12 `throw new Error()` calls with `throw new LSHError()`
+- Added appropriate error codes:
+  - `RESOURCE_NOT_FOUND` for missing teams/organizations
+  - `SECRETS_NOT_FOUND` for missing secrets
+  - `DB_QUERY_FAILED` for database operations
+  - `BILLING_TIER_LIMIT_EXCEEDED` for tier limits
+- Added context objects with relevant debugging info (teamId, secretId, environment, dbError)
+- Used `extractErrorMessage()` for safe error extraction in catch blocks
+
+**Files Modified**:
+- `src/lib/saas-secrets.ts` - Standardized all error handling
+- `src/__tests__/saas-secrets-errors.test.ts` (NEW - 21 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 21 new error handling tests pass
+
+---
+
 ### Task 9: Error Handling Standardization (saas-email.ts)
 **Priority**: MEDIUM → COMPLETE
 **Category**: 🏗️ Robustness / 📝 Typing
@@ -321,22 +354,22 @@ A comprehensive code analysis revealed the following priority areas:
 | ~~Email validation missing~~ | ~~Security~~ | ~~HIGH~~ | ~~saas-auth.ts~~ ✅ FIXED |
 | ~~Audit log failures ignored~~ | ~~Traceability~~ | ~~MEDIUM~~ | ~~saas-audit.ts~~ ✅ FIXED |
 | ~~History merge O(n²) complexity~~ | ~~Performance~~ | ~~MEDIUM~~ | ~~enhanced-history-system.ts~~ ✅ FIXED |
-| Error handling inconsistency | Robustness | MEDIUM | 37 files (saas-billing.ts done) |
+| Error handling inconsistency | Robustness | MEDIUM | 37 files (saas-billing, saas-email, saas-secrets done) |
 | 618+ TODO comments | Documentation | LOW | 44 files |
 
 ---
 
 ## Next Priority
 
-**Continue Error Message Standardization** - `saas-billing.ts` is now standardized. Continue with other SaaS modules: `saas-email.ts`, `saas-secrets.ts`, `saas-organizations.ts`. Also consider standardizing `database-persistence.ts` which has 19 catch blocks.
+**Continue Error Message Standardization** - `saas-billing.ts`, `saas-email.ts`, and `saas-secrets.ts` are now standardized. Continue with `saas-organizations.ts`. Also consider standardizing `database-persistence.ts` which has 19 catch blocks.
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 8
-- **Tests Added**: 194 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors)
-- **Files Modified**: 20
-- **Commits**: 9 (pending)
+- **Tasks Completed**: 10
+- **Tests Added**: 225 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors)
+- **Files Modified**: 22
+- **Commits**: 11
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 
 ---
