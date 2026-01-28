@@ -680,6 +680,23 @@ A comprehensive code analysis revealed the following priority areas:
 
 ---
 
+### Task 35: Type Safety Improvement (saas-organizations.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 📝 Typing / Type Safety
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 5 `any` types with proper database record types
+- Imported DbOrganizationRecord, DbOrganizationMemberRecord, etc.
+- Mapper functions now have full type safety for database queries
+- Reduced total `any` count from 31 to 26
+
+**Files Modified**:
+- `src/lib/saas-organizations.ts` - Replaced any with typed DB records
+
+---
+
 ### Task 34: Error Handling Standardization (5 utility files)
 **Priority**: MEDIUM → COMPLETE
 **Category**: 🏗️ Robustness / 📝 Typing
@@ -910,17 +927,18 @@ A comprehensive code analysis revealed the following priority areas:
 - `constants/index.ts` - Intentional validation error for template strings
 - `__tests__/integration/database.test.ts` - Test file mock error
 
-**Next Priority**: Test coverage improvements or other code quality items.
+**Next Priority**: Type safety improvements (26 `any` types remaining across 11 files).
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 34
+- **Tasks Completed**: 35
 - **Tests Added**: 633 (588 + 19 saas-types + 26 utility)
-- **Files Modified**: 75
-- **Commits**: 34
+- **Files Modified**: 76
+- **Commits**: 35
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
+- **Type Safety**: Started (5 `any` types removed, 26 remaining)
 
 ---
 
