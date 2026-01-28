@@ -14,6 +14,7 @@ import {
   BaseJobFilter,
 } from './base-job-manager.js';
 import MemoryJobStorage from './job-storage-memory.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 const execAsync = promisify(exec);
 
@@ -134,13 +135,21 @@ export class JobManager extends BaseJobManager {
   async startJob(jobId: string): Promise<BaseJobSpec> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId }
+      );
     }
 
     const job = baseJob as JobSpec;
 
     if (job.status === 'running') {
-      throw new Error(`Job ${jobId} is already running`);
+      throw new LSHError(
+        ErrorCodes.JOB_ALREADY_RUNNING,
+        `Job ${jobId} is already running`,
+        { jobId, status: job.status }
+      );
     }
 
     try {
@@ -229,17 +238,29 @@ export class JobManager extends BaseJobManager {
   async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<BaseJobSpec> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId }
+      );
     }
 
     const job = baseJob as JobSpec;
 
     if (job.status !== 'running') {
-      throw new Error(`Job ${jobId} is not running`);
+      throw new LSHError(
+        ErrorCodes.JOB_STOP_FAILED,
+        `Job ${jobId} is not running`,
+        { jobId, status: job.status }
+      );
     }
 
     if (!job.process || !job.pid) {
-      throw new Error(`Job ${jobId} has no associated process`);
+      throw new LSHError(
+        ErrorCodes.JOB_STOP_FAILED,
+        `Job ${jobId} has no associated process`,
+        { jobId, hasPid: !!job.pid, hasProcess: !!job.process }
+      );
     }
 
     // Clear timeout if exists
@@ -288,17 +309,29 @@ export class JobManager extends BaseJobManager {
   async resumeJob(jobId: string): Promise<BaseJobSpec> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId }
+      );
     }
 
     const job = baseJob as JobSpec;
 
     if (job.status !== 'paused') {
-      throw new Error(`Job ${jobId} is not paused`);
+      throw new LSHError(
+        ErrorCodes.JOB_START_FAILED,
+        `Job ${jobId} is not paused`,
+        { jobId, status: job.status }
+      );
     }
 
     if (!job.process || !job.pid) {
-      throw new Error(`Job ${jobId} has no associated process`);
+      throw new LSHError(
+        ErrorCodes.JOB_START_FAILED,
+        `Job ${jobId} has no associated process`,
+        { jobId, hasPid: !!job.pid, hasProcess: !!job.process }
+      );
     }
 
     // Send SIGCONT to resume
@@ -306,7 +339,11 @@ export class JobManager extends BaseJobManager {
       job.process.kill('SIGCONT');
       return await this.updateJobStatus(jobId, 'running');
     } catch (error) {
-      throw new Error(`Failed to resume job ${jobId}: ${error}`);
+      throw new LSHError(
+        ErrorCodes.JOB_START_FAILED,
+        `Failed to resume job ${jobId}`,
+        { jobId, originalError: extractErrorMessage(error) }
+      );
     }
   }
 
@@ -325,13 +362,21 @@ export class JobManager extends BaseJobManager {
   async monitorJob(jobId: string): Promise<any> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId }
+      );
     }
 
     const job = baseJob as JobSpec;
 
     if (!job.pid) {
-      throw new Error(`Job ${jobId} is not running`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} is not running`,
+        { jobId, status: job.status }
+      );
     }
 
     try {
