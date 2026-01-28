@@ -8,6 +8,14 @@ import type {
   Invoice,
   SubscriptionTier,
 } from './saas-types.js';
+import type {
+  DbSubscriptionRecord,
+  DbInvoiceRecord,
+  StripeWebhookEvent,
+  StripeCheckoutSession,
+  StripeSubscriptionEvent,
+  StripeInvoiceEvent,
+} from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { auditLogger } from './saas-audit.js';
 import { ENV_VARS } from '../constants/index.js';
@@ -181,24 +189,24 @@ export class BillingService {
     // Handle different event types
     switch (event.type) {
       case 'checkout.session.completed':
-        await this.handleCheckoutCompleted(event.data.object);
+        await this.handleCheckoutCompleted(event.data.object as StripeCheckoutSession);
         break;
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdated(event.data.object);
+        await this.handleSubscriptionUpdated(event.data.object as StripeSubscriptionEvent);
         break;
 
       case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(event.data.object);
+        await this.handleSubscriptionDeleted(event.data.object as StripeSubscriptionEvent);
         break;
 
       case 'invoice.paid':
-        await this.handleInvoicePaid(event.data.object);
+        await this.handleInvoicePaid(event.data.object as StripeInvoiceEvent);
         break;
 
       case 'invoice.payment_failed':
-        await this.handleInvoicePaymentFailed(event.data.object);
+        await this.handleInvoicePaymentFailed(event.data.object as StripeInvoiceEvent);
         break;
 
       default:
@@ -224,9 +232,8 @@ export class BillingService {
    * @throws Error if payload is not valid JSON
    * @see https://stripe.com/docs/webhooks/signatures
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe event structure
   // TODO(@gwicho38): Review - verifyWebhookSignature
-  private verifyWebhookSignature(payload: string, _signature: string): any {
+  private verifyWebhookSignature(payload: string, _signature: string): StripeWebhookEvent {
     // In production, use Stripe's webhook signature verification
     // For now, just parse the payload
     try {
@@ -248,9 +255,8 @@ export class BillingService {
    * @param session - Stripe checkout session object
    * @see StripeCheckoutSession in database-types.ts for partial type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe checkout session object
   // TODO(@gwicho38): Review - handleCheckoutCompleted
-  private async handleCheckoutCompleted(session: any): Promise<void> {
+  private async handleCheckoutCompleted(session: StripeCheckoutSession): Promise<void> {
     const organizationId = session.metadata?.organization_id;
     if (!organizationId) {
       console.error('No organization_id in checkout session metadata');
@@ -277,9 +283,8 @@ export class BillingService {
    * @param subscription - Stripe subscription object
    * @see StripeSubscriptionEvent in database-types.ts for partial type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe subscription object
   // TODO(@gwicho38): Review - handleSubscriptionUpdated
-  private async handleSubscriptionUpdated(subscription: any): Promise<void> {
+  private async handleSubscriptionUpdated(subscription: StripeSubscriptionEvent): Promise<void> {
     const organizationId = subscription.metadata?.organization_id;
     if (!organizationId) {
       console.error('No organization_id in subscription metadata');
@@ -351,9 +356,8 @@ export class BillingService {
    * @param subscription - Stripe subscription object
    * @see StripeSubscriptionEvent in database-types.ts for partial type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe subscription object
   // TODO(@gwicho38): Review - handleSubscriptionDeleted
-  private async handleSubscriptionDeleted(subscription: any): Promise<void> {
+  private async handleSubscriptionDeleted(subscription: StripeSubscriptionEvent): Promise<void> {
     const organizationId = subscription.metadata?.organization_id;
     if (!organizationId) {
       console.error('No organization_id in subscription metadata');
@@ -397,9 +401,8 @@ export class BillingService {
    * @param invoice - Stripe invoice object
    * @see StripeInvoiceEvent in database-types.ts for partial type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe invoice object
   // TODO(@gwicho38): Review - handleInvoicePaid
-  private async handleInvoicePaid(invoice: any): Promise<void> {
+  private async handleInvoicePaid(invoice: StripeInvoiceEvent): Promise<void> {
     const organizationId = invoice.subscription_metadata?.organization_id;
     if (!organizationId) {
       return;
@@ -416,7 +419,7 @@ export class BillingService {
         currency: invoice.currency?.toUpperCase() || 'USD',
         status: 'paid',
         invoice_date: new Date(invoice.created * 1000).toISOString(),
-        paid_at: new Date(invoice.status_transitions?.paid_at * 1000).toISOString(),
+        paid_at: invoice.status_transitions?.paid_at ? new Date(invoice.status_transitions.paid_at * 1000).toISOString() : null,
         invoice_pdf_url: invoice.invoice_pdf,
       },
       { onConflict: 'stripe_invoice_id' }
@@ -435,9 +438,8 @@ export class BillingService {
    * @param invoice - Stripe invoice object
    * @see StripeInvoiceEvent in database-types.ts for partial type
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Stripe invoice object
   // TODO(@gwicho38): Review - handleInvoicePaymentFailed
-  private async handleInvoicePaymentFailed(invoice: any): Promise<void> {
+  private async handleInvoicePaymentFailed(invoice: StripeInvoiceEvent): Promise<void> {
     const organizationId = invoice.subscription_metadata?.organization_id;
     if (!organizationId) {
       return;
@@ -463,7 +465,8 @@ export class BillingService {
    * Get tier from Stripe price ID
    */
   // TODO(@gwicho38): Review - getTierFromPriceId
-  private getTierFromPriceId(priceId: string): SubscriptionTier {
+  private getTierFromPriceId(priceId: string | undefined): SubscriptionTier {
+    if (!priceId) return 'free';
     if (
       priceId === STRIPE_PRICE_IDS.pro_monthly ||
       priceId === STRIPE_PRICE_IDS.pro_yearly
@@ -539,9 +542,8 @@ export class BillingService {
    * @see DbSubscriptionRecord in database-types.ts for input shape
    * @see Subscription in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbSubscriptionToSubscription
-  private mapDbSubscriptionToSubscription(dbSub: any): Subscription {
+  private mapDbSubscriptionToSubscription(dbSub: DbSubscriptionRecord): Subscription {
     return {
       id: dbSub.id,
       organizationId: dbSub.organization_id,
@@ -581,9 +583,8 @@ export class BillingService {
    * @see DbInvoiceRecord in database-types.ts for input shape
    * @see Invoice in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbInvoiceToInvoice
-  private mapDbInvoiceToInvoice(dbInvoice: any): Invoice {
+  private mapDbInvoiceToInvoice(dbInvoice: DbInvoiceRecord): Invoice {
     return {
       id: dbInvoice.id,
       organizationId: dbInvoice.organization_id,

@@ -13,7 +13,9 @@ import type {
   AuthToken,
   AuthSession,
   Organization,
+  JwtPayload,
 } from './saas-types.js';
+import type { DbUserRecord, DbOrganizationRecord, DbOrgMemberWithOrg } from './database-types.js';
 import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
 
@@ -109,7 +111,7 @@ export function verifyToken(token: string): { userId: string; email?: string; ty
     const decoded = jwt.verify(token, secret, {
       issuer: 'lsh-saas',
       audience: 'lsh-api',
-    }) as any;
+    }) as JwtPayload;
 
     return {
       userId: decoded.sub,
@@ -407,8 +409,7 @@ export class AuthService {
       throw new Error(`Failed to get user organizations: ${error.message}`);
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB join result
-    return (data || []).map((row: any) => this.mapDbOrgToOrg(row.organizations));
+    return (data || []).map((row: DbOrgMemberWithOrg) => this.mapDbOrgToOrg(row.organizations[0]));
   }
 
   /**
@@ -503,9 +504,8 @@ export class AuthService {
    * @see DbUserRecord in database-types.ts for input shape
    * @see User in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbUserToUser
-  private mapDbUserToUser(dbUser: any): User {
+  private mapDbUserToUser(dbUser: DbUserRecord): User {
     return {
       id: dbUser.id,
       email: dbUser.email,
@@ -546,9 +546,8 @@ export class AuthService {
    * @see DbOrganizationRecord in database-types.ts for input shape
    * @see Organization in saas-types.ts for output shape
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- DB row type varies by schema
   // TODO(@gwicho38): Review - mapDbOrgToOrg
-  private mapDbOrgToOrg(dbOrg: any): Organization {
+  private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
     return {
       id: dbOrg.id,
       name: dbOrg.name,
