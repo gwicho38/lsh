@@ -17,6 +17,7 @@ import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
 import { getIPFSSync } from './ipfs-sync.js';
 import { ENV_VARS } from '../constants/index.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -145,8 +146,7 @@ export class IPFSSecretsStorage {
             }
           }
         } catch (error) {
-          const err = error as Error;
-          logger.warn(`   ⚠️  IPFS upload failed: ${err.message}`);
+          logger.warn(`   ⚠️  IPFS upload failed: ${extractErrorMessage(error)}`);
         }
       }
 
@@ -157,8 +157,7 @@ export class IPFSSecretsStorage {
 
       return realCid || cid;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to push secrets to IPFS: ${err.message}`);
+      logger.error(`Failed to push secrets to IPFS: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -203,16 +202,20 @@ export class IPFSSecretsStorage {
           }
         } catch (error) {
           // History check failed, continue to error
-          const err = error as Error;
-          logger.debug(`   IPFS history check failed: ${err.message}`);
+          logger.debug(`   IPFS history check failed: ${extractErrorMessage(error)}`);
         }
       }
 
       if (!metadata) {
-        throw new Error(`No secrets found for environment: ${displayEnv}\n\n` +
-          `💡 Tip: Check available environments with: lsh env\n` +
-          `   Or push secrets first with: lsh push\n` +
-          `   Or pull by CID with: lsh sync pull <cid>`);
+        throw new LSHError(
+          ErrorCodes.SECRETS_NOT_FOUND,
+          `No secrets found for environment: ${displayEnv}`,
+          {
+            environment: displayEnv,
+            gitRepo,
+            hint: 'Check available environments with: lsh env, or push secrets first with: lsh push'
+          }
+        );
       }
 
       // Try to load from local cache
@@ -233,15 +236,21 @@ export class IPFSSecretsStorage {
             logger.info(`   ✅ Downloaded and cached from IPFS`);
           }
         } catch (error) {
-          const err = error as Error;
-          logger.debug(`   IPFS download failed: ${err.message}`);
+          logger.debug(`   IPFS download failed: ${extractErrorMessage(error)}`);
         }
       }
 
       if (!cachedData) {
-        throw new Error(`Secrets not found in cache or IPFS. CID: ${metadata.cid}\n\n` +
-          `💡 Tip: Start IPFS daemon: lsh ipfs start\n` +
-          `   Or pull directly by CID: lsh sync pull <cid>`);
+        throw new LSHError(
+          ErrorCodes.SECRETS_NOT_FOUND,
+          `Secrets not found in cache or IPFS`,
+          {
+            cid: metadata.cid,
+            environment,
+            gitRepo,
+            hint: 'Start IPFS daemon: lsh ipfs start, or pull directly by CID: lsh sync pull <cid>'
+          }
+        );
       }
 
       // Decrypt secrets
@@ -253,8 +262,7 @@ export class IPFSSecretsStorage {
 
       return secrets;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to pull secrets from IPFS: ${err.message}`);
+      logger.error(`Failed to pull secrets from IPFS: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -344,20 +352,20 @@ export class IPFSSecretsStorage {
 
       return JSON.parse(decrypted) as Secret[];
     } catch (error) {
-      const err = error as Error;
+      const errorMessage = extractErrorMessage(error);
       // Catch crypto errors (bad decrypt, wrong block length) AND JSON parse errors
       // (wrong key can produce garbage that fails JSON.parse)
-      if (err.message.includes('bad decrypt') ||
-          err.message.includes('wrong final block length') ||
-          err.message.includes('Unexpected token') ||
-          err.message.includes('JSON')) {
-        throw new Error(
-          'Decryption failed. This usually means:\n' +
-          '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
-          '  2. The key must match the one used during encryption\n' +
-          '  3. Generate a shared key with: lsh key\n' +
-          '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + err.message
+      if (errorMessage.includes('bad decrypt') ||
+          errorMessage.includes('wrong final block length') ||
+          errorMessage.includes('Unexpected token') ||
+          errorMessage.includes('JSON')) {
+        throw new LSHError(
+          ErrorCodes.SECRETS_DECRYPTION_FAILED,
+          'Decryption failed - encryption key may be incorrect or missing',
+          {
+            originalError: errorMessage,
+            hint: 'Set LSH_SECRETS_KEY environment variable with the key used during encryption. Generate a shared key with: lsh key'
+          }
         );
       }
       throw error;
