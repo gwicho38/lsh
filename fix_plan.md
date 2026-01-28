@@ -25,6 +25,37 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Completed
 
+### Task 41: Test Coverage - constant-time.ts (Timing Attack Prevention)
+**Priority**: HIGH → COMPLETE
+**Category**: 🧪 Testing / 🔒 Security
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `constant-time.ts` timing-attack-resistant functions needed comprehensive testing
+2. Security-critical comparison functions were under-tested
+3. HMAC verification and API key validation needed coverage
+
+**Implementation**:
+Added 75 comprehensive tests covering:
+- `constantTimeStringCompare`: Equal/unequal strings, unicode, special chars, edge cases
+- `constantTimeBufferCompare`: Binary data, empty buffers, length differences
+- `constantTimeHmacCompare`: HMAC-based comparison, length hiding, key handling
+- `verifyHmacSignature`: SHA-256/SHA-512, valid/invalid signatures, tampering detection
+- `verifyApiKey`: Whitespace normalization, unicode normalization, real-world formats
+- Timing attack resistance verification (behavioral tests)
+- Integration scenarios (API auth flow, webhook verification)
+
+**Files Modified**:
+- `src/__tests__/constant-time.test.ts` (NEW - 75 tests)
+
+**Verification**:
+- ✅ All 75 tests pass (99 total with existing tests)
+- ✅ Lint passes
+- ✅ Security-critical functions fully covered
+
+---
+
 ### Task 40: Test Coverage - env-validator.ts (Startup Security)
 **Priority**: HIGH → COMPLETE
 **Category**: 🧪 Testing / 🔒 Security
@@ -1101,14 +1132,14 @@ Added 76 comprehensive tests covering:
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 40
-- **Tests Added**: 752 (633 + 76 command-validator + 43 env-validator)
-- **Files Modified**: 84
-- **Commits**: 40
+- **Tasks Completed**: 41
+- **Tests Added**: 827 (633 + 76 command-validator + 43 env-validator + 75 constant-time)
+- **Files Modified**: 85
+- **Commits**: 41
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 - **Error Handling**: 100% complete (30+ files standardized, 2 intentional exceptions)
 - **Type Safety**: 100% complete (19 `any` types removed from source, only 2 remain in test file)
-- **Test Coverage**: In progress (command-validator.ts and env-validator.ts fully covered)
+- **Test Coverage**: In progress (command-validator.ts, env-validator.ts, constant-time.ts fully covered)
 
 ---
 
