@@ -13,6 +13,7 @@
 import { EventEmitter } from 'events';
 import { createLogger, Logger } from './logger.js';
 import { ENV_VARS } from '../constants/index.js';
+import { LSHError, ErrorCodes } from './lsh-error.js';
 
 /**
  * Unified job specification for all LSH job types.
@@ -231,10 +232,18 @@ export abstract class BaseJobManager extends EventEmitter {
   // TODO(@gwicho38): Review - validateJobSpec
   protected validateJobSpec(spec: Partial<BaseJobSpec>): void {
     if (!spec.name) {
-      throw new Error('Job name is required');
+      throw new LSHError(
+        ErrorCodes.VALIDATION_REQUIRED_FIELD,
+        'Job name is required',
+        { field: 'name', provided: spec }
+      );
     }
     if (!spec.command) {
-      throw new Error('Job command is required');
+      throw new LSHError(
+        ErrorCodes.VALIDATION_REQUIRED_FIELD,
+        'Job command is required',
+        { field: 'command', provided: spec }
+      );
     }
   }
 
@@ -365,7 +374,11 @@ export abstract class BaseJobManager extends EventEmitter {
   async updateJob(jobId: string, updates: BaseJobUpdate): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId, operation: 'updateJob' }
+      );
     }
 
     // Apply updates
@@ -397,7 +410,11 @@ export abstract class BaseJobManager extends EventEmitter {
   ): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId, operation: 'updateJobStatus', targetStatus: status }
+      );
     }
 
     job.status = status;
@@ -436,7 +453,11 @@ export abstract class BaseJobManager extends EventEmitter {
 
     // Check if job is running
     if (job.status === 'running' && !force) {
-      throw new Error(`Job ${jobId} is running. Use force=true to remove.`);
+      throw new LSHError(
+        ErrorCodes.RESOURCE_CONFLICT,
+        `Job ${jobId} is running. Use force=true to remove.`,
+        { jobId, status: job.status, force }
+      );
     }
 
     // Stop job if running
@@ -469,7 +490,11 @@ export abstract class BaseJobManager extends EventEmitter {
     const job = await this.getJob(jobId);
 
     if (!job) {
-      throw new Error(`Job ${jobId} not found`);
+      throw new LSHError(
+        ErrorCodes.JOB_NOT_FOUND,
+        `Job ${jobId} not found`,
+        { jobId, operation: 'getJobStatistics' }
+      );
     }
 
     const totalExecutions = executions.length;
