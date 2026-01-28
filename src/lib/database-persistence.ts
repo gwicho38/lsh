@@ -16,6 +16,7 @@ import {
 } from './database-schema.js';
 import { LocalStorageAdapter } from './local-storage-adapter.js';
 import { ENV_VARS } from '../constants/index.js';
+import { LSHError, ErrorCodes, extractErrorMessage } from './lsh-error.js';
 
 export class DatabasePersistence {
   private client?: SupabaseClient;
@@ -35,7 +36,7 @@ export class DatabasePersistence {
       }
       this.localStorage = new LocalStorageAdapter(userId);
       this.localStorage.initialize().catch(err => {
-        console.error('Failed to initialize local storage:', err);
+        console.error('Failed to initialize local storage:', extractErrorMessage(err));
       });
     } else {
       // Supabase is configured, use it exclusively
@@ -43,8 +44,11 @@ export class DatabasePersistence {
         this.client = supabaseClient.getClient();
       } catch (error) {
         // If Supabase is configured but fails, throw error instead of falling back
-        console.error('⚠️  Supabase is configured but connection failed:', error);
-        throw new Error('Supabase connection failed. Check your SUPABASE_URL and SUPABASE_ANON_KEY configuration.');
+        throw new LSHError(
+          ErrorCodes.DB_CONNECTION_FAILED,
+          'Supabase connection failed. Check your SUPABASE_URL and SUPABASE_ANON_KEY configuration.',
+          { originalError: extractErrorMessage(error) }
+        );
       }
     }
 
@@ -91,7 +95,7 @@ export class DatabasePersistence {
       console.log('Database schema initialization would be handled by Supabase migrations');
       return true;
     } catch (error) {
-      console.error('Failed to initialize database schema:', error);
+      console.error('Failed to initialize database schema:', extractErrorMessage(error));
       return false;
     }
   }
@@ -135,13 +139,13 @@ export class DatabasePersistence {
         .insert([insertData]);
 
       if (error) {
-        console.error('Failed to save history entry:', error);
+        console.error('Failed to save history entry:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error saving history entry:', error);
+      console.error('Error saving history entry:', extractErrorMessage(error));
       return false;
     }
   }
@@ -172,13 +176,13 @@ export class DatabasePersistence {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to get history entries:', error);
+        console.error('Failed to get history entries:', error.message, { code: error.code });
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error getting history entries:', error);
+      console.error('Error getting history entries:', extractErrorMessage(error));
       return [];
     }
   }
@@ -210,13 +214,13 @@ export class DatabasePersistence {
         .insert([insertData]);
 
       if (error) {
-        console.error('Failed to save job:', error);
+        console.error('Failed to save job:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error saving job:', error);
+      console.error('Error saving job:', extractErrorMessage(error));
       return false;
     }
   }
@@ -258,13 +262,13 @@ export class DatabasePersistence {
       const { error } = await query;
 
       if (error) {
-        console.error('Failed to update job status:', error);
+        console.error('Failed to update job status:', error.message, { code: error.code, jobId });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error updating job status:', error);
+      console.error('Error updating job status:', extractErrorMessage(error), { jobId });
       return false;
     }
   }
@@ -297,13 +301,13 @@ export class DatabasePersistence {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to get active jobs:', error);
+        console.error('Failed to get active jobs:', error.message, { code: error.code });
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error getting active jobs:', error);
+      console.error('Error getting active jobs:', extractErrorMessage(error));
       return [];
     }
   }
@@ -334,14 +338,14 @@ export class DatabasePersistence {
       if (error) {
         // Don't log PGRST116 (row not found) as an error
         if (error.code !== 'PGRST116') {
-          console.error('Failed to get job by ID:', error);
+          console.error('Failed to get job by ID:', error.message, { code: error.code, jobId });
         }
         return null;
       }
 
       return data || null;
     } catch (error) {
-      console.error('Error getting job by ID:', error);
+      console.error('Error getting job by ID:', extractErrorMessage(error), { jobId });
       return null;
     }
   }
@@ -370,13 +374,13 @@ export class DatabasePersistence {
       const { error } = await query;
 
       if (error) {
-        console.error('Failed to delete job:', error);
+        console.error('Failed to delete job:', error.message, { code: error.code, jobId });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error deleting job:', error);
+      console.error('Error deleting job:', extractErrorMessage(error), { jobId });
       return false;
     }
   }
@@ -409,13 +413,13 @@ export class DatabasePersistence {
         });
 
       if (error) {
-        console.error('Failed to save configuration:', error);
+        console.error('Failed to save configuration:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error saving configuration:', error);
+      console.error('Error saving configuration:', extractErrorMessage(error));
       return false;
     }
   }
@@ -449,13 +453,13 @@ export class DatabasePersistence {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to get configuration:', error);
+        console.error('Failed to get configuration:', error.message, { code: error.code });
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error getting configuration:', error);
+      console.error('Error getting configuration:', extractErrorMessage(error));
       return [];
     }
   }
@@ -488,13 +492,13 @@ export class DatabasePersistence {
         });
 
       if (error) {
-        console.error('Failed to save alias:', error);
+        console.error('Failed to save alias:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error saving alias:', error);
+      console.error('Error saving alias:', extractErrorMessage(error));
       return false;
     }
   }
@@ -524,13 +528,13 @@ export class DatabasePersistence {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to get aliases:', error);
+        console.error('Failed to get aliases:', error.message, { code: error.code });
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error getting aliases:', error);
+      console.error('Error getting aliases:', extractErrorMessage(error));
       return [];
     }
   }
@@ -563,13 +567,13 @@ export class DatabasePersistence {
         });
 
       if (error) {
-        console.error('Failed to save function:', error);
+        console.error('Failed to save function:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error saving function:', error);
+      console.error('Error saving function:', extractErrorMessage(error));
       return false;
     }
   }
@@ -599,13 +603,13 @@ export class DatabasePersistence {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to get functions:', error);
+        console.error('Failed to get functions:', error.message, { code: error.code });
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Error getting functions:', error);
+      console.error('Error getting functions:', extractErrorMessage(error));
       return [];
     }
   }
@@ -641,13 +645,13 @@ export class DatabasePersistence {
         .insert([insertData]);
 
       if (error) {
-        console.error('Failed to start session:', error);
+        console.error('Failed to start session:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error starting session:', error);
+      console.error('Error starting session:', extractErrorMessage(error));
       return false;
     }
   }
@@ -681,13 +685,13 @@ export class DatabasePersistence {
       const { error } = await query;
 
       if (error) {
-        console.error('Failed to end session:', error);
+        console.error('Failed to end session:', error.message, { code: error.code });
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error ending session:', error);
+      console.error('Error ending session:', extractErrorMessage(error));
       return false;
     }
   }
@@ -867,7 +871,7 @@ export class DatabasePersistence {
 
       return result;
     } catch (error) {
-      console.error('Error getting latest rows:', error);
+      console.error('Error getting latest rows:', extractErrorMessage(error));
       return {};
     }
   }
@@ -896,7 +900,11 @@ export class DatabasePersistence {
       ];
 
       if (!validTables.includes(tableName)) {
-        throw new Error(`Invalid table name: ${tableName}`);
+        throw new LSHError(
+          ErrorCodes.VALIDATION_INVALID_FORMAT,
+          `Invalid table name: ${tableName}`,
+          { tableName, validTables }
+        );
       }
 
       let query = this.client!
@@ -918,13 +926,17 @@ export class DatabasePersistence {
       const { data, error } = await query;
 
       if (error) {
-        console.error(`Failed to get latest rows from ${tableName}:`, error);
+        console.error(`Failed to get latest rows from ${tableName}:`, error.message, { code: error.code, tableName });
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error(`Error getting latest rows from ${tableName}:`, error);
+      // Re-throw LSHError (validation errors) but catch other exceptions
+      if (error instanceof LSHError) {
+        throw error;
+      }
+      console.error(`Error getting latest rows from ${tableName}:`, extractErrorMessage(error), { tableName });
       return [];
     }
   }

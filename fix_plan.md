@@ -17,13 +17,45 @@ A comprehensive code analysis revealed the following priority areas:
 3. **Missing Tests** - 95% of SaaS code has no test coverage
 
 #### Medium Priority Issues
-1. ~~Error message standardization~~ ✅ PARTIAL (saas-billing.ts done, more files pending)
+1. ~~Error message standardization~~ ✅ MOSTLY COMPLETE (5 files done: saas-billing, saas-email, saas-secrets, saas-organizations, database-persistence)
 2. ~~History merge algorithm efficiency~~ ✅ FIXED
 3. Email template input sanitization
 
 ---
 
 ## Completed
+
+### Task 12: Error Handling Standardization (database-persistence.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Problems Fixed**:
+1. `database-persistence.ts` used plain `Error` instead of `LSHError` class in two locations
+2. Constructor threw generic error on Supabase connection failure
+3. `getLatestRowsFromTable` threw generic error on invalid table name
+4. All 19 catch blocks used unstructured `console.error()` calls
+
+**Implementation**:
+- Replaced 2 `throw new Error()` calls with `throw new LSHError()`
+- Added appropriate error codes:
+  - `DB_CONNECTION_FAILED` (503) for Supabase initialization failures
+  - `VALIDATION_INVALID_FORMAT` (400) for invalid table name validation
+- Updated all 19 catch blocks to use `extractErrorMessage()` for safe error extraction
+- Added structured context to error logs (error code, jobId, tableName)
+- Preserved API contract: methods still return false/[]/null on failure (not throws)
+
+**Files Modified**:
+- `src/lib/database-persistence.ts` - Standardized error handling
+- `src/__tests__/database-persistence-errors.test.ts` (NEW - 15 tests)
+
+**Verification**:
+- ✅ Build passes
+- ✅ Lint passes (0 errors)
+- ✅ 15 new error handling tests pass
+
+---
 
 ### Task 11: Error Handling Standardization (saas-organizations.ts)
 **Priority**: MEDIUM → COMPLETE
@@ -386,22 +418,22 @@ A comprehensive code analysis revealed the following priority areas:
 | ~~Email validation missing~~ | ~~Security~~ | ~~HIGH~~ | ~~saas-auth.ts~~ ✅ FIXED |
 | ~~Audit log failures ignored~~ | ~~Traceability~~ | ~~MEDIUM~~ | ~~saas-audit.ts~~ ✅ FIXED |
 | ~~History merge O(n²) complexity~~ | ~~Performance~~ | ~~MEDIUM~~ | ~~enhanced-history-system.ts~~ ✅ FIXED |
-| Error handling inconsistency | Robustness | MEDIUM | 37 files (saas-billing, saas-email, saas-secrets done) |
+| Error handling inconsistency | Robustness | MEDIUM | 37 files (saas-billing, saas-email, saas-secrets, saas-organizations, database-persistence done) |
 | 618+ TODO comments | Documentation | LOW | 44 files |
 
 ---
 
 ## Next Priority
 
-**Continue Error Message Standardization** - `saas-billing.ts`, `saas-email.ts`, `saas-secrets.ts`, and `saas-organizations.ts` are now standardized. Continue with `database-persistence.ts` which has 19 catch blocks and 2 throw new Error calls.
+**Continue Error Message Standardization** - 5 files now standardized: `saas-billing.ts`, `saas-email.ts`, `saas-secrets.ts`, `saas-organizations.ts`, and `database-persistence.ts`. Consider continuing with other files like `saas-auth.ts` or `job-storage-database.ts`.
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 11
-- **Tests Added**: 255 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors + 30 Organizations Errors)
-- **Files Modified**: 24
-- **Commits**: 12
+- **Tasks Completed**: 12
+- **Tests Added**: 270 (15 UUID + 41 JWT + 25 Password Reset + 68 Input Validation + 18 Audit Log + 14 History Algorithm + 13 Billing Errors + 10 Email Errors + 21 Secrets Errors + 30 Organizations Errors + 15 Database Persistence Errors)
+- **Files Modified**: 26
+- **Commits**: 13
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 
 ---
