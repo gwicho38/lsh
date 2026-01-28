@@ -680,6 +680,117 @@ A comprehensive code analysis revealed the following priority areas:
 
 ---
 
+### Task 31: Error Handling Standardization (base-command-registrar.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 2 `throw new Error()` with `throw new LSHError()`
+- Used `VALIDATION_INVALID_FORMAT` (400) for JSON parse errors
+- Used `VALIDATION_REQUIRED_FIELD` (400) for missing required options
+- Added context with input, parseError, missingOptions, commandName
+
+**Files Modified**:
+- `src/lib/base-command-registrar.ts` - Standardized error handling
+- `src/__tests__/base-command-registrar-errors.test.ts` (NEW - 17 tests)
+
+---
+
+### Task 30: Error Handling Standardization (ipfs-client-manager.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 3 `throw new Error()` with `throw new LSHError()`
+- Replaced 4 `(error as Error).message` with `extractErrorMessage()`
+- Used `NOT_IMPLEMENTED` (501) for unsupported platforms
+- Used `CONFIG_MISSING_ENV_VAR` (500) for IPFS not installed
+- Added context with platform, supportedPlatforms, hint
+
+**Files Modified**:
+- `src/lib/ipfs-client-manager.ts` - Standardized error handling
+- `src/__tests__/ipfs-client-manager-errors.test.ts` (NEW - 15 tests)
+
+---
+
+### Task 29: Error Handling Standardization (supabase-client.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 3 `throw new Error()` with `throw new LSHError()`
+- Used `CONFIG_MISSING_ENV_VAR` (500) for missing Supabase config
+- Used `DB_CONNECTION_FAILED` (503) for client not initialized
+- Added context with missingVars, hints
+
+**Files Modified**:
+- `src/lib/supabase-client.ts` - Standardized error handling
+- `src/__tests__/supabase-client-errors.test.ts` (NEW - 15 tests)
+
+---
+
+### Task 28: Error Handling Standardization (ipfs-secrets-storage.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 3 `throw new Error()` with `throw new LSHError()`
+- Replaced 5 `(error as Error).message` with `extractErrorMessage()`
+- Used `SECRETS_NOT_FOUND` (404) for missing secrets/environments
+- Used `SECRETS_DECRYPTION_FAILED` (500) for crypto errors
+- Added context with environment, gitRepo, cid, hints
+
+**Files Modified**:
+- `src/lib/ipfs-secrets-storage.ts` - Standardized error handling
+- `src/__tests__/ipfs-secrets-storage-errors.test.ts` (NEW - 21 tests)
+
+---
+
+### Task 27: Error Handling Standardization (floating-point-arithmetic.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 7 `throw new Error()` with `throw new LSHError()`
+- Already had LSHError import, improved consistency
+- Used `VALIDATION_INVALID_FORMAT` (400) for expression errors
+- Used `RESOURCE_NOT_FOUND` (404) for unknown functions
+- Added context with expression, functionName, availableFunctions, arity
+
+**Files Modified**:
+- `src/lib/floating-point-arithmetic.ts` - Standardized error handling
+- `src/__tests__/floating-point-arithmetic-errors.test.ts` (NEW - 21 tests)
+
+---
+
+### Task 26: Error Handling Standardization (saas-audit.ts)
+**Priority**: MEDIUM → COMPLETE
+**Category**: 🏗️ Robustness / 📝 Typing
+**Completed**: 2026-01-28
+**Branch**: `fix/implement-job-storage-methods`
+
+**Implementation**:
+- Replaced 5 `throw new Error()` with `throw new LSHError()`
+- Already had LSHError import, improved consistency
+- Used `DB_QUERY_FAILED` (500) for all database query failures
+- Added context with organizationId, teamId, userId, resourceType, resourceId, retentionDays, dbError
+
+**Files Modified**:
+- `src/lib/saas-audit.ts` - Standardized error handling
+- `src/__tests__/saas-audit-errors.test.ts` (NEW - 21 tests)
+
+---
+
 ### Task 23: Error Handling Standardization (daemon-registrar.ts)
 **Priority**: MEDIUM → COMPLETE
 **Category**: 🏗️ Robustness / 📝 Typing
@@ -745,15 +856,15 @@ A comprehensive code analysis revealed the following priority areas:
 
 ## Next Priority
 
-**Continue Error Message Standardization** - 18 files now standardized. ~37 occurrences remain across 14 files. Highest priorities: `saas-audit.ts` (5), `saas-types.ts` (4), `floating-point-arithmetic.ts` (7), `ipfs-secrets-storage.ts` (3), `ipfs-client-manager.ts` (3).
+**Continue Error Message Standardization** - 24 files now standardized. ~11 occurrences remain across 8 files. Highest priorities: `saas-types.ts` (4), `local-storage-adapter.ts` (1), `format-utils.ts` (1), `cloud-config-manager.ts` (1), `string-utils.ts` (1), `job-storage-memory.ts` (1).
 
 ---
 
 ## Session Statistics
-- **Tasks Completed**: 25
-- **Tests Added**: 478 (389 + 19 saas-encryption + 24 supabase-registrar + 23 daemon-registrar + 9 cron-registrar + 14 job-registry)
-- **Files Modified**: 51
-- **Commits**: 25
+- **Tasks Completed**: 31
+- **Tests Added**: 588 (478 + 21 saas-audit + 21 floating-point-arithmetic + 21 ipfs-secrets-storage + 15 supabase-client + 15 ipfs-client-manager + 17 base-command-registrar)
+- **Files Modified**: 63
+- **Commits**: 31
 - **Branches**: 1 (`fix/implement-job-storage-methods`)
 
 ---
