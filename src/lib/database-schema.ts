@@ -203,6 +203,17 @@ export interface MLModelComparison {
   created_at: string;
 }
 
+export interface PasswordResetToken {
+  id: string;
+  user_id: string;
+  token_hash: string;
+  expires_at: string;
+  used_at?: string;
+  requested_ip?: string;
+  requested_user_agent?: string;
+  created_at: string;
+}
+
 // SQL schema for creating tables
 export const CREATE_TABLES_SQL = `
 -- Shell History Table
@@ -460,6 +471,23 @@ CREATE INDEX IF NOT EXISTS idx_ml_predictions_date ON ml_predictions(prediction_
 
 CREATE INDEX IF NOT EXISTS idx_ml_model_comparisons_user_id ON ml_model_comparisons(user_id);
 CREATE INDEX IF NOT EXISTS idx_ml_model_comparisons_created ON ml_model_comparisons(created_at);
+
+-- Password Reset Tokens Table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at TIMESTAMPTZ,
+  requested_ip TEXT,
+  requested_user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for password reset tokens
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_hash ON password_reset_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_expires ON password_reset_tokens(expires_at);
 `;
 
 export default {

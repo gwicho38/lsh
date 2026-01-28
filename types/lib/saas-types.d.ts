@@ -375,6 +375,49 @@ export interface ApiKeyWithSecret extends ApiKey {
     secret: string;
 }
 /**
+ * Password reset token record.
+ * Stores secure tokens for password reset flow.
+ */
+export interface PasswordResetToken {
+    /** UUID primary key */
+    id: string;
+    /** FK to user requesting reset */
+    userId: string;
+    /** SHA-256 hash of the reset token (never store plain token) */
+    tokenHash: string;
+    /** When the token expires (typically 1 hour) */
+    expiresAt: Date;
+    /** When the token was used (null if unused) */
+    usedAt: Date | null;
+    /** IP address of the request */
+    requestedIp: string | null;
+    /** User agent of the request */
+    requestedUserAgent: string | null;
+    /** When the token was created */
+    createdAt: Date;
+}
+/**
+ * Input for creating a password reset token.
+ */
+export interface CreatePasswordResetInput {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+    requestedIp?: string;
+    requestedUserAgent?: string;
+}
+/**
+ * Result of password reset token validation.
+ */
+export interface ValidateResetTokenResult {
+    /** Whether the token is valid */
+    valid: boolean;
+    /** User ID if valid */
+    userId?: string;
+    /** Error code if invalid */
+    error?: 'INVALID_TOKEN' | 'EXPIRED_TOKEN' | 'ALREADY_USED';
+}
+/**
  * Base JWT payload with standard claims.
  * All LSH JWTs include these fields.
  */
