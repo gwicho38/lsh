@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { createLogger } from './logger.js';
 import { getPlatformInfo } from './platform-utils.js';
@@ -222,10 +222,16 @@ export class IPFSClientManager {
     const ipfsCmd = clientInfo.path || 'ipfs';
 
     try {
-      // Start daemon in background
-      const daemon = exec(`${ipfsCmd} daemon`, {
+      // Start daemon as fully detached background process
+      // Using spawn with detached:true and stdio:'ignore' allows parent to exit
+      const daemon = spawn(ipfsCmd, ['daemon'], {
         env: { ...process.env, IPFS_PATH: ipfsRepoPath },
+        detached: true,
+        stdio: 'ignore',
       });
+
+      // Unref the child so parent process can exit independently
+      daemon.unref();
 
       // Log PID for management
       const pidPath = path.join(this.ipfsDir, 'daemon.pid');
