@@ -30,7 +30,6 @@ export class LshrcManager {
   /**
    * Initialize .lshrc if it doesn't exist
    */
-  // TODO(@gwicho38): Review - initialize
   public initialize(options: LshrcOptions = {}): boolean {
     try {
       // Check if .lshrc already exists
@@ -77,7 +76,6 @@ export class LshrcManager {
   /**
    * Create basic .lshrc without template
    */
-  // TODO(@gwicho38): Review - createBasicLshrc
   private createBasicLshrc(options: LshrcOptions): void {
     const content = `# LSH Configuration File
 # Location: ${this.lshrcPath}
@@ -96,7 +94,6 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
   /**
    * Check if .lshrc exists
    */
-  // TODO(@gwicho38): Review - exists
   public exists(): boolean {
     return fs.existsSync(this.lshrcPath);
   }
@@ -104,7 +101,6 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
   /**
    * Source .lshrc commands
    */
-  // TODO(@gwicho38): Review - source
   public async source(_executor?: unknown): Promise<string[]> {
     if (!this.exists()) {
       return [];
@@ -136,7 +132,6 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
   /**
    * Enable auto-import in existing .lshrc
    */
-  // TODO(@gwicho38): Review - enableAutoImport
   public enableAutoImport(options: string[] = []): boolean {
     try {
       if (!this.exists()) {
@@ -182,7 +177,6 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
   /**
    * Disable auto-import in .lshrc
    */
-  // TODO(@gwicho38): Review - disableAutoImport
   public disableAutoImport(): boolean {
     try {
       if (!this.exists()) {
@@ -210,7 +204,6 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
   /**
    * Get .lshrc path
    */
-  // TODO(@gwicho38): Review - getPath
   public getPath(): string {
     return this.lshrcPath;
   }
@@ -219,7 +212,6 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
 /**
  * Initialize .lshrc on first run
  */
-// TODO(@gwicho38): Review - initializeLshrc
 export function initializeLshrc(options: LshrcOptions = {}): boolean {
   const manager = new LshrcManager();
   return manager.initialize(options);
@@ -228,7 +220,6 @@ export function initializeLshrc(options: LshrcOptions = {}): boolean {
 /**
  * Check if .lshrc exists
  */
-// TODO(@gwicho38): Review - lshrcExists
 export function lshrcExists(): boolean {
   const manager = new LshrcManager();
   return manager.exists();

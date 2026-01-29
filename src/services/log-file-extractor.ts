@@ -28,7 +28,6 @@ export interface LogFileExtractorOptions {
 /**
  * Extract relevant log entries from a log file
  */
-// TODO(@gwicho38): Review - extractRelevantLogs
 export async function extractRelevantLogs(
   filePath: string,
   options: LogFileExtractorOptions
@@ -116,7 +115,6 @@ export async function extractRelevantLogs(
 /**
  * Extract error logs from a file
  */
-// TODO(@gwicho38): Review - extractErrors
 export async function extractErrors(
   filePath: string,
   options?: Partial<LogFileExtractorOptions>
@@ -133,7 +131,6 @@ export async function extractErrors(
 /**
  * Extract warning logs from a file
  */
-// TODO(@gwicho38): Review - extractWarnings
 export async function extractWarnings(
   filePath: string,
   options?: Partial<LogFileExtractorOptions>
@@ -150,7 +147,6 @@ export async function extractWarnings(
 /**
  * Extract logs from the last N minutes
  */
-// TODO(@gwicho38): Review - extractRecent
 export async function extractRecent(
   filePath: string,
   minutes: number,
@@ -186,7 +182,6 @@ export async function extractRecent(
 /**
  * Get summary statistics from a log file
  */
-// TODO(@gwicho38): Review - getLogStatistics
 export async function getLogStatistics(filePath: string): Promise<{
   totalLines: number;
   errorCount: number;

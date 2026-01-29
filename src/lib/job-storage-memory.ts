@@ -20,9 +20,7 @@ export class MemoryJobStorage implements JobStorage {
     this.maxExecutionsPerJob = maxExecutionsPerJob;
   }
 
-  // TODO(@gwicho38): Review - save
 
-  // TODO(@gwicho38): Review - save
   async save(job: BaseJobSpec): Promise<void> {
     this.jobs.set(job.id, { ...job });
   }
@@ -32,9 +30,7 @@ export class MemoryJobStorage implements JobStorage {
     return job ? { ...job } : null;
   }
 
-  // TODO(@gwicho38): Review - list
 
-  // TODO(@gwicho38): Review - list
   async list(filter?: BaseJobFilter): Promise<BaseJobSpec[]> {
     let jobs = Array.from(this.jobs.values()).map(job => ({ ...job }));
 
@@ -47,9 +43,7 @@ export class MemoryJobStorage implements JobStorage {
     return jobs;
   }
 
-  // TODO(@gwicho38): Review - update
 
-  // TODO(@gwicho38): Review - update
   async update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void> {
     const job = this.jobs.get(jobId);
     if (!job) {
@@ -60,16 +54,13 @@ export class MemoryJobStorage implements JobStorage {
     this.jobs.set(jobId, job);
   }
 
-  // TODO(@gwicho38): Review - delete
 
   async delete(jobId: string): Promise<void> {
     this.jobs.delete(jobId);
     this.executions.delete(jobId);
   }
 
-  // TODO(@gwicho38): Review - saveExecution
 
-  // TODO(@gwicho38): Review - saveExecution
   async saveExecution(execution: BaseJobExecution): Promise<void> {
     const jobExecutions = this.executions.get(execution.jobId) || [];
 
@@ -84,9 +75,7 @@ export class MemoryJobStorage implements JobStorage {
     this.executions.set(execution.jobId, jobExecutions);
   }
 
-  // TODO(@gwicho38): Review - getExecutions
 
-  // TODO(@gwicho38): Review - getExecutions
   async getExecutions(jobId: string, limit?: number): Promise<BaseJobExecution[]> {
     const jobExecutions = this.executions.get(jobId) || [];
 
@@ -97,23 +86,18 @@ export class MemoryJobStorage implements JobStorage {
     return jobExecutions.map(e => ({ ...e }));
   }
 
-  // TODO(@gwicho38): Review - cleanup
 
-  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     this.jobs.clear();
     this.executions.clear();
   }
 
   // Additional utility methods
-  // TODO(@gwicho38): Review - getJobCount
   getJobCount(): number {
     return this.jobs.size;
   }
 
-  // TODO(@gwicho38): Review - getExecutionCount
 
-  // TODO(@gwicho38): Review - getExecutionCount
   getExecutionCount(jobId?: string): number {
     if (jobId) {
       return this.executions.get(jobId)?.length || 0;

@@ -47,7 +47,6 @@ export class EmailService {
   /**
    * Send email using Resend API
    */
-  // TODO(@gwicho38): Review - sendEmail
   private async sendEmail(params: {
     to: string;
     subject: string;
@@ -94,7 +93,6 @@ export class EmailService {
   /**
    * Send email verification
    */
-  // TODO(@gwicho38): Review - sendVerificationEmail
   async sendVerificationEmail(to: string, token: string, firstName?: string): Promise<void> {
     const verificationUrl = `${this.config.baseUrl}/verify-email?token=${token}`;
     const name = firstName || 'there';
@@ -112,7 +110,6 @@ export class EmailService {
   /**
    * Send password reset email
    */
-  // TODO(@gwicho38): Review - sendPasswordResetEmail
   async sendPasswordResetEmail(to: string, token: string, firstName?: string): Promise<void> {
     const resetUrl = `${this.config.baseUrl}/reset-password?token=${token}`;
     const name = firstName || 'there';
@@ -130,7 +127,6 @@ export class EmailService {
   /**
    * Send organization invitation email
    */
-  // TODO(@gwicho38): Review - sendOrganizationInvite
   async sendOrganizationInvite(
     to: string,
     organizationName: string,
@@ -150,7 +146,6 @@ export class EmailService {
   /**
    * Send welcome email
    */
-  // TODO(@gwicho38): Review - sendWelcomeEmail
   async sendWelcomeEmail(to: string, firstName?: string): Promise<void> {
     const name = firstName || 'there';
     const template = this.getWelcomeEmailTemplate(name);
@@ -166,7 +161,6 @@ export class EmailService {
   /**
    * Send subscription confirmation
    */
-  // TODO(@gwicho38): Review - sendSubscriptionConfirmation
   async sendSubscriptionConfirmation(
     to: string,
     tier: string,
@@ -186,7 +180,6 @@ export class EmailService {
   /**
    * Email verification template
    */
-  // TODO(@gwicho38): Review - getVerificationEmailTemplate
   private getVerificationEmailTemplate(name: string, verificationUrl: string): EmailTemplate {
     return {
       subject: 'Verify your email address',
@@ -246,7 +239,6 @@ LSH Secrets Manager
   /**
    * Password reset template
    */
-  // TODO(@gwicho38): Review - getPasswordResetTemplate
   private getPasswordResetTemplate(name: string, resetUrl: string): EmailTemplate {
     return {
       subject: 'Reset your password',
@@ -302,7 +294,6 @@ LSH Secrets Manager
   /**
    * Organization invite template
    */
-  // TODO(@gwicho38): Review - getOrganizationInviteTemplate
   private getOrganizationInviteTemplate(
     organizationName: string,
     inviterName: string,
@@ -351,7 +342,6 @@ LSH Secrets Manager
   /**
    * Welcome email template
    */
-  // TODO(@gwicho38): Review - getWelcomeEmailTemplate
   private getWelcomeEmailTemplate(name: string): EmailTemplate {
     const dashboardUrl = `${this.config.baseUrl}/dashboard`;
     const docsUrl = 'https://docs.lsh.dev';
@@ -416,7 +406,6 @@ LSH Secrets Manager
   /**
    * Subscription confirmation template
    */
-  // TODO(@gwicho38): Review - getSubscriptionConfirmationTemplate
   private getSubscriptionConfirmationTemplate(name: string, tier: string): EmailTemplate {
     return {
       subject: `Your ${tier} subscription is active! 🎉`,

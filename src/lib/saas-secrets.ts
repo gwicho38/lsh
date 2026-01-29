@@ -26,7 +26,6 @@ export class SecretsService {
   /**
    * Create a new secret
    */
-  // TODO(@gwicho38): Review - createSecret
   async createSecret(input: CreateSecretInput): Promise<Secret> {
     // Check tier limits
     await this.checkSecretsLimit(input.teamId);
@@ -89,7 +88,6 @@ export class SecretsService {
   /**
    * Get secret by ID
    */
-  // TODO(@gwicho38): Review - getSecretById
   async getSecretById(id: string, decrypt = false): Promise<Secret | null> {
     const { data, error } = await this.supabase
       .from('secrets')
@@ -119,7 +117,6 @@ export class SecretsService {
   /**
    * Get secrets for team/environment
    */
-  // TODO(@gwicho38): Review - getTeamSecrets
   async getTeamSecrets(
     teamId: string,
     environment?: string,
@@ -169,7 +166,6 @@ export class SecretsService {
   /**
    * Update secret
    */
-  // TODO(@gwicho38): Review - updateSecret
   async updateSecret(id: string, input: UpdateSecretInput): Promise<Secret> {
     const secret = await this.getSecretById(id);
     if (!secret) {
@@ -240,7 +236,6 @@ export class SecretsService {
   /**
    * Delete secret (soft delete)
    */
-  // TODO(@gwicho38): Review - deleteSecret
   async deleteSecret(id: string, deletedBy: string): Promise<void> {
     const secret = await this.getSecretById(id);
     if (!secret) {
@@ -280,7 +275,6 @@ export class SecretsService {
   /**
    * Get secrets summary by team
    */
-  // TODO(@gwicho38): Review - getSecretsSummary
   async getSecretsSummary(teamId: string): Promise<SecretSummary[]> {
     const { data, error } = await this.supabase
       .from(TABLES.SECRETS_SUMMARY)
@@ -303,7 +297,6 @@ export class SecretsService {
   /**
    * Export secrets to .env format
    */
-  // TODO(@gwicho38): Review - exportToEnv
   async exportToEnv(teamId: string, environment: string): Promise<string> {
     const secrets = await this.getTeamSecrets(teamId, environment, true);
 
@@ -323,7 +316,6 @@ export class SecretsService {
   /**
    * Import secrets from .env format
    */
-  // TODO(@gwicho38): Review - importFromEnv
   async importFromEnv(
     teamId: string,
     environment: string,
@@ -418,7 +410,6 @@ export class SecretsService {
   /**
    * Check secrets limit for tier
    */
-  // TODO(@gwicho38): Review - checkSecretsLimit
   private async checkSecretsLimit(teamId: string): Promise<void> {
     const team = await this.getTeamById(teamId);
     if (!team) {
@@ -451,7 +442,6 @@ export class SecretsService {
    * @returns Raw Supabase team record or null if not found
    * @see DbTeamRecord in database-types.ts for return shape
    */
-  // TODO(@gwicho38): Review - getTeamById
   private async getTeamById(teamId: string): Promise<DbTeamRecord | null> {
     const { data } = await this.supabase
       .from('teams')
@@ -485,7 +475,6 @@ export class SecretsService {
    * @see DbSecretRecord in database-types.ts for input shape
    * @see Secret in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbSecretToSecret
   private mapDbSecretToSecret(dbSecret: DbSecretRecord): Secret {
     return {
       id: dbSecret.id,

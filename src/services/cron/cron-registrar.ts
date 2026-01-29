@@ -18,9 +18,7 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
     super('CronService');
   }
 
-  // TODO(@gwicho38): Review - register
 
-  // TODO(@gwicho38): Review - register
   async register(program: Command): Promise<void> {
     const cronCmd = this.createCommand(program, 'cron', 'Cron job management with database integration');
 
@@ -29,9 +27,7 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
     this.registerReportingCommands(cronCmd);
   }
 
-  // TODO(@gwicho38): Review - registerTemplateCommands
 
-  // TODO(@gwicho38): Review - registerTemplateCommands
   private registerTemplateCommands(cronCmd: Command): void {
     // List templates
     this.addSubcommand(cronCmd, {
@@ -93,9 +89,7 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
-  // TODO(@gwicho38): Review - registerJobManagementCommands
 
-  // TODO(@gwicho38): Review - registerJobManagementCommands
   private registerJobManagementCommands(cronCmd: Command): void {
     // List jobs
     this.addSubcommand(cronCmd, {
@@ -204,9 +198,7 @@ export class CronCommandRegistrar extends BaseCommandRegistrar {
     });
   }
 
-  // TODO(@gwicho38): Review - registerReportingCommands
 
-  // TODO(@gwicho38): Review - registerReportingCommands
   private registerReportingCommands(cronCmd: Command): void {
     // Get job report
     this.addSubcommand(cronCmd, {

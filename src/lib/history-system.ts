@@ -47,7 +47,6 @@ export class HistorySystem {
   /**
    * Add a command to history
    */
-  // TODO(@gwicho38): Review - addCommand
   public addCommand(command: string, exitCode?: number): void {
     if (!this.isEnabled) return;
 
@@ -84,7 +83,6 @@ export class HistorySystem {
   /**
    * Get history entry by line number
    */
-  // TODO(@gwicho38): Review - getEntry
   public getEntry(lineNumber: number): HistoryEntry | undefined {
     return this.entries.find(entry => entry.lineNumber === lineNumber);
   }
@@ -92,7 +90,6 @@ export class HistorySystem {
   /**
    * Get history entry by command prefix
    */
-  // TODO(@gwicho38): Review - getEntryByPrefix
   public getEntryByPrefix(prefix: string): HistoryEntry | undefined {
     return this.entries
       .slice()
@@ -103,7 +100,6 @@ export class HistorySystem {
   /**
    * Get all history entries
    */
-  // TODO(@gwicho38): Review - getAllEntries
   public getAllEntries(): HistoryEntry[] {
     return [...this.entries];
   }
@@ -111,7 +107,6 @@ export class HistorySystem {
   /**
    * Search history for commands matching pattern
    */
-  // TODO(@gwicho38): Review - searchHistory
   public searchHistory(pattern: string): HistoryEntry[] {
     const regex = new RegExp(pattern, 'i');
     return this.entries.filter(entry => regex.test(entry.command));
@@ -120,7 +115,6 @@ export class HistorySystem {
   /**
    * Get previous command in history
    */
-  // TODO(@gwicho38): Review - getPreviousCommand
   public getPreviousCommand(): string | null {
     if (this.currentIndex > 0) {
       this.currentIndex--;
@@ -132,7 +126,6 @@ export class HistorySystem {
   /**
    * Get next command in history
    */
-  // TODO(@gwicho38): Review - getNextCommand
   public getNextCommand(): string | null {
     if (this.currentIndex < this.entries.length - 1) {
       this.currentIndex++;
@@ -144,7 +137,6 @@ export class HistorySystem {
   /**
    * Reset history navigation index
    */
-  // TODO(@gwicho38): Review - resetIndex
   public resetIndex(): void {
     this.currentIndex = this.entries.length - 1;
   }
@@ -152,7 +144,6 @@ export class HistorySystem {
   /**
    * Expand history references like !! !n !string
    */
-  // TODO(@gwicho38): Review - expandHistory
   public expandHistory(command: string): string {
     let result = command;
 
@@ -190,7 +181,6 @@ export class HistorySystem {
   /**
    * Clear history
    */
-  // TODO(@gwicho38): Review - clearHistory
   public clearHistory(): void {
     this.entries = [];
     this.currentIndex = -1;
@@ -200,7 +190,6 @@ export class HistorySystem {
   /**
    * Get history statistics
    */
-  // TODO(@gwicho38): Review - getStats
   public getStats(): { total: number; unique: number; oldest: Date | null; newest: Date | null } {
     const unique = new Set(this.entries.map(e => e.command)).size;
     const oldest = this.entries.length > 0 ? new Date(this.entries[0].timestamp) : null;
@@ -217,7 +206,6 @@ export class HistorySystem {
   /**
    * Enable/disable history
    */
-  // TODO(@gwicho38): Review - setEnabled
   public setEnabled(enabled: boolean): void {
     this.isEnabled = enabled;
   }
@@ -225,7 +213,6 @@ export class HistorySystem {
   /**
    * Update configuration
    */
-  // TODO(@gwicho38): Review - updateConfig
   public updateConfig(newConfig: Partial<HistoryConfig>): void {
     this.config = { ...this.config, ...newConfig };
   }
@@ -233,7 +220,6 @@ export class HistorySystem {
   /**
    * Load history from file
    */
-  // TODO(@gwicho38): Review - loadHistory
   private loadHistory(): void {
     try {
       if (fs.existsSync(this.config.filePath)) {
@@ -269,7 +255,6 @@ export class HistorySystem {
   /**
    * Save history to file
    */
-  // TODO(@gwicho38): Review - saveHistory
   private saveHistory(): void {
     try {
       const content = this.entries
@@ -291,7 +276,6 @@ export class HistorySystem {
   /**
    * Remove duplicate command from history
    */
-  // TODO(@gwicho38): Review - removeDuplicateCommand
   private removeDuplicateCommand(command: string): void {
     const trimmedCommand = command.trim();
     this.entries = this.entries.filter(entry => entry.command !== trimmedCommand);
@@ -300,7 +284,6 @@ export class HistorySystem {
   /**
    * Renumber entries after trimming
    */
-  // TODO(@gwicho38): Review - renumberEntries
   private renumberEntries(): void {
     this.entries.forEach((entry, index) => {
       entry.lineNumber = index + 1;

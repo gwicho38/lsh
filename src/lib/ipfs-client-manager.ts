@@ -52,7 +52,6 @@ export class IPFSClientManager {
   /**
    * Detect if IPFS client is installed
    */
-  // TODO(@gwicho38): Review - detect
   async detect(): Promise<IPFSClientInfo> {
     // Check for system-wide Kubo installation
     try {
@@ -100,7 +99,6 @@ export class IPFSClientManager {
   /**
    * Install IPFS client
    */
-  // TODO(@gwicho38): Review - install
   async install(options: InstallOptions = {}): Promise<void> {
     const platformInfo = getPlatformInfo();
     const clientInfo = await this.detect();
@@ -149,7 +147,6 @@ export class IPFSClientManager {
   /**
    * Uninstall LSH-managed IPFS client
    */
-  // TODO(@gwicho38): Review - uninstall
   async uninstall(): Promise<void> {
     const clientInfo = await this.detect();
 
@@ -177,7 +174,6 @@ export class IPFSClientManager {
   /**
    * Initialize IPFS repository
    */
-  // TODO(@gwicho38): Review - init
   async init(): Promise<void> {
     const clientInfo = await this.detect();
 
@@ -213,7 +209,6 @@ export class IPFSClientManager {
   /**
    * Start IPFS daemon
    */
-  // TODO(@gwicho38): Review - start
   async start(): Promise<void> {
     const clientInfo = await this.detect();
 
@@ -252,7 +247,6 @@ export class IPFSClientManager {
   /**
    * Stop IPFS daemon
    */
-  // TODO(@gwicho38): Review - stop
   async stop(): Promise<void> {
     const pidPath = path.join(this.ipfsDir, 'daemon.pid');
 
@@ -279,7 +273,6 @@ export class IPFSClientManager {
   /**
    * Get latest Kubo version from GitHub releases
    */
-  // TODO(@gwicho38): Review - getLatestKuboVersion
   private async getLatestKuboVersion(): Promise<string> {
     try {
       // Use GitHub API to get latest release
@@ -297,7 +290,6 @@ export class IPFSClientManager {
   /**
    * Install Kubo on macOS
    */
-  // TODO(@gwicho38): Review - installKuboMacOS
   private async installKuboMacOS(version: string): Promise<void> {
     const arch = os.arch() === 'arm64' ? 'arm64' : 'amd64';
     const downloadUrl = `https://dist.ipfs.tech/kubo/v${version}/kubo_v${version}_darwin-${arch}.tar.gz`;
@@ -329,7 +321,6 @@ export class IPFSClientManager {
   /**
    * Install Kubo on Linux
    */
-  // TODO(@gwicho38): Review - installKuboLinux
   private async installKuboLinux(version: string): Promise<void> {
     const arch = os.arch() === 'arm64' ? 'arm64' : 'amd64';
     const downloadUrl = `https://dist.ipfs.tech/kubo/v${version}/kubo_v${version}_linux-${arch}.tar.gz`;
@@ -361,7 +352,6 @@ export class IPFSClientManager {
   /**
    * Install Kubo on Windows
    */
-  // TODO(@gwicho38): Review - installKuboWindows
   private async installKuboWindows(version: string): Promise<void> {
     const downloadUrl = `https://dist.ipfs.tech/kubo/v${version}/kubo_v${version}_windows-amd64.zip`;
     const zipPath = path.join(this.ipfsDir, 'kubo.zip');
@@ -389,7 +379,6 @@ export class IPFSClientManager {
   /**
    * Ensure required directories exist
    */
-  // TODO(@gwicho38): Review - ensureDirectories
   private ensureDirectories(): void {
     if (!fs.existsSync(this.lshDir)) {
       fs.mkdirSync(this.lshDir, { recursive: true });

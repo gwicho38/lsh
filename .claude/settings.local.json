@@ -166,7 +166,9 @@
       "WebFetch(domain:ipfs.io)",
       "Bash(git merge:*)",
       "Bash(git fetch:*)",
-      "Bash(gh pr view:*)"
+      "Bash(gh pr view:*)",
+      "Bash(git branch:*)",
+      "Bash(gh pr list:*)"
     ],
     "deny": [],
     "ask": []

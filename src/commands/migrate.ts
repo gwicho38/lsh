@@ -8,9 +8,7 @@ import * as path from 'path';
 import { homedir } from 'os';
 import { getGitRepoInfo } from '../lib/git-utils.js';
 
-// TODO(@gwicho38): Review - registerMigrateCommand
 
-// TODO(@gwicho38): Review - registerMigrateCommand
 export function registerMigrateCommand(program: Command) {
   program
     .command('migrate')

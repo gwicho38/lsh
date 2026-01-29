@@ -54,7 +54,6 @@ export class DatabasePersistence {
   /**
    * Generate a deterministic UUID from username
    */
-  // TODO(@gwicho38): Review - generateUserUUID
   private generateUserUUID(username: string): string {
     // Create a simple UUID v5-like deterministic UUID from username
     // In production, you'd use a proper UUID library
@@ -70,7 +69,6 @@ export class DatabasePersistence {
   /**
    * Generate a unique session ID
    */
-  // TODO(@gwicho38): Review - generateSessionId
   private generateSessionId(): string {
     return `lsh_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -78,7 +76,6 @@ export class DatabasePersistence {
   /**
    * Initialize database schema
    */
-  // TODO(@gwicho38): Review - initializeSchema
   public async initializeSchema(): Promise<boolean> {
     try {
       // Note: In a real implementation, you'd need to run the SQL schema
@@ -95,7 +92,6 @@ export class DatabasePersistence {
    * Cleanup resources (stop timers, close connections)
    * Call this when done to allow process to exit
    */
-  // TODO(@gwicho38): Review - cleanup
   public async cleanup(): Promise<void> {
     if (this.localStorage) {
       await this.localStorage.cleanup();
@@ -106,7 +102,6 @@ export class DatabasePersistence {
   /**
    * Save shell history entry
    */
-  // TODO(@gwicho38): Review - saveHistoryEntry
   public async saveHistoryEntry(entry: Omit<ShellHistoryEntry, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.saveHistoryEntry(entry);
@@ -144,7 +139,6 @@ export class DatabasePersistence {
   /**
    * Get shell history entries
    */
-  // TODO(@gwicho38): Review - getHistoryEntries
   public async getHistoryEntries(limit: number = 100, offset: number = 0): Promise<ShellHistoryEntry[]> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.getHistoryEntries(limit, offset);
@@ -181,7 +175,6 @@ export class DatabasePersistence {
   /**
    * Save shell job
    */
-  // TODO(@gwicho38): Review - saveJob
   public async saveJob(job: Omit<ShellJob, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.saveJob(job);
@@ -219,7 +212,6 @@ export class DatabasePersistence {
   /**
    * Update shell job status
    */
-  // TODO(@gwicho38): Review - updateJobStatus
   public async updateJobStatus(jobId: string, status: ShellJob['status'], exitCode?: number): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.updateJobStatus(jobId, status, exitCode);
@@ -267,7 +259,6 @@ export class DatabasePersistence {
   /**
    * Get active jobs
    */
-  // TODO(@gwicho38): Review - getActiveJobs
   public async getActiveJobs(): Promise<ShellJob[]> {
     if (this.useLocalStorage && this.localStorage) {
       // Reload from disk to get latest data (in case written by another SecretsManager instance)
@@ -306,7 +297,6 @@ export class DatabasePersistence {
   /**
    * Save shell configuration
    */
-  // TODO(@gwicho38): Review - saveConfiguration
   public async saveConfiguration(config: Omit<ShellConfiguration, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.saveConfiguration(config);
@@ -345,7 +335,6 @@ export class DatabasePersistence {
   /**
    * Get shell configuration
    */
-  // TODO(@gwicho38): Review - getConfiguration
   public async getConfiguration(key?: string): Promise<ShellConfiguration[]> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.getConfiguration(key);
@@ -385,7 +374,6 @@ export class DatabasePersistence {
   /**
    * Save shell alias
    */
-  // TODO(@gwicho38): Review - saveAlias
   public async saveAlias(alias: Omit<ShellAlias, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.saveAlias(alias);
@@ -424,7 +412,6 @@ export class DatabasePersistence {
   /**
    * Get shell aliases
    */
-  // TODO(@gwicho38): Review - getAliases
   public async getAliases(): Promise<ShellAlias[]> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.getAliases();
@@ -460,7 +447,6 @@ export class DatabasePersistence {
   /**
    * Save shell function
    */
-  // TODO(@gwicho38): Review - saveFunction
   public async saveFunction(func: Omit<ShellFunction, 'id' | 'created_at' | 'updated_at'>): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.saveFunction(func);
@@ -499,7 +485,6 @@ export class DatabasePersistence {
   /**
    * Get shell functions
    */
-  // TODO(@gwicho38): Review - getFunctions
   public async getFunctions(): Promise<ShellFunction[]> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.getFunctions();
@@ -535,7 +520,6 @@ export class DatabasePersistence {
   /**
    * Start a new shell session
    */
-  // TODO(@gwicho38): Review - startSession
   public async startSession(workingDirectory: string, environmentVariables: Record<string, string>): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.startSession(workingDirectory, environmentVariables);
@@ -577,7 +561,6 @@ export class DatabasePersistence {
   /**
    * End the current shell session
    */
-  // TODO(@gwicho38): Review - endSession
   public async endSession(): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.endSession();
@@ -617,7 +600,6 @@ export class DatabasePersistence {
   /**
    * Test database connectivity
    */
-  // TODO(@gwicho38): Review - testConnection
   public async testConnection(): Promise<boolean> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.testConnection();
@@ -628,7 +610,6 @@ export class DatabasePersistence {
   /**
    * Get session ID
    */
-  // TODO(@gwicho38): Review - getSessionId
   public getSessionId(): string {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.getSessionId();
@@ -640,7 +621,6 @@ export class DatabasePersistence {
   /**
    * Get latest rows from all database tables
    */
-  // TODO(@gwicho38): Review - getLatestRows
   public async getLatestRows(limit: number = 5): Promise<{
     [tableName: string]: Record<string, unknown>[]
   }> {
@@ -797,7 +777,6 @@ export class DatabasePersistence {
   /**
    * Get latest rows from a specific table
    */
-  // TODO(@gwicho38): Review - getLatestRowsFromTable
   public async getLatestRowsFromTable(tableName: string, limit: number = 5): Promise<Record<string, unknown>[]> {
     if (this.useLocalStorage && this.localStorage) {
       return this.localStorage.getLatestRowsFromTable(tableName, limit);

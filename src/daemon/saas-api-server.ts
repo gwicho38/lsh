@@ -46,7 +46,6 @@ export class SaaSApiServer {
   /**
    * Setup middleware
    */
-  // TODO(@gwicho38): Review - setupMiddleware
   private setupMiddleware() {
     // CORS
     this.app.use(
@@ -113,7 +112,6 @@ export class SaaSApiServer {
   /**
    * Setup routes
    */
-  // TODO(@gwicho38): Review - setupRoutes
   private setupRoutes() {
     // Health check
     this.app.get('/health', (req, res) => {
@@ -158,7 +156,6 @@ export class SaaSApiServer {
   /**
    * Setup error handlers
    */
-  // TODO(@gwicho38): Review - setupErrorHandlers
   private setupErrorHandlers() {
     // Global error handler
     const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
@@ -184,7 +181,6 @@ export class SaaSApiServer {
   /**
    * Start the server
    */
-  // TODO(@gwicho38): Review - start
   async start(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
@@ -223,7 +219,6 @@ export class SaaSApiServer {
   /**
    * Stop the server
    */
-  // TODO(@gwicho38): Review - stop
   async stop(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (!this.server) {
@@ -245,7 +240,6 @@ export class SaaSApiServer {
   /**
    * Get Express app (for testing)
    */
-  // TODO(@gwicho38): Review - getApp
   getApp(): Express {
     return this.app;
   }

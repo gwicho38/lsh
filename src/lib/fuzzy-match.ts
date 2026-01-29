@@ -11,7 +11,6 @@ export interface FuzzyMatchResult {
 /**
  * Normalize a string for fuzzy matching by removing spaces and special chars
  */
-// TODO(@gwicho38): Review - normalizeForMatching
 function normalizeForMatching(str: string): string {
   // Remove spaces, hyphens, and convert to lowercase
   return str.toLowerCase().replace(/[\s-]/g, '');
@@ -25,7 +24,6 @@ function normalizeForMatching(str: string): string {
  *  - "stripe api" matches "STRIPE_API_KEY"
  *  - "stripe secret" matches "STRIPE_SECRET_KEY"
  */
-// TODO(@gwicho38): Review - calculateMatchScore
 export function calculateMatchScore(searchTerm: string, key: string): number {
   // Empty search term matches nothing
   if (!searchTerm || searchTerm.trim() === '') {
@@ -129,7 +127,6 @@ export function calculateMatchScore(searchTerm: string, key: string): number {
  * Find fuzzy matches for a search term in a list of key-value pairs
  * Returns matches sorted by relevance (best match first)
  */
-// TODO(@gwicho38): Review - findFuzzyMatches
 export function findFuzzyMatches(
   searchTerm: string,
   secrets: Array<{ key: string; value: string }>

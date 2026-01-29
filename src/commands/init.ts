@@ -21,7 +21,6 @@ interface InitConfig {
 /**
  * Register init commands
  */
-// TODO(@gwicho38): Review - registerInitCommands
 export function registerInitCommands(program: Command): void {
   program
     .command('init')
@@ -41,7 +40,6 @@ export function registerInitCommands(program: Command): void {
 /**
  * Get the base directory for .env files
  */
-// TODO(@gwicho38): Review - getBaseDir
 function getBaseDir(globalMode?: boolean): string {
   return globalMode ? os.homedir() : process.cwd();
 }
@@ -49,7 +47,6 @@ function getBaseDir(globalMode?: boolean): string {
 /**
  * Run the interactive setup wizard
  */
-// TODO(@gwicho38): Review - runSetupWizard
 async function runSetupWizard(options: {
   global?: boolean;
 }): Promise<void> {
@@ -177,7 +174,6 @@ async function runSetupWizard(options: {
 /**
  * Check if LSH is already configured
  */
-// TODO(@gwicho38): Review - checkExistingConfig
 async function checkExistingConfig(baseDir: string): Promise<boolean> {
   try {
     const envPath = path.join(baseDir, '.env');
@@ -194,7 +190,6 @@ async function checkExistingConfig(baseDir: string): Promise<boolean> {
 /**
  * Pull secrets after init is complete
  */
-// TODO(@gwicho38): Review - pullSecretsAfterInit
 async function pullSecretsAfterInit(_encryptionKey: string, _repoName: string): Promise<void> {
   const spinner = ora('Pulling secrets from cloud...').start();
 
@@ -219,7 +214,6 @@ async function pullSecretsAfterInit(_encryptionKey: string, _repoName: string): 
 /**
  * Check if secrets already exist locally for current repo
  */
-// TODO(@gwicho38): Review - checkCloudSecretsExist
 async function checkCloudSecretsExist(): Promise<{ exists: boolean; repoName?: string; environment?: string }> {
   try {
     const gitInfo = getGitRepoInfo();
@@ -272,7 +266,6 @@ async function checkCloudSecretsExist(): Promise<{ exists: boolean; repoName?: s
 /**
  * Generate a secure encryption key
  */
-// TODO(@gwicho38): Review - generateEncryptionKey
 function generateEncryptionKey(): string {
   return crypto.randomBytes(32).toString('hex');
 }
@@ -280,7 +273,6 @@ function generateEncryptionKey(): string {
 /**
  * Save configuration to .env file
  */
-// TODO(@gwicho38): Review - saveConfiguration
 async function saveConfiguration(config: InitConfig, baseDir: string, globalMode?: boolean): Promise<void> {
   const spinner = ora('Saving configuration...').start();
 
@@ -331,7 +323,6 @@ async function saveConfiguration(config: InitConfig, baseDir: string, globalMode
 /**
  * Update .gitignore to include .env
  */
-// TODO(@gwicho38): Review - updateGitignore
 async function updateGitignore(): Promise<void> {
   try {
     const gitignorePath = path.join(process.cwd(), '.gitignore');
@@ -358,7 +349,6 @@ async function updateGitignore(): Promise<void> {
 /**
  * Show success message with next steps
  */
-// TODO(@gwicho38): Review - showSuccessMessage
 function showSuccessMessage(config: InitConfig): void {
   console.log('');
   console.log(chalk.bold.green('✨ Setup complete!'));

@@ -17,7 +17,6 @@ export interface SecretEntry {
 /**
  * Mask a secret value showing only first 3 and last 3 characters
  */
-// TODO(@gwicho38): Review - maskSecret
 export function maskSecret(value: string): string {
   if (value.length <= 6) {
     return '***';
@@ -28,7 +27,6 @@ export function maskSecret(value: string): string {
 /**
  * Apply masking to secrets array
  */
-// TODO(@gwicho38): Review - maskSecrets
 export function maskSecrets(secrets: SecretEntry[]): SecretEntry[] {
   return secrets.map(({ key, value }) => ({
     key,
@@ -40,7 +38,6 @@ export function maskSecrets(secrets: SecretEntry[]): SecretEntry[] {
  * Detect namespaces from key prefixes for TOML grouping
  * E.g., DATABASE_URL, DATABASE_PORT -> namespace: "database"
  */
-// TODO(@gwicho38): Review - detectNamespaces
 export function detectNamespaces(secrets: SecretEntry[]): Map<string, SecretEntry[]> {
   const namespaces = new Map<string, SecretEntry[]>();
   const ungrouped: SecretEntry[] = [];
@@ -94,7 +91,6 @@ export function detectNamespaces(secrets: SecretEntry[]): Map<string, SecretEntr
 /**
  * Format secrets as .env file (KEY=value)
  */
-// TODO(@gwicho38): Review - formatAsEnv
 export function formatAsEnv(secrets: SecretEntry[]): string {
   return secrets.map(({ key, value }) => `${key}=${value}`).join('\n');
 }
@@ -102,7 +98,6 @@ export function formatAsEnv(secrets: SecretEntry[]): string {
 /**
  * Format secrets as JSON object
  */
-// TODO(@gwicho38): Review - formatAsJSON
 export function formatAsJSON(secrets: SecretEntry[]): string {
   const obj: Record<string, string> = {};
   for (const { key, value } of secrets) {
@@ -114,7 +109,6 @@ export function formatAsJSON(secrets: SecretEntry[]): string {
 /**
  * Format secrets as YAML
  */
-// TODO(@gwicho38): Review - formatAsYAML
 export function formatAsYAML(secrets: SecretEntry[]): string {
   const obj: Record<string, string> = {};
   for (const { key, value } of secrets) {
@@ -129,7 +123,6 @@ export function formatAsYAML(secrets: SecretEntry[]): string {
 /**
  * Format secrets as TOML with namespace detection
  */
-// TODO(@gwicho38): Review - formatAsTOML
 export function formatAsTOML(secrets: SecretEntry[]): string {
   const namespaces = detectNamespaces(secrets);
   const lines: string[] = [];
@@ -161,7 +154,6 @@ export function formatAsTOML(secrets: SecretEntry[]): string {
 /**
  * Format secrets as shell export statements
  */
-// TODO(@gwicho38): Review - formatAsExport
 export function formatAsExport(secrets: SecretEntry[]): string {
   return secrets
     .map(({ key, value }) => {
@@ -179,7 +171,6 @@ export function formatAsExport(secrets: SecretEntry[]): string {
  * @param format - Output format
  * @param mask - Whether to mask values (auto-disabled for structured formats unless explicitly set)
  */
-// TODO(@gwicho38): Review - formatSecrets
 export function formatSecrets(
   secrets: SecretEntry[],
   format: OutputFormat,

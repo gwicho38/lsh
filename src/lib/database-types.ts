@@ -599,7 +599,6 @@ export interface DbOrgMemberWithOrg {
  * Type guard to check if a value is a valid DbOrganizationRecord.
  * Useful for runtime validation of Supabase responses.
  */
-// TODO(@gwicho38): Review - isDbOrganizationRecord
 export function isDbOrganizationRecord(value: unknown): value is DbOrganizationRecord {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
@@ -614,7 +613,6 @@ export function isDbOrganizationRecord(value: unknown): value is DbOrganizationR
 /**
  * Type guard to check if a value is a valid DbUserRecord.
  */
-// TODO(@gwicho38): Review - isDbUserRecord
 export function isDbUserRecord(value: unknown): value is DbUserRecord {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
@@ -628,7 +626,6 @@ export function isDbUserRecord(value: unknown): value is DbUserRecord {
 /**
  * Type guard to check if a value is a valid DbSecretRecord.
  */
-// TODO(@gwicho38): Review - isDbSecretRecord
 export function isDbSecretRecord(value: unknown): value is DbSecretRecord {
   if (typeof value !== 'object' || value === null) return false;
   const record = value as Record<string, unknown>;
@@ -643,7 +640,6 @@ export function isDbSecretRecord(value: unknown): value is DbSecretRecord {
 /**
  * Parse tags from database - handles both string JSON and array formats.
  */
-// TODO(@gwicho38): Review - parseDbTags
 export function parseDbTags(tags: string | string[] | null | undefined): string[] {
   if (!tags) return [];
   if (Array.isArray(tags)) return tags;
@@ -661,7 +657,6 @@ export function parseDbTags(tags: string | string[] | null | undefined): string[
  * Safely parse an ISO timestamp string to Date.
  * Returns null for null/undefined input.
  */
-// TODO(@gwicho38): Review - parseDbTimestamp
 export function parseDbTimestamp(timestamp: string | null | undefined): Date | null {
   if (!timestamp) return null;
   return new Date(timestamp);
@@ -671,7 +666,6 @@ export function parseDbTimestamp(timestamp: string | null | undefined): Date | n
  * Safely parse an ISO timestamp string to Date.
  * Returns current date for null/undefined input.
  */
-// TODO(@gwicho38): Review - parseDbTimestampRequired
 export function parseDbTimestampRequired(timestamp: string | null | undefined): Date {
   if (!timestamp) return new Date();
   return new Date(timestamp);
