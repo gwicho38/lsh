@@ -51,6 +51,16 @@ export declare const ERRORS: {
     readonly BASE64_COMMAND: "Base64 encoded command detected";
     readonly DYNAMIC_EVAL: "Dynamic command evaluation detected";
     readonly NULL_BYTE: "Null byte injection detected";
+    readonly RECURSIVE_DELETE: "Recursive deletion command";
+    readonly SUDO_ELEVATED: "Elevated privileges requested";
+    readonly CHMOD_777: "Overly permissive file permissions";
+    readonly DISK_WRITE: "Writing to disk device";
+    readonly INSECURE_SSL: "Insecure SSL certificate validation disabled";
+    readonly FORK_BOMB: "Fork bomb pattern detected";
+    readonly EXCESSIVE_CHAINING: "Excessive command chaining detected";
+    readonly EXCESSIVE_PIPES: "Excessive pipe usage detected";
+    readonly NESTED_SUBSTITUTION: "Nested command substitution detected";
+    readonly CONTROL_CHARS: "Control characters detected in command";
 };
 export declare const RISK_LEVELS: {
     readonly CRITICAL: "critical";
