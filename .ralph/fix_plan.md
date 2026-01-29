@@ -1,7 +1,7 @@
 # Ralph Fix Plan
 
 ## Current Status
-- **Lint Warnings**: 569 (reduced from 744)
+- **Lint Warnings**: 550 (reduced from 744)
 - **Build**: ✅ Passing
 - **CI**: ✅ Passing
 - **Open Issues**: 0
@@ -9,9 +9,9 @@
 
 ## High Priority
 
-### 1. Lint Warning Reduction (569 → target 500)
+### 1. Lint Warning Reduction (550 → target 500)
 Focus areas by warning type:
-- `lsh/no-hardcoded-strings`: ~541 warnings
+- `lsh/no-hardcoded-strings`: ~522 warnings
   - Context: Many are in documentation/help strings which are acceptable
   - Focus on: Error messages, log messages, API endpoints
 - `@typescript-eslint/no-explicit-any`: **0 warnings** ✅ (all fixed!)
@@ -38,6 +38,10 @@ Focus areas by warning type:
   - Moved DANGEROUS_PATTERNS, WARNING_PATTERNS, SUSPICIOUS_CHECKS to constants/validation.ts
   - Uses error messages from constants/errors.ts
   - All 39 command-validator tests passing
+- [x] logger.ts: Refactored ANSI codes to constants/ui.ts (19 warnings fixed)
+  - Added ANSI constant object to ui.ts with all color codes
+  - Logger now imports ANSI from constants
+  - All 25 logger tests passing
 
 #### Next candidates:
 - [ ] Continue hardcoded string cleanup where impactful
@@ -99,5 +103,5 @@ Current: ~11%, Target: 70%
   - These are acceptable and should not be refactored
 - Focus on error/log messages that users see repeatedly
 - Type safety improvements have higher ROI than string externalization
-- Total reduction: 744 → 569 = 175 warnings fixed (23.5% reduction)
+- Total reduction: 744 → 550 = 194 warnings fixed (26.1% reduction)
 - **MILESTONE**: All @typescript-eslint/no-explicit-any warnings eliminated (was 51+, now 0)

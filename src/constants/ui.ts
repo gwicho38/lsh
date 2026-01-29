@@ -4,6 +4,38 @@
  * All user-facing messages, prompts, and terminal output strings.
  */
 
+/**
+ * ANSI color codes for terminal output
+ */
+export const ANSI = {
+  // Reset
+  RESET: '\x1b[0m',
+
+  // Text styles
+  BRIGHT: '\x1b[1m',
+  DIM: '\x1b[2m',
+
+  // Foreground colors
+  FG_BLACK: '\x1b[30m',
+  FG_RED: '\x1b[31m',
+  FG_GREEN: '\x1b[32m',
+  FG_YELLOW: '\x1b[33m',
+  FG_BLUE: '\x1b[34m',
+  FG_MAGENTA: '\x1b[35m',
+  FG_CYAN: '\x1b[36m',
+  FG_WHITE: '\x1b[37m',
+
+  // Background colors
+  BG_BLACK: '\x1b[40m',
+  BG_RED: '\x1b[41m',
+  BG_GREEN: '\x1b[42m',
+  BG_YELLOW: '\x1b[43m',
+  BG_BLUE: '\x1b[44m',
+  BG_MAGENTA: '\x1b[45m',
+  BG_CYAN: '\x1b[46m',
+  BG_WHITE: '\x1b[47m',
+} as const;
+
 export const UI_MESSAGES = {
   // Help and usage
   DID_YOU_MEAN: '\nDid you mean one of these?',
@@ -169,7 +201,7 @@ export const MIGRATION_MESSAGES = {
  * Deprecation warnings
  */
 export const DEPRECATION_WARNINGS = {
-  LIB_COMMANDS: '\x1b[33m⚠️  WARNING: "lsh lib" commands are deprecated as of v1.0.0\x1b[0m',
+  LIB_COMMANDS: `${ANSI.FG_YELLOW}⚠️  WARNING: "lsh lib" commands are deprecated as of v1.0.0${ANSI.RESET}`,
 } as const;
 
 /**
