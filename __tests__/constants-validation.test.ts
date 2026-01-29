@@ -180,4 +180,88 @@ describe('Validation Constants', () => {
       expect(criticalMatches.length).toBe(0);
     });
   });
+
+  describe('SUSPICIOUS_CHECKS', () => {
+    let SUSPICIOUS_CHECKS: typeof import('../src/constants/validation.js').SUSPICIOUS_CHECKS;
+
+    beforeAll(async () => {
+      const module = await import('../src/constants/validation.js');
+      SUSPICIOUS_CHECKS = module.SUSPICIOUS_CHECKS;
+    });
+
+    it('should be an array of checks', () => {
+      expect(Array.isArray(SUSPICIOUS_CHECKS)).toBe(true);
+      expect(SUSPICIOUS_CHECKS.length).toBe(4);
+    });
+
+    it('should have valid check structure', () => {
+      for (const check of SUSPICIOUS_CHECKS) {
+        expect(typeof check.test).toBe('function');
+        expect(typeof check.message).toBe('string');
+        expect(['medium', 'high']).toContain(check.level);
+      }
+    });
+
+    it('should detect excessive command chaining (>5 semicolons)', () => {
+      const chainingCheck = SUSPICIOUS_CHECKS.find(c => c.message.includes('chaining'));
+      expect(chainingCheck).toBeDefined();
+      expect(chainingCheck?.level).toBe('medium');
+
+      // Should not trigger with 5 or fewer semicolons
+      expect(chainingCheck?.test('a;b;c;d;e;f')).toBe(false); // 5 semicolons
+      // Should trigger with more than 5 semicolons
+      expect(chainingCheck?.test('a;b;c;d;e;f;g')).toBe(true); // 6 semicolons
+    });
+
+    it('should detect excessive pipes (>3 pipes)', () => {
+      const pipeCheck = SUSPICIOUS_CHECKS.find(c => c.message.includes('pipe'));
+      expect(pipeCheck).toBeDefined();
+      expect(pipeCheck?.level).toBe('medium');
+
+      // Should not trigger with 3 or fewer pipes
+      expect(pipeCheck?.test('a | b | c | d')).toBe(false); // 3 pipes
+      // Should trigger with more than 3 pipes
+      expect(pipeCheck?.test('a | b | c | d | e')).toBe(true); // 4 pipes
+    });
+
+    it('should detect nested command substitution', () => {
+      const nestedCheck = SUSPICIOUS_CHECKS.find(c => c.message.includes('substitution'));
+      expect(nestedCheck).toBeDefined();
+      expect(nestedCheck?.level).toBe('high');
+
+      // Should detect nested $()
+      expect(nestedCheck?.test('$(echo $(whoami))')).toBe(true);
+      // Should not trigger on simple substitution
+      expect(nestedCheck?.test('$(echo hello)')).toBe(false);
+    });
+
+    it('should detect control characters', () => {
+      const controlCheck = SUSPICIOUS_CHECKS.find(c => c.message.includes('Control'));
+      expect(controlCheck).toBeDefined();
+      expect(controlCheck?.level).toBe('high');
+
+      // Should detect control characters (ASCII 0x01-0x08, 0x0B, 0x0C, 0x0E-0x1F)
+      expect(controlCheck?.test('hello\x01world')).toBe(true); // SOH character
+      expect(controlCheck?.test('hello\x07world')).toBe(true); // BEL character
+      // Should not trigger on normal text
+      expect(controlCheck?.test('echo hello')).toBe(false);
+      // Should allow tab (\x09) and newline (\x0A) and carriage return (\x0D)
+      expect(controlCheck?.test('echo\thello')).toBe(false);
+    });
+
+    it('should not flag safe commands', () => {
+      const safeCommands = [
+        'ls -la',
+        'echo hello',
+        'cat file.txt',
+        'git status',
+        'npm install',
+      ];
+
+      for (const cmd of safeCommands) {
+        const triggered = SUSPICIOUS_CHECKS.filter(c => c.test(cmd));
+        expect(triggered.length).toBe(0);
+      }
+    });
+  });
 });
