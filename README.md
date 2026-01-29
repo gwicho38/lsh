@@ -1,4 +1,4 @@
-# LSH v3.0.0 - Encrypted Secrets Manager
+# LSH v3.1.19 - Encrypted Secrets Manager
 
 **The simplest way to sync `.env` files across all your machines.**
 
@@ -8,13 +8,15 @@
 [![Node.js CI](https://github.com/gwicho38/lsh/actions/workflows/node.js.yml/badge.svg)](https://github.com/gwicho38/lsh/actions/workflows/node.js.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What's New in v3.0.0
+## What's New in v3.1.19
 
-- **Registry Fallback** - Pull now automatically checks the Storacha registry when local metadata is missing
-- **Improved Error Messages** - Clear, actionable error messages with environment context
-- **One-Command Setup** - `lsh init` handles everything with interactive prompts
-- **Zero-Config IPFS Sync** - Storacha network enabled by default after email authentication
-- **Smart Environment Detection** - Automatic repository-based namespacing
+- **Type Safety Milestone** - All `@typescript-eslint/no-explicit-any` warnings eliminated (51+ → 0)
+- **Constants Centralization** - Hardcoded strings moved to constants modules
+- **API Response Builder** - Standardized API responses with `sendSuccess`, `sendError`, `ApiErrors`
+- **Test Coverage** - 59 new tests for constants modules (142 total constants tests)
+- **Code Quality** - Lint warnings reduced from 744 to 550 (26.1% reduction)
+
+See [Release Notes](docs/releases/3.1.19.md) for full details.
 
 ## Quick Start
 
