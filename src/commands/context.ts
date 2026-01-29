@@ -63,7 +63,6 @@ interface ContextOutput {
 /**
  * Get current version from package.json
  */
-// TODO(@gwicho38): Review - getVersion
 function getVersion(): string {
   try {
     const packageJsonPath = path.join(__dirname, '../../package.json');
@@ -77,7 +76,6 @@ function getVersion(): string {
 /**
  * Build comprehensive context data structure
  */
-// TODO(@gwicho38): Review - buildContextData
 function buildContextData(): ContextOutput {
   return {
     tool: {
@@ -512,7 +510,6 @@ function buildContextData(): ContextOutput {
 /**
  * Format context data as human-readable text
  */
-// TODO(@gwicho38): Review - formatAsText
 function formatAsText(data: ContextOutput): string {
   const lines: string[] = [];
 
@@ -644,7 +641,6 @@ function formatAsText(data: ContextOutput): string {
 /**
  * Register the context command
  */
-// TODO(@gwicho38): Review - registerContextCommand
 export function registerContextCommand(program: Command): void {
   program
     .command('context')

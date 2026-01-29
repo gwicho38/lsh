@@ -89,7 +89,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Wait for initialization to complete
    */
-  // TODO(@gwicho38): Review - ready
   async ready(): Promise<void> {
     await this.initPromise;
   }
@@ -97,7 +96,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Create a job and persist to filesystem
    */
-  // TODO(@gwicho38): Review - createJob
   async createJob(spec: Partial<JobSpec>): Promise<BaseJobSpec> {
     const job = await super.createJob(spec);
     await this.persistJobs();
@@ -107,7 +105,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Update a job and persist to filesystem
    */
-  // TODO(@gwicho38): Review - updateJob
   async updateJob(jobId: string, updates: JobUpdate): Promise<BaseJobSpec> {
     const job = await super.updateJob(jobId, updates);
     await this.persistJobs();
@@ -117,7 +114,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Remove a job and persist to filesystem
    */
-  // TODO(@gwicho38): Review - removeJob
   async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
     const result = await super.removeJob(jobId, force);
     if (result) {
@@ -129,7 +125,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Update job status and persist to filesystem
    */
-  // TODO(@gwicho38): Review - updateJobStatus
   protected async updateJobStatus(
     jobId: string,
     status: BaseJobSpec['status'],
@@ -143,7 +138,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Start a job (execute it as a process)
    */
-  // TODO(@gwicho38): Review - startJob
   async startJob(jobId: string): Promise<BaseJobSpec> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
@@ -238,7 +232,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Stop a running job
    */
-  // TODO(@gwicho38): Review - stopJob
   async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<BaseJobSpec> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
@@ -279,7 +272,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Create and immediately start a job
    */
-  // TODO(@gwicho38): Review - runJob
   async runJob(spec: Partial<JobSpec>): Promise<BaseJobSpec> {
     const job = await this.createJob(spec);
     return await this.startJob(job.id);
@@ -288,7 +280,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Pause a job (stop it but keep for later resumption)
    */
-  // TODO(@gwicho38): Review - pauseJob
   async pauseJob(jobId: string): Promise<BaseJobSpec> {
     await this.stopJob(jobId, 'SIGSTOP');
     return await this.updateJobStatus(jobId, 'paused');
@@ -297,7 +288,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Resume a paused job
    */
-  // TODO(@gwicho38): Review - resumeJob
   async resumeJob(jobId: string): Promise<BaseJobSpec> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
@@ -326,7 +316,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Kill a job forcefully
    */
-  // TODO(@gwicho38): Review - killJob
   async killJob(jobId: string, signal: string = 'SIGKILL'): Promise<BaseJobSpec> {
     return await this.stopJob(jobId, signal);
   }
@@ -334,7 +323,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Monitor a job's resource usage
    */
-  // TODO(@gwicho38): Review - monitorJob
   async monitorJob(jobId: string): Promise<JobMonitoring | null> {
     const baseJob = await this.getJob(jobId);
     if (!baseJob) {
@@ -379,7 +367,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Get system processes
    */
-  // TODO(@gwicho38): Review - getSystemProcesses
   async getSystemProcesses(): Promise<SystemProcess[]> {
     try {
       const { stdout } = await execAsync('ps -eo pid,ppid,user,pcpu,pmem,lstart,comm,args');
@@ -410,7 +397,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Get job statistics
    */
-  // TODO(@gwicho38): Review - getJobStats
   getJobStats(): {
     total: number;
     byStatus: Record<string, number>;
@@ -440,7 +426,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Clean up old jobs
    */
-  // TODO(@gwicho38): Review - cleanupJobs
   async cleanupJobs(olderThanHours = 24): Promise<number> {
     const cutoff = new Date(Date.now() - olderThanHours * 60 * 60 * 1000);
     const jobs = await this.listJobs();
@@ -463,9 +448,7 @@ export class JobManager extends BaseJobManager {
   // PRIVATE: Persistence & Scheduling
   // ================================
 
-  // TODO(@gwicho38): Review - loadPersistedJobs
 
-  // TODO(@gwicho38): Review - loadPersistedJobs
   private async loadPersistedJobs(): Promise<void> {
     try {
       if (fs.existsSync(this.persistenceFile)) {
@@ -501,9 +484,7 @@ export class JobManager extends BaseJobManager {
     }
   }
 
-  // TODO(@gwicho38): Review - persistJobs
 
-  // TODO(@gwicho38): Review - persistJobs
   private async persistJobs(): Promise<void> {
     try {
       const jobs = Array.from(this.jobs.values()).map(job => {
@@ -518,9 +499,7 @@ export class JobManager extends BaseJobManager {
     }
   }
 
-  // TODO(@gwicho38): Review - startScheduler
 
-  // TODO(@gwicho38): Review - startScheduler
   private startScheduler(): void {
     // Check for scheduled jobs every minute
     this.schedulerInterval = setInterval(() => {
@@ -531,9 +510,7 @@ export class JobManager extends BaseJobManager {
     this.checkScheduledJobs();
   }
 
-  // TODO(@gwicho38): Review - checkScheduledJobs
 
-  // TODO(@gwicho38): Review - checkScheduledJobs
   private async checkScheduledJobs(): Promise<void> {
     const jobs = await this.listJobs({ status: 'created' });
     const now = new Date();
@@ -556,11 +533,8 @@ export class JobManager extends BaseJobManager {
     }
   }
 
-  // TODO(@gwicho38): Review - setupCleanupHandlers
 
-  // TODO(@gwicho38): Review - setupCleanupHandlers
   private setupCleanupHandlers(): void {
-    // TODO(@gwicho38): Review - cleanup
     const cleanup = async () => {
       this.logger.info('JobManager shutting down...');
       if (this.schedulerInterval) {
@@ -588,7 +562,6 @@ export class JobManager extends BaseJobManager {
   /**
    * Override cleanup to include scheduler
    */
-  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     if (this.schedulerInterval) {
       clearInterval(this.schedulerInterval);

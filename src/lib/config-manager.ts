@@ -161,7 +161,6 @@ export const DEFAULT_CONFIG_TEMPLATE = `# LSH Configuration File
 /**
  * Parse .env format file into config object
  */
-// TODO(@gwicho38): Review - parseEnvFile
 export function parseEnvFile(content: string): LSHConfig {
   const config: LSHConfig = {};
   const lines = content.split('\n');
@@ -196,7 +195,6 @@ export function parseEnvFile(content: string): LSHConfig {
 /**
  * Serialize config object to .env format
  */
-// TODO(@gwicho38): Review - serializeConfig
 export function serializeConfig(config: LSHConfig): string {
   const lines: string[] = [];
 
@@ -223,7 +221,6 @@ export class ConfigManager {
   /**
    * Get config file path
    */
-  // TODO(@gwicho38): Review - getConfigPath
   getConfigPath(): string {
     return this.configFile;
   }
@@ -231,7 +228,6 @@ export class ConfigManager {
   /**
    * Check if config file exists
    */
-  // TODO(@gwicho38): Review - exists
   async exists(): Promise<boolean> {
     try {
       await fs.access(this.configFile);
@@ -244,7 +240,6 @@ export class ConfigManager {
   /**
    * Check if config file exists (sync)
    */
-  // TODO(@gwicho38): Review - existsSync
   existsSync(): boolean {
     return fsSync.existsSync(this.configFile);
   }
@@ -252,7 +247,6 @@ export class ConfigManager {
   /**
    * Initialize config file with default template
    */
-  // TODO(@gwicho38): Review - initialize
   async initialize(): Promise<void> {
     const configDir = path.dirname(this.configFile);
 
@@ -275,7 +269,6 @@ export class ConfigManager {
   /**
    * Load configuration from file
    */
-  // TODO(@gwicho38): Review - load
   async load(): Promise<LSHConfig> {
     try {
       // Initialize if doesn't exist
@@ -295,7 +288,6 @@ export class ConfigManager {
   /**
    * Load configuration from file (sync)
    */
-  // TODO(@gwicho38): Review - loadSync
   loadSync(): LSHConfig {
     try {
       // Check if exists
@@ -316,7 +308,6 @@ export class ConfigManager {
   /**
    * Save configuration to file
    */
-  // TODO(@gwicho38): Review - save
   async save(config: LSHConfig): Promise<void> {
     try {
       const configDir = path.dirname(this.configFile);
@@ -352,7 +343,6 @@ export class ConfigManager {
   /**
    * Delete a specific config value
    */
-  // TODO(@gwicho38): Review - delete
   async delete(key: string): Promise<void> {
     delete this.config[key];
     await this.save(this.config);
@@ -361,7 +351,6 @@ export class ConfigManager {
   /**
    * Get all config values
    */
-  // TODO(@gwicho38): Review - getAll
   getAll(): LSHConfig {
     return { ...this.config };
   }
@@ -371,7 +360,6 @@ export class ConfigManager {
    * Config file values are loaded into process.env, but existing environment
    * variables take precedence (config provides defaults)
    */
-  // TODO(@gwicho38): Review - mergeWithEnv
   mergeWithEnv(): void {
     for (const [key, value] of Object.entries(this.config)) {
       if (value !== undefined && value !== '') {
@@ -392,7 +380,6 @@ let _globalConfigManager: ConfigManager | null = null;
 /**
  * Get global config manager
  */
-// TODO(@gwicho38): Review - getConfigManager
 export function getConfigManager(): ConfigManager {
   if (!_globalConfigManager) {
     _globalConfigManager = new ConfigManager();
@@ -404,7 +391,6 @@ export function getConfigManager(): ConfigManager {
  * Load global configuration and merge with process.env
  * This should be called early in the application startup
  */
-// TODO(@gwicho38): Review - loadGlobalConfig
 export async function loadGlobalConfig(): Promise<LSHConfig> {
   const manager = getConfigManager();
   const config = await manager.load();
@@ -415,7 +401,6 @@ export async function loadGlobalConfig(): Promise<LSHConfig> {
 /**
  * Load global configuration synchronously and merge with process.env
  */
-// TODO(@gwicho38): Review - loadGlobalConfigSync
 export function loadGlobalConfigSync(): LSHConfig {
   const manager = getConfigManager();
   const config = manager.loadSync();

@@ -6,9 +6,7 @@
 import { Command } from 'commander';
 import { DaemonCommandRegistrar } from './daemon-registrar.js';
 
-// TODO(@gwicho38): Review - init_daemon
 
-// TODO(@gwicho38): Review - init_daemon
 export async function init_daemon(program: Command) {
   const registrar = new DaemonCommandRegistrar();
   await registrar.register(program);

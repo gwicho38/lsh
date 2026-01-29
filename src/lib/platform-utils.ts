@@ -22,7 +22,6 @@ export interface PlatformPaths {
  * Get platform-specific paths
  * Handles differences between Windows, macOS, and Linux
  */
-// TODO(@gwicho38): Review - getPlatformPaths
 export function getPlatformPaths(appName: string = 'lsh'): PlatformPaths {
   const isWindows = process.platform === 'win32';
   const isMac = process.platform === 'darwin';
@@ -87,7 +86,6 @@ export function getPlatformPaths(appName: string = 'lsh'): PlatformPaths {
 /**
  * Normalize path for current platform
  */
-// TODO(@gwicho38): Review - normalizePath
 export function normalizePath(inputPath: string): string {
   return path.normalize(inputPath);
 }
@@ -95,7 +93,6 @@ export function normalizePath(inputPath: string): string {
 /**
  * Check if running on Windows
  */
-// TODO(@gwicho38): Review - isWindows
 export function isWindows(): boolean {
   return process.platform === 'win32';
 }
@@ -103,7 +100,6 @@ export function isWindows(): boolean {
 /**
  * Check if running on macOS
  */
-// TODO(@gwicho38): Review - isMacOS
 export function isMacOS(): boolean {
   return process.platform === 'darwin';
 }
@@ -111,7 +107,6 @@ export function isMacOS(): boolean {
 /**
  * Check if running on Linux
  */
-// TODO(@gwicho38): Review - isLinux
 export function isLinux(): boolean {
   return process.platform === 'linux';
 }
@@ -119,7 +114,6 @@ export function isLinux(): boolean {
 /**
  * Get platform name
  */
-// TODO(@gwicho38): Review - getPlatformName
 export function getPlatformName(): string {
   const platform = process.platform;
   switch (platform) {
@@ -138,7 +132,6 @@ export function getPlatformName(): string {
  * Get environment variable with fallback
  * Handles Windows vs Unix differences (e.g., HOME vs USERPROFILE)
  */
-// TODO(@gwicho38): Review - getEnvVar
 export function getEnvVar(unixVar: string, windowsVar?: string): string | undefined {
   if (isWindows() && windowsVar) {
     return process.env[windowsVar] || process.env[unixVar];
@@ -149,7 +142,6 @@ export function getEnvVar(unixVar: string, windowsVar?: string): string | undefi
 /**
  * Ensure directory exists, create if needed (cross-platform)
  */
-// TODO(@gwicho38): Review - ensureDir
 export async function ensureDir(dirPath: string): Promise<void> {
   const fs = await import('fs/promises');
   try {
@@ -165,7 +157,6 @@ export async function ensureDir(dirPath: string): Promise<void> {
 /**
  * Get shell executable path for current platform
  */
-// TODO(@gwicho38): Review - getDefaultShell
 export function getDefaultShell(): string {
   if (isWindows()) {
     return process.env[ENV_VARS.COMSPEC] || 'cmd.exe';
@@ -176,7 +167,6 @@ export function getDefaultShell(): string {
 /**
  * Get path separator for current platform
  */
-// TODO(@gwicho38): Review - getPathSeparator
 export function getPathSeparator(): string {
   return path.delimiter; // : on Unix, ; on Windows
 }
@@ -184,7 +174,6 @@ export function getPathSeparator(): string {
 /**
  * Join paths with platform-appropriate separator
  */
-// TODO(@gwicho38): Review - joinPaths
 export function joinPaths(...paths: string[]): string {
   return path.join(...paths);
 }
@@ -192,7 +181,6 @@ export function joinPaths(...paths: string[]): string {
 /**
  * Convert Unix-style path to platform path
  */
-// TODO(@gwicho38): Review - toPlatformPath
 export function toPlatformPath(unixPath: string): string {
   if (isWindows()) {
     return unixPath.replace(/\//g, '\\');
@@ -203,7 +191,6 @@ export function toPlatformPath(unixPath: string): string {
 /**
  * Convert platform path to Unix-style path
  */
-// TODO(@gwicho38): Review - toUnixPath
 export function toUnixPath(platformPath: string): string {
   return platformPath.replace(/\\/g, '/');
 }
@@ -211,7 +198,6 @@ export function toUnixPath(platformPath: string): string {
 /**
  * Get executable extension for current platform
  */
-// TODO(@gwicho38): Review - getExecutableExtension
 export function getExecutableExtension(): string {
   return isWindows() ? '.exe' : '';
 }
@@ -219,7 +205,6 @@ export function getExecutableExtension(): string {
 /**
  * Check if a path is absolute (cross-platform)
  */
-// TODO(@gwicho38): Review - isAbsolutePath
 export function isAbsolutePath(inputPath: string): boolean {
   return path.isAbsolute(inputPath);
 }
@@ -227,7 +212,6 @@ export function isAbsolutePath(inputPath: string): boolean {
 /**
  * Resolve path relative to home directory
  */
-// TODO(@gwicho38): Review - resolveHomePath
 export function resolveHomePath(relativePath: string): string {
   if (relativePath.startsWith('~')) {
     const homeDir = os.homedir();
@@ -239,7 +223,6 @@ export function resolveHomePath(relativePath: string): string {
 /**
  * Get platform-specific line ending
  */
-// TODO(@gwicho38): Review - getLineEnding
 export function getLineEnding(): string {
   return isWindows() ? '\r\n' : '\n';
 }
@@ -261,7 +244,6 @@ export interface PlatformInfo {
 /**
  * Get comprehensive platform information
  */
-// TODO(@gwicho38): Review - getPlatformInfo
 export function getPlatformInfo(): PlatformInfo {
   const paths = getPlatformPaths();
   return {

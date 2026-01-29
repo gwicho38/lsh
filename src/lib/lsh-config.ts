@@ -36,7 +36,6 @@ export class LshConfigManager {
   /**
    * Load config from disk, or create default if it doesn't exist
    */
-  // TODO(@gwicho38): Review - loadConfig
   private loadConfig(): LshConfig {
     try {
       if (fs.existsSync(this.configPath)) {
@@ -58,7 +57,6 @@ export class LshConfigManager {
   /**
    * Save config to disk
    */
-  // TODO(@gwicho38): Review - saveConfig
   private saveConfig(): void {
     try {
       const dir = path.dirname(this.configPath);
@@ -81,7 +79,6 @@ export class LshConfigManager {
   /**
    * Get encryption key for a specific repository
    */
-  // TODO(@gwicho38): Review - getKey
   getKey(repoName: string): string | null {
     // Check config file first
     if (this.config.keys[repoName]) {
@@ -104,7 +101,6 @@ export class LshConfigManager {
   /**
    * Set encryption key for a specific repository
    */
-  // TODO(@gwicho38): Review - setKey
   setKey(repoName: string, key: string): void {
     this.config.keys[repoName] = {
       key,
@@ -118,7 +114,6 @@ export class LshConfigManager {
   /**
    * Check if a key exists for a repository
    */
-  // TODO(@gwicho38): Review - hasKey
   hasKey(repoName: string): boolean {
     return !!this.config.keys[repoName];
   }
@@ -126,7 +121,6 @@ export class LshConfigManager {
   /**
    * Remove encryption key for a repository
    */
-  // TODO(@gwicho38): Review - removeKey
   removeKey(repoName: string): void {
     delete this.config.keys[repoName];
     this.saveConfig();
@@ -136,7 +130,6 @@ export class LshConfigManager {
   /**
    * List all repositories with stored keys
    */
-  // TODO(@gwicho38): Review - listKeys
   listKeys(): Array<{ repoName: string; createdAt: string; lastUsed: string }> {
     return Object.entries(this.config.keys).map(([repoName, data]) => ({
       repoName,
@@ -148,7 +141,6 @@ export class LshConfigManager {
   /**
    * Export key for sharing with other hosts
    */
-  // TODO(@gwicho38): Review - exportKey
   exportKey(repoName: string): string | null {
     const key = this.getKey(repoName);
     if (!key) {
@@ -160,7 +152,6 @@ export class LshConfigManager {
   /**
    * Get config file path (for debugging/migration)
    */
-  // TODO(@gwicho38): Review - getConfigPath
   getConfigPath(): string {
     return this.configPath;
   }
@@ -172,7 +163,6 @@ let _configManager: LshConfigManager | null = null;
 /**
  * Get the global LSH config manager instance
  */
-// TODO(@gwicho38): Review - getLshConfig
 export function getLshConfig(): LshConfigManager {
   if (!_configManager) {
     _configManager = new LshConfigManager();

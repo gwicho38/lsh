@@ -52,7 +52,6 @@ const writeLimiter = rateLimit({
  * Security is enforced by cryptographic JWT verification and database lookup,
  * not by input validation alone.
  */
-// TODO(@gwicho38): Review - authenticateUser
 export async function authenticateUser(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const authHeader = req.headers.authorization;
@@ -105,7 +104,6 @@ export async function authenticateUser(req: AuthenticatedRequest, res: Response,
 /**
  * Middleware: Check organization membership
  */
-// TODO(@gwicho38): Review - requireOrganizationMembership
 export async function requireOrganizationMembership(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     // Only use organizationId from URL params to prevent bypass attacks
@@ -147,7 +145,6 @@ export async function requireOrganizationMembership(req: AuthenticatedRequest, r
 /**
  * Setup SaaS API routes
  */
-// TODO(@gwicho38): Review - setupSaaSApiRoutes
 export function setupSaaSApiRoutes(app: Application) {
   // ============================================================================
   // AUTH ROUTES

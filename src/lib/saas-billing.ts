@@ -42,7 +42,6 @@ export class BillingService {
   /**
    * Create Stripe customer
    */
-  // TODO(@gwicho38): Review - createStripeCustomer
   async createStripeCustomer(params: {
     email: string;
     name?: string;
@@ -87,7 +86,6 @@ export class BillingService {
   /**
    * Create checkout session
    */
-  // TODO(@gwicho38): Review - createCheckoutSession
   async createCheckoutSession(params: {
     organizationId: string;
     tier: 'pro' | 'enterprise';
@@ -146,7 +144,6 @@ export class BillingService {
   /**
    * Create billing portal session
    */
-  // TODO(@gwicho38): Review - createPortalSession
   async createPortalSession(customerId: string, returnUrl: string): Promise<string> {
     if (!this.stripeSecretKey) {
       throw new Error('STRIPE_SECRET_KEY not configured');
@@ -177,7 +174,6 @@ export class BillingService {
   /**
    * Handle Stripe webhook
    */
-  // TODO(@gwicho38): Review - handleWebhook
   async handleWebhook(payload: string, signature: string): Promise<void> {
     if (!this.stripeWebhookSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET not configured');
@@ -232,7 +228,6 @@ export class BillingService {
    * @throws Error if payload is not valid JSON
    * @see https://stripe.com/docs/webhooks/signatures
    */
-  // TODO(@gwicho38): Review - verifyWebhookSignature
   private verifyWebhookSignature(payload: string, _signature: string): StripeWebhookEvent {
     // In production, use Stripe's webhook signature verification
     // For now, just parse the payload
@@ -255,7 +250,6 @@ export class BillingService {
    * @param session - Stripe checkout session object
    * @see StripeCheckoutSession in database-types.ts for partial type
    */
-  // TODO(@gwicho38): Review - handleCheckoutCompleted
   private async handleCheckoutCompleted(session: StripeCheckoutSession): Promise<void> {
     const organizationId = session.metadata?.organization_id;
     if (!organizationId) {
@@ -283,7 +277,6 @@ export class BillingService {
    * @param subscription - Stripe subscription object
    * @see StripeSubscriptionEvent in database-types.ts for partial type
    */
-  // TODO(@gwicho38): Review - handleSubscriptionUpdated
   private async handleSubscriptionUpdated(subscription: StripeSubscriptionEvent): Promise<void> {
     const organizationId = subscription.metadata?.organization_id;
     if (!organizationId) {
@@ -356,7 +349,6 @@ export class BillingService {
    * @param subscription - Stripe subscription object
    * @see StripeSubscriptionEvent in database-types.ts for partial type
    */
-  // TODO(@gwicho38): Review - handleSubscriptionDeleted
   private async handleSubscriptionDeleted(subscription: StripeSubscriptionEvent): Promise<void> {
     const organizationId = subscription.metadata?.organization_id;
     if (!organizationId) {
@@ -401,7 +393,6 @@ export class BillingService {
    * @param invoice - Stripe invoice object
    * @see StripeInvoiceEvent in database-types.ts for partial type
    */
-  // TODO(@gwicho38): Review - handleInvoicePaid
   private async handleInvoicePaid(invoice: StripeInvoiceEvent): Promise<void> {
     const organizationId = invoice.subscription_metadata?.organization_id;
     if (!organizationId) {
@@ -438,7 +429,6 @@ export class BillingService {
    * @param invoice - Stripe invoice object
    * @see StripeInvoiceEvent in database-types.ts for partial type
    */
-  // TODO(@gwicho38): Review - handleInvoicePaymentFailed
   private async handleInvoicePaymentFailed(invoice: StripeInvoiceEvent): Promise<void> {
     const organizationId = invoice.subscription_metadata?.organization_id;
     if (!organizationId) {
@@ -464,7 +454,6 @@ export class BillingService {
   /**
    * Get tier from Stripe price ID
    */
-  // TODO(@gwicho38): Review - getTierFromPriceId
   private getTierFromPriceId(priceId: string | undefined): SubscriptionTier {
     if (!priceId) return 'free';
     if (
@@ -485,7 +474,6 @@ export class BillingService {
   /**
    * Get subscription for organization
    */
-  // TODO(@gwicho38): Review - getOrganizationSubscription
   async getOrganizationSubscription(organizationId: string): Promise<Subscription | null> {
     const { data, error } = await this.supabase
       .from('subscriptions')
@@ -505,7 +493,6 @@ export class BillingService {
   /**
    * Get invoices for organization
    */
-  // TODO(@gwicho38): Review - getOrganizationInvoices
   async getOrganizationInvoices(organizationId: string): Promise<Invoice[]> {
     const { data, error } = await this.supabase
       .from('invoices')
@@ -542,7 +529,6 @@ export class BillingService {
    * @see DbSubscriptionRecord in database-types.ts for input shape
    * @see Subscription in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbSubscriptionToSubscription
   private mapDbSubscriptionToSubscription(dbSub: DbSubscriptionRecord): Subscription {
     return {
       id: dbSub.id,
@@ -583,7 +569,6 @@ export class BillingService {
    * @see DbInvoiceRecord in database-types.ts for input shape
    * @see Invoice in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbInvoiceToInvoice
   private mapDbInvoiceToInvoice(dbInvoice: DbInvoiceRecord): Invoice {
     return {
       id: dbInvoice.id,

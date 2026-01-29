@@ -183,20 +183,14 @@ export interface BaseJobStatistics {
  */
 export interface JobStorage {
   // CRUD operations
-  // TODO(@gwicho38): Review - save
   save(job: BaseJobSpec): Promise<void>;
   get(jobId: string): Promise<BaseJobSpec | null>;
-  // TODO(@gwicho38): Review - list
   list(filter?: BaseJobFilter): Promise<BaseJobSpec[]>;
-  // TODO(@gwicho38): Review - update
   update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void>;
-  // TODO(@gwicho38): Review - delete
   delete(jobId: string): Promise<void>;
 
   // Execution tracking
-  // TODO(@gwicho38): Review - saveExecution
   saveExecution(execution: BaseJobExecution): Promise<void>;
-  // TODO(@gwicho38): Review - getExecutions
   getExecutions(jobId: string, limit?: number): Promise<BaseJobExecution[]>;
 
   // Cleanup
@@ -220,7 +214,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Generate unique job ID
    */
-  // TODO(@gwicho38): Review - generateJobId
   protected generateJobId(prefix: string = 'job'): string {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
@@ -228,7 +221,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Validate job specification
    */
-  // TODO(@gwicho38): Review - validateJobSpec
   protected validateJobSpec(spec: Partial<BaseJobSpec>): void {
     if (!spec.name) {
       throw new Error('Job name is required');
@@ -241,7 +233,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Create a new job
    */
-  // TODO(@gwicho38): Review - createJob
   async createJob(spec: Partial<BaseJobSpec>): Promise<BaseJobSpec> {
     this.validateJobSpec(spec);
 
@@ -276,7 +267,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Get job by ID
    */
-  // TODO(@gwicho38): Review - getJob
   async getJob(jobId: string): Promise<BaseJobSpec | null> {
     // Check memory cache first
     const job = this.jobs.get(jobId);
@@ -297,7 +287,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * List jobs with optional filtering
    */
-  // TODO(@gwicho38): Review - listJobs
   async listJobs(filter?: BaseJobFilter): Promise<BaseJobSpec[]> {
     let jobs = await this.storage.list(filter);
 
@@ -312,7 +301,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Apply filters to job list
    */
-  // TODO(@gwicho38): Review - applyFilters
   protected applyFilters(jobs: BaseJobSpec[], filter: BaseJobFilter): BaseJobSpec[] {
     return jobs.filter(job => {
       // Status filter
@@ -361,7 +349,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Update job
    */
-  // TODO(@gwicho38): Review - updateJob
   async updateJob(jobId: string, updates: BaseJobUpdate): Promise<BaseJobSpec> {
     const job = await this.getJob(jobId);
     if (!job) {
@@ -389,7 +376,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Update job status
    */
-  // TODO(@gwicho38): Review - updateJobStatus
   protected async updateJobStatus(
     jobId: string,
     status: BaseJobSpec['status'],
@@ -426,7 +412,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Remove job
    */
-  // TODO(@gwicho38): Review - removeJob
   async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
     const job = await this.getJob(jobId);
     if (!job) {
@@ -455,7 +440,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Get job execution history
    */
-  // TODO(@gwicho38): Review - getJobHistory
   async getJobHistory(jobId: string, limit: number = 50): Promise<BaseJobExecution[]> {
     return await this.storage.getExecutions(jobId, limit);
   }
@@ -463,7 +447,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Calculate job statistics
    */
-  // TODO(@gwicho38): Review - getJobStatistics
   async getJobStatistics(jobId: string): Promise<BaseJobStatistics> {
     const executions = await this.getJobHistory(jobId);
     const job = await this.getJob(jobId);
@@ -502,7 +485,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Record job execution
    */
-  // TODO(@gwicho38): Review - recordExecution
   protected async recordExecution(
     job: BaseJobSpec,
     status: BaseJobExecution['status'],
@@ -542,7 +524,6 @@ export abstract class BaseJobManager extends EventEmitter {
   /**
    * Cleanup - optional override
    */
-  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     if (this.storage.cleanup) {
       await this.storage.cleanup();

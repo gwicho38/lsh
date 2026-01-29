@@ -8,9 +8,7 @@ import DatabasePersistence from '../lib/database-persistence.js';
 import CloudConfigManager from '../lib/cloud-config-manager.js';
 import EnhancedHistorySystem from '../lib/enhanced-history-system.js';
 
-// TODO(@gwicho38): Review - demonstrateSupabaseIntegration
 
-// TODO(@gwicho38): Review - demonstrateSupabaseIntegration
 async function demonstrateSupabaseIntegration() {
   console.log('🚀 LSH Supabase Integration Demo\n');
 

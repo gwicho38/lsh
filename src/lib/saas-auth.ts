@@ -27,7 +27,6 @@ const EMAIL_VERIFICATION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in ms
 /**
  * Generate a secure random token
  */
-// TODO(@gwicho38): Review - generateToken
 function generateToken(length = 32): string {
   return randomBytes(length).toString('hex');
 }
@@ -35,7 +34,6 @@ function generateToken(length = 32): string {
 /**
  * Hash a password using bcrypt
  */
-// TODO(@gwicho38): Review - hashPassword
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, BCRYPT_ROUNDS);
 }
@@ -43,7 +41,6 @@ export async function hashPassword(password: string): Promise<string> {
 /**
  * Verify a password against a hash
  */
-// TODO(@gwicho38): Review - verifyPassword
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   return bcrypt.compare(password, hash);
 }
@@ -51,7 +48,6 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 /**
  * Generate JWT access token
  */
-// TODO(@gwicho38): Review - generateAccessToken
 export function generateAccessToken(userId: string, email: string): string {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
@@ -76,7 +72,6 @@ export function generateAccessToken(userId: string, email: string): string {
 /**
  * Generate JWT refresh token
  */
-// TODO(@gwicho38): Review - generateRefreshToken
 export function generateRefreshToken(userId: string): string {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
@@ -100,7 +95,6 @@ export function generateRefreshToken(userId: string): string {
 /**
  * Verify and decode JWT token
  */
-// TODO(@gwicho38): Review - verifyToken
 export function verifyToken(token: string): { userId: string; email?: string; type: string } {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
@@ -132,7 +126,6 @@ export class AuthService {
   /**
    * Sign up a new user
    */
-  // TODO(@gwicho38): Review - signup
   async signup(input: SignupInput): Promise<{ user: User; verificationToken: string }> {
     // Check if email already exists
     const { data: existingUser } = await this.supabase
@@ -180,7 +173,6 @@ export class AuthService {
   /**
    * Verify email address
    */
-  // TODO(@gwicho38): Review - verifyEmail
   async verifyEmail(token: string): Promise<User> {
     const { data: user, error } = await this.supabase
       .from('users')
@@ -220,7 +212,6 @@ export class AuthService {
   /**
    * Resend email verification
    */
-  // TODO(@gwicho38): Review - resendVerificationEmail
   async resendVerificationEmail(email: string): Promise<string> {
     const { data: user, error } = await this.supabase
       .from('users')
@@ -254,7 +245,6 @@ export class AuthService {
   /**
    * Login with email and password
    */
-  // TODO(@gwicho38): Review - login
   async login(input: LoginInput, ipAddress?: string): Promise<AuthSession> {
     // Find user
     const { data: user, error } = await this.supabase
@@ -314,7 +304,6 @@ export class AuthService {
   /**
    * Refresh access token
    */
-  // TODO(@gwicho38): Review - refreshAccessToken
   async refreshAccessToken(refreshToken: string): Promise<AuthToken> {
     const { userId } = verifyToken(refreshToken);
 
@@ -342,7 +331,6 @@ export class AuthService {
   /**
    * Get user by ID
    */
-  // TODO(@gwicho38): Review - getUserById
   async getUserById(userId: string): Promise<User | null> {
     const { data: user, error } = await this.supabase
       .from('users')
@@ -361,7 +349,6 @@ export class AuthService {
   /**
    * Get user by email
    */
-  // TODO(@gwicho38): Review - getUserByEmail
   async getUserByEmail(email: string): Promise<User | null> {
     const { data: user, error } = await this.supabase
       .from('users')
@@ -380,7 +367,6 @@ export class AuthService {
   /**
    * Get user's organizations
    */
-  // TODO(@gwicho38): Review - getUserOrganizations
   async getUserOrganizations(userId: string): Promise<Organization[]> {
     const { data, error } = await this.supabase
       .from('organization_members')
@@ -415,7 +401,6 @@ export class AuthService {
   /**
    * Request password reset
    */
-  // TODO(@gwicho38): Review - requestPasswordReset
   async requestPasswordReset(email: string): Promise<string> {
     const { data: user, error } = await this.supabase
       .from('users')
@@ -440,7 +425,6 @@ export class AuthService {
   /**
    * Reset password
    */
-  // TODO(@gwicho38): Review - resetPassword
   async resetPassword(_token: string, _newPassword: string): Promise<void> {
     // TODO: Implement password reset
     // Need to create password_reset_tokens table
@@ -450,7 +434,6 @@ export class AuthService {
   /**
    * Change password
    */
-  // TODO(@gwicho38): Review - changePassword
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     const { data: user, error } = await this.supabase
       .from('users')
@@ -504,7 +487,6 @@ export class AuthService {
    * @see DbUserRecord in database-types.ts for input shape
    * @see User in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbUserToUser
   private mapDbUserToUser(dbUser: DbUserRecord): User {
     return {
       id: dbUser.id,
@@ -546,7 +528,6 @@ export class AuthService {
    * @see DbOrganizationRecord in database-types.ts for input shape
    * @see Organization in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbOrgToOrg
   private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
     return {
       id: dbOrg.id,
