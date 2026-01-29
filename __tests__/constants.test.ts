@@ -197,11 +197,13 @@ describe('Constants', () => {
   describe('Error Constants', () => {
     let ERRORS: typeof import('../src/constants/errors.js').ERRORS;
     let RISK_LEVELS: typeof import('../src/constants/errors.js').RISK_LEVELS;
+    let ERROR_CODES: typeof import('../src/constants/errors.js').ERROR_CODES;
 
     beforeAll(async () => {
       const module = await import('../src/constants/errors.js');
       ERRORS = module.ERRORS;
       RISK_LEVELS = module.RISK_LEVELS;
+      ERROR_CODES = module.ERROR_CODES;
     });
 
     it('should export ERRORS', () => {
@@ -223,6 +225,117 @@ describe('Constants', () => {
       expect(ERRORS.DELETE_ROOT).toBeDefined();
       expect(ERRORS.REVERSE_SHELL).toBeDefined();
       expect(ERRORS.PRIV_ESCALATION).toBeDefined();
+    });
+
+    it('should have general error messages', () => {
+      expect(ERRORS.ERROR_PREFIX).toContain('${message}');
+      expect(ERRORS.ERROR_UNKNOWN_COMMAND).toBe('error: unknown command');
+      expect(ERRORS.ERROR_UNKNOWN_COMMAND_PREFIX).toBe('error: unknown command');
+    });
+
+    it('should have daemon error messages', () => {
+      expect(ERRORS.DAEMON_ALREADY_RUNNING).toBe('Daemon is already running');
+      expect(ERRORS.ERROR_DAEMON_ALREADY_RUNNING).toBe('Another daemon instance is already running');
+      expect(ERRORS.SOCKET_NOT_FOUND).toContain('${socketPath}');
+      expect(ERRORS.SOCKET_PERMISSION_DENIED).toContain('${socketPath}');
+      expect(ERRORS.NOT_CONNECTED).toBe('Not connected to daemon');
+      expect(ERRORS.RESPONSE_TOO_LARGE).toContain('truncating');
+      expect(ERRORS.REQUEST_TIMEOUT).toContain('${command}');
+    });
+
+    it('should have script and config error messages', () => {
+      expect(ERRORS.ERROR_SCRIPT_PREFIX).toContain('${message}');
+      expect(ERRORS.ERROR_CONFIG_PREFIX).toContain('${message}');
+      expect(ERRORS.ERROR_SCRIPT_NOT_FOUND).toContain('${scriptPath}');
+      expect(ERRORS.ERROR_CONFIG_NOT_FOUND).toContain('${rcFile}');
+    });
+
+    it('should have file error messages', () => {
+      expect(ERRORS.FILE_NOT_FOUND).toContain('${filePath}');
+      expect(ERRORS.INVALID_FILENAME).toContain('${filename}');
+    });
+
+    it('should have ZSH compatibility error messages', () => {
+      expect(ERRORS.ERROR_ZSH_COMPAT_PREFIX).toContain('ZSH compatibility');
+    });
+
+    it('should have command validation error messages', () => {
+      expect(ERRORS.COMMAND_EMPTY_STRING).toBe('Command must be a non-empty string');
+      expect(ERRORS.COMMAND_WHITESPACE_ONLY).toContain('whitespace');
+      expect(ERRORS.COMMAND_TOO_LONG).toContain('${maxLength}');
+      expect(ERRORS.COMMAND_NOT_WHITELISTED).toContain('${commandName}');
+      expect(ERRORS.COMMAND_VALIDATION_FAILED).toContain('${errors}');
+    });
+
+    it('should have secrets error messages', () => {
+      expect(ERRORS.INVALID_ENCRYPTED_FORMAT).toBe('Invalid encrypted format');
+      expect(ERRORS.DECRYPTION_FAILED_MESSAGE).toContain('LSH_SECRETS_KEY');
+      expect(ERRORS.DESTRUCTIVE_CHANGE).toBe('Destructive change detected');
+      expect(ERRORS.NO_SECRETS_FOUND).toContain('${filename}');
+      expect(ERRORS.NO_ENCRYPTED_DATA).toContain('${environment}');
+    });
+
+    it('should have critical security error messages', () => {
+      expect(ERRORS.DELETE_ROOT).toBe('Attempting to delete root filesystem');
+      expect(ERRORS.MKFS_DETECTED).toContain('formatting');
+      expect(ERRORS.DD_DETECTED).toContain('disk write');
+      expect(ERRORS.PRIV_ESCALATION).toBe('Privilege escalation attempt');
+      expect(ERRORS.PASSWORD_MOD).toContain('Password');
+      expect(ERRORS.REMOTE_EXEC_CURL).toContain('curl');
+      expect(ERRORS.REMOTE_EXEC_WGET).toContain('wget');
+      expect(ERRORS.REVERSE_SHELL).toContain('netcat');
+      expect(ERRORS.READ_SHADOW).toContain('shadow');
+      expect(ERRORS.READ_PASSWD).toContain('user account');
+      expect(ERRORS.ACCESS_SSH_KEY).toContain('SSH');
+      expect(ERRORS.KILL_INIT).toContain('init');
+      expect(ERRORS.KILL_SSHD).toContain('SSH daemon');
+      expect(ERRORS.BASE64_COMMAND).toContain('Base64');
+      expect(ERRORS.DYNAMIC_EVAL).toContain('eval');
+      expect(ERRORS.NULL_BYTE).toContain('Null byte');
+    });
+
+    it('should have warning-level security messages', () => {
+      expect(ERRORS.RECURSIVE_DELETE).toContain('Recursive');
+      expect(ERRORS.SUDO_ELEVATED).toContain('privileges');
+      expect(ERRORS.CHMOD_777).toContain('permissive');
+      expect(ERRORS.DISK_WRITE).toContain('disk');
+      expect(ERRORS.INSECURE_SSL).toContain('SSL');
+      expect(ERRORS.FORK_BOMB).toContain('Fork bomb');
+      expect(ERRORS.EXCESSIVE_CHAINING).toContain('chaining');
+      expect(ERRORS.EXCESSIVE_PIPES).toContain('pipe');
+      expect(ERRORS.NESTED_SUBSTITUTION).toContain('substitution');
+      expect(ERRORS.CONTROL_CHARS).toContain('Control characters');
+    });
+
+    it('should export ERROR_CODES', () => {
+      expect(ERROR_CODES).toBeDefined();
+    });
+
+    it('should have authentication error codes', () => {
+      expect(ERROR_CODES.UNAUTHORIZED).toBe('UNAUTHORIZED');
+      expect(ERROR_CODES.INVALID_CREDENTIALS).toBe('INVALID_CREDENTIALS');
+      expect(ERROR_CODES.INVALID_TOKEN).toBe('INVALID_TOKEN');
+      expect(ERROR_CODES.EMAIL_NOT_VERIFIED).toBe('EMAIL_NOT_VERIFIED');
+      expect(ERROR_CODES.EMAIL_ALREADY_EXISTS).toBe('EMAIL_ALREADY_EXISTS');
+    });
+
+    it('should have authorization error codes', () => {
+      expect(ERROR_CODES.FORBIDDEN).toBe('FORBIDDEN');
+    });
+
+    it('should have validation error codes', () => {
+      expect(ERROR_CODES.INVALID_INPUT).toBe('INVALID_INPUT');
+      expect(ERROR_CODES.NOT_FOUND).toBe('NOT_FOUND');
+      expect(ERROR_CODES.ALREADY_EXISTS).toBe('ALREADY_EXISTS');
+    });
+
+    it('should have payment error codes', () => {
+      expect(ERROR_CODES.PAYMENT_REQUIRED).toBe('PAYMENT_REQUIRED');
+      expect(ERROR_CODES.TIER_LIMIT_EXCEEDED).toBe('TIER_LIMIT_EXCEEDED');
+    });
+
+    it('should have server error codes', () => {
+      expect(ERROR_CODES.INTERNAL_ERROR).toBe('INTERNAL_ERROR');
     });
   });
 
