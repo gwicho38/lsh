@@ -12,7 +12,9 @@ import { auditLogger, getIpFromRequest } from '../lib/saas-audit.js';
 import { emailService } from '../lib/saas-email.js';
 import { secretsService } from '../lib/saas-secrets.js';
 import type { AuthenticatedRequest, AuditAction } from '../lib/saas-types.js';
-import { getErrorMessage, getAuthenticatedUser } from '../lib/saas-types.js'; // eslint-disable-line no-duplicate-imports
+import { getAuthenticatedUser } from '../lib/saas-types.js'; // eslint-disable-line no-duplicate-imports
+import { sendSuccess, sendError, ApiErrors, extractApiErrorMessage } from '../lib/api-response.js';
+import { ERROR_CODES } from '../constants/errors.js';
 
 /**
  * Rate Limiters for different endpoint types
@@ -59,13 +61,7 @@ export async function authenticateUser(req: AuthenticatedRequest, res: Response,
     // Early rejection for malformed requests (not a security boundary)
     // Real security comes from JWT cryptographic verification below
     if (typeof authHeader !== 'string' || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'No authorization token provided',
-        },
-      });
+      return ApiErrors.unauthorized(res, 'No authorization token provided');
     }
 
     const token = authHeader.substring(7).trim();
@@ -77,13 +73,7 @@ export async function authenticateUser(req: AuthenticatedRequest, res: Response,
 
     const user = await authService.getUserById(userId);
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Invalid token',
-        },
-      });
+      return ApiErrors.unauthorized(res, 'Invalid token');
     }
 
     // Attach user to request (safe - req is not reassigned, only augmented)
@@ -91,13 +81,7 @@ export async function authenticateUser(req: AuthenticatedRequest, res: Response,
     req.user = user;
     next();
   } catch (error: unknown) {
-    return res.status(401).json({
-      success: false,
-      error: {
-        code: 'UNAUTHORIZED',
-        message: getErrorMessage(error) || 'Authentication failed',
-      },
-    });
+    return ApiErrors.unauthorized(res, extractApiErrorMessage(error) || 'Authentication failed');
   }
 }
 
@@ -109,25 +93,16 @@ export async function requireOrganizationMembership(req: AuthenticatedRequest, r
     // Only use organizationId from URL params to prevent bypass attacks
     const organizationId = req.params.organizationId;
     if (!organizationId) {
-      return res.status(400).json({
-        success: false,
-        error: { code: 'INVALID_INPUT', message: 'Organization ID required' },
-      });
+      return ApiErrors.invalidInput(res, 'Organization ID required');
     }
 
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        error: { code: 'UNAUTHORIZED', message: 'User not authenticated' },
-      });
+      return ApiErrors.unauthorized(res, 'User not authenticated');
     }
 
     const role = await organizationService.getUserRole(organizationId, getAuthenticatedUser(req).id);
     if (!role) {
-      return res.status(403).json({
-        success: false,
-        error: { code: 'FORBIDDEN', message: 'Not a member of this organization' },
-      });
+      return ApiErrors.forbidden(res, 'Not a member of this organization');
     }
 
     // Safe - req is not reassigned, only augmented with organization context
@@ -135,10 +110,7 @@ export async function requireOrganizationMembership(req: AuthenticatedRequest, r
     req.organizationId = organizationId;
     next();
   } catch (error: unknown) {
-    return res.status(500).json({
-      success: false,
-      error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-    });
+    return ApiErrors.internalError(res, extractApiErrorMessage(error));
   }
 }
 
@@ -162,10 +134,7 @@ export function setupSaaSApiRoutes(app: Application) {
       // Real validation happens in authService.signup()
       if (typeof email !== 'string' || typeof password !== 'string' ||
           email.trim().length === 0 || password.length < 8) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Valid email and password (min 8 chars) required' },
-        });
+        return ApiErrors.invalidInput(res, 'Valid email and password (min 8 chars) required');
       }
 
       // Basic email format validation (fail-fast for obviously bad input)
@@ -176,10 +145,7 @@ export function setupSaaSApiRoutes(app: Application) {
           email.startsWith('@') ||
           email.endsWith('@') ||
           email.split('@')[1]?.includes('.') === false) { // Domain has a dot
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Invalid email format' },
-        });
+        return ApiErrors.invalidInput(res, 'Invalid email format');
       }
 
       // SECURITY BOUNDARY: authService handles:
@@ -196,24 +162,20 @@ export function setupSaaSApiRoutes(app: Application) {
       // Send verification email
       await emailService.sendVerificationEmail(user.email, verificationToken, user.firstName || undefined);
 
-      res.json({
-        success: true,
-        data: {
-          user: {
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            emailVerified: user.emailVerified,
-          },
-          message: 'Verification email sent',
+      return sendSuccess(res, {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          emailVerified: user.emailVerified,
         },
+        message: 'Verification email sent',
       });
     } catch (error: unknown) {
-      res.status(400).json({
-        success: false,
-        error: { code: getErrorMessage(error).includes('ALREADY_EXISTS') ? 'EMAIL_ALREADY_EXISTS' : 'INTERNAL_ERROR', message: getErrorMessage(error) },
-      });
+      const msg = extractApiErrorMessage(error);
+      const code = msg.includes('ALREADY_EXISTS') ? ERROR_CODES.EMAIL_ALREADY_EXISTS : ERROR_CODES.INTERNAL_ERROR;
+      return sendError(res, code, msg, 400);
     }
   });
 
@@ -229,10 +191,7 @@ export function setupSaaSApiRoutes(app: Application) {
       // Real authentication happens in authService.login() via bcrypt password comparison
       if (typeof email !== 'string' || typeof password !== 'string' ||
           email.trim().length === 0 || password.length === 0) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Email and password required' },
-        });
+        return ApiErrors.invalidInput(res, 'Email and password required');
       }
 
       // SECURITY BOUNDARY: authService.login() performs:
@@ -242,16 +201,12 @@ export function setupSaaSApiRoutes(app: Application) {
       const ipAddress = getIpFromRequest(req);
       const session = await authService.login({ email, password }, ipAddress);
 
-      res.json({
-        success: true,
-        data: session,
-      });
+      return sendSuccess(res, session);
     } catch (error: unknown) {
-      const statusCode = getErrorMessage(error).includes('EMAIL_NOT_VERIFIED') ? 403 : 401;
-      res.status(statusCode).json({
-        success: false,
-        error: { code: getErrorMessage(error) || 'INVALID_CREDENTIALS', message: getErrorMessage(error) },
-      });
+      const msg = extractApiErrorMessage(error);
+      const statusCode = msg.includes('EMAIL_NOT_VERIFIED') ? 403 : 401;
+      const code = msg || ERROR_CODES.INVALID_CREDENTIALS;
+      return sendError(res, code, msg, statusCode);
     }
   });
 
@@ -266,10 +221,7 @@ export function setupSaaSApiRoutes(app: Application) {
       // Input sanitization (not a security boundary)
       // Real verification happens in authService.verifyEmail() via database lookup
       if (typeof token !== 'string' || token.trim().length === 0) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Valid token required' },
-        });
+        return ApiErrors.invalidInput(res, 'Valid token required');
       }
 
       // SECURITY BOUNDARY: authService.verifyEmail() performs:
@@ -281,15 +233,9 @@ export function setupSaaSApiRoutes(app: Application) {
       // Send welcome email
       await emailService.sendWelcomeEmail(user.email, user.firstName || undefined);
 
-      res.json({
-        success: true,
-        data: { user, message: 'Email verified successfully' },
-      });
+      return sendSuccess(res, { user, message: 'Email verified successfully' });
     } catch (error: unknown) {
-      res.status(400).json({
-        success: false,
-        error: { code: 'INVALID_TOKEN', message: getErrorMessage(error) },
-      });
+      return ApiErrors.invalidToken(res, extractApiErrorMessage(error));
     }
   });
 
@@ -308,15 +254,9 @@ export function setupSaaSApiRoutes(app: Application) {
         await emailService.sendVerificationEmail(email, token, user.firstName || undefined);
       }
 
-      res.json({
-        success: true,
-        data: { message: 'Verification email sent' },
-      });
+      return sendSuccess(res, { message: 'Verification email sent' });
     } catch (error: unknown) {
-      res.status(400).json({
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-      });
+      return ApiErrors.internalError(res, extractApiErrorMessage(error));
     }
   });
 
@@ -329,23 +269,14 @@ export function setupSaaSApiRoutes(app: Application) {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Refresh token required' },
-        });
+        return ApiErrors.invalidInput(res, 'Refresh token required');
       }
 
       const tokens = await authService.refreshAccessToken(refreshToken);
 
-      res.json({
-        success: true,
-        data: tokens,
-      });
+      return sendSuccess(res, tokens);
     } catch (error: unknown) {
-      res.status(401).json({
-        success: false,
-        error: { code: 'INVALID_TOKEN', message: getErrorMessage(error) },
-      });
+      return ApiErrors.invalidToken(res, extractApiErrorMessage(error));
     }
   });
 
@@ -354,10 +285,7 @@ export function setupSaaSApiRoutes(app: Application) {
    * Get current user
    */
   app.get('/api/v1/auth/me', authenticateUser, async (req: AuthenticatedRequest, res: Response) => {
-    res.json({
-      success: true,
-      data: { user: req.user },
-    });
+    return sendSuccess(res, { user: req.user });
   });
 
   // ============================================================================
@@ -373,10 +301,7 @@ export function setupSaaSApiRoutes(app: Application) {
       const { name, slug } = req.body;
 
       if (!name) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Organization name required' },
-        });
+        return ApiErrors.invalidInput(res, 'Organization name required');
       }
 
       const organization = await organizationService.createOrganization({
@@ -385,15 +310,9 @@ export function setupSaaSApiRoutes(app: Application) {
         ownerId: getAuthenticatedUser(req).id,
       });
 
-      res.json({
-        success: true,
-        data: { organization },
-      });
+      return sendSuccess(res, { organization });
     } catch (error: unknown) {
-      res.status(400).json({
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-      });
+      return ApiErrors.internalError(res, extractApiErrorMessage(error));
     }
   });
 
@@ -412,24 +331,15 @@ export function setupSaaSApiRoutes(app: Application) {
         );
 
         if (!organization) {
-          return res.status(404).json({
-            success: false,
-            error: { code: 'NOT_FOUND', message: 'Organization not found' },
-          });
+          return ApiErrors.notFound(res, 'Organization');
         }
 
         // Get usage summary
         const usage = await organizationService.getUsageSummary(req.params.organizationId);
 
-        res.json({
-          success: true,
-          data: { organization, usage },
-        });
+        return sendSuccess(res, { organization, usage });
       } catch (error: unknown) {
-        res.status(500).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -448,15 +358,9 @@ export function setupSaaSApiRoutes(app: Application) {
           req.params.organizationId
         );
 
-        res.json({
-          success: true,
-          data: { members },
-        });
+        return sendSuccess(res, { members });
       } catch (error: unknown) {
-        res.status(500).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -480,10 +384,7 @@ export function setupSaaSApiRoutes(app: Application) {
         );
 
         if (!canInvite) {
-          return res.status(403).json({
-            success: false,
-            error: { code: 'FORBIDDEN', message: 'No permission to invite members' },
-          });
+          return ApiErrors.forbidden(res, 'No permission to invite members');
         }
 
         const { userId, role } = req.body;
@@ -495,15 +396,9 @@ export function setupSaaSApiRoutes(app: Application) {
           invitedBy: getAuthenticatedUser(req).id,
         });
 
-        res.json({
-          success: true,
-          data: { member },
-        });
+        return sendSuccess(res, { member });
       } catch (error: unknown) {
-        res.status(400).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -526,10 +421,7 @@ export function setupSaaSApiRoutes(app: Application) {
         const { name, slug, description } = req.body;
 
         if (!name) {
-          return res.status(400).json({
-            success: false,
-            error: { code: 'INVALID_INPUT', message: 'Team name required' },
-          });
+          return ApiErrors.invalidInput(res, 'Team name required');
         }
 
         const team = await teamService.createTeam(
@@ -542,15 +434,9 @@ export function setupSaaSApiRoutes(app: Application) {
           getAuthenticatedUser(req).id
         );
 
-        res.json({
-          success: true,
-          data: { team },
-        });
+        return sendSuccess(res, { team });
       } catch (error: unknown) {
-        res.status(400).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -567,15 +453,9 @@ export function setupSaaSApiRoutes(app: Application) {
       try {
         const teams = await teamService.getOrganizationTeams(req.params.organizationId);
 
-        res.json({
-          success: true,
-          data: { teams },
-        });
+        return sendSuccess(res, { teams });
       } catch (error: unknown) {
-        res.status(500).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -593,10 +473,7 @@ export function setupSaaSApiRoutes(app: Application) {
       const { environment, key, value, description, tags, rotationIntervalDays } = req.body;
 
       if (!environment || !key || !value) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_INPUT', message: 'Environment, key, and value required' },
-        });
+        return ApiErrors.invalidInput(res, 'Environment, key, and value required');
       }
 
       const secret = await secretsService.createSecret({
@@ -610,16 +487,13 @@ export function setupSaaSApiRoutes(app: Application) {
         createdBy: getAuthenticatedUser(req).id,
       });
 
-      res.json({
-        success: true,
-        data: { secret: { ...secret, encryptedValue: '***REDACTED***' } },
-      });
+      return sendSuccess(res, { secret: { ...secret, encryptedValue: '***REDACTED***' } });
     } catch (error: unknown) {
-      const statusCode = getErrorMessage(error).includes('TIER_LIMIT_EXCEEDED') ? 402 : 400;
-      res.status(statusCode).json({
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-      });
+      const msg = extractApiErrorMessage(error);
+      if (msg.includes('TIER_LIMIT_EXCEEDED')) {
+        return ApiErrors.tierLimitExceeded(res, msg);
+      }
+      return ApiErrors.internalError(res, msg);
     }
   });
 
@@ -643,15 +517,9 @@ export function setupSaaSApiRoutes(app: Application) {
         encryptedValue: decrypt === 'true' ? secret.encryptedValue : '***REDACTED***',
       }));
 
-      res.json({
-        success: true,
-        data: { secrets: maskedSecrets },
-      });
+      return sendSuccess(res, { secrets: maskedSecrets });
     } catch (error: unknown) {
-      res.status(500).json({
-        success: false,
-        error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-      });
+      return ApiErrors.internalError(res, extractApiErrorMessage(error));
     }
   });
 
@@ -674,26 +542,17 @@ export function setupSaaSApiRoutes(app: Application) {
         );
 
         if (!secret) {
-          return res.status(404).json({
-            success: false,
-            error: { code: 'NOT_FOUND', message: 'Secret not found' },
-          });
+          return ApiErrors.notFound(res, 'Secret');
         }
 
-        res.json({
-          success: true,
-          data: {
-            secret: {
-              ...secret,
-              encryptedValue: decrypt ? secret.encryptedValue : '***REDACTED***',
-            },
+        return sendSuccess(res, {
+          secret: {
+            ...secret,
+            encryptedValue: decrypt ? secret.encryptedValue : '***REDACTED***',
           },
         });
       } catch (error: unknown) {
-        res.status(500).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -718,15 +577,9 @@ export function setupSaaSApiRoutes(app: Application) {
           updatedBy: getAuthenticatedUser(req).id,
         });
 
-        res.json({
-          success: true,
-          data: { secret: { ...secret, encryptedValue: '***REDACTED***' } },
-        });
+        return sendSuccess(res, { secret: { ...secret, encryptedValue: '***REDACTED***' } });
       } catch (error: unknown) {
-        res.status(400).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -743,15 +596,9 @@ export function setupSaaSApiRoutes(app: Application) {
       try {
         await secretsService.deleteSecret(req.params.secretId, getAuthenticatedUser(req).id);
 
-        res.json({
-          success: true,
-          data: { message: 'Secret deleted successfully' },
-        });
+        return sendSuccess(res, { message: 'Secret deleted successfully' });
       } catch (error: unknown) {
-        res.status(400).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -768,10 +615,7 @@ export function setupSaaSApiRoutes(app: Application) {
         const { environment } = req.query;
 
         if (!environment) {
-          return res.status(400).json({
-            success: false,
-            error: { code: 'INVALID_INPUT', message: 'Environment parameter required' },
-          });
+          return ApiErrors.invalidInput(res, 'Environment parameter required');
         }
 
         const envContent = await secretsService.exportToEnv(
@@ -786,10 +630,7 @@ export function setupSaaSApiRoutes(app: Application) {
         );
         res.send(envContent);
       } catch (error: unknown) {
-        res.status(500).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -807,10 +648,7 @@ export function setupSaaSApiRoutes(app: Application) {
         const { environment, content } = req.body;
 
         if (!environment || !content) {
-          return res.status(400).json({
-            success: false,
-            error: { code: 'INVALID_INPUT', message: 'Environment and content required' },
-          });
+          return ApiErrors.invalidInput(res, 'Environment and content required');
         }
 
         const result = await secretsService.importFromEnv(
@@ -820,15 +658,9 @@ export function setupSaaSApiRoutes(app: Application) {
           getAuthenticatedUser(req).id
         );
 
-        res.json({
-          success: true,
-          data: result,
-        });
+        return sendSuccess(res, result);
       } catch (error: unknown) {
-        res.status(400).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -855,10 +687,7 @@ export function setupSaaSApiRoutes(app: Application) {
         );
 
         if (!canView) {
-          return res.status(403).json({
-            success: false,
-            error: { code: 'FORBIDDEN', message: 'No permission to view audit logs' },
-          });
+          return ApiErrors.forbidden(res, 'No permission to view audit logs');
         }
 
         const { limit = 50, offset = 0, action, userId, teamId, startDate, endDate } = req.query;
@@ -873,15 +702,9 @@ export function setupSaaSApiRoutes(app: Application) {
           endDate: endDate ? new Date(endDate as string) : undefined,
         });
 
-        res.json({
-          success: true,
-          data: result,
-        });
+        return sendSuccess(res, result);
       } catch (error: unknown) {
-        res.status(500).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -909,20 +732,14 @@ export function setupSaaSApiRoutes(app: Application) {
         );
 
         if (!canManage) {
-          return res.status(403).json({
-            success: false,
-            error: { code: 'FORBIDDEN', message: 'No permission to manage billing' },
-          });
+          return ApiErrors.forbidden(res, 'No permission to manage billing');
         }
 
         const { tier, billingPeriod, successUrl, cancelUrl } = req.body;
 
         const org = await organizationService.getOrganizationById(req.params.organizationId);
         if (!org) {
-          return res.status(404).json({
-            success: false,
-            error: { code: 'NOT_FOUND', message: 'Organization not found' },
-          });
+          return ApiErrors.notFound(res, 'Organization');
         }
 
         const checkout = await billingService.createCheckoutSession({
@@ -934,15 +751,9 @@ export function setupSaaSApiRoutes(app: Application) {
           customerId: org.stripeCustomerId || undefined,
         });
 
-        res.json({
-          success: true,
-          data: checkout,
-        });
+        return sendSuccess(res, checkout);
       } catch (error: unknown) {
-        res.status(400).json({
-          success: false,
-          error: { code: 'INTERNAL_ERROR', message: getErrorMessage(error) },
-        });
+        return ApiErrors.internalError(res, extractApiErrorMessage(error));
       }
     }
   );
@@ -958,10 +769,10 @@ export function setupSaaSApiRoutes(app: Application) {
 
       await billingService.handleWebhook(payload, signature);
 
-      res.json({ received: true });
+      return sendSuccess(res, { received: true });
     } catch (error: unknown) {
       console.error('Webhook error:', error);
-      res.status(400).json({ error: getErrorMessage(error) });
+      return ApiErrors.internalError(res, extractApiErrorMessage(error));
     }
   });
 
