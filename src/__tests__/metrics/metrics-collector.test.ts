@@ -162,13 +162,15 @@ describe('MetricsCollector', () => {
     it('should create timer that records duration', async () => {
       const timer = collector.startTimer('test.timer');
 
-      // Simulate some work
+      // Simulate some work - use 50ms to avoid timing flakiness in CI
+      // setTimeout doesn't guarantee minimum time, just approximate scheduling
       await new Promise((resolve) => {
-        setTimeout(resolve, 10);
+        setTimeout(resolve, 50);
       });
 
       const duration = timer.stop();
-      expect(duration).toBeGreaterThanOrEqual(10);
+      // Use a lower bound with margin for timer precision variance
+      expect(duration).toBeGreaterThanOrEqual(40);
 
       const metrics = collector.getAllMetrics();
       const timing = metrics.find((m) => m.name === 'test.timer');
