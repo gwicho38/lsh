@@ -20,6 +20,7 @@ import { getPlatformPaths } from '../lib/platform-utils.js';
 import { ENV_VARS, DEFAULTS, ERRORS } from '../constants/index.js';
 import { OptimizedJobScheduler, SchedulerMetrics } from '../lib/optimized-job-scheduler.js';
 import { BaseJobSpec } from '../lib/base-job-manager.js';
+import { PerformanceProfiler } from '../lib/metrics/performance-profiler.js';
 
 const execAsync = promisify(exec);
 
@@ -66,6 +67,7 @@ export class LSHJobDaemon extends EventEmitter {
   private lastRunTimes = new Map<string, number>(); // Track last run time per job
   private logger = createLogger('LSHJobDaemon');
   private optimizedScheduler?: OptimizedJobScheduler; // Priority queue scheduler (Issue #108)
+  private startupProfiler?: PerformanceProfiler; // Startup performance profiler
 
   constructor(config?: Partial<DaemonConfig>) {
     super();
@@ -155,9 +157,21 @@ export class LSHJobDaemon extends EventEmitter {
       throw new Error('Daemon is already running');
     }
 
+    // Initialize startup profiler for performance monitoring
+    const enableProfiling = process.env[ENV_VARS.LSH_LOG_LEVEL] === 'debug';
+    if (enableProfiling) {
+      this.startupProfiler = new PerformanceProfiler({
+        profilingEnabled: true,
+        profilingSampleRate: 1.0,
+        maxMetricsInMemory: 100,
+      });
+      this.startupProfiler.startProfile('daemon-startup', { pid: process.pid });
+    }
+
     // Validate environment variables
     this.log('INFO', 'Validating environment configuration');
     const envValidation = validateEnvironment();
+    this.startupProfiler?.checkpoint('daemon-startup', 'env-validation');
 
     // Print validation results
     if (envValidation.errors.length > 0 || envValidation.warnings.length > 0) {
@@ -179,18 +193,34 @@ export class LSHJobDaemon extends EventEmitter {
     if (await this.isDaemonRunning()) {
       throw new Error('Another daemon instance is already running');
     }
+    this.startupProfiler?.checkpoint('daemon-startup', 'pid-check');
 
     this.log('INFO', 'Starting LSH Job Daemon');
 
     // Write PID file with secure permissions (mode 0o600 = rw-------)
     await fs.promises.writeFile(this.config.pidFile, process.pid.toString(), { mode: 0o600 });
+    this.startupProfiler?.checkpoint('daemon-startup', 'pid-file-written');
 
     this.isRunning = true;
     this.startJobScheduler();
+    this.startupProfiler?.checkpoint('daemon-startup', 'scheduler-started');
+
     this.startIPCServer();
+    this.startupProfiler?.checkpoint('daemon-startup', 'ipc-server-started');
 
     // Setup cleanup handlers
     this.setupSignalHandlers();
+    this.startupProfiler?.checkpoint('daemon-startup', 'signal-handlers');
+
+    // End startup profiling and log results
+    if (this.startupProfiler) {
+      const profile = this.startupProfiler.endProfile('daemon-startup');
+      if (profile) {
+        this.log('INFO', `Daemon startup completed in ${profile.duration.toFixed(2)}ms`);
+        this.log('DEBUG', `Startup profile checkpoints: ${JSON.stringify(profile.checkpoints.map(cp => ({ label: cp.label, time: cp.relativeTime.toFixed(2) + 'ms' })))}`);
+        this.log('DEBUG', `Memory delta: heap=${(profile.memoryDelta.heapUsed / 1024 / 1024).toFixed(2)}MB, rss=${(profile.memoryDelta.rss / 1024 / 1024).toFixed(2)}MB`);
+      }
+    }
 
     this.log('INFO', `Daemon started with PID ${process.pid}`);
     this.emit('started');
