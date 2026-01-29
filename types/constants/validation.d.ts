@@ -14,3 +14,9 @@ export interface WarningPattern {
 }
 export declare const DANGEROUS_PATTERNS: DangerousPattern[];
 export declare const WARNING_PATTERNS: WarningPattern[];
+export interface SuspiciousCheck {
+    test: (command: string) => boolean;
+    message: string;
+    level: 'medium' | 'high';
+}
+export declare const SUSPICIOUS_CHECKS: SuspiciousCheck[];

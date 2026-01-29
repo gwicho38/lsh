@@ -3,6 +3,30 @@
  *
  * All user-facing messages, prompts, and terminal output strings.
  */
+/**
+ * ANSI color codes for terminal output
+ */
+export declare const ANSI: {
+    readonly RESET: "\u001B[0m";
+    readonly BRIGHT: "\u001B[1m";
+    readonly DIM: "\u001B[2m";
+    readonly FG_BLACK: "\u001B[30m";
+    readonly FG_RED: "\u001B[31m";
+    readonly FG_GREEN: "\u001B[32m";
+    readonly FG_YELLOW: "\u001B[33m";
+    readonly FG_BLUE: "\u001B[34m";
+    readonly FG_MAGENTA: "\u001B[35m";
+    readonly FG_CYAN: "\u001B[36m";
+    readonly FG_WHITE: "\u001B[37m";
+    readonly BG_BLACK: "\u001B[40m";
+    readonly BG_RED: "\u001B[41m";
+    readonly BG_GREEN: "\u001B[42m";
+    readonly BG_YELLOW: "\u001B[43m";
+    readonly BG_BLUE: "\u001B[44m";
+    readonly BG_MAGENTA: "\u001B[45m";
+    readonly BG_CYAN: "\u001B[46m";
+    readonly BG_WHITE: "\u001B[47m";
+};
 export declare const UI_MESSAGES: {
     readonly DID_YOU_MEAN: "\nDid you mean one of these?";
     readonly RUN_HELP_MESSAGE: "\nRun 'lsh --help' to see available commands.";
