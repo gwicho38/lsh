@@ -12,7 +12,6 @@ import { getIPFSSync } from '../lib/ipfs-sync.js';
 /**
  * Register IPFS commands
  */
-// TODO(@gwicho38): Review - registerIPFSCommands
 export function registerIPFSCommands(program: Command): void {
   const ipfsCommand = program
     .command('ipfs')

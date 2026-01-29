@@ -27,9 +27,7 @@ export class DatabaseJobStorage implements JobStorage {
     this.persistence = new DatabasePersistence(userId);
   }
 
-  // TODO(@gwicho38): Review - save
 
-  // TODO(@gwicho38): Review - save
   async save(job: BaseJobSpec): Promise<void> {
     // Map BaseJobSpec to database format (ShellJob structure)
     const dbJob: ShellJobInput = {
@@ -56,9 +54,7 @@ export class DatabaseJobStorage implements JobStorage {
     return null;
   }
 
-  // TODO(@gwicho38): Review - list
 
-  // TODO(@gwicho38): Review - list
   async list(_filter?: BaseJobFilter): Promise<BaseJobSpec[]> {
     // Get active jobs from database
     const dbJobs = await this.persistence.getActiveJobs();
@@ -86,9 +82,7 @@ export class DatabaseJobStorage implements JobStorage {
     return jobs;
   }
 
-  // TODO(@gwicho38): Review - mapDbStatusToJobStatus
 
-  // TODO(@gwicho38): Review - mapDbStatusToJobStatus
   private mapDbStatusToJobStatus(dbStatus: string): BaseJobSpec['status'] {
     switch (dbStatus) {
       case 'running':
@@ -110,9 +104,7 @@ export class DatabaseJobStorage implements JobStorage {
     }
   }
 
-  // TODO(@gwicho38): Review - update
 
-  // TODO(@gwicho38): Review - update
   async update(jobId: string, updates: Partial<BaseJobSpec>): Promise<void> {
     // Update by saving again (upsert behavior)
     if (updates.command) {
@@ -134,7 +126,6 @@ export class DatabaseJobStorage implements JobStorage {
     }
   }
 
-  // TODO(@gwicho38): Review - delete
 
   async delete(jobId: string): Promise<void> {
     // DatabasePersistence doesn't have a delete method yet
@@ -142,9 +133,7 @@ export class DatabaseJobStorage implements JobStorage {
     console.warn(`Delete not implemented for job ${jobId}`);
   }
 
-  // TODO(@gwicho38): Review - saveExecution
 
-  // TODO(@gwicho38): Review - saveExecution
   async saveExecution(execution: BaseJobExecution): Promise<void> {
     // Map to database format and save as job (ShellJob structure)
     const dbJob: ShellJobInput = {
@@ -163,9 +152,7 @@ export class DatabaseJobStorage implements JobStorage {
     await this.persistence.saveJob(dbJob);
   }
 
-  // TODO(@gwicho38): Review - getExecutions
 
-  // TODO(@gwicho38): Review - getExecutions
   async getExecutions(jobId: string, limit: number = 50): Promise<BaseJobExecution[]> {
     // Get active jobs (no specific history method available yet)
     const dbJobs = await this.persistence.getActiveJobs();
@@ -189,9 +176,7 @@ export class DatabaseJobStorage implements JobStorage {
     }));
   }
 
-  // TODO(@gwicho38): Review - mapDbStatus
 
-  // TODO(@gwicho38): Review - mapDbStatus
   private mapDbStatus(dbStatus: string): BaseJobExecution['status'] {
     switch (dbStatus) {
       case 'running':
@@ -210,9 +195,7 @@ export class DatabaseJobStorage implements JobStorage {
     }
   }
 
-  // TODO(@gwicho38): Review - cleanup
 
-  // TODO(@gwicho38): Review - cleanup
   async cleanup(): Promise<void> {
     // DatabasePersistence maintains its own connections
     // No cleanup needed here

@@ -114,7 +114,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Connect to the daemon
    */
-  // TODO(@gwicho38): Review - connect
   public async connect(): Promise<boolean> {
     return new Promise((resolve, reject) => {
       if (this.connected) {
@@ -264,7 +263,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Disconnect from the daemon
    */
-  // TODO(@gwicho38): Review - disconnect
   public disconnect(): void {
     if (this.socket) {
       this.socket.destroy();
@@ -276,7 +274,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Send a message to the daemon
    */
-  // TODO(@gwicho38): Review - sendMessage
   private async sendMessage(message: DaemonMessage): Promise<unknown> {
     if (!this.connected || !this.socket) {
       throw new Error('Not connected to daemon');
@@ -313,7 +310,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Handle response from daemon
    */
-  // TODO(@gwicho38): Review - handleResponse
   private handleResponse(response: DaemonResponse): void {
     if (response.id && this.pendingMessages.has(response.id)) {
       const { resolve, reject } = this.pendingMessages.get(response.id)!;
@@ -330,7 +326,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get daemon status
    */
-  // TODO(@gwicho38): Review - getStatus
   public async getStatus(): Promise<DaemonStatus> {
     return await this.sendMessage({ command: 'status' }) as Promise<DaemonStatus>;
   }
@@ -338,7 +333,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Add a simple job to the daemon
    */
-  // TODO(@gwicho38): Review - addJob
   public async addJob(jobSpec: Partial<JobSpec>): Promise<JobSpec> {
     return await this.sendMessage({
       command: 'addJob',
@@ -349,7 +343,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Create a cron job
    */
-  // TODO(@gwicho38): Review - createCronJob
   public async createCronJob(jobSpec: CronJobSpec): Promise<JobSpec> {
     const daemonJobSpec = {
       id: jobSpec.id,
@@ -383,7 +376,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Start a job
    */
-  // TODO(@gwicho38): Review - startJob
   public async startJob(jobId: string): Promise<JobSpec> {
     const result = await this.sendMessage({
       command: 'startJob',
@@ -401,7 +393,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Trigger a job to run immediately (bypass schedule)
    */
-  // TODO(@gwicho38): Review - triggerJob
   public async triggerJob(jobId: string): Promise<{ success: boolean; output?: string; error?: string }> {
     const result = await this.sendMessage({
       command: 'triggerJob',
@@ -438,7 +429,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Stop a job
    */
-  // TODO(@gwicho38): Review - stopJob
   public async stopJob(jobId: string, signal: string = 'SIGTERM'): Promise<JobSpec> {
     const result = await this.sendMessage({
       command: 'stopJob',
@@ -456,7 +446,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * List all jobs
    */
-  // TODO(@gwicho38): Review - listJobs
   public async listJobs(filter?: JobFilter): Promise<JobSpec[]> {
     try {
       const result = await this.sendMessage({
@@ -486,7 +475,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get job details
    */
-  // TODO(@gwicho38): Review - getJob
   public async getJob(jobId: string): Promise<JobSpec> {
     return await this.sendMessage({
       command: 'getJob',
@@ -497,7 +485,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Remove a job
    */
-  // TODO(@gwicho38): Review - removeJob
   public async removeJob(jobId: string, force: boolean = false): Promise<boolean> {
     const result = await this.sendMessage({
       command: 'removeJob',
@@ -516,7 +503,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Restart the daemon
    */
-  // TODO(@gwicho38): Review - restartDaemon
   public async restartDaemon(): Promise<void> {
     await this.sendMessage({ command: 'restart' });
   }
@@ -524,7 +510,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Stop the daemon
    */
-  // TODO(@gwicho38): Review - stopDaemon
   public async stopDaemon(): Promise<void> {
     await this.sendMessage({ command: 'stop' });
   }
@@ -532,7 +517,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Sync job status to Supabase database
    */
-  // TODO(@gwicho38): Review - syncJobToDatabase
   public async syncJobToDatabase(jobSpec: CronJobSpec, status: string): Promise<void> {
     if (!this.databasePersistence) return;
 
@@ -553,7 +537,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Create a database-backed cron job
    */
-  // TODO(@gwicho38): Review - createDatabaseCronJob
   public async createDatabaseCronJob(jobSpec: CronJobSpec): Promise<JobSpec> {
     // Create job in daemon
     const daemonResult = await this.createCronJob({
@@ -579,7 +562,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get job execution history from database
    */
-  // TODO(@gwicho38): Review - getJobHistory
   public async getJobHistory(jobId?: string, limit: number = 100): Promise<ShellJob[]> {
     if (!this.databasePersistence) {
       throw new Error('Database persistence not configured');
@@ -597,7 +579,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get job statistics from database
    */
-  // TODO(@gwicho38): Review - getJobStatistics
   public async getJobStatistics(jobId?: string): Promise<JobStatistics> {
     if (!this.databasePersistence) {
       throw new Error('Database persistence not configured');
@@ -616,7 +597,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Calculate job statistics
    */
-  // TODO(@gwicho38): Review - calculateJobStatistics
   private calculateJobStatistics(jobs: ShellJob[]): JobStatistics {
     const total = jobs.length;
     const byStatus = jobs.reduce((acc, job) => {
@@ -639,7 +619,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Check if daemon is running
    */
-  // TODO(@gwicho38): Review - isDaemonRunning
   public isDaemonRunning(): boolean {
     if (!fs.existsSync(this.socketPath)) {
       return false;
@@ -657,7 +636,6 @@ export class DaemonClient extends EventEmitter {
   /**
    * Get connection status
    */
-  // TODO(@gwicho38): Review - isConnected
   public isConnected(): boolean {
     return this.connected;
   }

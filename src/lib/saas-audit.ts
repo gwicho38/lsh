@@ -17,7 +17,6 @@ export class AuditLogger {
   /**
    * Log an audit event
    */
-  // TODO(@gwicho38): Review - log
   async log(input: CreateAuditLogInput): Promise<void> {
     try {
       const { error } = await this.supabase.from('audit_logs').insert({
@@ -49,7 +48,6 @@ export class AuditLogger {
   /**
    * Get audit logs for organization
    */
-  // TODO(@gwicho38): Review - getOrganizationLogs
   async getOrganizationLogs(
     organizationId: string,
     options: {
@@ -112,7 +110,6 @@ export class AuditLogger {
   /**
    * Get audit logs for a specific resource
    */
-  // TODO(@gwicho38): Review - getResourceLogs
   async getResourceLogs(
     organizationId: string,
     resourceType: ResourceType,
@@ -138,7 +135,6 @@ export class AuditLogger {
   /**
    * Get audit logs for a team
    */
-  // TODO(@gwicho38): Review - getTeamLogs
   async getTeamLogs(
     teamId: string,
     options: {
@@ -186,7 +182,6 @@ export class AuditLogger {
   /**
    * Get audit logs for a user
    */
-  // TODO(@gwicho38): Review - getUserLogs
   async getUserLogs(
     userId: string,
     options: {
@@ -234,7 +229,6 @@ export class AuditLogger {
   /**
    * Delete old audit logs (for retention policy)
    */
-  // TODO(@gwicho38): Review - deleteOldLogs
   async deleteOldLogs(organizationId: string, retentionDays: number): Promise<number> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
@@ -255,7 +249,6 @@ export class AuditLogger {
   /**
    * Map database log to AuditLog type
    */
-  // TODO(@gwicho38): Review - mapDbLogToLog
   private mapDbLogToLog(dbLog: DbAuditLogRecord): AuditLog {
     return {
       id: dbLog.id,
@@ -284,7 +277,6 @@ export const auditLogger = new AuditLogger();
 /**
  * Helper function to extract IP from request
  */
-// TODO(@gwicho38): Review - getIpFromRequest
 export function getIpFromRequest(req: Request): string | undefined {
   const forwarded = req.headers['x-forwarded-for'];
   const forwardedIp = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : undefined;
@@ -299,7 +291,6 @@ export function getIpFromRequest(req: Request): string | undefined {
 /**
  * Helper function to extract user agent from request
  */
-// TODO(@gwicho38): Review - getUserAgentFromRequest
 export function getUserAgentFromRequest(req: Request): string | undefined {
   return req.headers['user-agent'];
 }

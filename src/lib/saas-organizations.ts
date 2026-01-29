@@ -30,7 +30,6 @@ import { TABLES } from '../constants/index.js';
 /**
  * Generate URL-friendly slug from name
  */
-// TODO(@gwicho38): Review - slugify
 function slugify(name: string): string {
   let result = name
     .toLowerCase()
@@ -58,7 +57,6 @@ export class OrganizationService {
   /**
    * Create a new organization
    */
-  // TODO(@gwicho38): Review - createOrganization
   async createOrganization(input: CreateOrganizationInput): Promise<Organization> {
     const slug = input.slug || slugify(input.name);
 
@@ -112,7 +110,6 @@ export class OrganizationService {
   /**
    * Get organization by ID
    */
-  // TODO(@gwicho38): Review - getOrganizationById
   async getOrganizationById(id: string): Promise<Organization | null> {
     const { data: org, error } = await this.supabase
       .from('organizations')
@@ -131,7 +128,6 @@ export class OrganizationService {
   /**
    * Get organization by slug
    */
-  // TODO(@gwicho38): Review - getOrganizationBySlug
   async getOrganizationBySlug(slug: string): Promise<Organization | null> {
     const { data: org, error } = await this.supabase
       .from('organizations')
@@ -150,7 +146,6 @@ export class OrganizationService {
   /**
    * Update organization
    */
-  // TODO(@gwicho38): Review - updateOrganization
   async updateOrganization(
     id: string,
     updates: { name?: string; settings?: Record<string, unknown> }
@@ -181,7 +176,6 @@ export class OrganizationService {
   /**
    * Delete organization (soft delete)
    */
-  // TODO(@gwicho38): Review - deleteOrganization
   async deleteOrganization(id: string, deletedBy: string): Promise<void> {
     const { error } = await this.supabase
       .from('organizations')
@@ -204,7 +198,6 @@ export class OrganizationService {
   /**
    * Add member to organization
    */
-  // TODO(@gwicho38): Review - addMember
   async addMember(params: {
     organizationId: string;
     userId: string;
@@ -257,7 +250,6 @@ export class OrganizationService {
   /**
    * Update member role
    */
-  // TODO(@gwicho38): Review - updateMemberRole
   async updateMemberRole(
     organizationId: string,
     userId: string,
@@ -291,7 +283,6 @@ export class OrganizationService {
   /**
    * Remove member from organization
    */
-  // TODO(@gwicho38): Review - removeMember
   async removeMember(organizationId: string, userId: string, removedBy: string): Promise<void> {
     const { error } = await this.supabase
       .from('organization_members')
@@ -315,7 +306,6 @@ export class OrganizationService {
   /**
    * Get organization members
    */
-  // TODO(@gwicho38): Review - getOrganizationMembers
   async getOrganizationMembers(organizationId: string): Promise<OrganizationMemberDetailed[]> {
     const { data, error } = await this.supabase
       .from(TABLES.ORGANIZATION_MEMBERS_DETAILED)
@@ -332,7 +322,6 @@ export class OrganizationService {
   /**
    * Get user's role in organization
    */
-  // TODO(@gwicho38): Review - getUserRole
   async getUserRole(organizationId: string, userId: string): Promise<OrganizationRole | null> {
     const { data, error } = await this.supabase
       .from('organization_members')
@@ -366,7 +355,6 @@ export class OrganizationService {
   /**
    * Get organization usage summary
    */
-  // TODO(@gwicho38): Review - getUsageSummary
   async getUsageSummary(organizationId: string): Promise<OrganizationUsageSummary> {
     const { data, error } = await this.supabase
       .from(TABLES.ORGANIZATION_USAGE_SUMMARY)
@@ -393,7 +381,6 @@ export class OrganizationService {
   /**
    * Check if organization is within tier limits
    */
-  // TODO(@gwicho38): Review - checkTierLimits
   async checkTierLimits(organizationId: string): Promise<{
     withinLimits: boolean;
     violations: string[];
@@ -432,7 +419,6 @@ export class OrganizationService {
   /**
    * Check member limit before adding
    */
-  // TODO(@gwicho38): Review - checkMemberLimit
   private async checkMemberLimit(organizationId: string): Promise<void> {
     const usage = await this.getUsageSummary(organizationId);
     const org = await this.getOrganizationById(organizationId);
@@ -469,7 +455,6 @@ export class OrganizationService {
    * @see DbOrganizationRecord in database-types.ts for input shape
    * @see Organization in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbOrgToOrg
   private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
     return {
       id: dbOrg.id,
@@ -504,7 +489,6 @@ export class OrganizationService {
    * @see DbOrganizationMemberRecord in database-types.ts for input shape
    * @see OrganizationMember in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbMemberToMember
   private mapDbMemberToMember(dbMember: DbOrganizationMemberRecord): OrganizationMember {
     return {
       id: dbMember.id,
@@ -539,7 +523,6 @@ export class OrganizationService {
    * @see DbOrganizationMemberDetailedRecord in database-types.ts for input shape
    * @see OrganizationMemberDetailed in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbMemberDetailedToMemberDetailed
   private mapDbMemberDetailedToMemberDetailed(dbMember: DbOrganizationMemberDetailedRecord): OrganizationMemberDetailed {
     return {
       id: dbMember.id,
@@ -571,7 +554,6 @@ export class TeamService {
   /**
    * Create a new team
    */
-  // TODO(@gwicho38): Review - createTeam
   async createTeam(input: CreateTeamInput, createdBy: string): Promise<Team> {
     const slug = input.slug || slugify(input.name);
 
@@ -618,7 +600,6 @@ export class TeamService {
   /**
    * Get team by ID
    */
-  // TODO(@gwicho38): Review - getTeamById
   async getTeamById(id: string): Promise<Team | null> {
     const { data: team, error } = await this.supabase
       .from('teams')
@@ -637,7 +618,6 @@ export class TeamService {
   /**
    * Get teams for organization
    */
-  // TODO(@gwicho38): Review - getOrganizationTeams
   async getOrganizationTeams(organizationId: string): Promise<Team[]> {
     const { data: teams, error } = await this.supabase
       .from('teams')
@@ -656,7 +636,6 @@ export class TeamService {
   /**
    * Update team
    */
-  // TODO(@gwicho38): Review - updateTeam
   async updateTeam(
     id: string,
     updates: { name?: string; description?: string },
@@ -689,7 +668,6 @@ export class TeamService {
   /**
    * Delete team (soft delete)
    */
-  // TODO(@gwicho38): Review - deleteTeam
   async deleteTeam(id: string, deletedBy: string): Promise<void> {
     const team = await this.getTeamById(id);
     if (!team) {
@@ -718,7 +696,6 @@ export class TeamService {
   /**
    * Add member to team
    */
-  // TODO(@gwicho38): Review - addTeamMember
   async addTeamMember(
     teamId: string,
     userId: string,
@@ -744,7 +721,6 @@ export class TeamService {
   /**
    * Remove member from team
    */
-  // TODO(@gwicho38): Review - removeTeamMember
   async removeTeamMember(teamId: string, userId: string): Promise<void> {
     const { error } = await this.supabase
       .from('team_members')
@@ -760,7 +736,6 @@ export class TeamService {
   /**
    * Get team members
    */
-  // TODO(@gwicho38): Review - getTeamMembers
   async getTeamMembers(teamId: string): Promise<DbTeamMemberDetailedRecord[]> {
     const { data, error } = await this.supabase
       .from(TABLES.TEAM_MEMBERS_DETAILED)
@@ -789,7 +764,6 @@ export class TeamService {
    * @see DbTeamRecord in database-types.ts for input shape
    * @see Team in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbTeamToTeam
   private mapDbTeamToTeam(dbTeam: DbTeamRecord): Team {
     return {
       id: dbTeam.id,
@@ -819,7 +793,6 @@ export class TeamService {
    * @see DbTeamMemberRecord in database-types.ts for input shape
    * @see TeamMember in saas-types.ts for output shape
    */
-  // TODO(@gwicho38): Review - mapDbTeamMemberToTeamMember
   private mapDbTeamMemberToTeamMember(dbMember: DbTeamMemberRecord): TeamMember {
     return {
       id: dbMember.id,

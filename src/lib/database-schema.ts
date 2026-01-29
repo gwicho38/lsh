@@ -255,7 +255,6 @@ CREATE TABLE IF NOT EXISTS shell_configuration (
   is_default BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  // TODO(@gwicho38): Review - UNIQUE
   UNIQUE(user_id, config_key)
 );
 
@@ -284,7 +283,6 @@ CREATE TABLE IF NOT EXISTS shell_aliases (
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  // TODO(@gwicho38): Review - UNIQUE
   UNIQUE(user_id, alias_name)
 );
 
@@ -298,7 +296,6 @@ CREATE TABLE IF NOT EXISTS shell_functions (
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  // TODO(@gwicho38): Review - UNIQUE
   UNIQUE(user_id, function_name)
 );
 
@@ -313,7 +310,6 @@ CREATE TABLE IF NOT EXISTS shell_completions (
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  // TODO(@gwicho38): Review - UNIQUE
   UNIQUE(user_id, command, completion_pattern)
 );
 
@@ -396,7 +392,6 @@ CREATE TABLE IF NOT EXISTS ml_model_versions (
   residuals_file TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  // TODO(@gwicho38): Review - UNIQUE
   UNIQUE(model_name, version)
 );
 
@@ -413,7 +408,6 @@ CREATE TABLE IF NOT EXISTS ml_feature_sets (
   description TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
-  // TODO(@gwicho38): Review - UNIQUE
   UNIQUE(feature_set_name, version)
 );
 

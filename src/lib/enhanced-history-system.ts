@@ -47,7 +47,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Initialize cloud synchronization
    */
-  // TODO(@gwicho38): Review - initializeCloudSync
   private async initializeCloudSync(): Promise<void> {
     try {
       const isConnected = await this.databasePersistence.testConnection();
@@ -66,7 +65,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Load history from cloud database
    */
-  // TODO(@gwicho38): Review - loadCloudHistory
   private async loadCloudHistory(): Promise<void> {
     try {
       const cloudEntries = await this.databasePersistence.getHistoryEntries(1000);
@@ -89,7 +87,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Merge cloud history entries with local history
    */
-  // TODO(@gwicho38): Review - mergeHistoryEntries
   private mergeHistoryEntries(cloudEntries: HistoryEntry[]): void {
     const localEntries = this.getAllEntries();
     const mergedEntries: HistoryEntry[] = [];
@@ -125,7 +122,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Start periodic synchronization timer
    */
-  // TODO(@gwicho38): Review - startSyncTimer
   private startSyncTimer(): void {
     this.syncTimer = setInterval(() => {
       this.syncToCloud();
@@ -135,7 +131,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Stop synchronization timer
    */
-  // TODO(@gwicho38): Review - stopSyncTimer
   private stopSyncTimer(): void {
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
@@ -146,7 +141,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Synchronize local history to cloud
    */
-  // TODO(@gwicho38): Review - syncToCloud
   private async syncToCloud(): Promise<void> {
     if (this.pendingSync || !this.enhancedConfig.enableCloudSync) {
       return;
@@ -177,7 +171,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Override addCommand to include cloud sync
    */
-  // TODO(@gwicho38): Review - addCommand
   public addCommand(command: string, exitCode?: number): void {
     super.addCommand(command, exitCode);
 
@@ -192,7 +185,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Search history across local and cloud data
    */
-  // TODO(@gwicho38): Review - searchHistoryCloud
   public async searchHistoryCloud(query: string, limit: number = 20): Promise<HistoryEntry[]> {
     const localResults = this.searchHistory(query).slice(0, limit);
     
@@ -229,7 +221,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Get history statistics
    */
-  // TODO(@gwicho38): Review - getHistoryStats
   public async getHistoryStats(): Promise<{
     localEntries: number;
     cloudEntries: number;
@@ -273,7 +264,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Enable or disable cloud sync
    */
-  // TODO(@gwicho38): Review - setCloudSyncEnabled
   public setCloudSyncEnabled(enabled: boolean): void {
     this.enhancedConfig.enableCloudSync = enabled;
     
@@ -287,7 +277,6 @@ export class EnhancedHistorySystem extends HistorySystem {
   /**
    * Cleanup resources
    */
-  // TODO(@gwicho38): Review - destroy
   public destroy(): void {
     this.stopSyncTimer();
     if (this.enhancedConfig.enableCloudSync) {
