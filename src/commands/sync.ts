@@ -27,6 +27,9 @@ export function registerSyncCommands(program: Command): void {
       // Show help when running `lsh sync` without subcommand
       console.log(chalk.bold.cyan('\n🔄 LSH Sync - IPFS Secrets Sync\n'));
       console.log(chalk.gray('Sync encrypted secrets via native IPFS (no auth required)\n'));
+      console.log(chalk.bold('Quick:'));
+      console.log(`  ${chalk.cyan('now')}       ⚡ Auto-setup and push secrets in one command`);
+      console.log('');
       console.log(chalk.bold('Setup:'));
       console.log(`  ${chalk.cyan('init')}      🚀 Full setup: install IPFS, initialize, and start daemon`);
       console.log(`  ${chalk.cyan('status')}    📊 Show IPFS client, daemon, and sync status`);
@@ -41,8 +44,8 @@ export function registerSyncCommands(program: Command): void {
       console.log(`  ${chalk.cyan('clear')}     🗑️  Clear sync history`);
       console.log('');
       console.log(chalk.bold('Examples:'));
-      console.log(chalk.gray('  lsh sync init          # One-time setup'));
-      console.log(chalk.gray('  lsh sync push          # Push secrets, get CID'));
+      console.log(chalk.gray('  lsh sync now           # Auto-setup + push (recommended)'));
+      console.log(chalk.gray('  lsh sync now -d "v1.0" # Push with description'));
       console.log(chalk.gray('  lsh sync pull <cid>    # Pull secrets by CID'));
       console.log('');
       console.log(chalk.gray('Run "lsh sync <command> --help" for more info.'));
@@ -131,6 +134,148 @@ export function registerSyncCommands(program: Command): void {
       console.log(chalk.cyan('  lsh sync push          # Push secrets → get CID'));
       console.log(chalk.cyan('  lsh sync pull <cid>    # Pull secrets by CID'));
       console.log('');
+    });
+
+  // lsh sync now - convenience command that does everything
+  syncCommand
+    .command('now')
+    .description('⚡ Auto-setup and push secrets in one command')
+    .option('-f, --file <path>', 'Path to .env file', '.env')
+    .option('-e, --env <name>', 'Environment name', '')
+    .option('-d, --description <text>', 'Description for this sync')
+    .action(async (options) => {
+      console.log(chalk.bold.cyan('\n⚡ LSH Sync Now\n'));
+
+      const manager = new IPFSClientManager();
+      const ipfsSync = getIPFSSync();
+      const gitInfo = getGitRepoInfo();
+
+      // Step 1: Ensure IPFS is set up and daemon is running
+      let daemonReady = await ipfsSync.checkDaemon();
+
+      if (!daemonReady) {
+        // Check if IPFS is installed
+        const clientInfo = await manager.detect();
+
+        if (!clientInfo.installed) {
+          const installSpinner = ora('Installing IPFS client...').start();
+          try {
+            await manager.install();
+            installSpinner.succeed(chalk.green('IPFS client installed'));
+          } catch (error) {
+            const err = error as Error;
+            installSpinner.fail(chalk.red('Failed to install IPFS'));
+            console.error(chalk.red(err.message));
+            process.exit(1);
+          }
+        }
+
+        // Initialize repo if needed
+        const initSpinner = ora('Initializing IPFS...').start();
+        try {
+          await manager.init();
+          initSpinner.succeed(chalk.green('IPFS initialized'));
+        } catch (error) {
+          const err = error as Error;
+          if (!err.message.includes('already') && !err.message.includes('exists')) {
+            initSpinner.fail(chalk.red('Failed to initialize IPFS'));
+            console.error(chalk.red(err.message));
+            process.exit(1);
+          }
+          initSpinner.succeed(chalk.green('IPFS already initialized'));
+        }
+
+        // Start daemon
+        const startSpinner = ora('Starting IPFS daemon...').start();
+        try {
+          await manager.start();
+          // Give daemon a moment to start accepting connections
+          await new Promise(resolve => { setTimeout(resolve, 2000); });
+          startSpinner.succeed(chalk.green('IPFS daemon started'));
+          daemonReady = true;
+        } catch (error) {
+          const err = error as Error;
+          startSpinner.fail(chalk.red('Failed to start daemon'));
+          console.error(chalk.red(err.message));
+          process.exit(1);
+        }
+      } else {
+        console.log(chalk.green('✓ IPFS daemon running'));
+      }
+
+      // Step 2: Read and validate .env file
+      const envPath = path.resolve(options.file);
+      if (!fs.existsSync(envPath)) {
+        console.error(chalk.red(`\n✖ File not found: ${envPath}`));
+        process.exit(1);
+      }
+
+      const content = fs.readFileSync(envPath, 'utf-8');
+
+      // Step 3: Get encryption key
+      let encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+
+      if (!encryptionKey) {
+        const keyMatch = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
+        if (keyMatch) {
+          encryptionKey = keyMatch[1].trim();
+          if ((encryptionKey.startsWith('"') && encryptionKey.endsWith('"')) ||
+              (encryptionKey.startsWith("'") && encryptionKey.endsWith("'"))) {
+            encryptionKey = encryptionKey.slice(1, -1);
+          }
+        }
+      }
+
+      if (!encryptionKey) {
+        console.error(chalk.red('\n✖ LSH_SECRETS_KEY not set'));
+        console.log('');
+        console.log(chalk.gray('Generate a key with:'));
+        console.log(chalk.cyan('  lsh key'));
+        process.exit(1);
+      }
+
+      // Step 4: Encrypt and upload
+      const uploadSpinner = ora('Encrypting and uploading...').start();
+
+      try {
+        const key = crypto.createHash('sha256').update(encryptionKey).digest();
+        const iv = crypto.randomBytes(16);
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        let encrypted = cipher.update(content, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+        const encryptedData = iv.toString('hex') + ':' + encrypted;
+
+        const filename = `lsh-secrets-${options.env || 'default'}.encrypted`;
+        const cid = await ipfsSync.upload(
+          Buffer.from(encryptedData, 'utf-8'),
+          filename,
+          {
+            environment: options.env || undefined,
+            gitRepo: gitInfo?.repoName || undefined,
+          }
+        );
+
+        if (!cid) {
+          uploadSpinner.fail(chalk.red('Upload failed'));
+          process.exit(1);
+        }
+
+        uploadSpinner.succeed(chalk.green('Synced to IPFS!'));
+        console.log('');
+        console.log(chalk.bold('CID:'), chalk.cyan(cid));
+        if (options.description) {
+          console.log(chalk.bold('Description:'), chalk.gray(options.description));
+        }
+        console.log('');
+        console.log(chalk.gray('Pull on another machine:'));
+        console.log(chalk.cyan(`  lsh sync pull ${cid}`));
+        console.log('');
+      } catch (error) {
+        const err = error as Error;
+        uploadSpinner.fail(chalk.red('Sync failed'));
+        console.error(chalk.red(err.message));
+        process.exit(1);
+      }
     });
 
   // lsh sync push
