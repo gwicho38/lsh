@@ -312,8 +312,9 @@ export class OptimizedJobScheduler extends EventEmitter {
       const [minute, hour, day, month, weekday] = cronExpr.split(' ');
       const now = new Date(from);
 
-      // Try to find next matching time within the next 7 days
-      for (let i = 0; i < 7 * 24 * 60; i++) {
+      // Try to find next matching time within the next 32 days
+      // (covers monthly cron expressions like "0 0 1 * *")
+      for (let i = 0; i < 32 * 24 * 60; i++) {
         const checkTime = new Date(now.getTime() + i * 60000);
 
         if (

@@ -47,6 +47,7 @@ export declare class LSHJobDaemon extends EventEmitter {
     private lastRunTimes;
     private logger;
     private optimizedScheduler?;
+    private startupProfiler?;
     constructor(config?: Partial<DaemonConfig>);
     /**
      * Initialize the optimized job scheduler (Issue #108)
