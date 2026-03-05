@@ -68,6 +68,7 @@ program
     console.log(CLI_HELP.CMD_GET);
     console.log(CLI_HELP.CMD_SET);
     console.log(CLI_HELP.CMD_DELETE);
+    console.log(CLI_HELP.CMD_CP);
     console.log(CLI_HELP.CMD_STATUS);
     console.log('');
     console.log(CLI_HELP.SECTION_IPFS);
