@@ -207,6 +207,7 @@ export declare const CLI_HELP: {
     readonly CMD_GET: "  get <key>               Get a specific secret value (--all for all)";
     readonly CMD_SET: "  set <key> <value>       Set a specific secret value";
     readonly CMD_DELETE: "  delete                  Delete .env file";
+    readonly CMD_CP: "  cp <from> <to>          Copy env variables between files (--name to copy one variable)";
     readonly CMD_STATUS: "  status                  Get detailed secrets status";
     readonly CMD_SYNC_INIT: "  sync init               Full IPFS setup (install, init, start)";
     readonly CMD_SYNC_PUSH: "  sync push               Push secrets to IPFS → get CID";

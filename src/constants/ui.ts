@@ -264,6 +264,7 @@ export const CLI_HELP = {
   CMD_GET: '  get <key>               Get a specific secret value (--all for all)',
   CMD_SET: '  set <key> <value>       Set a specific secret value',
   CMD_DELETE: '  delete                  Delete .env file',
+  CMD_CP: '  cp <from> <to>          Copy env variables between files (--name to copy one variable)',
   CMD_STATUS: '  status                  Get detailed secrets status',
 
   // IPFS commands

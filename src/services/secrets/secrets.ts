@@ -1208,6 +1208,137 @@ API_KEY=
         process.exit(1);
       }
     });
+
+  // Copy env variables from one file to another
+  program
+    .command('cp <from> <to>')
+    .description('Copy env variables from <from> to <to> (like cp, but for .env files)')
+    .option('--merge', 'Merge into destination instead of overwriting; source takes precedence on conflicts')
+    .option('--no-overwrite', 'With --merge, skip keys that already exist in destination')
+    .option('-n, --name <key>', 'Copy only the specified variable (implies --merge into destination)')
+    .action(async (from: string, to: string, options) => {
+      try {
+        const fromPath = path.resolve(from);
+        const toPath = path.resolve(to);
+
+        if (!fs.existsSync(fromPath)) {
+          console.error(`❌ Source file not found: ${fromPath}`);
+          process.exit(1);
+        }
+
+        // Parse source file
+        const srcContent = fs.readFileSync(fromPath, 'utf8');
+        const srcLines = srcContent.split('\n');
+        const srcVars = new Map<string, string>();
+
+        for (const line of srcLines) {
+          if (line.trim().startsWith('#') || !line.trim()) continue;
+          const match = line.match(/^(?:export\s+)?([^=]+)=(.*)$/);
+          if (match) {
+            const key = match[1].trim();
+            let value = match[2].trim();
+            if ((value.startsWith('"') && value.endsWith('"')) ||
+                (value.startsWith("'") && value.endsWith("'"))) {
+              value = value.slice(1, -1);
+            }
+            srcVars.set(key, value);
+          }
+        }
+
+        if (srcVars.size === 0) {
+          console.error(`❌ No env variables found in: ${fromPath}`);
+          process.exit(1);
+        }
+
+        // --name: copy only a single named variable (always merges into destination)
+        if (options.name) {
+          const targetKey = options.name as string;
+          if (!srcVars.has(targetKey)) {
+            console.error(`❌ Variable '${targetKey}' not found in ${from}`);
+            process.exit(1);
+          }
+          const targetValue = srcVars.get(targetKey)!;
+          await setSingleSecret(toPath, targetKey, targetValue);
+          console.log(`✅ Copied ${targetKey} from ${from} to ${to}`);
+          return;
+        }
+
+        if (!options.merge) {
+          // Default: overwrite destination entirely (like regular cp)
+          const newLines: string[] = [];
+          for (const [key, value] of srcVars.entries()) {
+            newLines.push(formatEnvLine(key, value, toPath));
+          }
+          fs.writeFileSync(toPath, newLines.join('\n') + '\n', 'utf8');
+          console.log(`✅ Copied ${srcVars.size} variable(s) from ${from} to ${to}`);
+          return;
+        }
+
+        // Merge mode: apply source vars into destination
+        const noOverwrite = options.overwrite === false;
+        const destLines: string[] = [];
+
+        if (fs.existsSync(toPath)) {
+          const destContent = fs.readFileSync(toPath, 'utf8');
+          for (const line of destContent.split('\n')) {
+            destLines.push(line);
+          }
+        }
+
+        // Build merged content: walk destination lines, update/keep keys
+        const processedKeys = new Set<string>();
+        const mergedLines: string[] = [];
+
+        for (const line of destLines) {
+          if (line.trim().startsWith('#') || !line.trim()) {
+            mergedLines.push(line);
+            continue;
+          }
+          const match = line.match(/^(?:export\s+)?([^=]+)=(.*)$/);
+          if (match) {
+            const key = match[1].trim();
+            if (srcVars.has(key)) {
+              if (noOverwrite) {
+                mergedLines.push(line);
+              } else {
+                mergedLines.push(formatEnvLine(key, srcVars.get(key)!, toPath));
+              }
+              processedKeys.add(key);
+            } else {
+              mergedLines.push(line);
+            }
+          } else {
+            mergedLines.push(line);
+          }
+        }
+
+        // Append new keys from source not in destination
+        let added = 0;
+        for (const [key, value] of srcVars.entries()) {
+          if (!processedKeys.has(key)) {
+            mergedLines.push(formatEnvLine(key, value, toPath));
+            added++;
+          }
+        }
+
+        let finalContent = mergedLines.join('\n');
+        if (!finalContent.endsWith('\n')) finalContent += '\n';
+        fs.writeFileSync(toPath, finalContent, 'utf8');
+
+        const updated = srcVars.size - added;
+        const skipped = noOverwrite ? updated : 0;
+        const overwritten = noOverwrite ? 0 : updated;
+
+        console.log(`✅ Merged ${from} into ${to}:`);
+        if (added > 0) console.log(`   Added:      ${added} new variable(s)`);
+        if (overwritten > 0) console.log(`   Overwritten: ${overwritten} existing variable(s)`);
+        if (skipped > 0) console.log(`   Skipped:    ${skipped} existing variable(s) (--no-overwrite)`);
+      } catch (error) {
+        const err = error as Error;
+        console.error('❌ Failed to copy env file:', err.message);
+        process.exit(1);
+      }
+    });
 }
 
 export default init_secrets;
