@@ -180,3 +180,13 @@ BetterTouchTool.app
 
 # ML Model files
 lightweight_models/
+
+# Keep example env files tracked
+!.env.example
+!.env.*.example
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Environment backups
+.env.backup.*
