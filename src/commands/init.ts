@@ -101,6 +101,7 @@ async function runSetupWizard(options: {
   // Check if secrets already exist locally
   const cloudCheck = await checkCloudSecretsExist();
   let encryptionKey: string;
+  let importedKey = false;
 
   if (cloudCheck.exists && cloudCheck.repoName) {
     // Secrets found! This is an existing project
@@ -134,38 +135,70 @@ async function runSetupWizard(options: {
         },
       ]);
       encryptionKey = existingKey.trim();
+      importedKey = true;
     } else {
       // Generate new key (will overwrite existing)
       console.log(chalk.yellow('\n⚠️  Generating new key will overwrite existing secrets!'));
       encryptionKey = generateEncryptionKey();
     }
   } else {
-    // No existing secrets - generate new key
-    encryptionKey = generateEncryptionKey();
+    // No existing secrets found locally — ask if joining an existing project
+    const { keyChoice } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'keyChoice',
+        message: 'How would you like to set up this project?',
+        choices: [
+          { name: '🔑 Generate a new encryption key (new project)', value: 'generate' },
+          { name: '🤝 Import an existing key from a teammate', value: 'import' },
+        ],
+      },
+    ]);
+
+    if (keyChoice === 'import') {
+      const { existingKey } = await inquirer.prompt([
+        {
+          type: 'password',
+          name: 'existingKey',
+          message: 'Enter the LSH_SECRETS_KEY from your teammate:',
+          mask: '*',
+          validate: (input: string) => {
+            if (!input.trim()) return 'Encryption key is required';
+            if (input.length < 16) return 'Key is too short (minimum 16 characters)';
+            return true;
+          },
+        },
+      ]);
+      encryptionKey = existingKey.trim();
+      importedKey = true;
+    } else {
+      encryptionKey = generateEncryptionKey();
+    }
   }
 
   const config: InitConfig = {
     encryptionKey,
   };
 
-  // If using existing key and secrets exist, offer to pull them now
-  if (cloudCheck.exists && config.encryptionKey && cloudCheck.repoName) {
+  // Save configuration first so LSH_SECRETS_KEY is available for pull
+  await saveConfiguration(config, baseDir, globalMode);
+
+  // If user imported a key, offer to pull secrets via IPNS
+  if (importedKey && daemonRunning) {
     const { pullNow } = await inquirer.prompt([
       {
         type: 'confirm',
         name: 'pullNow',
-        message: 'Pull secrets now?',
+        message: 'Pull secrets now via IPNS?',
         default: true,
       },
     ]);
 
     if (pullNow) {
-      await pullSecretsAfterInit(config.encryptionKey, cloudCheck.repoName);
+      const gitInfo = getGitRepoInfo();
+      await pullSecretsAfterInit(config.encryptionKey, cloudCheck.repoName || gitInfo?.repoName || '');
     }
   }
-
-  // Save configuration
-  await saveConfiguration(config, baseDir, globalMode);
 
   // Show success message
   showSuccessMessage(config);
@@ -373,18 +406,12 @@ function showSuccessMessage(config: InitConfig): void {
   console.log(chalk.gray('   1. (Optional) Start IPFS daemon for network sync:'));
   console.log(chalk.cyan('      lsh ipfs install && lsh ipfs init && lsh ipfs start'));
   console.log('');
-  console.log(chalk.gray('   2. Push your secrets to IPFS:'));
-  console.log(chalk.cyan('      lsh sync push'));
-  console.log(chalk.gray('      (Returns a CID - share this with teammates)'));
+  console.log(chalk.gray('   2. Push your secrets:'));
+  console.log(chalk.cyan('      lsh push'));
   console.log('');
-  console.log(chalk.gray('   3. On another machine:'));
-  console.log(chalk.cyan('      lsh init'));
-  console.log(chalk.cyan('      export LSH_SECRETS_KEY=<key-from-teammate>'));
-  console.log(chalk.cyan('      lsh sync pull <cid>'));
-  console.log('');
-  console.log(chalk.gray('   Alternatively, use the classic push/pull commands:'));
-  console.log(chalk.cyan('      lsh push --env dev'));
-  console.log(chalk.cyan('      lsh pull --env dev'));
+  console.log(chalk.gray('   3. Teammates (share only the key, nothing else):'));
+  console.log(chalk.cyan('      lsh init        # Choose "Import existing key"'));
+  console.log(chalk.cyan('      lsh pull         # Auto-resolves latest via IPNS'));
 
   console.log('');
   console.log(chalk.gray('📖 Documentation: https://github.com/gwicho38/lsh'));
