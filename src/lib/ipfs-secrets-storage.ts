@@ -16,7 +16,8 @@ import * as crypto from 'crypto';
 import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
 import { getIPFSSync } from './ipfs-sync.js';
-import { ENV_VARS } from '../constants/index.js';
+import { deriveKeyInfo, ensureKeyImported } from './ipns-key-manager.js';
+import { ENV_VARS, DEFAULTS } from '../constants/index.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -25,6 +26,7 @@ export interface IPFSSecretsMetadata {
   git_repo?: string;
   git_branch?: string;
   cid: string;
+  ipns_name?: string;
   timestamp: string;
   keys_count: number;
   encrypted: boolean;
@@ -148,6 +150,29 @@ export class IPFSSecretsStorage {
         }
       }
 
+      // Publish to IPNS if we uploaded to the network
+      if (uploadedToNetwork && realCid && encryptionKey) {
+        try {
+          const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
+          const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+
+          if (ipnsName) {
+            const publishedName = await ipfsSync.publishToIPNS(realCid, keyInfo.keyName);
+            if (publishedName) {
+              metadata.ipns_name = publishedName;
+              this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
+              await this.saveMetadata();
+              logger.info(`   🔗 Published to IPNS: ${publishedName}`);
+            }
+          }
+        } catch (error) {
+          const err = error as Error;
+          logger.warn(`   ⚠️  IPNS publish failed (non-fatal): ${err.message}`);
+        }
+      }
+
       if (!uploadedToNetwork) {
         logger.warn(`   📁 Secrets cached locally only (no network sync)`);
         logger.warn(`   💡 Start IPFS daemon for network sync: lsh ipfs start`);
@@ -178,7 +203,43 @@ export class IPFSSecretsStorage {
         ? (environment ? `${gitRepo}_${environment}` : gitRepo)
         : (environment || 'default');
 
-      // If no local metadata, check IPFS sync history
+      // If no local metadata, try IPNS resolution first
+      if (!metadata && encryptionKey) {
+        try {
+          const ipfsSync = getIPFSSync();
+          if (await ipfsSync.checkDaemon()) {
+            const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
+            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+
+            if (ipnsName) {
+              logger.info(`   🔍 Resolving via IPNS: ${ipnsName.substring(0, 20)}...`);
+              const resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
+
+              if (resolvedCid) {
+                logger.info(`   ✅ IPNS resolved to CID: ${resolvedCid}`);
+                metadata = {
+                  environment,
+                  git_repo: gitRepo,
+                  cid: resolvedCid,
+                  ipns_name: ipnsName,
+                  timestamp: new Date().toISOString(),
+                  keys_count: 0,
+                  encrypted: true,
+                };
+                this.metadata[metadataKey] = metadata;
+                await this.saveMetadata();
+              }
+            }
+          }
+        } catch (error) {
+          const err = error as Error;
+          logger.debug(`   IPNS resolution failed: ${err.message}`);
+        }
+      }
+
+      // If still no metadata, check IPFS sync history
       if (!metadata && gitRepo) {
         try {
           const ipfsSync = getIPFSSync();

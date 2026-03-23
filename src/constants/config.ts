@@ -161,4 +161,11 @@ export const DEFAULTS = {
   DEFAULT_SHELL_UNIX: '/bin/sh',
   DEFAULT_SHELL_WIN: 'cmd.exe',
   DEFAULT_EDITOR: 'vi',
+
+  // IPNS configuration
+  DEFAULT_ENVIRONMENT: 'default',
+  IPNS_PUBLISH_LIFETIME: '87600h',       // ~10 years, re-published on each push
+  IPNS_RESOLVE_TIMEOUT_MS: 30000,        // 30s for DHT lookup
+  IPNS_KEY_PREFIX: 'lsh-',
+  IPNS_KEY_DERIVATION_CONTEXT: 'lsh-ipns-v1',
 } as const;

@@ -25,6 +25,7 @@ export interface SyncHistoryEntry {
   size: number;
   environment?: string;
   gitRepo?: string;
+  ipnsName?: string;
 }
 
 export interface IPFSAddResponse {
@@ -393,6 +394,74 @@ export class IPFSSync {
    */
   getGatewayUrls(cid: string): string[] {
     return this.GATEWAYS.map(template => template.replace('{cid}', cid));
+  }
+
+  /**
+   * Get the Kubo API URL
+   */
+  getApiUrl(): string {
+    return this.LOCAL_IPFS_API;
+  }
+
+  /**
+   * Publish a CID to IPNS under the given key name.
+   * The key must already be imported into Kubo.
+   * Returns the IPNS name on success, null on failure.
+   */
+  async publishToIPNS(cid: string, keyName: string): Promise<string | null> {
+    try {
+      const response = await fetch(
+        `${this.LOCAL_IPFS_API}/name/publish?arg=${cid}&key=${encodeURIComponent(keyName)}&lifetime=87600h&resolve=false`,
+        {
+          method: 'POST',
+          signal: AbortSignal.timeout(30000),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.warn(`IPNS publish failed: ${errorText}`);
+        return null;
+      }
+
+      const data = await response.json() as { Name: string; Value: string };
+      logger.info(`📡 IPNS published: ${data.Name} → ${data.Value}`);
+      return data.Name;
+    } catch (error) {
+      const err = error as Error;
+      logger.debug(`IPNS publish error: ${err.message}`);
+      return null;
+    }
+  }
+
+  /**
+   * Resolve an IPNS name to its current CID.
+   * Returns the CID (without /ipfs/ prefix) on success, null on failure/timeout.
+   */
+  async resolveIPNS(ipnsName: string): Promise<string | null> {
+    try {
+      const response = await fetch(
+        `${this.LOCAL_IPFS_API}/name/resolve?arg=${encodeURIComponent(ipnsName)}&nocache=true`,
+        {
+          method: 'POST',
+          signal: AbortSignal.timeout(30000),
+        }
+      );
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json() as { Path: string };
+      // Strip /ipfs/ prefix to get the raw CID
+      const resolvedCid = data.Path.replace(/^\/ipfs\//, '');
+      logger.info(`📡 IPNS resolved: ${ipnsName} → ${resolvedCid}`);
+      return resolvedCid;
+    } catch (error) {
+      const err = error as Error;
+      logger.debug(`IPNS resolve error: ${err.message}`);
+      return null;
+    }
   }
 }
 

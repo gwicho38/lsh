@@ -14,7 +14,8 @@ import * as crypto from 'crypto';
 import { getIPFSSync } from '../lib/ipfs-sync.js';
 import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 import { getGitRepoInfo } from '../lib/git-utils.js';
-import { ENV_VARS } from '../constants/index.js';
+import { deriveKeyInfo, ensureKeyImported } from '../lib/ipns-key-manager.js';
+import { ENV_VARS, DEFAULTS } from '../constants/index.js';
 
 /**
  * Register sync commands
@@ -266,8 +267,30 @@ export function registerSyncCommands(program: Command): void {
         if (options.description) {
           console.log(chalk.bold('Description:'), chalk.gray(options.description));
         }
+
+        // Publish to IPNS
+        if (encryptionKey) {
+          try {
+            const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const env = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
+            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+
+            if (ipnsName) {
+              const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
+              if (publishedName) {
+                console.log(chalk.bold('IPNS:'), chalk.cyan(publishedName));
+              }
+            }
+          } catch {
+            // Non-fatal: IPNS is a convenience
+          }
+        }
+
         console.log('');
         console.log(chalk.gray('Pull on another machine:'));
+        console.log(chalk.cyan('  lsh sync pull'));
+        console.log(chalk.gray('Or by specific CID:'));
         console.log(chalk.cyan(`  lsh sync pull ${cid}`));
         console.log('');
       } catch (error) {
@@ -363,14 +386,31 @@ export function registerSyncCommands(program: Command): void {
         spinner.succeed(chalk.green('Uploaded to IPFS!'));
         console.log('');
         console.log(chalk.bold('CID:'), chalk.cyan(cid));
+
+        // Publish to IPNS
+        if (encryptionKey) {
+          try {
+            const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const env = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
+            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+
+            if (ipnsName) {
+              const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
+              if (publishedName) {
+                console.log(chalk.bold('IPNS:'), chalk.cyan(publishedName));
+              }
+            }
+          } catch {
+            // Non-fatal
+          }
+        }
+
         console.log('');
-        console.log(chalk.gray('Share this CID with teammates to pull secrets:'));
+        console.log(chalk.gray('Teammates can pull with just:'));
+        console.log(chalk.cyan('  lsh sync pull'));
+        console.log(chalk.gray('Or by specific CID:'));
         console.log(chalk.cyan(`  lsh sync pull ${cid}`));
-        console.log('');
-        console.log(chalk.gray('Public gateway URLs:'));
-        ipfsSync.getGatewayUrls(cid).slice(0, 2).forEach(url => {
-          console.log(chalk.gray(`  ${url}`));
-        });
         console.log('');
       } catch (error) {
         const err = error as Error;
@@ -380,14 +420,75 @@ export function registerSyncCommands(program: Command): void {
       }
     });
 
-  // lsh sync pull <cid>
+  // lsh sync pull [cid]
   syncCommand
-    .command('pull <cid>')
-    .description('⬇️  Pull secrets from IPFS by CID')
+    .command('pull [cid]')
+    .description('⬇️  Pull secrets from IPFS (auto-resolves via IPNS if no CID given)')
     .option('-o, --output <path>', 'Output file path', '.env')
+    .option('-e, --env <name>', 'Environment name', '')
     .option('--force', 'Overwrite existing file without backup')
     .action(async (cid, options) => {
-      const spinner = ora('Downloading from IPFS...').start();
+      const spinner = ora(cid ? 'Downloading from IPFS...' : 'Resolving latest secrets via IPNS...').start();
+
+      // If no CID provided, resolve via IPNS
+      if (!cid) {
+        try {
+          const ipfsSync = getIPFSSync();
+          if (!await ipfsSync.checkDaemon()) {
+            spinner.fail(chalk.red('IPFS daemon not running'));
+            console.log(chalk.gray('  Start with: lsh sync start'));
+            process.exit(1);
+          }
+
+          // Get encryption key
+          let ipnsKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+          if (!ipnsKey) {
+            const outputPath = path.resolve(options.output);
+            if (fs.existsSync(outputPath)) {
+              const content = fs.readFileSync(outputPath, 'utf-8');
+              const keyMatch = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
+              if (keyMatch) {
+                ipnsKey = keyMatch[1].trim().replace(/^["']|["']$/g, '');
+              }
+            }
+          }
+
+          if (!ipnsKey) {
+            spinner.fail(chalk.red('LSH_SECRETS_KEY required for IPNS resolution'));
+            console.log(chalk.gray('  Set it: export LSH_SECRETS_KEY=<key>'));
+            process.exit(1);
+          }
+
+          const gitInfo = getGitRepoInfo();
+          const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const environment = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const keyInfo = deriveKeyInfo(ipnsKey, repoName, environment);
+          const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+
+          if (!ipnsName) {
+            spinner.fail(chalk.red('Failed to derive IPNS key'));
+            process.exit(1);
+          }
+
+          spinner.text = `Resolving IPNS: ${ipnsName.substring(0, 20)}...`;
+          const resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
+
+          if (!resolvedCid) {
+            spinner.fail(chalk.red('No secrets found via IPNS'));
+            console.log(chalk.gray('  No one has pushed secrets for this repo/environment yet.'));
+            console.log(chalk.gray('  Push first: lsh sync push'));
+            process.exit(1);
+          }
+
+          cid = resolvedCid;
+          spinner.succeed(chalk.green(`Resolved IPNS → CID: ${cid.substring(0, 16)}...`));
+          spinner.start('Downloading from IPFS...');
+        } catch (error) {
+          const err = error as Error;
+          spinner.fail(chalk.red(`IPNS resolution failed: ${err.message}`));
+          process.exit(1);
+        }
+      }
 
       try {
         const ipfsSync = getIPFSSync();

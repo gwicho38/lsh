@@ -107,4 +107,9 @@ export declare const DEFAULTS: {
     readonly DEFAULT_SHELL_UNIX: "/bin/sh";
     readonly DEFAULT_SHELL_WIN: "cmd.exe";
     readonly DEFAULT_EDITOR: "vi";
+    readonly DEFAULT_ENVIRONMENT: "default";
+    readonly IPNS_PUBLISH_LIFETIME: "87600h";
+    readonly IPNS_RESOLVE_TIMEOUT_MS: 30000;
+    readonly IPNS_KEY_PREFIX: "lsh-";
+    readonly IPNS_KEY_DERIVATION_CONTEXT: "lsh-ipns-v1";
 };
