@@ -55,7 +55,8 @@ export declare class IPFSSync {
     }): Promise<string | null>;
     /**
      * Download data from IPFS
-     * Tries local daemon first, then falls back to public gateways
+     * Tries local daemon first (with longer timeout for DHT discovery),
+     * then falls back to public gateways
      */
     download(cid: string): Promise<Buffer | null>;
     /**
