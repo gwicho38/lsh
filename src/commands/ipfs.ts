@@ -8,6 +8,9 @@ import chalk from 'chalk';
 import ora from 'ora';
 import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 import { getIPFSSync } from '../lib/ipfs-sync.js';
+import { deriveKeyInfo, ensureKeyImported } from '../lib/ipns-key-manager.js';
+import { getGitRepoInfo } from '../lib/git-utils.js';
+import { ENV_VARS, DEFAULTS } from '../constants/index.js';
 
 /**
  * Register IPFS commands
@@ -71,6 +74,31 @@ export function registerIPFSCommands(program: Command): void {
         }
         console.log('');
 
+        // IPNS info
+        const encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+        if (encryptionKey && daemonInfo) {
+          console.log(chalk.bold('IPNS:'));
+          try {
+            const gitInfo = getGitRepoInfo();
+            const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
+            const keyInfo = deriveKeyInfo(encryptionKey, repoName, DEFAULTS.DEFAULT_ENVIRONMENT);
+            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+
+            if (ipnsName) {
+              console.log(chalk.green(`  ✅ IPNS name: ${ipnsName}`));
+              const resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
+              if (resolvedCid) {
+                console.log(`     Latest CID: ${resolvedCid.substring(0, 20)}...`);
+              } else {
+                console.log(chalk.gray('     No published record yet'));
+              }
+            }
+          } catch {
+            console.log(chalk.gray('  Could not derive IPNS info'));
+          }
+          console.log('');
+        }
+
         // Quick actions
         console.log(chalk.bold('Quick Actions:'));
         if (!info.installed) {
@@ -78,8 +106,8 @@ export function registerIPFSCommands(program: Command): void {
         } else if (!daemonInfo) {
           console.log(chalk.cyan('  lsh ipfs start       # Start daemon'));
         } else {
-          console.log(chalk.cyan('  lsh ipfs sync push   # Upload encrypted secrets'));
-          console.log(chalk.cyan('  lsh ipfs sync pull <cid>  # Download by CID'));
+          console.log(chalk.cyan('  lsh sync push        # Push secrets'));
+          console.log(chalk.cyan('  lsh sync pull        # Pull latest via IPNS'));
         }
         console.log('');
       } catch (error) {

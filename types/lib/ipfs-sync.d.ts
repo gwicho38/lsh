@@ -16,6 +16,7 @@ export interface SyncHistoryEntry {
     size: number;
     environment?: string;
     gitRepo?: string;
+    ipnsName?: string;
 }
 export interface IPFSAddResponse {
     Name: string;
@@ -94,6 +95,21 @@ export declare class IPFSSync {
      * Get public gateway URLs for a CID
      */
     getGatewayUrls(cid: string): string[];
+    /**
+     * Get the Kubo API URL
+     */
+    getApiUrl(): string;
+    /**
+     * Publish a CID to IPNS under the given key name.
+     * The key must already be imported into Kubo.
+     * Returns the IPNS name on success, null on failure.
+     */
+    publishToIPNS(cid: string, keyName: string): Promise<string | null>;
+    /**
+     * Resolve an IPNS name to its current CID.
+     * Returns the CID (without /ipfs/ prefix) on success, null on failure/timeout.
+     */
+    resolveIPNS(ipnsName: string): Promise<string | null>;
 }
 /**
  * Get singleton IPFSSync instance

@@ -12,6 +12,7 @@ export interface IPFSSecretsMetadata {
     git_repo?: string;
     git_branch?: string;
     cid: string;
+    ipns_name?: string;
     timestamp: string;
     keys_count: number;
     encrypted: boolean;
