@@ -8,7 +8,7 @@ import { describe, it, expect } from '@jest/globals';
 import { deriveKeyInfo, buildPemFromSeed } from '../src/lib/ipns-key-manager.js';
 
 describe('IPNSKeyManager', () => {
-  const testKey = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2';
+  const testKey = 'test-key-for-unit-tests-not-a-real-secret';
   const testRepo = 'my-app';
   const testEnv = 'dev';
 
