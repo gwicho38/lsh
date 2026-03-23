@@ -410,11 +410,14 @@ export class IPFSSync {
    */
   async publishToIPNS(cid: string, keyName: string): Promise<string | null> {
     try {
+      // allow-offline=true stores the record locally and returns immediately;
+      // the daemon propagates it to the DHT in the background.
+      // Without this, first publishes can take 60-90s for DHT propagation.
       const response = await fetch(
-        `${this.LOCAL_IPFS_API}/name/publish?arg=${cid}&key=${encodeURIComponent(keyName)}&lifetime=87600h&resolve=false`,
+        `${this.LOCAL_IPFS_API}/name/publish?arg=${cid}&key=${encodeURIComponent(keyName)}&lifetime=87600h&resolve=false&offline=true`,
         {
           method: 'POST',
-          signal: AbortSignal.timeout(30000),
+          signal: AbortSignal.timeout(15000),
         }
       );
 
