@@ -207,6 +207,13 @@ export class IPFSClientManager {
   }
 
   /**
+   * Get the IPFS repo path used by lsh
+   */
+  getRepoPath(): string {
+    return path.join(this.ipfsDir, 'repo');
+  }
+
+  /**
    * Start IPFS daemon
    */
   async start(): Promise<void> {
@@ -216,10 +223,24 @@ export class IPFSClientManager {
       throw new Error('IPFS client not installed. Run: lsh ipfs install');
     }
 
-    logger.info('🚀 Starting IPFS daemon...');
-
-    const ipfsRepoPath = path.join(this.ipfsDir, 'repo');
+    const ipfsRepoPath = this.getRepoPath();
     const ipfsCmd = clientInfo.path || 'ipfs';
+
+    // Auto-initialize repo if it doesn't exist
+    if (!fs.existsSync(path.join(ipfsRepoPath, 'config'))) {
+      logger.info('🔧 IPFS repository not found, initializing...');
+      try {
+        await execAsync(`${ipfsCmd} init`, {
+          env: { ...process.env, IPFS_PATH: ipfsRepoPath },
+        });
+        logger.info('✅ IPFS repository initialized');
+      } catch (initError) {
+        const err = initError as Error;
+        throw new Error(`Failed to auto-initialize IPFS repo: ${err.message}`);
+      }
+    }
+
+    logger.info('🚀 Starting IPFS daemon...');
 
     try {
       // Start daemon as fully detached background process
@@ -239,6 +260,20 @@ export class IPFSClientManager {
         fs.writeFileSync(pidPath, daemon.pid.toString(), 'utf8');
       }
 
+      // Wait for daemon to actually be ready (poll the API)
+      const ready = await this.waitForDaemon(10000);
+      if (!ready) {
+        // Clean up PID file since daemon didn't start
+        if (fs.existsSync(pidPath)) {
+          fs.unlinkSync(pidPath);
+        }
+        throw new Error(
+          'IPFS daemon process started but API is not responding. ' +
+          'The daemon may have crashed. Check if IPFS repo is properly initialized: ' +
+          `IPFS_PATH=${ipfsRepoPath}`
+        );
+      }
+
       logger.info('✅ IPFS daemon started');
       logger.info(`   PID: ${daemon.pid}`);
       logger.info('   API: http://localhost:5001');
@@ -248,6 +283,26 @@ export class IPFSClientManager {
       logger.error(`❌ Failed to start daemon: ${err.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Wait for daemon API to become ready
+   */
+  private async waitForDaemon(timeoutMs: number): Promise<boolean> {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      try {
+        const response = await fetch('http://127.0.0.1:5001/api/v0/id', {
+          method: 'POST',
+          signal: AbortSignal.timeout(2000),
+        });
+        if (response.ok) return true;
+      } catch {
+        // Daemon not ready yet, keep polling
+      }
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    return false;
   }
 
   /**

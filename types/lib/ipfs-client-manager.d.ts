@@ -43,9 +43,17 @@ export declare class IPFSClientManager {
      */
     init(): Promise<void>;
     /**
+     * Get the IPFS repo path used by lsh
+     */
+    getRepoPath(): string;
+    /**
      * Start IPFS daemon
      */
     start(): Promise<void>;
+    /**
+     * Wait for daemon API to become ready
+     */
+    private waitForDaemon;
     /**
      * Stop IPFS daemon
      */

@@ -162,14 +162,16 @@ export class IPFSSync {
 
   /**
    * Download data from IPFS
-   * Tries local daemon first, then falls back to public gateways
+   * Tries local daemon first (with longer timeout for DHT discovery),
+   * then falls back to public gateways
    */
   async download(cid: string): Promise<Buffer | null> {
-    // Try local daemon first (fastest if available)
+    // Try local daemon first — use a longer timeout (60s) because
+    // the local node may need time for DHT content discovery
     try {
       const localResponse = await fetch(`${this.LOCAL_IPFS_API}/cat?arg=${cid}`, {
         method: 'POST',
-        signal: AbortSignal.timeout(30000),
+        signal: AbortSignal.timeout(60000),
       });
 
       if (localResponse.ok) {

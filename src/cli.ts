@@ -15,6 +15,7 @@ import { registerSyncHistoryCommands } from './commands/sync-history.js';
 import { registerSyncCommands } from './commands/sync.js';
 import { registerMigrateCommand } from './commands/migrate.js';
 import { registerContextCommand } from './commands/context.js';
+import { registerIPFSCommands } from './commands/ipfs.js';
 import { init_secrets } from './services/secrets/secrets.js';
 import { loadGlobalConfigSync } from './lib/config-manager.js';
 import { CLI_TEXT, CLI_HELP } from './constants/ui.js';
@@ -160,6 +161,7 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   registerSyncCommands(program);
   registerMigrateCommand(program);
   registerContextCommand(program);
+  registerIPFSCommands(program);
 
   // Secrets management (primary feature)
   await init_secrets(program);

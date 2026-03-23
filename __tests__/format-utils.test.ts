@@ -32,7 +32,7 @@ describe('FormatUtils', () => {
   describe('maskSecret', () => {
     it('should mask long secrets', () => {
       const result = maskSecret('REDACTED');
-      expect(result).toBe('sk_***890');
+      expect(result).toBe('RED***TED');
     });
 
     it('should fully mask short secrets', () => {
@@ -53,7 +53,7 @@ describe('FormatUtils', () => {
         { key: 'TOKEN', value: 'short' }
       ];
       const result = maskSecrets(secrets);
-      expect(result[0].value).toBe('sk_***890');
+      expect(result[0].value).toBe('RED***TED');
       expect(result[1].value).toBe('***');
     });
 
@@ -252,7 +252,7 @@ describe('FormatUtils', () => {
     it('should mask values when mask is true', () => {
       const result = formatSecrets(testSecrets, 'json', true);
       const parsed = JSON.parse(result);
-      expect(parsed.API_KEY).toBe('sk_***890');
+      expect(parsed.API_KEY).toBe('RED***TED');
     });
 
     it('should auto-mask for env format', () => {

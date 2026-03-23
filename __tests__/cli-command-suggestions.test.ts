@@ -1,7 +1,11 @@
 import { execSync } from 'child_process';
 import { describe, it, expect } from '@jest/globals';
 
-describe('CLI Command Suggestions', () => {
+// ora requires Node 21+ (uses RegExp /v flag and import-with syntax)
+const nodeVersion = parseInt(process.versions.node.split('.')[0], 10);
+const describeIfSupported = nodeVersion >= 21 ? describe : describe.skip;
+
+describeIfSupported('CLI Command Suggestions', () => {
   const cliPath = 'node dist/cli.js';
 
   it('should suggest "list" when user types "listt"', () => {
