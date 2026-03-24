@@ -92,13 +92,23 @@ export class IPFSSecretsStorage {
       // Encrypt secrets
       const encryptedData = this.encryptSecrets(secrets, encryptionKey);
 
-      // Generate CID from encrypted content
-      const cid = this.generateCID(encryptedData);
+      // Upload to IPFS (daemon guaranteed running by ensureDaemonRunning)
+      const ipfsSync = getIPFSSync();
+      const filename = `lsh-secrets-${environment}.encrypted`;
+      const cid = await ipfsSync.upload(
+        Buffer.from(encryptedData, 'utf-8'),
+        filename,
+        { environment, gitRepo }
+      );
 
-      // Store locally (cache)
+      if (!cid) {
+        throw new Error('IPFS upload failed. Is the daemon running? Check: lsh ipfs status');
+      }
+
+      // Cache locally for fast re-reads
       await this.storeLocally(cid, encryptedData, environment);
 
-      // Update metadata
+      // Update metadata with real CID
       const metadata: IPFSSecretsMetadata = {
         environment,
         git_repo: gitRepo,
@@ -118,40 +128,8 @@ export class IPFSSecretsStorage {
         logger.info(`   Repository: ${gitRepo}/${gitBranch || 'main'}`);
       }
 
-      // Try native IPFS upload
-      const ipfsSync = getIPFSSync();
-      let uploadedToNetwork = false;
-      let realCid: string | null = null;
-
-      if (await ipfsSync.checkDaemon()) {
-        try {
-          const filename = `lsh-secrets-${environment}.encrypted`;
-          realCid = await ipfsSync.upload(
-            Buffer.from(encryptedData, 'utf-8'),
-            filename,
-            { environment, gitRepo }
-          );
-
-          if (realCid) {
-            // Update CID to the real IPFS CID
-            logger.info(`   🌐 Synced to IPFS (CID: ${realCid})`);
-            uploadedToNetwork = true;
-
-            // Update metadata with real CID if different
-            if (realCid !== cid) {
-              metadata.cid = realCid;
-              this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
-              await this.saveMetadata();
-            }
-          }
-        } catch (error) {
-          const err = error as Error;
-          logger.warn(`   ⚠️  IPFS upload failed: ${err.message}`);
-        }
-      }
-
-      // Publish to IPNS if we uploaded to the network
-      if (uploadedToNetwork && realCid && encryptionKey) {
+      // Publish to IPNS
+      if (encryptionKey) {
         try {
           const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
           const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
@@ -159,7 +137,7 @@ export class IPFSSecretsStorage {
           const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
 
           if (ipnsName) {
-            const publishedName = await ipfsSync.publishToIPNS(realCid, keyInfo.keyName);
+            const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
             if (publishedName) {
               metadata.ipns_name = publishedName;
               this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
@@ -169,16 +147,14 @@ export class IPFSSecretsStorage {
           }
         } catch (error) {
           const err = error as Error;
-          logger.warn(`   ⚠️  IPNS publish failed (non-fatal): ${err.message}`);
+          logger.error(
+            `Content uploaded (CID: ${cid}) but IPNS publish failed: ${err.message}\n` +
+            `Other machines won't find it via 'lsh pull' until you re-push.`
+          );
         }
       }
 
-      if (!uploadedToNetwork) {
-        logger.warn(`   📁 Secrets cached locally only (no network sync)`);
-        logger.warn(`   💡 Start IPFS daemon for network sync: lsh ipfs start`);
-      }
-
-      return realCid || cid;
+      return cid;
     } catch (error) {
       const err = error as Error;
       logger.error(`Failed to push secrets to IPFS: ${err.message}`);
@@ -414,15 +390,6 @@ export class IPFSSecretsStorage {
       }
       throw error;
     }
-  }
-
-  /**
-   * Generate IPFS-compatible CID from content
-   */
-  private generateCID(content: string): string {
-    const hash = crypto.createHash('sha256').update(content).digest('hex');
-    // Format like IPFS CIDv1 (bafkreixxx...)
-    return `bafkrei${hash.substring(0, 52)}`;
   }
 
   /**

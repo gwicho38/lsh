@@ -35,3 +35,11 @@ describe('IPFSSync.publishToIPNS', () => {
     expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('IPFSSecretsStorage.push', () => {
+  it('should not have a generateCID method (fake CIDs removed)', async () => {
+    const { IPFSSecretsStorage } = await import('../lib/ipfs-secrets-storage.js');
+    const storage = new IPFSSecretsStorage();
+    expect((storage as any).generateCID).toBeUndefined();
+  });
+});
