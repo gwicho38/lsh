@@ -21,6 +21,40 @@ function isOutputFormat(value: string): value is OutputFormat {
 }
 
 
+/**
+ * Find existing LSH_SECRETS_KEY from environment, local .env, or global ~/.env
+ */
+function findExistingKey(): string | null {
+  // 1. Check environment variable
+  const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+  if (envKey) return envKey;
+
+  // 2. Check local .env
+  const localEnvPath = path.join(process.cwd(), '.env');
+  const localKey = readKeyFromEnvFile(localEnvPath);
+  if (localKey) return localKey;
+
+  // 3. Check global ~/.env
+  const globalEnvPath = path.join(process.env.HOME || '~', '.env');
+  const globalKey = readKeyFromEnvFile(globalEnvPath);
+  if (globalKey) return globalKey;
+
+  return null;
+}
+
+function readKeyFromEnvFile(envPath: string): string | null {
+  try {
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf-8');
+      const match = content.match(/^LSH_SECRETS_KEY=['"]?([^'"\n]+)['"]?/m);
+      if (match) return match[1];
+    }
+  } catch {
+    // Ignore read errors
+  }
+  return null;
+}
+
 export async function init_secrets(program: Command) {
   // Push secrets to cloud
   program
@@ -291,25 +325,166 @@ export async function init_secrets(program: Command) {
       }
     });
 
-  // Generate encryption key
-  program
+  // Key management command group
+  const keyCmd = program
     .command('key')
-    .description('Generate a new encryption key')
+    .description('Manage your LSH encryption key');
+
+  // Default action: show existing key or prompt to generate
+  keyCmd
+    .action(async () => {
+      const existingKey = findExistingKey();
+      if (existingKey) {
+        const masked = existingKey.slice(0, 8) + '...' + existingKey.slice(-4);
+        console.log(`\n🔑 LSH_SECRETS_KEY=${masked}\n`);
+        console.log('  lsh key show --no-mask    Reveal full key');
+        console.log('  lsh key generate          Generate a new key');
+        console.log('  lsh key import            Import a key from a teammate\n');
+      } else {
+        console.log('\n⚠️  No encryption key found.\n');
+        console.log('  lsh key generate    Create a new key');
+        console.log('  lsh key import      Import a key from a teammate\n');
+      }
+    });
+
+  // lsh key show
+  keyCmd
+    .command('show')
+    .description('Display the current encryption key')
+    .option('--no-mask', 'Show the full key (default: masked)')
     .option('--export', 'Output in export format for shell evaluation')
     .action(async (options) => {
+      const existingKey = findExistingKey();
+      if (!existingKey) {
+        console.error('❌ No encryption key found. Run: lsh key generate');
+        process.exit(1);
+      }
+
+      if (options.export) {
+        console.log(`export LSH_SECRETS_KEY='${existingKey}'`);
+        return;
+      }
+
+      const displayKey = options.mask === false ? existingKey : existingKey.slice(0, 8) + '...' + existingKey.slice(-4);
+      console.log(`\n🔑 LSH_SECRETS_KEY=${displayKey}\n`);
+      if (options.mask !== false) {
+        console.log('💡 Use --no-mask to reveal the full key');
+      }
+      console.log('💡 Share this key securely with your team to sync secrets.');
+      console.log('    Never commit it to git!\n');
+    });
+
+  // lsh key generate
+  keyCmd
+    .command('generate')
+    .description('Generate a new encryption key')
+    .option('--force', 'Overwrite existing key')
+    .option('--export', 'Output in export format for shell evaluation')
+    .action(async (options) => {
+      const existingKey = findExistingKey();
+
+      if (existingKey && !options.force) {
+        console.error('❌ An encryption key already exists. Use --force to overwrite.');
+        console.error('⚠️  Warning: existing secrets will NOT be decryptable with a new key.\n');
+        process.exit(1);
+      }
+
       const { randomBytes } = await import('crypto');
       const key = randomBytes(32).toString('hex');
 
       if (options.export) {
-        // Just output the export statement for eval
         console.log(`export LSH_SECRETS_KEY='${key}'`);
-      } else {
-        // Interactive output with tips
-        console.log('\n🔑 New encryption key (add to your .env):\n');
-        console.log(`export LSH_SECRETS_KEY='${key}'\n`);
-        console.log('💡 Tip: Share this key securely with your team to sync secrets.');
-        console.log('    Never commit it to git!\n');
-        console.log('💡 To load immediately: eval "$(lsh key --export)"\n');
+        return;
+      }
+
+      if (existingKey && options.force) {
+        console.log('\n⚠️  Replacing existing key. Old secrets will NOT be decryptable with this new key!\n');
+      }
+      console.log('\n🔑 New encryption key (add to your .env):\n');
+      console.log(`export LSH_SECRETS_KEY='${key}'\n`);
+      console.log('💡 Tip: Share this key securely with your team to sync secrets.');
+      console.log('    Never commit it to git!\n');
+      console.log('💡 To load immediately: eval "$(lsh key generate --export)"\n');
+    });
+
+  // lsh key import
+  keyCmd
+    .command('import')
+    .description('Import an encryption key from a teammate')
+    .argument('[key]', 'The encryption key to import')
+    .option('-f, --file <path>', 'Path to .env file to save to', '.env')
+    .option('-g, --global', 'Save to global ~/.env instead of local')
+    .action(async (keyArg: string | undefined, options) => {
+      let keyValue = keyArg;
+
+      // If no key argument, prompt for it
+      if (!keyValue) {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        keyValue = await new Promise<string>((resolve) => {
+          rl.question('🔑 Paste the encryption key: ', (answer) => {
+            rl.close();
+            resolve(answer.trim());
+          });
+        });
+      }
+
+      if (!keyValue || keyValue.length === 0) {
+        console.error('❌ No key provided.');
+        process.exit(1);
+      }
+
+      // Validate key format (should be 64 hex chars = 32 bytes)
+      if (!/^[0-9a-fA-F]{64}$/.test(keyValue)) {
+        console.error('❌ Invalid key format. Expected 64 hex characters (256-bit key).');
+        process.exit(1);
+      }
+
+      // Check for existing key
+      const existingKey = findExistingKey();
+      if (existingKey) {
+        if (existingKey === keyValue) {
+          console.log('\n✅ This key is already configured.\n');
+          return;
+        }
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const confirm = await new Promise<string>((resolve) => {
+          rl.question('⚠️  An existing key will be replaced. Continue? (y/N) ', (answer) => {
+            rl.close();
+            resolve(answer.trim().toLowerCase());
+          });
+        });
+        if (confirm !== 'y' && confirm !== 'yes') {
+          console.log('Aborted.');
+          return;
+        }
+      }
+
+      // Save to .env file
+      const envPath = options.global
+        ? path.join(process.env.HOME || '~', '.env')
+        : path.resolve(options.file);
+
+      try {
+        let content = '';
+        if (fs.existsSync(envPath)) {
+          content = fs.readFileSync(envPath, 'utf-8');
+          // Replace existing key if present
+          if (/^LSH_SECRETS_KEY=/m.test(content)) {
+            content = content.replace(/^LSH_SECRETS_KEY=.*/m, `LSH_SECRETS_KEY=${keyValue}`);
+          } else {
+            content = content.trimEnd() + `\nLSH_SECRETS_KEY=${keyValue}\n`;
+          }
+        } else {
+          content = `LSH_SECRETS_KEY=${keyValue}\n`;
+        }
+
+        fs.writeFileSync(envPath, content, { mode: 0o600 });
+        console.log(`\n✅ Key saved to ${envPath}\n`);
+        console.log('💡 Now pull secrets: lsh sync pull\n');
+      } catch (error) {
+        const err = error as Error;
+        console.error(`❌ Failed to save key: ${err.message}`);
+        process.exit(1);
       }
     });
 
