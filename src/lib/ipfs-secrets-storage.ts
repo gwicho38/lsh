@@ -171,98 +171,71 @@ export class IPFSSecretsStorage {
     gitRepo?: string
   ): Promise<Secret[]> {
     try {
-      const metadataKey = this.getMetadataKey(gitRepo, environment);
-      let metadata = this.metadata[metadataKey];
+      const ipfsSync = getIPFSSync();
 
-      // Construct display name for error messages
-      const displayEnv = gitRepo
-        ? (environment ? `${gitRepo}_${environment}` : gitRepo)
-        : (environment || 'default');
+      // Step 1: Always resolve via IPNS (source of truth)
+      let resolvedCid: string | null = null;
 
-      // If no local metadata, try IPNS resolution first
-      if (!metadata && encryptionKey) {
+      if (encryptionKey) {
         try {
-          const ipfsSync = getIPFSSync();
-          if (await ipfsSync.checkDaemon()) {
-            const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
-            const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
-            const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
-            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+          const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
+          const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
 
-            if (ipnsName) {
-              logger.info(`   🔍 Resolving via IPNS: ${ipnsName.substring(0, 20)}...`);
-              const resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
+          if (ipnsName) {
+            logger.info(`   🔍 Resolving via IPNS: ${ipnsName.substring(0, 20)}...`);
+            resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
 
-              if (resolvedCid) {
-                logger.info(`   ✅ IPNS resolved to CID: ${resolvedCid}`);
-                metadata = {
-                  environment,
-                  git_repo: gitRepo,
-                  cid: resolvedCid,
-                  ipns_name: ipnsName,
-                  timestamp: new Date().toISOString(),
-                  keys_count: 0,
-                  encrypted: true,
-                };
-                this.metadata[metadataKey] = metadata;
-                await this.saveMetadata();
-              }
+            if (resolvedCid) {
+              logger.info(`   ✅ IPNS resolved to CID: ${resolvedCid}`);
+
+              // Update local metadata
+              const metadataKey = this.getMetadataKey(gitRepo, environment);
+              this.metadata[metadataKey] = {
+                environment,
+                git_repo: gitRepo,
+                cid: resolvedCid,
+                ipns_name: ipnsName,
+                timestamp: new Date().toISOString(),
+                keys_count: 0,
+                encrypted: true,
+              };
+              await this.saveMetadata();
             }
           }
         } catch (error) {
           const err = error as Error;
-          logger.debug(`   IPNS resolution failed: ${err.message}`);
+          logger.debug(`   IPNS resolution error: ${err.message}`);
         }
       }
 
-      // If still no metadata, check IPFS sync history
-      if (!metadata && gitRepo) {
-        try {
-          const ipfsSync = getIPFSSync();
-          const latestCid = await ipfsSync.getLatestCid(gitRepo, environment);
-
-          if (latestCid) {
-            logger.info(`   ✅ Found secrets in IPFS history (CID: ${latestCid})`);
-            // Create metadata from history
-            metadata = {
-              environment,
-              git_repo: gitRepo,
-              cid: latestCid,
-              timestamp: new Date().toISOString(),
-              keys_count: 0, // Unknown until decrypted
-              encrypted: true,
-            };
-            this.metadata[metadataKey] = metadata;
-            await this.saveMetadata();
-          }
-        } catch (error) {
-          // History check failed, continue to error
-          const err = error as Error;
-          logger.debug(`   IPFS history check failed: ${err.message}`);
-        }
+      // No fallback to local metadata — IPNS is the source of truth
+      if (!resolvedCid) {
+        throw new Error(
+          'Could not resolve secrets from network.\n\n' +
+          'Possible causes:\n' +
+          '  - The machine that pushed secrets is offline or IPFS daemon stopped\n' +
+          '  - IPNS record hasn\'t propagated yet (try again in 30s)\n' +
+          '  - Network connectivity issue\n' +
+          '  - IPNS record expired from DHT (records are cached ~24-48h;\n' +
+          '    the publishing machine must be online periodically)\n\n' +
+          'Troubleshooting:\n' +
+          '  lsh ipfs status    # Check local daemon\n' +
+          '  lsh doctor         # Full health check'
+        );
       }
 
-      if (!metadata) {
-        throw new Error(`No secrets found for environment: ${displayEnv}\n\n` +
-          `💡 Tip: Check available environments with: lsh env\n` +
-          `   Or push secrets first with: lsh push\n` +
-          `   Or pull by CID with: lsh sync pull <cid>`);
-      }
+      // Step 2: Load content — try cache first, then IPFS download
+      let cachedData = await this.loadLocally(resolvedCid);
 
-      // Try to load from local cache
-      let cachedData = await this.loadLocally(metadata.cid);
-
-      // If not in cache, try downloading from IPFS
       if (!cachedData) {
-        const ipfsSync = getIPFSSync();
-
         try {
           logger.info(`   🌐 Downloading from IPFS...`);
-          const downloadedData = await ipfsSync.download(metadata.cid);
+          const downloadedData = await ipfsSync.download(resolvedCid);
 
           if (downloadedData) {
-            // Store in local cache for future use
-            await this.storeLocally(metadata.cid, downloadedData.toString('utf-8'), environment);
+            await this.storeLocally(resolvedCid, downloadedData.toString('utf-8'), environment);
             cachedData = downloadedData.toString('utf-8');
             logger.info(`   ✅ Downloaded and cached from IPFS`);
           }
@@ -273,16 +246,15 @@ export class IPFSSecretsStorage {
       }
 
       if (!cachedData) {
-        throw new Error(`Secrets not found in cache or IPFS. CID: ${metadata.cid}\n\n` +
-          `💡 Tip: Start IPFS daemon: lsh ipfs start\n` +
-          `   Or pull directly by CID: lsh sync pull <cid>`);
+        throw new Error(`Secrets resolved via IPNS (CID: ${resolvedCid}) but download failed.\n\n` +
+          `💡 The source machine may be offline. Try again when it's online.`);
       }
 
-      // Decrypt secrets
+      // Step 3: Decrypt
       const secrets = this.decryptSecrets(cachedData, encryptionKey);
 
       logger.info(`📥 Retrieved ${secrets.length} secrets from IPFS`);
-      logger.info(`   CID: ${metadata.cid}`);
+      logger.info(`   CID: ${resolvedCid}`);
       logger.info(`   Environment: ${environment}`);
 
       return secrets;

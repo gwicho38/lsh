@@ -43,3 +43,20 @@ describe('IPFSSecretsStorage.push', () => {
     expect((storage as any).generateCID).toBeUndefined();
   });
 });
+
+describe('IPFSSecretsStorage.pull - IPNS-first', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should fail clearly when IPFS network is unreachable', async () => {
+    jest.spyOn(global, 'fetch').mockRejectedValue(new Error('timeout'));
+
+    const { IPFSSecretsStorage } = await import('../lib/ipfs-secrets-storage.js');
+    const storage = new IPFSSecretsStorage();
+
+    await expect(
+      storage.pull('', 'test-key', 'test-repo')
+    ).rejects.toThrow(/Could not resolve secrets from network/);
+  });
+});
