@@ -152,56 +152,13 @@ export function registerSyncCommands(program: Command): void {
       const gitInfo = getGitRepoInfo();
 
       // Step 1: Ensure IPFS is set up and daemon is running
-      let daemonReady = await ipfsSync.checkDaemon();
-
-      if (!daemonReady) {
-        // Check if IPFS is installed
-        const clientInfo = await manager.detect();
-
-        if (!clientInfo.installed) {
-          const installSpinner = ora('Installing IPFS client...').start();
-          try {
-            await manager.install();
-            installSpinner.succeed(chalk.green('IPFS client installed'));
-          } catch (error) {
-            const err = error as Error;
-            installSpinner.fail(chalk.red('Failed to install IPFS'));
-            console.error(chalk.red(err.message));
-            process.exit(1);
-          }
-        }
-
-        // Initialize repo if needed
-        const initSpinner = ora('Initializing IPFS...').start();
-        try {
-          await manager.init();
-          initSpinner.succeed(chalk.green('IPFS initialized'));
-        } catch (error) {
-          const err = error as Error;
-          if (!err.message.includes('already') && !err.message.includes('exists')) {
-            initSpinner.fail(chalk.red('Failed to initialize IPFS'));
-            console.error(chalk.red(err.message));
-            process.exit(1);
-          }
-          initSpinner.succeed(chalk.green('IPFS already initialized'));
-        }
-
-        // Start daemon
-        const startSpinner = ora('Starting IPFS daemon...').start();
-        try {
-          await manager.start();
-          // Give daemon a moment to start accepting connections
-          await new Promise(resolve => { setTimeout(resolve, 2000); });
-          startSpinner.succeed(chalk.green('IPFS daemon started'));
-          daemonReady = true;
-        } catch (error) {
-          const err = error as Error;
-          startSpinner.fail(chalk.red('Failed to start daemon'));
-          console.error(chalk.red(err.message));
-          process.exit(1);
-        }
-      } else {
+      try {
+        await manager.ensureDaemonRunning();
         console.log(chalk.green('✓ IPFS daemon running'));
+      } catch (error) {
+        const err = error as Error;
+        console.error(chalk.red(err.message));
+        process.exit(1);
       }
 
       // Step 2: Read and validate .env file
@@ -314,12 +271,13 @@ export function registerSyncCommands(program: Command): void {
         const ipfsSync = getIPFSSync();
         const gitInfo = getGitRepoInfo();
 
-        // Check daemon
-        if (!await ipfsSync.checkDaemon()) {
-          spinner.fail(chalk.red('IPFS daemon not running'));
-          console.log('');
-          console.log(chalk.gray('Initialize IPFS first:'));
-          console.log(chalk.cyan('  lsh sync init'));
+        // Ensure daemon is running (auto-setup if needed)
+        try {
+          const ipfsManager = new IPFSClientManager();
+          await ipfsManager.ensureDaemonRunning();
+        } catch (error) {
+          const err = error as Error;
+          spinner.fail(chalk.red(err.message));
           process.exit(1);
         }
 
@@ -434,9 +392,12 @@ export function registerSyncCommands(program: Command): void {
       if (!cid) {
         try {
           const ipfsSync = getIPFSSync();
-          if (!await ipfsSync.checkDaemon()) {
-            spinner.fail(chalk.red('IPFS daemon not running'));
-            console.log(chalk.gray('  Start with: lsh sync start'));
+          try {
+            const ipfsManager = new IPFSClientManager();
+            await ipfsManager.ensureDaemonRunning();
+          } catch (error) {
+            const err = error as Error;
+            spinner.fail(chalk.red(err.message));
             process.exit(1);
           }
 
