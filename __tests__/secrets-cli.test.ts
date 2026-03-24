@@ -123,7 +123,7 @@ describe('Secrets CLI Commands', () => {
   });
 
   describe('key command', () => {
-    it('should generate a new encryption key', async () => {
+    it('should show existing key when one is set', async () => {
       const program = new Command();
       await init_secrets(program);
 
@@ -131,14 +131,13 @@ describe('Secrets CLI Commands', () => {
 
       const calls = consoleLogSpy.mock.calls.flat().join(' ');
       expect(calls).toContain('LSH_SECRETS_KEY');
-      expect(calls).toContain('encryption key');
     });
 
-    it('should output export format with --export flag', async () => {
+    it('should show key with export format via show --export', async () => {
       const program = new Command();
       await init_secrets(program);
 
-      await program.parseAsync(['node', 'test', 'key', '--export']);
+      await program.parseAsync(['node', 'test', 'key', 'show', '--export']);
 
       const calls = consoleLogSpy.mock.calls.flat();
       const exportLine = calls.find(c => String(c).startsWith('export LSH_SECRETS_KEY='));
@@ -149,7 +148,7 @@ describe('Secrets CLI Commands', () => {
       const program = new Command();
       await init_secrets(program);
 
-      await program.parseAsync(['node', 'test', 'key', '--export']);
+      await program.parseAsync(['node', 'test', 'key', 'generate', '--force', '--export']);
 
       const calls = consoleLogSpy.mock.calls.flat();
       const exportLine = calls.find(c => String(c).startsWith('export LSH_SECRETS_KEY='));
