@@ -15,6 +15,7 @@ export interface SyncRecord {
   command: string;
   action: 'push' | 'pull' | 'sync' | 'create';
   environment: string;
+  cid?: string;
   git_repo?: string;
   git_branch?: string;
   git_commit?: string;
@@ -100,7 +101,7 @@ export class IPFSSyncLogger {
 
     // Use file-based storage with IPFS-like CIDs
     // Records are stored locally and can optionally be uploaded to IPFS
-    const cid = this.generateContentId(record);
+    const cid = this.generateRecordId(record);
     const repoEnv = this.getRepoEnvKey(record.git_repo, record.environment);
 
     // Store the record locally
@@ -112,9 +113,9 @@ export class IPFSSyncLogger {
     }
 
     this.syncLog[repoEnv].push({
-      cid,
+      cid,  // This is the record ID (file key), NOT the IPFS CID
       timestamp: record.timestamp,
-      url: `ipfs://${cid}`,
+      url: record.cid ? `ipfs://${record.cid}` : `lsh-record://${cid}`,
       action: record.action,
     });
 
@@ -188,7 +189,7 @@ export class IPFSSyncLogger {
   /**
    * Generate a content-addressed ID (like IPFS CID)
    */
-  private generateContentId(record: SyncRecord): string {
+  private generateRecordId(record: SyncRecord): string {
     const content = JSON.stringify(record);
     const hash = crypto.createHash('sha256').update(content).digest('hex');
     // Format like IPFS CIDv1 (bafkreixxx...)
