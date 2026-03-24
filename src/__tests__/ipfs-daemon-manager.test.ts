@@ -1,3 +1,4 @@
+import { jest } from '@jest/globals';
 import { LshConfigManager } from '../lib/lsh-config.js';
 import * as fs from 'fs';
 import * as path from 'path';
