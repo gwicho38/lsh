@@ -406,35 +406,45 @@ export class IPFSSync {
   /**
    * Publish a CID to IPNS under the given key name.
    * The key must already be imported into Kubo.
+   * Publishes to DHT and blocks until confirmed.
+   * Retries once on failure.
    * Returns the IPNS name on success, null on failure.
    */
   async publishToIPNS(cid: string, keyName: string): Promise<string | null> {
-    try {
-      // allow-offline=true stores the record locally and returns immediately;
-      // the daemon propagates it to the DHT in the background.
-      // Without this, first publishes can take 60-90s for DHT propagation.
-      const response = await fetch(
-        `${this.LOCAL_IPFS_API}/name/publish?arg=${cid}&key=${encodeURIComponent(keyName)}&lifetime=87600h&resolve=false&offline=true`,
-        {
+    const url = `${this.LOCAL_IPFS_API}/name/publish?arg=${cid}&key=${encodeURIComponent(keyName)}&lifetime=87600h&resolve=false&offline=false&allow-offline=false`;
+
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        logger.info('📡 Publishing to IPNS (waiting for network confirmation)...');
+        const response = await fetch(url, {
           method: 'POST',
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(120000),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          logger.warn(`IPNS publish failed (attempt ${attempt}): ${errorText}`);
+          if (attempt === 2) return null;
+          continue;
         }
-      );
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        logger.warn(`IPNS publish failed: ${errorText}`);
-        return null;
+        const data = await response.json() as { Name: string; Value: string };
+        logger.info(`📡 IPNS published: ${data.Name} → ${data.Value}`);
+        return data.Name;
+      } catch (error) {
+        const err = error as Error;
+        logger.warn(`IPNS publish error (attempt ${attempt}): ${err.message}`);
+        if (attempt === 2) {
+          logger.error(
+            `IPNS publish failed after retry. Content is uploaded (CID: ${cid}) ` +
+            `but other machines won't find it via 'lsh pull' until you re-push.`
+          );
+          return null;
+        }
       }
-
-      const data = await response.json() as { Name: string; Value: string };
-      logger.info(`📡 IPNS published: ${data.Name} → ${data.Value}`);
-      return data.Name;
-    } catch (error) {
-      const err = error as Error;
-      logger.debug(`IPNS publish error: ${err.message}`);
-      return null;
     }
+
+    return null;
   }
 
   /**
