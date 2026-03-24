@@ -384,6 +384,7 @@ export function registerSyncCommands(program: Command): void {
     .description('⬇️  Pull secrets from IPFS (auto-resolves via IPNS if no CID given)')
     .option('-o, --output <path>', 'Output file path', '.env')
     .option('-e, --env <name>', 'Environment name', '')
+    .option('-r, --repo <name>', 'Source repo name for IPNS resolution (overrides auto-detected repo)')
     .option('--force', 'Overwrite existing file without backup')
     .action(async (cid, options) => {
       const spinner = ora(cid ? 'Downloading from IPFS...' : 'Resolving latest secrets via IPNS...').start();
@@ -421,7 +422,7 @@ export function registerSyncCommands(program: Command): void {
           }
 
           const gitInfo = getGitRepoInfo();
-          const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
+          const repoName = options.repo || gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
           const environment = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
           const keyInfo = deriveKeyInfo(ipnsKey, repoName, environment);
           const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
