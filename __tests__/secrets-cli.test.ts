@@ -123,25 +123,43 @@ describe('Secrets CLI Commands', () => {
   });
 
   describe('key command', () => {
+    const testKey = 'a'.repeat(64); // Valid 64-char hex key for testing
+
     it('should show existing key when one is set', async () => {
-      const program = new Command();
-      await init_secrets(program);
+      const originalKey = process.env.LSH_SECRETS_KEY;
+      process.env.LSH_SECRETS_KEY = testKey;
 
-      await program.parseAsync(['node', 'test', 'key']);
+      try {
+        const program = new Command();
+        await init_secrets(program);
 
-      const calls = consoleLogSpy.mock.calls.flat().join(' ');
-      expect(calls).toContain('LSH_SECRETS_KEY');
+        await program.parseAsync(['node', 'test', 'key']);
+
+        const calls = consoleLogSpy.mock.calls.flat().join(' ');
+        expect(calls).toContain('LSH_SECRETS_KEY');
+      } finally {
+        if (originalKey) process.env.LSH_SECRETS_KEY = originalKey;
+        else delete process.env.LSH_SECRETS_KEY;
+      }
     });
 
     it('should show key with export format via show --export', async () => {
-      const program = new Command();
-      await init_secrets(program);
+      const originalKey = process.env.LSH_SECRETS_KEY;
+      process.env.LSH_SECRETS_KEY = testKey;
 
-      await program.parseAsync(['node', 'test', 'key', 'show', '--export']);
+      try {
+        const program = new Command();
+        await init_secrets(program);
 
-      const calls = consoleLogSpy.mock.calls.flat();
-      const exportLine = calls.find(c => String(c).startsWith('export LSH_SECRETS_KEY='));
-      expect(exportLine).toBeDefined();
+        await program.parseAsync(['node', 'test', 'key', 'show', '--export']);
+
+        const calls = consoleLogSpy.mock.calls.flat();
+        const exportLine = calls.find(c => String(c).startsWith('export LSH_SECRETS_KEY='));
+        expect(exportLine).toBeDefined();
+      } finally {
+        if (originalKey) process.env.LSH_SECRETS_KEY = originalKey;
+        else delete process.env.LSH_SECRETS_KEY;
+      }
     });
 
     it('should generate a 64-character hex key', async () => {
