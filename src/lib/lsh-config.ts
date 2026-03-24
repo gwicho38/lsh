@@ -15,6 +15,7 @@ import { ENV_VARS } from '../constants/index.js';
 
 interface LshConfig {
   version: string;
+  ipfs_consent?: boolean;
   keys: {
     [repoName: string]: {
       key: string;
@@ -154,6 +155,15 @@ export class LshConfigManager {
    */
   getConfigPath(): string {
     return this.configPath;
+  }
+
+  getIpfsConsent(): boolean {
+    return this.config.ipfs_consent === true;
+  }
+
+  setIpfsConsent(value: boolean): void {
+    this.config.ipfs_consent = value;
+    this.saveConfig();
   }
 }
 
