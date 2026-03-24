@@ -29,3 +29,26 @@ describe('LshConfigManager ipfs_consent', () => {
     expect(manager2.getIpfsConsent()).toBe(true);
   });
 });
+
+import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
+
+describe('IPFSClientManager.ensureDaemonRunning', () => {
+  let manager: IPFSClientManager;
+
+  beforeEach(() => {
+    manager = new IPFSClientManager();
+  });
+
+  it('should be a method on IPFSClientManager', () => {
+    expect(typeof manager.ensureDaemonRunning).toBe('function');
+  });
+
+  it('should not throw when daemon is already running', async () => {
+    jest.spyOn(global, 'fetch').mockResolvedValueOnce(
+      new Response(JSON.stringify({ ID: 'test' }), { status: 200 })
+    );
+
+    await expect(manager.ensureDaemonRunning()).resolves.not.toThrow();
+    jest.restoreAllMocks();
+  });
+});
