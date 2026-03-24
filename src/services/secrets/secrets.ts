@@ -11,6 +11,7 @@ import * as readline from 'readline';
 import { getGitRepoInfo } from '../../lib/git-utils.js';
 import { ENV_VARS } from '../../constants/index.js';
 import type { OutputFormat } from '../../lib/format-utils.js';
+import { IPFSClientManager } from '../../lib/ipfs-client-manager.js';
 
 /**
  * Type guard to check if a string is a valid OutputFormat.
@@ -32,6 +33,9 @@ export async function init_secrets(program: Command) {
     .action(async (options) => {
       const manager = new SecretsManager({ globalMode: options.global });
       try {
+        const ipfsManager = new IPFSClientManager();
+        await ipfsManager.ensureDaemonRunning();
+
         // Resolve file path (handles global mode)
         const filePath = manager.resolveFilePath(options.file);
         // v2.0: Use context-aware default environment
@@ -58,6 +62,9 @@ export async function init_secrets(program: Command) {
     .action(async (options) => {
       const manager = new SecretsManager({ globalMode: options.global });
       try {
+        const ipfsManager = new IPFSClientManager();
+        await ipfsManager.ensureDaemonRunning();
+
         // Resolve file path (handles global mode)
         const filePath = manager.resolveFilePath(options.file);
         // v2.0: Use context-aware default environment

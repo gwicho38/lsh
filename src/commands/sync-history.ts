@@ -55,8 +55,13 @@ export function registerSyncHistoryCommands(program: Command) {
         if (options.url) {
           // Show URLs only
           for (const record of records) {
-            const cid = `bafkrei${record.key_fingerprint.substring(0, 52)}`;
-            console.log(`ipfs://${cid}`);
+            if (record.cid) {
+              console.log(`ipfs://${record.cid}`);
+            } else {
+              // Old records without real CID
+              const recordId = record.key_fingerprint.substring(0, 16);
+              console.log(`lsh-record://${recordId} (local)`);
+            }
           }
         } else {
           // Show formatted table

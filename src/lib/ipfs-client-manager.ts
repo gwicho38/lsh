@@ -8,8 +8,10 @@ import * as path from 'path';
 import * as os from 'os';
 import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
+import * as readline from 'readline';
 import { createLogger } from './logger.js';
 import { getPlatformInfo } from './platform-utils.js';
+import { getLshConfig } from './lsh-config.js';
 
 const execAsync = promisify(exec);
 const logger = createLogger('IPFSClientManager');
@@ -435,6 +437,99 @@ export class IPFSClientManager {
     // Cleanup
     fs.unlinkSync(zipPath);
     fs.rmSync(path.join(this.ipfsDir, 'kubo'), { recursive: true });
+  }
+
+  /**
+   * Ensure IPFS daemon is installed and running.
+   * Prompts once for install consent, then auto-manages daemon lifecycle.
+   */
+  async ensureDaemonRunning(): Promise<void> {
+    // Step 1: Check if daemon is already running
+    const isRunning = await this.isDaemonRunning();
+    if (isRunning) {
+      return;
+    }
+
+    // Step 2: Check if Kubo is installed
+    const clientInfo = await this.detect();
+    const config = getLshConfig();
+
+    if (!clientInfo.installed) {
+      if (config.getIpfsConsent()) {
+        logger.info('📦 Installing IPFS client (Kubo)...');
+        await this.install();
+        await this.init();
+      } else {
+        if (!process.stdin.isTTY) {
+          throw new Error(
+            'IPFS (Kubo) is required for sync but is not installed.\n' +
+            'Install manually: lsh ipfs install && lsh ipfs start'
+          );
+        }
+
+        const consent = await this.promptUser(
+          'IPFS (Kubo) is required for sync. Install now? [Y/n] '
+        );
+
+        if (consent.toLowerCase() === 'n') {
+          throw new Error(
+            'IPFS is required for push/pull.\n' +
+            'Install manually: lsh ipfs install && lsh ipfs start'
+          );
+        }
+
+        logger.info('📦 Installing IPFS client (Kubo)...');
+        await this.install();
+        await this.init();
+        config.setIpfsConsent(true);
+      }
+    }
+
+    // Step 3: Start daemon
+    logger.info('🚀 Starting IPFS daemon...');
+    await this.start();
+
+    // Step 4: Wait for API readiness
+    const ready = await this.waitForDaemon(15000);
+    if (!ready) {
+      throw new Error(
+        'IPFS daemon started but API is not responding.\n' +
+        'Try manually: lsh ipfs start'
+      );
+    }
+
+    logger.info('✅ IPFS daemon ready');
+  }
+
+  /**
+   * Check if daemon API is responding
+   */
+  private async isDaemonRunning(): Promise<boolean> {
+    try {
+      const response = await fetch('http://127.0.0.1:5001/api/v0/id', {
+        method: 'POST',
+        signal: AbortSignal.timeout(3000),
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Prompt user for input via readline
+   */
+  private promptUser(question: string): Promise<string> {
+    return new Promise((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+      rl.question(question, (answer) => {
+        rl.close();
+        resolve(answer || 'y');
+      });
+    });
   }
 
   /**
