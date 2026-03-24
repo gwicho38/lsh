@@ -388,7 +388,7 @@ export class SecretsManager {
     console.log(`📦 IPFS CID: ${cid}`);
 
     // Log to IPFS for immutable audit record
-    await this.logToIPFS('push', effectiveEnv, secrets.length);
+    await this.logToIPFS('push', effectiveEnv, secrets.length, cid);
   }
 
   /**
@@ -1166,7 +1166,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
   /**
    * Log sync operation to IPFS for immutable record
    */
-  private async logToIPFS(action: 'push' | 'pull' | 'sync' | 'create', environment: string, keysCount: number): Promise<void> {
+  private async logToIPFS(action: 'push' | 'pull' | 'sync' | 'create', environment: string, keysCount: number, realCid?: string): Promise<void> {
     try {
       const ipfsLogger = new IPFSSyncLogger();
 
@@ -1178,11 +1178,14 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         action,
         environment: this.getRepoAwareEnvironment(environment),
         keys_count: keysCount,
+        cid: realCid,
       });
 
       if (cid) {
-        console.log(`📝 Recorded on IPFS: ipfs://${cid}`);
-        console.log(`   View: https://ipfs.io/ipfs/${cid}`);
+        if (realCid) {
+          console.log(`📝 Recorded on IPFS: ipfs://${realCid}`);
+          console.log(`   View: https://ipfs.io/ipfs/${realCid}`);
+        }
       }
     } catch (error) {
       // Don't fail operation if IPFS logging fails
