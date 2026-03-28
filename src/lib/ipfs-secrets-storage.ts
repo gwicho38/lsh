@@ -18,6 +18,7 @@ import { createLogger } from './logger.js';
 import { getIPFSSync } from './ipfs-sync.js';
 import { deriveKeyInfo, ensureKeyImported } from './ipns-key-manager.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import { extractErrorMessage } from './lsh-error.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -146,9 +147,8 @@ export class IPFSSecretsStorage {
             }
           }
         } catch (error) {
-          const err = error as Error;
           logger.error(
-            `Content uploaded (CID: ${cid}) but IPNS publish failed: ${err.message}\n` +
+            `Content uploaded (CID: ${cid}) but IPNS publish failed: ${extractErrorMessage(error)}\n` +
             `Other machines won't find it via 'lsh pull' until you re-push.`
           );
         }
@@ -156,8 +156,7 @@ export class IPFSSecretsStorage {
 
       return cid;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to push secrets to IPFS: ${err.message}`);
+      logger.error(`Failed to push secrets to IPFS: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -205,8 +204,7 @@ export class IPFSSecretsStorage {
             }
           }
         } catch (error) {
-          const err = error as Error;
-          logger.debug(`   IPNS resolution error: ${err.message}`);
+          logger.debug(`   IPNS resolution error: ${extractErrorMessage(error)}`);
         }
       }
 
@@ -240,8 +238,7 @@ export class IPFSSecretsStorage {
             logger.info(`   ✅ Downloaded and cached from IPFS`);
           }
         } catch (error) {
-          const err = error as Error;
-          logger.debug(`   IPFS download failed: ${err.message}`);
+          logger.debug(`   IPFS download failed: ${extractErrorMessage(error)}`);
         }
       }
 
@@ -259,8 +256,7 @@ export class IPFSSecretsStorage {
 
       return secrets;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to pull secrets from IPFS: ${err.message}`);
+      logger.error(`Failed to pull secrets from IPFS: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -344,20 +340,20 @@ export class IPFSSecretsStorage {
 
       return JSON.parse(decrypted) as Secret[];
     } catch (error) {
-      const err = error as Error;
+      const msg = extractErrorMessage(error);
       // Catch crypto errors (bad decrypt, wrong block length) AND JSON parse errors
       // (wrong key can produce garbage that fails JSON.parse)
-      if (err.message.includes('bad decrypt') ||
-          err.message.includes('wrong final block length') ||
-          err.message.includes('Unexpected token') ||
-          err.message.includes('JSON')) {
+      if (msg.includes('bad decrypt') ||
+          msg.includes('wrong final block length') ||
+          msg.includes('Unexpected token') ||
+          msg.includes('JSON')) {
         throw new Error(
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
           '  3. Generate a shared key with: lsh key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + err.message
+          '\nOriginal error: ' + msg
         );
       }
       throw error;

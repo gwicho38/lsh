@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, beforeAll, afterAll, jest } from '@je
 
 // Mock fetch globally
 const mockFetch = jest.fn();
+const originalFetch = global.fetch;
 global.fetch = mockFetch as unknown as typeof fetch;
 
 // Create stable mock references - these persist across tests
@@ -56,14 +57,14 @@ const makeThenable = (defaultValue: any) => {
 
 makeThenable({ data: [], error: null });
 
-jest.mock('../src/lib/supabase-client.js', () => ({
+jest.unstable_mockModule('../src/lib/supabase-client.js', () => ({
   getSupabaseClient: () => mockSupabase,
 }));
 
 // Mock audit logger
-jest.mock('../src/lib/saas-audit.js', () => ({
+jest.unstable_mockModule('../src/lib/saas-audit.js', () => ({
   auditLogger: {
-    log: jest.fn().mockResolvedValue(undefined),
+    log: async () => undefined,
   },
 }));
 
@@ -110,7 +111,12 @@ describe('SaaS Billing Service', () => {
     billingService = new BillingService();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   afterAll(() => {
+    global.fetch = originalFetch;
     process.env = originalEnv;
   });
 

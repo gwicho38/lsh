@@ -7,6 +7,7 @@ export interface SyncRecord {
     command: string;
     action: 'push' | 'pull' | 'sync' | 'create';
     environment: string;
+    cid?: string;
     git_repo?: string;
     git_branch?: string;
     git_commit?: string;
@@ -64,7 +65,7 @@ export declare class IPFSSyncLogger {
     /**
      * Generate a content-addressed ID (like IPFS CID)
      */
-    private generateContentId;
+    private generateRecordId;
     /**
      * Store record locally (acts as IPFS cache)
      */

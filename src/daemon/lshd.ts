@@ -19,8 +19,10 @@ import { DaemonStatus, JobFilter } from '../lib/daemon-client.js';
 import { getPlatformPaths } from '../lib/platform-utils.js';
 import { ENV_VARS, DEFAULTS, ERRORS } from '../constants/index.js';
 import { OptimizedJobScheduler, SchedulerMetrics } from '../lib/optimized-job-scheduler.js';
+import { extractErrorMessage } from '../lib/lsh-error.js';
 import { BaseJobSpec } from '../lib/base-job-manager.js';
 import { PerformanceProfiler } from '../lib/metrics/performance-profiler.js';
+import lockfile from 'proper-lockfile';
 
 const execAsync = promisify(exec);
 
@@ -119,7 +121,7 @@ export class LSHJobDaemon extends EventEmitter {
       try {
         await this.executeScheduledJob(job as JobSpec);
       } catch (error) {
-        this.log('ERROR', `Failed to execute scheduled job ${job.id}: ${(error as Error).message}`);
+        this.log('ERROR', `Failed to execute scheduled job ${job.id}: ${extractErrorMessage(error)}`);
       }
     });
 
@@ -189,17 +191,37 @@ export class LSHJobDaemon extends EventEmitter {
       envValidation.warnings.forEach(warn => this.log('WARN', warn));
     }
 
-    // Check if daemon is already running
-    if (await this.isDaemonRunning()) {
-      throw new Error('Another daemon instance is already running');
+    // Check if daemon is already running (with file lock to prevent race condition - Issue #135)
+    // Ensure PID file exists before locking (proper-lockfile requires it)
+    try {
+      await fs.promises.access(this.config.pidFile);
+    } catch {
+      await fs.promises.writeFile(this.config.pidFile, '', { mode: 0o600 });
     }
-    this.startupProfiler?.checkpoint('daemon-startup', 'pid-check');
 
-    this.log('INFO', 'Starting LSH Job Daemon');
+    let release: (() => Promise<void>) | undefined;
+    try {
+      release = await lockfile.lock(this.config.pidFile, { stale: 10000, retries: 0 });
+    } catch (_lockErr) {
+      throw new Error('Another daemon instance is starting (could not acquire PID file lock)');
+    }
 
-    // Write PID file with secure permissions (mode 0o600 = rw-------)
-    await fs.promises.writeFile(this.config.pidFile, process.pid.toString(), { mode: 0o600 });
-    this.startupProfiler?.checkpoint('daemon-startup', 'pid-file-written');
+    try {
+      if (await this.isDaemonRunning()) {
+        throw new Error('Another daemon instance is already running');
+      }
+      this.startupProfiler?.checkpoint('daemon-startup', 'pid-check');
+
+      this.log('INFO', 'Starting LSH Job Daemon');
+
+      // Write PID file with secure permissions (mode 0o600 = rw-------)
+      await fs.promises.writeFile(this.config.pidFile, process.pid.toString(), { mode: 0o600 });
+      this.startupProfiler?.checkpoint('daemon-startup', 'pid-file-written');
+    } finally {
+      if (release) {
+        await release();
+      }
+    }
 
     this.isRunning = true;
     this.startJobScheduler();
@@ -570,7 +592,7 @@ export class LSHJobDaemon extends EventEmitter {
         this.startLegacyScheduler();
       }
     } catch (error) {
-      this.log('ERROR', `❌ Failed to start job scheduler: ${(error as Error).message}`);
+      this.log('ERROR', `❌ Failed to start job scheduler: ${extractErrorMessage(error)}`);
       throw error;
     }
   }
@@ -603,7 +625,7 @@ export class LSHJobDaemon extends EventEmitter {
         this.cleanupCompletedJobs();
         this.rotateLogs();
       } catch (error) {
-        this.log('ERROR', `❌ Maintenance error: ${(error as Error).message}`);
+        this.log('ERROR', `❌ Maintenance error: ${extractErrorMessage(error)}`);
       }
     }, this.config.checkInterval);
 
@@ -623,7 +645,7 @@ export class LSHJobDaemon extends EventEmitter {
         this.cleanupCompletedJobs();
         this.rotateLogs();
       } catch (error) {
-        this.log('ERROR', `❌ Scheduler error: ${(error as Error).message}`);
+        this.log('ERROR', `❌ Scheduler error: ${extractErrorMessage(error)}`);
       }
     }, this.config.checkInterval);
     this.log('INFO', `✅ Legacy scheduler started successfully`);
@@ -843,6 +865,10 @@ export class LSHJobDaemon extends EventEmitter {
 
     this.logStream = fs.createWriteStream(this.config.logFile, { flags: 'a' });
 
+    this.logStream.on('error', (err) => {
+      console.error(`Log stream error: ${err.message}`);
+    });
+
     // Log uncaught exceptions
     process.on('uncaughtException', (error) => {
       this.log('FATAL', `Uncaught exception: ${error.message}`);
@@ -871,6 +897,12 @@ export class LSHJobDaemon extends EventEmitter {
     }
 
     this.ipcServer = net.createServer((socket: net.Socket) => {
+      socket.on('error', (err: Error & { code?: string }) => {
+        if (err.code !== 'ECONNRESET') {
+          this.log('WARN', `IPC socket error: ${err.message}`);
+        }
+      });
+
       socket.on('data', async (data: Buffer) => {
         let messageId: string | undefined;
         try {
@@ -1015,21 +1047,21 @@ export class LSHJobDaemon extends EventEmitter {
 
 
   private setupSignalHandlers(): void {
-    process.on('SIGTERM', async () => {
+    process.on('SIGTERM', () => {
       this.log('INFO', 'Received SIGTERM, shutting down gracefully');
-      await this.stop();
-      process.exit(0);
+      this.stop().then(() => process.exit(0)).catch(() => process.exit(1));
     });
 
-    process.on('SIGINT', async () => {
+    process.on('SIGINT', () => {
       this.log('INFO', 'Received SIGINT, shutting down gracefully');
-      await this.stop();
-      process.exit(0);
+      this.stop().then(() => process.exit(0)).catch(() => process.exit(1));
     });
 
-    process.on('SIGHUP', async () => {
+    process.on('SIGHUP', () => {
       this.log('INFO', 'Received SIGHUP, restarting');
-      await this.restart();
+      this.restart().catch((err) => {
+        this.log('ERROR', `Failed to restart on SIGHUP: ${err.message}`);
+      });
     });
   }
 }
@@ -1103,8 +1135,7 @@ if (isMainModule()) {
         client.disconnect();
         process.exit(0);
       } catch (error) {
-        const err = error as Error;
-        cliLogger.error('Failed to add job', err);
+        cliLogger.error(`Failed to add job: ${extractErrorMessage(error)}`);
         process.exit(1);
       }
     })();

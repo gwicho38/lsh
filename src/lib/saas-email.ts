@@ -78,6 +78,7 @@ export class EmailService {
           html: params.html,
           text: params.text,
         }),
+        signal: AbortSignal.timeout(30000),
       });
 
       if (!response.ok) {

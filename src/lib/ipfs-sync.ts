@@ -15,6 +15,7 @@ import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { createLogger } from './logger.js';
+import { extractErrorMessage } from './lsh-error.js';
 
 const logger = createLogger('IPFSSync');
 
@@ -155,8 +156,7 @@ export class IPFSSync {
 
       return cid;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`IPFS upload error: ${err.message}`);
+      logger.error(`IPFS upload error: ${extractErrorMessage(error)}`);
       return null;
     }
   }
@@ -185,6 +185,7 @@ export class IPFSSync {
     }
 
     // Fall back to public gateways
+    let backoffMs = 1000;
     for (const gatewayTemplate of this.GATEWAYS) {
       const gatewayUrl = gatewayTemplate.replace('{cid}', cid);
 
@@ -200,6 +201,8 @@ export class IPFSSync {
         }
       } catch {
         logger.debug(`Gateway ${gatewayUrl} failed, trying next...`);
+        await new Promise<void>((resolve) => { setTimeout(resolve, backoffMs); });
+        backoffMs = Math.min(backoffMs * 2, 10000);
       }
     }
 
@@ -272,8 +275,7 @@ export class IPFSSync {
 
       return false;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Pin failed: ${err.message}`);
+      logger.error(`Pin failed: ${extractErrorMessage(error)}`);
       return false;
     }
   }
@@ -301,8 +303,7 @@ export class IPFSSync {
 
       return false;
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Unpin failed: ${err.message}`);
+      logger.error(`Unpin failed: ${extractErrorMessage(error)}`);
       return false;
     }
   }
@@ -352,8 +353,7 @@ export class IPFSSync {
 
       await fsPromises.writeFile(this.historyPath, JSON.stringify(history, null, 2), 'utf-8');
     } catch (error) {
-      const err = error as Error;
-      logger.debug(`Failed to save history: ${err.message}`);
+      logger.debug(`Failed to save history: ${extractErrorMessage(error)}`);
     }
   }
 
@@ -384,8 +384,7 @@ export class IPFSSync {
         logger.info('Sync history cleared');
       }
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to clear history: ${err.message}`);
+      logger.error(`Failed to clear history: ${extractErrorMessage(error)}`);
     }
   }
 
@@ -432,8 +431,7 @@ export class IPFSSync {
         logger.info(`📡 IPNS published: ${data.Name} → ${data.Value}`);
         return data.Name;
       } catch (error) {
-        const err = error as Error;
-        logger.warn(`IPNS publish error (attempt ${attempt}): ${err.message}`);
+        logger.warn(`IPNS publish error (attempt ${attempt}): ${extractErrorMessage(error)}`);
         if (attempt === 2) {
           logger.error(
             `IPNS publish failed after retry. Content is uploaded (CID: ${cid}) ` +
@@ -471,8 +469,7 @@ export class IPFSSync {
       logger.info(`📡 IPNS resolved: ${ipnsName} → ${resolvedCid}`);
       return resolvedCid;
     } catch (error) {
-      const err = error as Error;
-      logger.debug(`IPNS resolve error: ${err.message}`);
+      logger.debug(`IPNS resolve error: ${extractErrorMessage(error)}`);
       return null;
     }
   }

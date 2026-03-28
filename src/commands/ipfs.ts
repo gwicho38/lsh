@@ -11,6 +11,7 @@ import { getIPFSSync } from '../lib/ipfs-sync.js';
 import { deriveKeyInfo, ensureKeyImported } from '../lib/ipns-key-manager.js';
 import { getGitRepoInfo } from '../lib/git-utils.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import { extractErrorMessage } from '../lib/lsh-error.js';
 
 /**
  * Register IPFS commands
@@ -111,8 +112,7 @@ export function registerIPFSCommands(program: Command): void {
         }
         console.log('');
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('\n❌ Failed to check status:'), err.message);
+        console.error(chalk.red('\n❌ Failed to check status:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -140,9 +140,8 @@ export function registerIPFSCommands(program: Command): void {
         console.log(chalk.cyan('  lsh ipfs start   # Start IPFS daemon'));
         console.log('');
       } catch (error) {
-        const err = error as Error;
         spinner.fail(chalk.red('Installation failed'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
     });
@@ -156,8 +155,7 @@ export function registerIPFSCommands(program: Command): void {
         const manager = new IPFSClientManager();
         await manager.uninstall();
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('\n❌ Uninstallation failed:'), err.message);
+        console.error(chalk.red('\n❌ Uninstallation failed:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -179,9 +177,8 @@ export function registerIPFSCommands(program: Command): void {
         console.log(chalk.cyan('  lsh ipfs start   # Start IPFS daemon'));
         console.log('');
       } catch (error) {
-        const err = error as Error;
         spinner.fail(chalk.red('Initialization failed'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
     });
@@ -195,8 +192,7 @@ export function registerIPFSCommands(program: Command): void {
         const manager = new IPFSClientManager();
         await manager.start();
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('\n❌ Failed to start daemon:'), err.message);
+        console.error(chalk.red('\n❌ Failed to start daemon:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -210,8 +206,7 @@ export function registerIPFSCommands(program: Command): void {
         const manager = new IPFSClientManager();
         await manager.stop();
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('\n❌ Failed to stop daemon:'), err.message);
+        console.error(chalk.red('\n❌ Failed to stop daemon:'), extractErrorMessage(error));
         process.exit(1);
       }
     });

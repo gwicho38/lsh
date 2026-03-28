@@ -16,6 +16,7 @@ import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 import { getGitRepoInfo } from '../lib/git-utils.js';
 import { deriveKeyInfo, ensureKeyImported } from '../lib/ipns-key-manager.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import { extractErrorMessage } from '../lib/lsh-error.js';
 
 /**
  * Register sync commands
@@ -88,9 +89,8 @@ export function registerSyncCommands(program: Command): void {
           await manager.install({ force: options.force });
           installSpinner.succeed(chalk.green('IPFS client installed'));
         } catch (error) {
-          const err = error as Error;
           installSpinner.fail(chalk.red('Failed to install IPFS'));
-          console.error(chalk.red(err.message));
+          console.error(chalk.red(extractErrorMessage(error)));
           process.exit(1);
         }
       } else {
@@ -104,13 +104,13 @@ export function registerSyncCommands(program: Command): void {
         await manager.init();
         initSpinner.succeed(chalk.green('IPFS repository initialized'));
       } catch (error) {
-        const err = error as Error;
+        const msg = extractErrorMessage(error);
         // Check if already initialized
-        if (err.message.includes('already') || err.message.includes('exists')) {
+        if (msg.includes('already') || msg.includes('exists')) {
           initSpinner.succeed(chalk.green('IPFS repository already initialized'));
         } else {
           initSpinner.fail(chalk.red('Failed to initialize IPFS'));
-          console.error(chalk.red(err.message));
+          console.error(chalk.red(msg));
           process.exit(1);
         }
       }
@@ -121,9 +121,8 @@ export function registerSyncCommands(program: Command): void {
         await manager.start();
         startSpinner.succeed(chalk.green('IPFS daemon started'));
       } catch (error) {
-        const err = error as Error;
         startSpinner.fail(chalk.red('Failed to start daemon'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
 
@@ -156,8 +155,7 @@ export function registerSyncCommands(program: Command): void {
         await manager.ensureDaemonRunning();
         console.log(chalk.green('✓ IPFS daemon running'));
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
 
@@ -251,9 +249,8 @@ export function registerSyncCommands(program: Command): void {
         console.log(chalk.cyan(`  lsh sync pull ${cid}`));
         console.log('');
       } catch (error) {
-        const err = error as Error;
         uploadSpinner.fail(chalk.red('Sync failed'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
     });
@@ -276,8 +273,7 @@ export function registerSyncCommands(program: Command): void {
           const ipfsManager = new IPFSClientManager();
           await ipfsManager.ensureDaemonRunning();
         } catch (error) {
-          const err = error as Error;
-          spinner.fail(chalk.red(err.message));
+          spinner.fail(chalk.red(extractErrorMessage(error)));
           process.exit(1);
         }
 
@@ -371,9 +367,8 @@ export function registerSyncCommands(program: Command): void {
         console.log(chalk.cyan(`  lsh sync pull ${cid}`));
         console.log('');
       } catch (error) {
-        const err = error as Error;
         spinner.fail(chalk.red('Push failed'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
     });
@@ -397,8 +392,7 @@ export function registerSyncCommands(program: Command): void {
             const ipfsManager = new IPFSClientManager();
             await ipfsManager.ensureDaemonRunning();
           } catch (error) {
-            const err = error as Error;
-            spinner.fail(chalk.red(err.message));
+            spinner.fail(chalk.red(extractErrorMessage(error)));
             process.exit(1);
           }
 
@@ -446,8 +440,7 @@ export function registerSyncCommands(program: Command): void {
           spinner.succeed(chalk.green(`Resolved IPNS → CID: ${cid.substring(0, 16)}...`));
           spinner.start('Downloading from IPFS...');
         } catch (error) {
-          const err = error as Error;
-          spinner.fail(chalk.red(`IPNS resolution failed: ${err.message}`));
+          spinner.fail(chalk.red(`IPNS resolution failed: ${extractErrorMessage(error)}`));
           process.exit(1);
         }
       }
@@ -537,9 +530,8 @@ export function registerSyncCommands(program: Command): void {
         console.log(chalk.bold('CID:'), chalk.gray(cid));
         console.log('');
       } catch (error) {
-        const err = error as Error;
         spinner.fail(chalk.red('Pull failed'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
     });
@@ -623,8 +615,7 @@ export function registerSyncCommands(program: Command): void {
         }
         console.log('');
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('Failed to check status:'), err.message);
+        console.error(chalk.red('Failed to check status:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -679,8 +670,7 @@ export function registerSyncCommands(program: Command): void {
         console.log(chalk.gray(`Showing ${history.length} entries. Use -n to show more.`));
         console.log('');
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('Failed to get history:'), err.message);
+        console.error(chalk.red('Failed to get history:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -713,9 +703,8 @@ export function registerSyncCommands(program: Command): void {
           console.log('');
         }
       } catch (error) {
-        const err = error as Error;
         spinner.fail(chalk.red('Verification failed'));
-        console.error(chalk.red(err.message));
+        console.error(chalk.red(extractErrorMessage(error)));
         process.exit(1);
       }
     });
@@ -730,8 +719,7 @@ export function registerSyncCommands(program: Command): void {
         await ipfsSync.clearHistory();
         console.log(chalk.green('✅ Sync history cleared'));
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('Failed to clear history:'), err.message);
+        console.error(chalk.red('Failed to clear history:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -757,8 +745,7 @@ export function registerSyncCommands(program: Command): void {
 
         await manager.start();
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('Failed to start daemon:'), err.message);
+        console.error(chalk.red('Failed to start daemon:'), extractErrorMessage(error));
         process.exit(1);
       }
     });
@@ -772,8 +759,7 @@ export function registerSyncCommands(program: Command): void {
         const manager = new IPFSClientManager();
         await manager.stop();
       } catch (error) {
-        const err = error as Error;
-        console.error(chalk.red('Failed to stop daemon:'), err.message);
+        console.error(chalk.red('Failed to stop daemon:'), extractErrorMessage(error));
         process.exit(1);
       }
     });

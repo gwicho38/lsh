@@ -13,6 +13,7 @@ import { JobSpec } from './job-manager.js';
 import { ShellJob } from './database-schema.js';
 import { getPlatformPaths } from './platform-utils.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import { extractErrorMessage } from './lsh-error.js';
 
 export interface DaemonMessage {
   command: string;
@@ -138,8 +139,15 @@ export class DaemonClient extends EventEmitter {
         return;
       }
 
+      // Clean up existing socket if reconnecting
+      if (this.socket) {
+        this.socket.removeAllListeners();
+        this.socket.destroy();
+        this.socket = undefined;
+      }
+
       this.socket = new net.Socket();
-      
+
       this.socket.on('connect', () => {
         this.connected = true;
         this.emit('connected');
@@ -204,7 +212,7 @@ export class DaemonClient extends EventEmitter {
                       buffer = buffer.substring(i + 1); // Remove processed part
                       break;
                     } catch (parseError) {
-                      this.logger.error('Invalid JSON in daemon response', parseError as Error, { jsonContent: jsonStr.substring(0, 200) });
+                      this.logger.error(`Invalid JSON in daemon response: ${extractErrorMessage(parseError)}`, undefined, { jsonContent: jsonStr.substring(0, 200) });
                       buffer = buffer.substring(i + 1); // Skip this invalid JSON
                       break;
                     }
@@ -218,7 +226,7 @@ export class DaemonClient extends EventEmitter {
               }
 
             } catch (parseError) {
-              this.logger.error('JSON parsing error', parseError as Error);
+              this.logger.error(`JSON parsing error: ${extractErrorMessage(parseError)}`);
               // Try to find the start of the next JSON object
               const nextStart = buffer.indexOf('{', 1);
               if (nextStart > 0) {
@@ -230,7 +238,7 @@ export class DaemonClient extends EventEmitter {
             }
           }
         } catch (error) {
-          this.logger.error('Failed to process daemon response', error as Error);
+          this.logger.error(`Failed to process daemon response: ${extractErrorMessage(error)}`);
           buffer = ''; // Reset buffer on error
         }
       });
@@ -418,8 +426,7 @@ export class DaemonClient extends EventEmitter {
         });
       } catch (error) {
         // Don't fail the trigger if database save fails
-        const err = error as Error;
-        this.logger.warn(`Failed to save job execution to database: ${err.message}`);
+        this.logger.warn(`Failed to save job execution to database: ${extractErrorMessage(error)}`);
       }
     }
 
@@ -466,7 +473,7 @@ export class DaemonClient extends EventEmitter {
         return [];
       }
     } catch (error) {
-      this.logger.error('Failed to list jobs', error as Error);
+      this.logger.error(`Failed to list jobs: ${extractErrorMessage(error)}`);
       // Return empty array instead of throwing to prevent crashes
       return [];
     }
@@ -530,7 +537,7 @@ export class DaemonClient extends EventEmitter {
         started_at: new Date().toISOString(),
       });
     } catch (error) {
-      this.logger.error('Failed to sync job to database', error as Error);
+      this.logger.error(`Failed to sync job to database: ${extractErrorMessage(error)}`);
     }
   }
 

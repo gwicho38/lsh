@@ -10,7 +10,6 @@ import type {
   User,
   LoginInput,
   SignupInput,
-  AuthToken,
   AuthSession,
   Organization,
   JwtPayload,
@@ -20,7 +19,7 @@ import { getSupabaseClient } from './supabase-client.js';
 import { ENV_VARS } from '../constants/index.js';
 
 const BCRYPT_ROUNDS = 12;
-const TOKEN_EXPIRY = 7 * 24 * 60 * 60; // 7 days in seconds
+const TOKEN_EXPIRY = 60 * 60; // 1 hour
 const REFRESH_TOKEN_EXPIRY = 30 * 24 * 60 * 60; // 30 days
 const EMAIL_VERIFICATION_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in ms
 
@@ -95,7 +94,7 @@ export function generateRefreshToken(userId: string): string {
 /**
  * Verify and decode JWT token
  */
-export function verifyToken(token: string): { userId: string; email?: string; type: string } {
+export function verifyToken(token: string, expectedType?: 'access' | 'refresh'): { userId: string; email?: string; type: string } {
   const secret = process.env[ENV_VARS.LSH_JWT_SECRET];
   if (!secret) {
     throw new Error('LSH_JWT_SECRET is not set');
@@ -106,6 +105,10 @@ export function verifyToken(token: string): { userId: string; email?: string; ty
       issuer: 'lsh-saas',
       audience: 'lsh-api',
     }) as JwtPayload;
+
+    if (expectedType && decoded.type !== expectedType) {
+      throw new Error(`Expected ${expectedType} token, got ${decoded.type}`);
+    }
 
     return {
       userId: decoded.sub,
@@ -302,30 +305,28 @@ export class AuthService {
   }
 
   /**
-   * Refresh access token
+   * Refresh access token using a valid refresh token.
+   * Validates that the token is specifically a refresh token,
+   * verifies the user still exists and is active, then issues
+   * a new access token without rotating the refresh token.
    */
-  async refreshAccessToken(refreshToken: string): Promise<AuthToken> {
-    const { userId } = verifyToken(refreshToken);
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+    const decoded = verifyToken(refreshToken, 'refresh');
 
+    // Get user to verify they still exist and are active
     const { data: user, error } = await this.supabase
       .from('users')
-      .select('email')
-      .eq('id', userId)
-      .is('deleted_at', null)
+      .select('id, email, is_active')
+      .eq('id', decoded.userId)
       .single();
 
-    if (error || !user) {
-      throw new Error('INVALID_TOKEN');
+    if (error || !user || !user.is_active) {
+      throw new Error('INVALID_REFRESH_TOKEN');
     }
 
-    const accessToken = generateAccessToken(userId, user.email);
-    const newRefreshToken = generateRefreshToken(userId);
+    const accessToken = generateAccessToken(user.id, user.email);
 
-    return {
-      accessToken,
-      refreshToken: newRefreshToken,
-      expiresIn: TOKEN_EXPIRY,
-    };
+    return { accessToken };
   }
 
   /**

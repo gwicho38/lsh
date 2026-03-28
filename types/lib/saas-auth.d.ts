@@ -2,7 +2,7 @@
  * LSH SaaS Authentication Service
  * Handles user signup, login, email verification, and session management
  */
-import type { User, LoginInput, SignupInput, AuthToken, AuthSession, Organization } from './saas-types.js';
+import type { User, LoginInput, SignupInput, AuthSession, Organization } from './saas-types.js';
 /**
  * Hash a password using bcrypt
  */
@@ -22,7 +22,7 @@ export declare function generateRefreshToken(userId: string): string;
 /**
  * Verify and decode JWT token
  */
-export declare function verifyToken(token: string): {
+export declare function verifyToken(token: string, expectedType?: 'access' | 'refresh'): {
     userId: string;
     email?: string;
     type: string;
@@ -52,9 +52,14 @@ export declare class AuthService {
      */
     login(input: LoginInput, ipAddress?: string): Promise<AuthSession>;
     /**
-     * Refresh access token
+     * Refresh access token using a valid refresh token.
+     * Validates that the token is specifically a refresh token,
+     * verifies the user still exists and is active, then issues
+     * a new access token without rotating the refresh token.
      */
-    refreshAccessToken(refreshToken: string): Promise<AuthToken>;
+    refreshAccessToken(refreshToken: string): Promise<{
+        accessToken: string;
+    }>;
     /**
      * Get user by ID
      */

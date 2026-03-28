@@ -75,6 +75,19 @@ export declare class IPFSClientManager {
      */
     private installKuboWindows;
     /**
+     * Ensure IPFS daemon is installed and running.
+     * Prompts once for install consent, then auto-manages daemon lifecycle.
+     */
+    ensureDaemonRunning(): Promise<void>;
+    /**
+     * Check if daemon API is responding
+     */
+    private isDaemonRunning;
+    /**
+     * Prompt user for input via readline
+     */
+    private promptUser;
+    /**
      * Ensure required directories exist
      */
     private ensureDirectories;

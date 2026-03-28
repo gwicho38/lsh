@@ -54,10 +54,8 @@ const createMockSupabase = () => {
 
 let mockSupabase = createMockSupabase();
 
-jest.mock('../src/lib/supabase-client.js', () => ({
-  get getSupabaseClient() {
-    return () => mockSupabase;
-  },
+jest.unstable_mockModule('../src/lib/supabase-client.js', () => ({
+  getSupabaseClient: () => mockSupabase,
 }));
 
 describe('SaaS Audit Logging Service', () => {
@@ -67,14 +65,6 @@ describe('SaaS Audit Logging Service', () => {
   let getUserAgentFromRequest: typeof import('../src/lib/saas-audit.js').getUserAgentFromRequest;
 
   beforeAll(async () => {
-    // Reset modules to ensure our mock is applied fresh
-    jest.resetModules();
-
-    // Re-establish the mock after reset
-    jest.doMock('../src/lib/supabase-client.js', () => ({
-      getSupabaseClient: () => mockSupabase,
-    }));
-
     const module = await import('../src/lib/saas-audit.js');
     AuditLogger = module.AuditLogger;
     getIpFromRequest = module.getIpFromRequest;
@@ -85,6 +75,10 @@ describe('SaaS Audit Logging Service', () => {
     jest.clearAllMocks();
     mockSupabase = createMockSupabase();
     auditLogger = new AuditLogger();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('log', () => {

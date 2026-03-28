@@ -144,20 +144,20 @@ export class SecretsService {
 
     // Decrypt if requested
     if (decrypt) {
-      return Promise.all(
+      const results = await Promise.allSettled(
         secrets.map(async (secret) => {
-          try {
-            const decryptedValue = await encryptionService.decryptForTeam(
-              teamId,
-              secret.encryptedValue
-            );
-            return { ...secret, encryptedValue: decryptedValue };
-          } catch (error) {
-            console.error(`Failed to decrypt secret ${secret.id}:`, error);
-            return secret;
-          }
+          const decryptedValue = await encryptionService.decryptForTeam(
+            teamId,
+            secret.encryptedValue
+          );
+          return { ...secret, encryptedValue: decryptedValue };
         })
       );
+      return results.map((result, i) => {
+        if (result.status === 'fulfilled') return result.value;
+        console.error(`Failed to decrypt secret ${secrets[i].id}:`, result.reason);
+        return secrets[i];
+      });
     }
 
     return secrets;
