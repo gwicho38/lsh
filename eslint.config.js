@@ -116,7 +116,7 @@ export default [
       // TYPESCRIPT STRICTNESS (Non-type-aware rules)
       // Gradually improve type safety
       // ====================================
-      '@typescript-eslint/no-explicit-any': 'warn', // Warn about explicit any types
+      '@typescript-eslint/no-explicit-any': 'error', // Enforce no explicit any types
 
       // ====================================
       // CONSOLE AND DEBUGGING

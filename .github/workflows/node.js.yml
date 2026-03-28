@@ -64,7 +64,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.9.0, 21.x]
+        node-version: [20.9.0, 22.x]
 
     steps:
     - uses: actions/checkout@v4
@@ -87,7 +87,6 @@ jobs:
 
     - name: Run tests with coverage
       run: npm test -- --coverage --forceExit
-      continue-on-error: true  # Temporarily allow test failures while fixing test suite (v0.5.3)
 
     - name: Upload coverage reports
       if: matrix.node-version == '20.9.0'
@@ -133,4 +132,3 @@ jobs:
       run: npm run test:integration --if-present || echo "No integration tests configured"
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test
-      continue-on-error: true

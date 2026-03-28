@@ -313,6 +313,24 @@ export class IPFSClientManager {
   async stop(): Promise<void> {
     const pidPath = path.join(this.ipfsDir, 'daemon.pid');
 
+    // Try graceful shutdown via IPFS API first (works even without PID file)
+    try {
+      const response = await fetch('http://127.0.0.1:5001/api/v0/shutdown', {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (response.ok) {
+        // Clean up PID file if it exists
+        if (fs.existsSync(pidPath)) {
+          fs.unlinkSync(pidPath);
+        }
+        logger.info('✅ IPFS daemon stopped');
+        return;
+      }
+    } catch {
+      // API shutdown failed, fall back to PID-based kill
+    }
+
     if (!fs.existsSync(pidPath)) {
       logger.info('ℹ️  IPFS daemon not running (no PID file)');
       return;
@@ -327,7 +345,13 @@ export class IPFSClientManager {
       fs.unlinkSync(pidPath);
       logger.info('✅ IPFS daemon stopped');
     } catch (error) {
-      const err = error as Error;
+      const err = error as NodeJS.ErrnoException;
+      // Process already gone — clean up stale PID file
+      if (err.code === 'ESRCH') {
+        if (fs.existsSync(pidPath)) fs.unlinkSync(pidPath);
+        logger.info('✅ IPFS daemon already stopped (stale PID file cleaned)');
+        return;
+      }
       logger.error(`❌ Failed to stop daemon: ${err.message}`);
       throw error;
     }

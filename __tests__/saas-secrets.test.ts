@@ -46,48 +46,46 @@ const createMockSupabase = () => {
 
 let mockSupabase = createMockSupabase();
 
-jest.mock('../src/lib/supabase-client.js', () => ({
-  get getSupabaseClient() {
-    return () => mockSupabase;
-  },
+jest.unstable_mockModule('../src/lib/supabase-client.js', () => ({
+  getSupabaseClient: () => mockSupabase,
 }));
 
 // Mock encryption service
-jest.mock('../src/lib/saas-encryption.js', () => ({
+jest.unstable_mockModule('../src/lib/saas-encryption.js', () => ({
   encryptionService: {
-    getTeamKey: jest.fn().mockResolvedValue({
+    getTeamKey: async () => ({
       id: 'key-123',
       teamId: 'team-123',
       encryptedKey: 'encrypted-key',
       keyVersion: 1,
       isActive: true,
     }),
-    generateTeamKey: jest.fn().mockResolvedValue({
+    generateTeamKey: async () => ({
       id: 'key-new',
       teamId: 'team-123',
       keyVersion: 1,
       isActive: true,
     }),
-    encryptForTeam: jest.fn().mockResolvedValue('iv:encrypted-data'),
-    decryptForTeam: jest.fn().mockResolvedValue('decrypted-value'),
+    encryptForTeam: async () => 'iv:encrypted-data',
+    decryptForTeam: async () => 'decrypted-value',
   },
 }));
 
 // Mock audit logger
-jest.mock('../src/lib/saas-audit.js', () => ({
+jest.unstable_mockModule('../src/lib/saas-audit.js', () => ({
   auditLogger: {
-    log: jest.fn().mockResolvedValue(undefined),
+    log: async () => undefined,
   },
 }));
 
 // Mock organizations service
-jest.mock('../src/lib/saas-organizations.js', () => ({
+jest.unstable_mockModule('../src/lib/saas-organizations.js', () => ({
   organizationService: {
-    getOrganizationById: jest.fn().mockResolvedValue({
+    getOrganizationById: async () => ({
       id: 'org-123',
       subscriptionTier: 'pro',
     }),
-    getUsageSummary: jest.fn().mockResolvedValue({
+    getUsageSummary: async () => ({
       secretCount: 10,
     }),
   },
@@ -98,14 +96,6 @@ describe('SaaS Secrets Service', () => {
   let secretsService: InstanceType<typeof SecretsService>;
 
   beforeAll(async () => {
-    // Reset modules to ensure our mock is applied fresh
-    jest.resetModules();
-
-    // Re-establish the mock after reset
-    jest.doMock('../src/lib/supabase-client.js', () => ({
-      getSupabaseClient: () => mockSupabase,
-    }));
-
     const module = await import('../src/lib/saas-secrets.js');
     SecretsService = module.SecretsService;
   });
@@ -114,6 +104,10 @@ describe('SaaS Secrets Service', () => {
     jest.clearAllMocks();
     mockSupabase = createMockSupabase();
     secretsService = new SecretsService();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   describe('createSecret', () => {

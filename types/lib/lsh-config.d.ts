@@ -50,6 +50,8 @@ export declare class LshConfigManager {
      * Get config file path (for debugging/migration)
      */
     getConfigPath(): string;
+    getIpfsConsent(): boolean;
+    setIpfsConsent(value: boolean): void;
 }
 /**
  * Get the global LSH config manager instance

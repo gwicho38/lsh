@@ -8,12 +8,14 @@
 import { spawn, exec, ChildProcess } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
+import lockfile from 'proper-lockfile';
 import {
   BaseJobManager,
   BaseJobSpec,
   BaseJobFilter,
 } from './base-job-manager.js';
 import MemoryJobStorage from './job-storage-memory.js';
+import { extractErrorMessage } from './lsh-error.js';
 
 const execAsync = promisify(exec);
 
@@ -169,21 +171,30 @@ export class JobManager extends BaseJobManager {
 
       job.pid = job.process.pid;
 
-      // Handle output
+      // Handle output (cap buffer at 1MB to prevent OOM)
+      const MAX_OUTPUT = 1024 * 1024;
       job.process.stdout?.on('data', (data) => {
-        job.stdout = (job.stdout || '') + data.toString();
+        const chunk = data.toString();
+        job.stdout = (job.stdout || '') + chunk;
+        if (job.stdout.length > MAX_OUTPUT) {
+          job.stdout = '...[truncated]\n' + job.stdout.slice(-MAX_OUTPUT);
+        }
         if (job.logFile) {
           fs.appendFileSync(job.logFile, data);
         }
-        this.emit('jobOutput', job.id, 'stdout', data.toString());
+        this.emit('jobOutput', job.id, 'stdout', chunk);
       });
 
       job.process.stderr?.on('data', (data) => {
-        job.stderr = (job.stderr || '') + data.toString();
+        const chunk = data.toString();
+        job.stderr = (job.stderr || '') + chunk;
+        if (job.stderr.length > MAX_OUTPUT) {
+          job.stderr = '...[truncated]\n' + job.stderr.slice(-MAX_OUTPUT);
+        }
         if (job.logFile) {
           fs.appendFileSync(job.logFile, data);
         }
-        this.emit('jobOutput', job.id, 'stderr', data.toString());
+        this.emit('jobOutput', job.id, 'stderr', chunk);
       });
 
       // Handle completion
@@ -219,10 +230,9 @@ export class JobManager extends BaseJobManager {
       return updatedJob;
 
     } catch (error) {
-      const err = error as Error;
       await this.updateJobStatus(job.id, 'failed', {
         completedAt: new Date(),
-        stderr: err.message,
+        stderr: extractErrorMessage(error),
       });
       this.emit('jobFailed', job, error);
       throw error;
@@ -389,7 +399,7 @@ export class JobManager extends BaseJobManager {
           };
         });
     } catch (error) {
-      this.logger.error('Failed to get system processes', error as Error);
+      this.logger.error('Failed to get system processes: ' + extractErrorMessage(error));
       return [];
     }
   }
@@ -480,7 +490,7 @@ export class JobManager extends BaseJobManager {
         this.logger.info(`Loaded ${persistedJobs.length} persisted jobs`);
       }
     } catch (error) {
-      this.logger.error('Failed to load persisted jobs', error as Error);
+      this.logger.error('Failed to load persisted jobs: ' + extractErrorMessage(error));
     }
   }
 
@@ -492,10 +502,24 @@ export class JobManager extends BaseJobManager {
         return serializable;
       });
 
-      // Write with secure permissions (mode 0o600 = rw-------)
-      fs.writeFileSync(this.persistenceFile, JSON.stringify(jobs, null, 2), { mode: 0o600 });
+      const data = JSON.stringify(jobs, null, 2);
+
+      // Use file locking to prevent concurrent write corruption
+      if (fs.existsSync(this.persistenceFile)) {
+        const release = await lockfile.lock(this.persistenceFile, {
+          stale: 5000,
+          retries: { retries: 3, minTimeout: 100 },
+        });
+        try {
+          fs.writeFileSync(this.persistenceFile, data, { mode: 0o600 });
+        } finally {
+          await release();
+        }
+      } else {
+        fs.writeFileSync(this.persistenceFile, data, { mode: 0o600 });
+      }
     } catch (error) {
-      this.logger.error('Failed to persist jobs', error as Error);
+      this.logger.error('Failed to persist jobs: ' + extractErrorMessage(error));
     }
   }
 
@@ -527,7 +551,7 @@ export class JobManager extends BaseJobManager {
             await this.updateJob(job.id, { schedule: job.schedule });
           }
         } catch (error) {
-          this.logger.error(`Failed to start scheduled job ${job.id}`, error as Error);
+          this.logger.error(`Failed to start scheduled job ${job.id}: ${extractErrorMessage(error)}`);
         }
       }
     }
@@ -547,7 +571,7 @@ export class JobManager extends BaseJobManager {
         try {
           await this.stopJob(job.id);
         } catch (error) {
-          this.logger.error(`Failed to stop job ${job.id}`, error as Error);
+          this.logger.error(`Failed to stop job ${job.id}: ${extractErrorMessage(error)}`);
         }
       }
 

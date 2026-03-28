@@ -13,7 +13,7 @@ const ALGORITHM = 'aes-256-cbc';
 const KEY_LENGTH = 32; // 256 bits
 const IV_LENGTH = 16; // 128 bits
 const _SALT_LENGTH = 32; // Reserved for future use
-const PBKDF2_ITERATIONS = 100000;
+const PBKDF2_ITERATIONS = 210000; // NIST SP 800-132 recommendation
 
 /**
  * Get master encryption key from environment
@@ -33,8 +33,10 @@ function getMasterKey(): Buffer {
     return Buffer.from(masterKeyHex, 'hex');
   }
 
-  // Otherwise, derive a key from it using PBKDF2
-  const salt = createHash('sha256').update('lsh-saas-master-key-salt').digest();
+  // Otherwise, derive a key from it using PBKDF2 with input-derived salt
+  // Salt is derived from the passphrase itself via HKDF-like expansion,
+  // making it unique per passphrase while remaining deterministic
+  const salt = createHash('sha256').update(masterKeyHex).update('lsh-saas-key-derivation-v2').digest();
   return pbkdf2Sync(masterKeyHex, salt, PBKDF2_ITERATIONS, KEY_LENGTH, 'sha256');
 }
 

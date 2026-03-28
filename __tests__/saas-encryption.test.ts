@@ -35,9 +35,9 @@ const createMockSupabase = () => {
   return chain;
 };
 
-const mockSupabase = createMockSupabase();
+let mockSupabase = createMockSupabase();
 
-jest.mock('../src/lib/supabase-client.js', () => ({
+jest.unstable_mockModule('../src/lib/supabase-client.js', () => ({
   getSupabaseClient: () => mockSupabase,
 }));
 
@@ -49,14 +49,6 @@ describe('SaaS Encryption Service', () => {
   let encryptionService: InstanceType<typeof EncryptionService>;
 
   beforeAll(async () => {
-    // Reset modules to ensure our mock is applied fresh
-    jest.resetModules();
-
-    // Re-establish the mock after reset
-    jest.doMock('../src/lib/supabase-client.js', () => ({
-      getSupabaseClient: () => mockSupabase,
-    }));
-
     // Set required env var before importing
     process.env.LSH_MASTER_KEY = randomBytes(32).toString('hex');
 
@@ -66,9 +58,14 @@ describe('SaaS Encryption Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSupabase = createMockSupabase();
     // Reset env for each test
     process.env.LSH_MASTER_KEY = randomBytes(32).toString('hex');
     encryptionService = new EncryptionService();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   afterAll(() => {
@@ -298,30 +295,30 @@ describe('SaaS Encryption Service', () => {
       const teamId = 'team-123';
       const rotatedBy = 'user-456';
 
-      // Create a fresh mock with proper chaining for rotation
-      const rotationMock = {
-        from: jest.fn().mockReturnThis(),
-        insert: jest.fn().mockReturnThis(),
-        update: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockReturnThis(),
-        limit: jest.fn(),
-        single: jest.fn(),
-      };
-
       // Mock sequence for rotateTeamKey:
-      // 1. Get current key version
-      rotationMock.limit.mockResolvedValueOnce({
+      // 1. Get current key version (via .limit())
+      mockSupabase.limit.mockResolvedValueOnce({
         data: [{ key_version: 2 }],
         error: null,
       });
 
-      // 2. Mark old keys inactive (returns from eq chain)
-      rotationMock.eq.mockImplementation(() => rotationMock);
+      // 2. Mark old keys inactive - eq chain: update().eq().eq()
+      // 3rd overall eq call (2nd in update chain) is terminal
+      let eqCallCount = 0;
+      const originalEq = mockSupabase.eq;
+      mockSupabase.eq = jest.fn().mockImplementation(() => {
+        eqCallCount++;
+        // eq call 1: select chain .eq('team_id', teamId) -> returns chain
+        // eq call 2: update chain .eq('team_id', teamId) -> returns chain
+        // eq call 3: update chain .eq('is_active', true) -> terminal, returns thenable
+        if (eqCallCount === 3) {
+          return Promise.resolve({ error: null });
+        }
+        return mockSupabase;
+      }) as jest.Mock;
 
-      // 3. Insert new key
-      rotationMock.single.mockResolvedValueOnce({
+      // 3. Insert new key (via .single())
+      mockSupabase.single.mockResolvedValueOnce({
         data: {
           id: 'key-new',
           team_id: teamId,
@@ -335,26 +332,14 @@ describe('SaaS Encryption Service', () => {
         error: null,
       });
 
-      // Create a new service instance that uses our rotation mock
-      const savedMasterKey = process.env.LSH_MASTER_KEY;
-      process.env.LSH_MASTER_KEY = randomBytes(32).toString('hex');
-
-      jest.resetModules();
-      jest.doMock('../src/lib/supabase-client.js', () => ({
-        getSupabaseClient: () => rotationMock,
-      }));
-
-      const { EncryptionService: RotationService } = await import('../src/lib/saas-encryption.js');
-      const rotationEncryptionService = new RotationService();
-
-      const newKey = await rotationEncryptionService.rotateTeamKey(teamId, rotatedBy);
+      const newKey = await encryptionService.rotateTeamKey(teamId, rotatedBy);
 
       expect(newKey).toBeDefined();
       expect(newKey.keyVersion).toBe(3);
       expect(newKey.isActive).toBe(true);
 
-      // Restore
-      process.env.LSH_MASTER_KEY = savedMasterKey!;
+      // Restore eq mock
+      mockSupabase.eq = originalEq;
     });
   });
 });

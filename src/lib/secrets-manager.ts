@@ -4,6 +4,7 @@
  */
 
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import { createLogger, LogLevel } from './logger.js';
@@ -11,6 +12,7 @@ import { getGitRepoInfo, hasEnvExample, ensureEnvInGitignore, type GitRepoInfo }
 import { IPFSSyncLogger } from './ipfs-sync-logger.js';
 import { IPFSSecretsStorage } from './ipfs-secrets-storage.js';
 import { ENV_VARS } from '../constants/index.js';
+import { extractErrorMessage } from './lsh-error.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -109,62 +111,95 @@ export class SecretsManager {
       return envKey;
     }
 
-    // Generate from machine ID and user
-    const machineId = process.env[ENV_VARS.HOSTNAME] || 'localhost';
-    const user = process.env[ENV_VARS.USER] || 'unknown';
-    const seed = `${machineId}-${user}-lsh-secrets`;
+    logger.warn('No explicit LSH_SECRETS_KEY found. Generating machine-derived fallback key.');
+    logger.warn('Set LSH_SECRETS_KEY in your environment for portable, secure encryption.');
+
+    // Generate from multiple machine-specific entropy sources
+    const hostname = os.hostname();
+    const uid = String(os.userInfo().uid);
+    const homedir = os.homedir();
+
+    // Try to read /etc/machine-id (Linux) for additional entropy
+    let machineSpecific: string;
+    try {
+      machineSpecific = fs.readFileSync('/etc/machine-id', 'utf8').trim();
+    } catch {
+      // Fallback to CPU model on macOS / systems without machine-id
+      machineSpecific = os.cpus()[0]?.model || 'no-cpu-info';
+    }
+
+    const seed = `${hostname}-${uid}-${homedir}-${machineSpecific}-lsh-secrets`;
 
     // Create deterministic key
     return crypto.createHash('sha256').update(seed).digest('hex');
   }
 
   /**
-   * Encrypt a value
+   * Encrypt a value using AES-256-GCM with authentication tag
    */
   private encrypt(text: string): string {
-    const iv = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(12); // 96-bit IV recommended for GCM
     const key = Buffer.from(this.encryptionKey, 'hex');
-    const cipher = crypto.createCipheriv('aes-256-cbc', key.slice(0, 32), iv);
+    const cipher = crypto.createCipheriv('aes-256-gcm', key.slice(0, 32), iv);
 
     let encrypted = cipher.update(text, 'utf8', 'hex');
     encrypted += cipher.final('hex');
 
-    return iv.toString('hex') + ':' + encrypted;
+    const authTag = cipher.getAuthTag();
+
+    // Format: iv:authTag:encrypted (3-part GCM format)
+    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
   }
 
   /**
-   * Decrypt a value
+   * Decrypt a value (supports both AES-256-GCM and legacy AES-256-CBC)
    */
   private decrypt(text: string): string {
     try {
       const parts = text.split(':');
-      if (parts.length !== 2) {
-        throw new Error('Invalid encrypted format');
-      }
-
-      const iv = Buffer.from(parts[0], 'hex');
-      const encryptedText = parts[1];
       const key = Buffer.from(this.encryptionKey, 'hex');
 
-      const decipher = crypto.createDecipheriv('aes-256-cbc', key.slice(0, 32), iv);
+      if (parts.length === 3) {
+        // AES-256-GCM format: iv:authTag:encrypted
+        const iv = Buffer.from(parts[0], 'hex');
+        const authTag = Buffer.from(parts[1], 'hex');
+        const encryptedText = parts[2];
 
-      let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
+        const decipher = crypto.createDecipheriv('aes-256-gcm', key.slice(0, 32), iv);
+        decipher.setAuthTag(authTag);
 
-      return decrypted;
+        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+
+        return decrypted;
+      } else if (parts.length === 2) {
+        // Legacy AES-256-CBC format: iv:encrypted
+        const iv = Buffer.from(parts[0], 'hex');
+        const encryptedText = parts[1];
+
+        const decipher = crypto.createDecipheriv('aes-256-cbc', key.slice(0, 32), iv);
+
+        let decrypted = decipher.update(encryptedText, 'hex', 'utf8');
+        decrypted += decipher.final('utf8');
+
+        return decrypted;
+      } else {
+        throw new Error('Invalid encrypted format');
+      }
     } catch (error) {
-      const err = error as Error;
-      if (err.message.includes('bad decrypt') || err.message.includes('wrong final block length')) {
+      const msg = extractErrorMessage(error);
+      if (msg.includes('bad decrypt') || msg.includes('wrong final block length') ||
+          msg.includes('Unsupported state') || msg.includes('unable to authenticate')) {
         throw new Error(
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
           '  3. Generate a shared key with: lsh secrets key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + err.message
+          '\nOriginal error: ' + msg
         );
       }
-      throw err;
+      throw error;
     }
   }
 
@@ -357,10 +392,9 @@ export class SecretsManager {
           }
         }
       } catch (error) {
-        const err = error as Error;
         // Re-throw destructive change errors
-        if (err.message.includes('Destructive change')) {
-          throw err;
+        if (extractErrorMessage(error).includes('Destructive change')) {
+          throw error;
         }
         // Ignore other errors (like missing secrets) and proceed
       }
@@ -460,8 +494,8 @@ export class SecretsManager {
     // Convert to .env format
     const envContent = this.formatEnvFile(finalEnv);
 
-    // Write new .env
-    fs.writeFileSync(envFilePath, envContent, 'utf8');
+    // Write new .env with restrictive permissions (owner read/write only)
+    fs.writeFileSync(envFilePath, envContent, { encoding: 'utf8', mode: 0o600 });
 
     logger.info(`✅ Pulled ${secrets.length} secrets from IPFS`);
 
@@ -693,7 +727,7 @@ export class SecretsManager {
         content += `\n# LSH Secrets Encryption Key (do not commit!)\nLSH_SECRETS_KEY=${key}\n`;
       }
 
-      fs.writeFileSync(envPath, content, 'utf8');
+      fs.writeFileSync(envPath, content, { encoding: 'utf8', mode: 0o600 });
 
       // Set in current process
       process.env[ENV_VARS.LSH_SECRETS_KEY] = key;
@@ -704,8 +738,7 @@ export class SecretsManager {
 
       return true;
     } catch (error) {
-      const _err = error as Error;
-      logger.error(`Failed to save encryption key: ${_err.message}`);
+      logger.error(`Failed to save encryption key: ${extractErrorMessage(error)}`);
       logger.info('Please set it manually:');
       logger.info(`export LSH_SECRETS_KEY=${key}`);
       return false;
@@ -739,12 +772,11 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 `;
 
       try {
-        fs.writeFileSync(envFilePath, template, 'utf8');
+        fs.writeFileSync(envFilePath, template, { encoding: 'utf8', mode: 0o600 });
         logger.info(`✅ Created ${envFilePath} from template`);
         return true;
       } catch (error) {
-        const _err = error as Error;
-        logger.error(`Failed to create ${envFilePath}: ${_err.message}`);
+        logger.error(`Failed to create ${envFilePath}: ${extractErrorMessage(error)}`);
         return false;
       }
     }
@@ -759,12 +791,11 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         newContent += `\n# LSH Secrets Encryption Key (auto-generated)\nLSH_SECRETS_KEY=${this.encryptionKey}\n`;
       }
 
-      fs.writeFileSync(envFilePath, newContent, 'utf8');
+      fs.writeFileSync(envFilePath, newContent, { encoding: 'utf8', mode: 0o600 });
       logger.info(`✅ Created ${envFilePath} from ${path.basename(examplePath)}`);
       return true;
     } catch (error) {
-      const _err = error as Error;
-      logger.error(`Failed to create ${envFilePath}: ${_err.message}`);
+      logger.error(`Failed to create ${envFilePath}: ${extractErrorMessage(error)}`);
       return false;
     }
   }
@@ -1189,8 +1220,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       }
     } catch (error) {
       // Don't fail operation if IPFS logging fails
-      const err = error as Error;
-      logger.warn(`⚠️  Could not log to IPFS: ${err.message}`);
+      logger.warn(`⚠️  Could not log to IPFS: ${extractErrorMessage(error)}`);
     }
   }
 }

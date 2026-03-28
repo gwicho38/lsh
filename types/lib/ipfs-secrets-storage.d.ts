@@ -70,10 +70,6 @@ export declare class IPFSSecretsStorage {
      */
     private decryptSecrets;
     /**
-     * Generate IPFS-compatible CID from content
-     */
-    private generateCID;
-    /**
      * Store encrypted data locally
      */
     private storeLocally;

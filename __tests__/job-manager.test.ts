@@ -399,7 +399,8 @@ describe('Job Manager', () => {
 
       const startedJob = await jobManager.startJob(job.id);
 
-      expect(startedJob.status).toBe('running');
+      // On fast CI runners, echo may complete before startJob returns
+      expect(['running', 'completed']).toContain(startedJob.status);
       expect(startedJob.startedAt).toBeInstanceOf(Date);
       expect(startedJob.pid).toBeDefined();
 

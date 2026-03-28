@@ -102,6 +102,8 @@ export declare class IPFSSync {
     /**
      * Publish a CID to IPNS under the given key name.
      * The key must already be imported into Kubo.
+     * Publishes to DHT and blocks until confirmed.
+     * Retries once on failure.
      * Returns the IPNS name on success, null on failure.
      */
     publishToIPNS(cid: string, keyName: string): Promise<string | null>;

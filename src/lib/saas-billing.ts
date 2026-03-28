@@ -65,6 +65,7 @@ export class BillingService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -126,6 +127,7 @@ export class BillingService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {
@@ -160,6 +162,7 @@ export class BillingService {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: formData,
+      signal: AbortSignal.timeout(30000),
     });
 
     if (!response.ok) {

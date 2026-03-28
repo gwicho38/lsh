@@ -50,16 +50,14 @@ const createMockSupabase = () => {
 
 let mockSupabase = createMockSupabase();
 
-jest.mock('../src/lib/supabase-client.js', () => ({
-  get getSupabaseClient() {
-    return () => mockSupabase;
-  },
+jest.unstable_mockModule('../src/lib/supabase-client.js', () => ({
+  getSupabaseClient: () => mockSupabase,
 }));
 
 // Mock audit logger
-jest.mock('../src/lib/saas-audit.js', () => ({
+jest.unstable_mockModule('../src/lib/saas-audit.js', () => ({
   auditLogger: {
-    log: jest.fn().mockResolvedValue(undefined),
+    log: async () => undefined,
   },
 }));
 
@@ -73,14 +71,6 @@ describe('SaaS Organizations Service', () => {
   let teamService: InstanceType<typeof TeamService>;
 
   beforeAll(async () => {
-    // Reset modules to ensure our mock is applied fresh
-    jest.resetModules();
-
-    // Re-establish the mock after reset
-    jest.doMock('../src/lib/supabase-client.js', () => ({
-      getSupabaseClient: () => mockSupabase,
-    }));
-
     const module = await import('../src/lib/saas-organizations.js');
     OrganizationService = module.OrganizationService;
     TeamService = module.TeamService;
@@ -91,6 +81,10 @@ describe('SaaS Organizations Service', () => {
     mockSupabase = createMockSupabase();
     organizationService = new OrganizationService();
     teamService = new TeamService();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   afterAll(() => {
