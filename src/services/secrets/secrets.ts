@@ -4,7 +4,7 @@
  */
 
 import { Command } from 'commander';
-import SecretsManager from '../../lib/secrets-manager.js';
+import SecretsManager, { findEncryptionKey } from '../../lib/secrets-manager.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
@@ -20,40 +20,6 @@ function isOutputFormat(value: string): value is OutputFormat {
   return ['env', 'json', 'yaml', 'toml', 'export'].includes(value);
 }
 
-
-/**
- * Find existing LSH_SECRETS_KEY from environment, local .env, or global ~/.env
- */
-function findExistingKey(): string | null {
-  // 1. Check environment variable
-  const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
-  if (envKey) return envKey;
-
-  // 2. Check local .env
-  const localEnvPath = path.join(process.cwd(), '.env');
-  const localKey = readKeyFromEnvFile(localEnvPath);
-  if (localKey) return localKey;
-
-  // 3. Check global ~/.env
-  const globalEnvPath = path.join(process.env.HOME || '~', '.env');
-  const globalKey = readKeyFromEnvFile(globalEnvPath);
-  if (globalKey) return globalKey;
-
-  return null;
-}
-
-function readKeyFromEnvFile(envPath: string): string | null {
-  try {
-    if (fs.existsSync(envPath)) {
-      const content = fs.readFileSync(envPath, 'utf-8');
-      const match = content.match(/^LSH_SECRETS_KEY=['"]?([^'"\n]+)['"]?/m);
-      if (match) return match[1];
-    }
-  } catch {
-    // Ignore read errors
-  }
-  return null;
-}
 
 export async function init_secrets(program: Command) {
   // Push secrets to cloud
@@ -333,7 +299,7 @@ export async function init_secrets(program: Command) {
   // Default action: show existing key or prompt to generate
   keyCmd
     .action(async () => {
-      const existingKey = findExistingKey();
+      const existingKey = findEncryptionKey();
       if (existingKey) {
         const masked = existingKey.slice(0, 8) + '...' + existingKey.slice(-4);
         console.log(`\n🔑 LSH_SECRETS_KEY=${masked}\n`);
@@ -354,7 +320,7 @@ export async function init_secrets(program: Command) {
     .option('--no-mask', 'Show the full key (default: masked)')
     .option('--export', 'Output in export format for shell evaluation')
     .action(async (options) => {
-      const existingKey = findExistingKey();
+      const existingKey = findEncryptionKey();
       if (!existingKey) {
         console.error('❌ No encryption key found. Run: lsh key generate');
         process.exit(1);
@@ -381,7 +347,7 @@ export async function init_secrets(program: Command) {
     .option('--force', 'Overwrite existing key')
     .option('--export', 'Output in export format for shell evaluation')
     .action(async (options) => {
-      const existingKey = findExistingKey();
+      const existingKey = findEncryptionKey();
 
       if (existingKey && !options.force) {
         console.error('❌ An encryption key already exists. Use --force to overwrite.');
@@ -440,7 +406,7 @@ export async function init_secrets(program: Command) {
       }
 
       // Check for existing key
-      const existingKey = findExistingKey();
+      const existingKey = findEncryptionKey();
       if (existingKey) {
         if (existingKey === keyValue) {
           console.log('\n✅ This key is already configured.\n');

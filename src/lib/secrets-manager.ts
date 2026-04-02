@@ -16,6 +16,45 @@ import { extractErrorMessage } from './lsh-error.js';
 
 const logger = createLogger('SecretsManager');
 
+/**
+ * Read LSH_SECRETS_KEY from a .env file without loading the entire file into process.env
+ */
+function readKeyFromEnvFile(envPath: string): string | null {
+  try {
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8');
+      const match = content.match(/^LSH_SECRETS_KEY=['"]?([^'"\n]+)['"]?/m);
+      if (match) return match[1];
+    }
+  } catch {
+    // Ignore read errors
+  }
+  return null;
+}
+
+/**
+ * Find LSH_SECRETS_KEY from environment, local .env, or global ~/.env.
+ * Returns null if no explicit key is found (does not generate a fallback).
+ */
+export function findEncryptionKey(): string | null {
+  // 1. Check environment variable
+  const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+  if (envKey) return envKey;
+
+  // 2. Check local .env
+  const localKey = readKeyFromEnvFile(path.join(process.cwd(), '.env'));
+  if (localKey) return localKey;
+
+  // 3. Check global ~/.env
+  const home = process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || '';
+  if (home) {
+    const globalKey = readKeyFromEnvFile(path.join(home, '.env'));
+    if (globalKey) return globalKey;
+  }
+
+  return null;
+}
+
 export interface Secret {
   key: string;
   value: string;
@@ -105,11 +144,9 @@ export class SecretsManager {
    * Get default encryption key from environment or machine
    */
   private getDefaultEncryptionKey(): string {
-    // Check for explicit key
-    const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
-    if (envKey) {
-      return envKey;
-    }
+    // Check environment, local .env, and global ~/.env
+    const explicitKey = findEncryptionKey();
+    if (explicitKey) return explicitKey;
 
     logger.warn('No explicit LSH_SECRETS_KEY found. Generating machine-derived fallback key.');
     logger.warn('Set LSH_SECRETS_KEY in your environment for portable, secure encryption.');
@@ -348,8 +385,8 @@ export class SecretsManager {
     // Get the effective environment name (repo-aware)
     const effectiveEnv = this.getRepoAwareEnvironment(environment);
 
-    // Warn if using default key
-    if (!process.env[ENV_VARS.LSH_SECRETS_KEY]) {
+    // Warn if using machine-derived fallback key (no explicit key found anywhere)
+    if (!findEncryptionKey()) {
       logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
       logger.warn('   To share secrets across machines, generate a key with: lsh key');
       logger.warn('   Then add LSH_SECRETS_KEY=<key> to your .env on all machines');
@@ -598,7 +635,7 @@ export class SecretsManager {
       cloudExists: false,
       cloudKeys: 0,
       cloudModified: undefined as Date | undefined,
-      keySet: !!process.env[ENV_VARS.LSH_SECRETS_KEY],
+      keySet: !!findEncryptionKey(),
       keyMatches: undefined as boolean | undefined,
       suggestions: [] as string[],
     };
@@ -699,7 +736,7 @@ export class SecretsManager {
    * Generate encryption key if not set
    */
   private async ensureEncryptionKey(): Promise<boolean> {
-    if (process.env[ENV_VARS.LSH_SECRETS_KEY]) {
+    if (findEncryptionKey()) {
       return true; // Key already set
     }
 
@@ -882,7 +919,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     }
 
     // Step 1: Ensure encryption key exists
-    if (!process.env[ENV_VARS.LSH_SECRETS_KEY]) {
+    if (!findEncryptionKey()) {
       logger.info('🔑 No encryption key found...');
       await this.ensureEncryptionKey();
       out();

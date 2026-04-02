@@ -2,6 +2,11 @@
  * LSH Secrets Manager
  * Sync .env files across machines using encrypted Supabase storage
  */
+/**
+ * Find LSH_SECRETS_KEY from environment, local .env, or global ~/.env.
+ * Returns null if no explicit key is found (does not generate a fallback).
+ */
+export declare function findEncryptionKey(): string | null;
 export interface Secret {
     key: string;
     value: string;
