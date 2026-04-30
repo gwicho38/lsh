@@ -3,7 +3,8 @@
  * Sync .env files across machines using encrypted Supabase storage
  */
 /**
- * Find LSH_SECRETS_KEY from environment, local .env, or global ~/.env.
+ * Find LSH_SECRETS_KEY from environment, local .env, global ~/.env,
+ * or the persistent SyncKeyStore at $LSH_HOME/sync_key.json.
  * Returns null if no explicit key is found (does not generate a fallback).
  */
 export declare function findEncryptionKey(): string | null;

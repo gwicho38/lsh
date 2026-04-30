@@ -13,6 +13,7 @@ import { IPFSSyncLogger } from './ipfs-sync-logger.js';
 import { IPFSSecretsStorage } from './ipfs-secrets-storage.js';
 import { ENV_VARS } from '../constants/index.js';
 import { extractErrorMessage } from './lsh-error.js';
+import { SyncKeyStore } from './sync-key-store.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -33,7 +34,8 @@ function readKeyFromEnvFile(envPath: string): string | null {
 }
 
 /**
- * Find LSH_SECRETS_KEY from environment, local .env, or global ~/.env.
+ * Find LSH_SECRETS_KEY from environment, local .env, global ~/.env,
+ * or the persistent SyncKeyStore at $LSH_HOME/sync_key.json.
  * Returns null if no explicit key is found (does not generate a fallback).
  */
 export function findEncryptionKey(): string | null {
@@ -51,6 +53,10 @@ export function findEncryptionKey(): string | null {
     const globalKey = readKeyFromEnvFile(path.join(home, '.env'));
     if (globalKey) return globalKey;
   }
+
+  // 4. Check persistent sync key store ($LSH_HOME/sync_key.json)
+  const stored = new SyncKeyStore().get();
+  if (stored) return stored;
 
   return null;
 }
