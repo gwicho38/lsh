@@ -12,6 +12,12 @@ import { getGitRepoInfo } from '../../lib/git-utils.js';
 import { ENV_VARS } from '../../constants/index.js';
 import type { OutputFormat } from '../../lib/format-utils.js';
 import { IPFSClientManager } from '../../lib/ipfs-client-manager.js';
+import { SyncKeyStore } from '../../lib/sync-key-store.js';
+
+function maskKey(key: string): string {
+  if (key.length <= 12) return '*'.repeat(key.length);
+  return `${key.slice(0, 4)}...${key.slice(-4)}`;
+}
 
 /**
  * Type guard to check if a string is a valid OutputFormat.
@@ -452,6 +458,73 @@ export async function init_secrets(program: Command) {
         console.error(`❌ Failed to save key: ${err.message}`);
         process.exit(1);
       }
+    });
+
+  // lsh key gen — generate + persist to ~/.config/lsh/sync_key.json
+  keyCmd
+    .command('gen')
+    .description('Generate a new key and persist it to the LSH sync key store')
+    .option('-f, --force', 'Overwrite an existing stored key')
+    .option('--show', 'Print the full key (default masks it)')
+    .action((options: { force?: boolean; show?: boolean }) => {
+      const store = new SyncKeyStore();
+      let key: string;
+      try {
+        key = store.generate(options.force === true);
+      } catch (err) {
+        const e = err as Error;
+        console.error(`❌ ${e.message}`);
+        console.error("💡 Use --force to overwrite, or run 'lsh key show' to view the existing key.");
+        process.exit(1);
+        return; // for the type-checker
+      }
+
+      console.log(`✅ Generated sync key at ${store.path}`);
+      if (options.show) {
+        console.log(`🔑 ${key}`);
+      } else {
+        console.log(`🔑 ${maskKey(key)}  (use --show to print full)`);
+      }
+      console.log("💡 Share this key with teammates / your other hosts. Then run `lsh key set <key>` on each peer.");
+    });
+
+  // lsh key set — paste a 64-char hex key from another host into the store
+  keyCmd
+    .command('set <key>')
+    .description('Persist an existing 64-char hex key to the LSH sync key store')
+    .action((keyValue: string) => {
+      const store = new SyncKeyStore();
+      try {
+        store.set(keyValue.trim());
+      } catch (err) {
+        const e = err as Error;
+        console.error(`❌ ${e.message}`);
+        process.exit(1);
+      }
+      console.log('✅ Sync key stored.');
+    });
+
+  // lsh key clear — delete the persisted key (env var, if set, is untouched)
+  keyCmd
+    .command('clear')
+    .description('Delete the persisted LSH sync key (env var is untouched)')
+    .option('-y, --yes', 'Skip confirmation prompt')
+    .action(async (options: { yes?: boolean }) => {
+      if (!options.yes) {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise<string>((resolve) => {
+          rl.question('Remove the stored sync key? [y/N] ', (ans) => {
+            rl.close();
+            resolve(ans.trim().toLowerCase());
+          });
+        });
+        if (answer !== 'y' && answer !== 'yes') {
+          console.log('Aborted.');
+          return;
+        }
+      }
+      new SyncKeyStore().clear();
+      console.log('✅ Stored sync key removed.');
     });
 
   // Create .env file
