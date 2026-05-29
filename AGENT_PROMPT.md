@@ -4,7 +4,7 @@ You are ClawdBot, the autonomous development agent for **lsh-framework** (Encryp
 
 ## Project Context
 - **Purpose:** CLI tool for encrypted secrets management and .env file sync
-- **Stack:** Node.js/TypeScript, Express, Supabase, IPFS (Storacha)
+- **Stack:** Node.js/TypeScript, Express, Supabase, IPFS (local Kubo daemon + IPNS; optional remote pinning service)
 - **Package:** npm: lsh-framework
 - **Repo:** gwicho38/lsh
 
@@ -41,7 +41,7 @@ You are ClawdBot, the autonomous development agent for **lsh-framework** (Encryp
 ### P1 - Should Do
 1. Review encryption implementation
 2. Test multi-environment sync (dev/staging/prod)
-3. Verify Storacha IPFS integration
+3. Verify IPFS sync integration (local Kubo daemon + IPNS resolution)
 4. Update documentation for any changes
 
 ### P2 - Nice to Have

@@ -16,6 +16,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { createLogger } from './logger.js';
 import { extractErrorMessage } from './lsh-error.js';
+import { ENV_VARS } from '../constants/config.js';
 
 const logger = createLogger('IPFSSync');
 
@@ -400,6 +401,86 @@ export class IPFSSync {
    */
   getApiUrl(): string {
     return this.LOCAL_IPFS_API;
+  }
+
+  /**
+   * List the names of remote pinning services configured in the local Kubo
+   * node (via `ipfs pin remote service add`). Returns [] on any error.
+   */
+  async listRemoteServices(): Promise<string[]> {
+    try {
+      const response = await fetch(`${this.LOCAL_IPFS_API}/pin/remote/service/ls`, {
+        method: 'POST',
+        signal: AbortSignal.timeout(5000),
+      });
+      if (!response.ok) return [];
+      const data = await response.json() as { RemoteServices?: Array<{ Service: string }> };
+      return (data.RemoteServices || []).map((s) => s.Service).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Decide which remote pinning service to pin to.
+   * - If LSH_PIN_SERVICE is set, use it only when it is actually configured.
+   * - Otherwise, use the sole configured service when exactly one exists.
+   * - Returns null when nothing is configured or the choice is ambiguous.
+   */
+  async resolveRemoteService(): Promise<string | null> {
+    const services = await this.listRemoteServices();
+    const explicit = process.env[ENV_VARS.LSH_PIN_SERVICE];
+    if (explicit) {
+      return services.includes(explicit) ? explicit : null;
+    }
+    return services.length === 1 ? services[0] : null;
+  }
+
+  /**
+   * Pin a CID to a configured remote pinning service so the content survives
+   * this machine going offline. This is what makes "pull anywhere, anytime"
+   * real: without it, blocks live only on the pushing node.
+   *
+   * Returns the service name on success, or null when no service is
+   * configured (the common zero-config case) or the pin request failed.
+   * Never throws — durable pinning is best-effort and the caller decides how
+   * loudly to warn.
+   */
+  async addRemotePin(cid: string, pinName: string): Promise<string | null> {
+    try {
+      const service = await this.resolveRemoteService();
+      if (!service) return null;
+
+      const url =
+        `${this.LOCAL_IPFS_API}/pin/remote/add` +
+        `?arg=${encodeURIComponent(cid)}` +
+        `&service=${encodeURIComponent(service)}` +
+        `&name=${encodeURIComponent(pinName)}` +
+        `&background=true`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        signal: AbortSignal.timeout(30000),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        // An already-present pin is reported as an error by some services; treat
+        // a "already pinned"/"duplicate" message as success rather than a failure.
+        if (/already|duplicate|exists/i.test(errorText)) {
+          logger.info(`📌 Already remote-pinned on "${service}": ${cid}`);
+          return service;
+        }
+        logger.warn(`Remote pin failed on "${service}": ${errorText}`);
+        return null;
+      }
+
+      logger.info(`📌 Remote-pinned to "${service}" (durable): ${cid}`);
+      return service;
+    } catch (error) {
+      logger.warn(`Remote pin error: ${extractErrorMessage(error)}`);
+      return null;
+    }
   }
 
   /**

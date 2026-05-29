@@ -154,6 +154,15 @@ export class IPFSSecretsStorage {
         }
       }
 
+      // Durable remote pin (best-effort): survives this machine going offline.
+      // No-op unless a kubo remote pinning service is configured.
+      const pinnedService = await ipfsSync.addRemotePin(cid, `lsh-${gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT}-${environment}`);
+      if (pinnedService) {
+        logger.info(`   📌 Remote-pinned to "${pinnedService}" (durable)`);
+      } else {
+        logger.warn('No remote pin — content lives only on this machine until a peer caches it. Configure LSH_PIN_SERVICE for durability.');
+      }
+
       return cid;
     } catch (error) {
       logger.error(`Failed to push secrets to IPFS: ${extractErrorMessage(error)}`);

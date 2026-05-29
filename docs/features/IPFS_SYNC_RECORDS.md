@@ -274,15 +274,16 @@ lsh sync-history show | grep "sha256:"
 
 ### Planned Features
 
-1. **Real IPFS Upload** - Upload to actual IPFS network
-2. **Storacha Integration** - Free 5GB storage via storacha.network
-3. **Public Gateways** - View records via public IPFS gateways
-4. **Blockchain Anchoring** - Optional Ethereum anchoring
-5. **Record Sharing** - Share audit logs via IPFS CID
+1. **Upload Records to IPFS** - Publish audit records via the local Kubo daemon, the same path `lsh sync` already uses for secrets (`ipfs add` → CID → IPNS)
+2. **Public Gateways** - View records via public IPFS gateways
+3. **Blockchain Anchoring** - Optional Ethereum anchoring
+4. **Record Sharing** - Share audit logs via IPFS CID
+
+> Note: secrets sync itself already shells out to a local Kubo (IPFS) daemon — `ipfs add` (pinned locally) produces a CID that is published to IPNS, and other machines retrieve it peer-to-peer over the swarm/DHT (with public gateway fallback). For durable availability, configure a Kubo remote pinning service and set `export LSH_PIN_SERVICE=<name>`. The enhancements above would extend that same mechanism to these audit records, which are currently stored locally only.
 
 ### Migration Path
 
-Current implementation stores records locally with IPFS-compatible CIDs. When real IPFS upload is implemented:
+Current implementation stores records locally with IPFS-compatible CIDs. When record upload via the local Kubo daemon is implemented:
 
 1. Existing CIDs remain valid
 2. Records can be uploaded retroactively

@@ -35,6 +35,9 @@ export const ENV_VARS = {
   // Secrets management
   LSH_SECRETS_KEY: 'LSH_SECRETS_KEY',
   LSH_MASTER_KEY: 'LSH_MASTER_KEY',
+  // Name of the kubo remote pinning service to use for durable sync
+  // (configured via `ipfs pin remote service add <name> <endpoint> <key>`).
+  LSH_PIN_SERVICE: 'LSH_PIN_SERVICE',
 
   // Feature flags
   LSH_LOCAL_STORAGE_QUIET: 'LSH_LOCAL_STORAGE_QUIET',
