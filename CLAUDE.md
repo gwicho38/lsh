@@ -307,14 +307,13 @@ node --version  # Should be >= 20.18.0
 
 ## CI/CD
 
-### CRITICAL: CI Must Pass Before Work is Complete
-**NEVER declare work complete until CI passes on GitHub.** This is a hard requirement.
+### Merge gate: local `act` is authoritative
+The pre-push hook runs `mcli ci preflight` (local `act`) on every push. **A green local `act` run is the merge gate** — when it passes, the branch is good to merge. Do NOT block merges on GitHub-hosted CI: hosted runners here are frequently backlogged, so hosted CI is informational, not the gate.
 
-### CI/CD Workflow
-1. **Before starting work**: Check current CI status with `gh run list --limit 3`
-2. **After pushing changes**: Monitor CI with `gh run watch` or `gh run list`
-3. **If CI fails**: Fix immediately, push fix, wait for green CI
-4. **Only after CI passes**: Declare the task complete
+1. **Push WITHOUT `--no-verify`** so the `act` gate actually runs. The hook blocks only on a real `act` failure (exit 1); a "cannot validate" outcome — Docker Hub rate-limit, no docker, or an online runner will validate instead (exit 2/3) — allows the push so an environment hiccup never wedges the workflow.
+2. **If local `act` passes → merge** with `gh pr merge --squash --delete-branch`. No need to wait for hosted Build & Test.
+3. `--no-verify` is only for bypassing a *genuinely broken* local gate (e.g. an infra outage you've separately confirmed) — prefer fixing the gate.
+4. Container runtime: `docker` is provided by **podman** (avoids Docker Hub unauthenticated pull rate limits). Verify with `mcli ci doctor` (act / docker / runner status).
 
 ### CI Commands
 ```bash
@@ -525,3 +524,6 @@ throw new Error('Resource not found');
 ## Release Notes
 
 Every time you push a new release it should be a new release in GitHub and a new version published to npm.
+## Concurrent Agents → Use Worktrees
+
+When multiple agents/sessions may touch this repo simultaneously, each MUST work in its own `git worktree` (never a shared checkout) to avoid commit commingling. See global `~/.claude/CLAUDE.md` § "Concurrent Agents → Use Worktrees (REQUIRED)" for the full rule.
