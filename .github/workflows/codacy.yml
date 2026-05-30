@@ -27,6 +27,8 @@ permissions:
 
 jobs:
   codacy-security-scan:
+    # Skipped under local `act` (no Codacy token / network); runs on hosted CI.
+    if: ${{ github.actor != 'nektos/act' }}
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
