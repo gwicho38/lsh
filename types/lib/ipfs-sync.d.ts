@@ -100,6 +100,29 @@ export declare class IPFSSync {
      */
     getApiUrl(): string;
     /**
+     * List the names of remote pinning services configured in the local Kubo
+     * node (via `ipfs pin remote service add`). Returns [] on any error.
+     */
+    listRemoteServices(): Promise<string[]>;
+    /**
+     * Decide which remote pinning service to pin to.
+     * - If LSH_PIN_SERVICE is set, use it only when it is actually configured.
+     * - Otherwise, use the sole configured service when exactly one exists.
+     * - Returns null when nothing is configured or the choice is ambiguous.
+     */
+    resolveRemoteService(): Promise<string | null>;
+    /**
+     * Pin a CID to a configured remote pinning service so the content survives
+     * this machine going offline. This is what makes "pull anywhere, anytime"
+     * real: without it, blocks live only on the pushing node.
+     *
+     * Returns the service name on success, or null when no service is
+     * configured (the common zero-config case) or the pin request failed.
+     * Never throws — durable pinning is best-effort and the caller decides how
+     * loudly to warn.
+     */
+    addRemotePin(cid: string, pinName: string): Promise<string | null>;
+    /**
      * Publish a CID to IPNS under the given key name.
      * The key must already be imported into Kubo.
      * Publishes to DHT and blocks until confirmed.

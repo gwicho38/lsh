@@ -1,0 +1,10 @@
+# Local `act` config. CI migrated to self-hosted runners (runs-on:
+# [self-hosted, linux, x64]); act has no built-in image for those labels, so map
+# them to the standard act runner image. This lets `mcli ci preflight` actually
+# run the build/test/quality jobs locally instead of skipping them as
+# "unsupported platform". Security-scanner jobs still skip under act via their
+# `if: ${{ github.actor != 'nektos/act' }}` guard.
+-P self-hosted=catthehacker/ubuntu:act-latest
+-P linux=catthehacker/ubuntu:act-latest
+-P x64=catthehacker/ubuntu:act-latest
+-P ubuntu-latest=catthehacker/ubuntu:act-latest

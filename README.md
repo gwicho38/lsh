@@ -1,8 +1,10 @@
-# LSH v3.1.19 - Encrypted Secrets Manager
+# LSH — Encrypted Secrets Manager
 
 **The simplest way to sync `.env` files across all your machines.**
 
-`lsh` is an encrypted secrets manager that syncs your environment files across development machines with AES-256 encryption via the IPFS network. Push once, pull anywhere.
+`lsh` is an encrypted secrets manager that syncs your environment files across development machines with AES-256 encryption over the IPFS network. Secrets are encrypted locally, addressed by content (CID), and published under a deterministic IPNS name derived from your shared key — so a teammate with the same key can pull the latest version with no account or server.
+
+> **Durability note:** by default the encrypted content is pinned **only on the machine that pushed it** and served peer-to-peer. Another machine can pull as long as a node that holds the content is online and the IPNS record is still live. For "pull anywhere, anytime" durability, configure a remote pinning service (see [Durable sync](#durable-sync-remote-pinning)).
 
 [![npm version](https://badge.fury.io/js/lsh-framework.svg)](https://badge.fury.io/js/lsh-framework)
 [![Node.js CI](https://github.com/gwicho38/lsh/actions/workflows/node.js.yml/badge.svg)](https://github.com/gwicho38/lsh/actions/workflows/node.js.yml)
@@ -71,25 +73,49 @@ lsh pull --env staging
 ## How It Works
 
 ```
-Your Machine                    Storacha (IPFS Network)
-┌─────────────┐                 ┌─────────────────────┐
-│   .env      │   AES-256       │  Encrypted Blob     │
-│  (secrets)  │ ───encrypt───►  │  (content-addressed)│
-└─────────────┘                 └─────────────────────┘
-                                         │
-                                         ▼
-Another Machine                 ┌─────────────────────┐
-┌─────────────┐   AES-256       │  Registry           │
-│   .env      │ ◄──decrypt────  │  (points to blob)   │
-│  (secrets)  │                 └─────────────────────┘
-└─────────────┘
+Machine A (push)                Local Kubo (IPFS) node          IPFS DHT / swarm
+┌─────────────┐   AES-256       ┌─────────────────────┐         ┌──────────────────┐
+│   .env      │ ───encrypt───►  │ ipfs add (pin local)│ ──────► │ IPNS record:     │
+│  (secrets)  │                 │  → CID              │ publish │  name → CID      │
+└─────────────┘                 └─────────────────────┘         │ (key-derived)    │
+                                                                 └──────────────────┘
+                                                                          │ resolve
+Machine B (pull)                                                          ▼
+┌─────────────┐   AES-256       ┌─────────────────────┐  fetch   ┌──────────────────┐
+│   .env      │ ◄──decrypt────  │ ipfs cat <CID>      │ ◄─────── │ a node holding   │
+│  (secrets)  │                 └─────────────────────┘  swarm   │ the block (A or  │
+└─────────────┘                                                  │ a pinning svc)   │
+                                                                 └──────────────────┘
 ```
 
-1. Your `.env` is encrypted locally with AES-256
-2. Encrypted data uploads to IPFS via Storacha
-3. A registry tracks the latest version per repository
-4. Other machines pull via the content ID (CID)
-5. Decryption happens locally with your shared key
+1. Your `.env` is encrypted locally with AES-256 (the key never leaves the machine).
+2. The ciphertext is added to your **local Kubo (IPFS) daemon** and pinned there, producing a content ID (CID).
+3. The CID is published to **IPNS** under a name derived deterministically from `LSH_SECRETS_KEY` + repo + environment (`HMAC-SHA256`), so teammates need only the shared key.
+4. Another machine derives the same IPNS name, resolves it to the latest CID over the network, and fetches the ciphertext over the IPFS swarm.
+5. Decryption happens locally with the shared key.
+
+**What this means:** the encrypted block is only guaranteed to exist where it was pushed. Cross-machine pull works while a node holding the block is online (the publisher, a peer that cached it, or — recommended — a [remote pinning service](#durable-sync-remote-pinning)).
+
+## Durable sync (remote pinning)
+
+Out of the box, `lsh sync` is zero-config but **not durable**: the encrypted content lives only on the machine that pushed it. If that machine sleeps or goes offline before a teammate pulls — and no peer has cached the block — the pull will stall. `lsh sync push` warns you when no durable pin is configured.
+
+To make secrets available "anytime, anywhere", point `lsh` at any IPFS **remote pinning service** (Pinata, Filebase, 4EVERLAND, web3.storage, an IPFS Cluster, etc.). `lsh` uses your local Kubo daemon's remote-pinning support — no extra dependency, and your encryption key never leaves your machine (the service only ever stores ciphertext).
+
+```bash
+# 1. Register a pinning service with your local Kubo daemon (one-time)
+ipfs pin remote service add pinata https://api.pinata.cloud/psa <YOUR_JWT>
+
+# 2. Tell lsh which service to use (only needed if more than one is configured)
+export LSH_SECRETS_KEY=<your-key>
+export LSH_PIN_SERVICE=pinata
+
+# 3. Push — content is now pinned remotely and survives this machine going offline
+lsh sync push --env dev
+# → "Pinned: pinata (durable)"
+```
+
+If exactly one remote service is configured, `lsh` uses it automatically and `LSH_PIN_SERVICE` is optional.
 
 ## Installation
 
@@ -138,15 +164,17 @@ lsh pull
 # 1. Install LSH
 npm install -g lsh-framework
 
-# 2. Authenticate with Storacha (one-time)
-lsh storacha login your@email.com
+# 2. Install + start a local IPFS (Kubo) daemon (one-time)
+lsh sync init
 
-# 3. Add your encryption key
+# 3. Add your encryption key (shared with your other machines / team)
 echo "LSH_SECRETS_KEY=your-shared-key" > .env
 
-# 4. Pull secrets
-lsh pull
+# 4. Pull secrets (resolves the latest version via IPNS)
+lsh sync pull
 ```
+
+> Requires a local IPFS (Kubo) daemon — `lsh sync init` installs and starts one. The pushing machine must be online (or a pinning service configured) for others to fetch the content.
 
 ## Multi-Environment Support
 
@@ -215,10 +243,10 @@ eval "$(lsh list --format export)"
 
 ## Security
 
-- **AES-256-CBC** encryption for all secrets
+- **AES-256** encryption for all secrets (the key never leaves your machine)
 - **Content-addressed storage** - tamper-proof IPFS CIDs
-- **Zero-knowledge** - Storacha never sees your unencrypted data
-- **Local-first** - Works offline with cached secrets
+- **Zero-knowledge** - the IPFS network (and any pinning service) only ever sees ciphertext
+- **Local-first** - works offline with cached secrets
 
 ### Best Practices
 
@@ -258,16 +286,25 @@ lsh key
 lsh push --force
 ```
 
-### "Storacha authentication required"
+### Pull hangs or "Could not resolve secrets from network"
+
+The IPNS name resolved but no online node is serving the content (or the IPNS record expired). Either:
 
 ```bash
-lsh storacha login your@email.com
-# Check email for verification
+# On the machine that pushed: make sure its daemon is running, then re-push
+lsh sync status
+lsh sync push --env dev
+
+# Better: configure a remote pinning service so content stays available
+# even when the pushing machine is offline (see "Durable sync" below)
 ```
 
-### Pull fails after clearing metadata
+### "IPFS daemon not running"
 
-v3.0.0 fix: Pull now automatically checks the Storacha registry when local metadata is missing.
+```bash
+lsh sync init     # install + start a local Kubo daemon
+lsh sync status   # verify it is up
+```
 
 ```bash
 # If secrets were pushed before, pull should auto-recover
@@ -314,8 +351,9 @@ lsh -i
 # Required
 LSH_SECRETS_KEY=<your-encryption-key>
 
-# Optional - Storacha (default enabled)
-LSH_STORACHA_ENABLED=true
+# Optional - name of a kubo remote pinning service for durable sync
+# (configure once with: ipfs pin remote service add <name> <endpoint> <key>)
+LSH_PIN_SERVICE=<service-name>
 
 # Optional - Supabase backend
 SUPABASE_URL=https://xxx.supabase.co

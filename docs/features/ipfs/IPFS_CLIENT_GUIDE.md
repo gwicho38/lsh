@@ -8,7 +8,7 @@ IPFS (InterPlanetary File System) is a distributed, content-addressed storage pr
 
 - **Local secrets storage** - Content-addressed encrypted secrets at `~/.lsh/secrets-cache/`
 - **Audit logs** - Immutable audit trail storage
-- **Future features** - Distributed backup and team sync via IPFS network
+- **Team sync** - Encrypted secrets published to IPNS and retrieved peer-to-peer over the IPFS swarm/DHT (with public gateway fallback for downloads)
 
 ## Quick Start
 
@@ -237,12 +237,24 @@ IPFS is used for immutable audit trail storage:
 ls ~/.lsh/ipfs/
 ```
 
-### Future: Distributed Storage
+### Distributed Storage & Team Sync
 
-Coming in v1.7.0:
-- Upload secrets to IPFS network via Storacha
-- Distributed team sync without central server
-- Pinning service integration for redundancy
+LSH shells out to your local Kubo (IPFS) daemon for cross-machine secrets sync:
+- `ipfs add` writes the encrypted payload to the local datastore (pinned locally) and returns a CID
+- The CID is published to IPNS, with the name derived deterministically from `LSH_SECRETS_KEY` + repo + environment
+- Other machines retrieve the content peer-to-peer over the IPFS swarm/DHT, with a public gateway used as a download fallback
+
+By default, content is pinned only on the pushing machine. For durable availability, configure a Kubo remote pinning service (any provider, e.g. Pinata, Filebase, 4EVERLAND, web3.storage, or IPFS Cluster):
+
+```bash
+# Register a remote pinning service with your local daemon
+ipfs pin remote service add <name> <endpoint> <key>
+
+# Tell LSH to use it
+export LSH_PIN_SERVICE=<name>
+```
+
+LSH then calls the daemon's `/pin/remote/add` on push. No extra dependency is required, and the service only ever stores ciphertext.
 
 ## Troubleshooting
 
@@ -443,7 +455,7 @@ Kubo is the official Go implementation of IPFS (formerly called `go-ipfs`). When
 
 ### Does LSH upload secrets to the IPFS network?
 
-**Not yet.** As of v1.6.0, LSH uses IPFS-compatible local storage only. Future versions (v1.7.0+) will support optional upload to IPFS network via Storacha.
+**Yes, for team sync.** LSH shells out to your local Kubo daemon: `ipfs add` stores the encrypted payload (pinned locally) and returns a CID, which is then published to IPNS. Other machines retrieve it peer-to-peer over the IPFS swarm/DHT, with a public gateway fallback for downloads. Only ciphertext is ever uploaded. By default content is pinned only on the pushing machine; for durable availability, configure a Kubo remote pinning service and set `export LSH_PIN_SERVICE=<name>` (see [Distributed Storage & Team Sync](#distributed-storage--team-sync)).
 
 ### How much disk space does IPFS use?
 

@@ -42,10 +42,9 @@ lsh init
 ```
 
 This wizard will:
-1. Ask for your storage backend preference (Storacha/Supabase/Local)
+1. Install and start a local Kubo (IPFS) daemon for sync
 2. Generate or import an encryption key
-3. Authenticate with Storacha (email verification)
-4. Pull existing secrets if found
+3. Pull existing secrets if found
 
 ### Option 2: Manual Setup
 
@@ -96,14 +95,16 @@ lsh pull --file .env.prod --env prod
 lsh pull --force
 ```
 
-### v3.0.0: Registry Fallback
+### v3.0.0: IPNS Recovery
 
-Pull now automatically checks the Storacha registry when local metadata is missing:
+Pull can recover even when local metadata is missing. The IPNS name is derived
+deterministically from your `LSH_SECRETS_KEY`, repo, and environment, so pull
+re-resolves the latest CID over the network:
 
 ```bash
-# Even after clearing metadata, pull auto-recovers from registry
+# Even after clearing metadata, pull re-resolves via IPNS
 lsh clear --all
-lsh pull  # Finds secrets in registry automatically
+lsh pull  # Re-derives the IPNS name and resolves the latest CID
 ```
 
 ## Multi-Environment Workflow
@@ -206,8 +207,8 @@ lsh push
 # 1. Install LSH
 npm install -g lsh-framework
 
-# 2. Authenticate with Storacha
-lsh storacha login your@email.com
+# 2. Install and start a local Kubo (IPFS) daemon
+lsh sync init
 
 # 3. Add encryption key
 echo "LSH_SECRETS_KEY=same-key-as-first-machine" > .env
@@ -217,16 +218,49 @@ cd ~/repos/my-project
 lsh pull
 ```
 
-## Storage Backends
+## How Sync Works
 
-### Storacha (IPFS Network) - Default
+LSH syncs over IPFS using a local Kubo daemon. There is no central server and no
+account to log into.
 
-Zero-config after email authentication:
+On `lsh push`:
+1. Secrets are AES-256 encrypted locally (the key never leaves your machine).
+2. The ciphertext is added to your local Kubo (IPFS) daemon and pinned there,
+   producing a content ID (CID).
+3. The CID is published to IPNS under a name derived deterministically from your
+   `LSH_SECRETS_KEY` + repo + environment.
+
+On `lsh pull` from another machine:
+1. The same `LSH_SECRETS_KEY` derives the same IPNS name.
+2. That name resolves over the network to the latest CID.
+3. The ciphertext is fetched over the IPFS swarm and decrypted locally.
+
+One-time setup (installs and starts the local Kubo daemon):
 
 ```bash
-lsh storacha login your@email.com
-lsh storacha status
+lsh sync init
 ```
+
+### Durability caveat
+
+By default, content is pinned **only on the pushing machine** and served
+peer-to-peer. A cross-machine `lsh pull` works only while a node holding the
+block is online (the publisher, a peer that has cached it, or a remote pinning
+service) and the IPNS record is still live.
+
+For durable "anytime" sync, configure a Kubo remote pinning service so a CID
+stays available even when your machine is offline:
+
+```bash
+# One-time: register a remote pinning service with Kubo
+ipfs pin remote service add <name> <endpoint> <key>
+
+# Tell LSH to pin pushes to that service
+export LSH_PIN_SERVICE=<name>
+```
+
+Pinning services only ever see ciphertext. See the README section
+"Durable sync (remote pinning)" for details.
 
 ### Supabase
 
@@ -236,16 +270,6 @@ Team collaboration with audit logs:
 # Add to .env
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_ANON_KEY=your-key
-```
-
-### Local Only
-
-For offline-only use:
-
-```bash
-# Disable network sync
-export LSH_STORACHA_ENABLED=false
-lsh push  # Stored locally at ~/.lsh/secrets-cache/
 ```
 
 ## Troubleshooting
@@ -276,14 +300,20 @@ lsh key
 lsh push --force
 ```
 
-### Registry not found
+### Secrets not found on another machine
 
-Storacha not authenticated:
+The local Kubo daemon may not be running, or no online node holds the content:
 
 ```bash
-lsh storacha login your@email.com
-lsh storacha status
+# Ensure the local Kubo (IPFS) daemon is installed and running
+lsh sync init
+
+# Check sync status
+lsh sync status
 ```
+
+If the pushing machine is offline and no remote pinning service is configured,
+the content may be unreachable. See the "Durability caveat" section above.
 
 ### Clear stale metadata
 
@@ -294,7 +324,7 @@ lsh clear --all
 # Clear specific repo
 lsh clear --repo my-project
 
-# Pull will auto-recover from registry
+# Pull re-resolves the latest CID via IPNS
 lsh pull
 ```
 

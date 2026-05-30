@@ -341,11 +341,13 @@ export function registerSyncCommands(program: Command): void {
         console.log('');
         console.log(chalk.bold('CID:'), chalk.cyan(cid));
 
-        // Publish to IPNS
+        const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
+        const env = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
+
+        // Publish to IPNS so teammates can `lsh sync pull` without a CID.
+        let ipnsPublished = false;
         if (encryptionKey) {
           try {
-            const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
-            const env = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
             const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
             const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
 
@@ -353,11 +355,19 @@ export function registerSyncCommands(program: Command): void {
               const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
               if (publishedName) {
                 console.log(chalk.bold('IPNS:'), chalk.cyan(publishedName));
+                ipnsPublished = true;
               }
             }
-          } catch {
-            // Non-fatal
+          } catch (error) {
+            console.error(chalk.yellow(`IPNS publish error: ${extractErrorMessage(error)}`));
           }
+        }
+
+        // Durable remote pin (best-effort): makes the content survive this
+        // machine going offline. No-op unless a pinning service is configured.
+        const pinnedService = await ipfsSync.addRemotePin(cid, `lsh-${repoName}-${env}`);
+        if (pinnedService) {
+          console.log(chalk.bold('Pinned:'), chalk.cyan(`${pinnedService} (durable)`));
         }
 
         console.log('');
@@ -366,6 +376,24 @@ export function registerSyncCommands(program: Command): void {
         console.log(chalk.gray('Or by specific CID:'));
         console.log(chalk.cyan(`  lsh sync pull ${cid}`));
         console.log('');
+
+        // Honest durability reporting — do not claim success the user cannot rely on.
+        if (!pinnedService) {
+          console.log(chalk.yellow('⚠️  No remote pin — this content lives ONLY on this machine.'));
+          console.log(chalk.gray('   If this machine goes offline, teammates cannot fetch it.'));
+          console.log(chalk.gray('   Enable durable pinning (one-time):'));
+          console.log(chalk.gray('     ipfs pin remote service add <name> <endpoint> <key>'));
+          console.log(chalk.gray('     export LSH_PIN_SERVICE=<name>'));
+          console.log('');
+        }
+        if (!ipnsPublished) {
+          spinner.warn(chalk.yellow('IPNS publish failed — teammates CANNOT `lsh sync pull` (no CID) until you re-push.'));
+          console.log(chalk.gray(`   They can still pull by explicit CID:  lsh sync pull ${cid}`));
+          console.log('');
+          // The headline promise ("teammates can pull with just: lsh sync pull") failed,
+          // so exit non-zero rather than reporting a success the user cannot rely on.
+          process.exit(1);
+        }
       } catch (error) {
         spinner.fail(chalk.red('Push failed'));
         console.error(chalk.red(extractErrorMessage(error)));

@@ -74,17 +74,34 @@ lsh list --format export
 eval "$(lsh list --format export)"
 ```
 
-## Storacha (IPFS Sync)
+## IPFS Sync
+
+Secrets are AES-256 encrypted locally, added to your local Kubo (IPFS) daemon
+(pinned), and published to IPNS under a name derived from `LSH_SECRETS_KEY` +
+repo + environment. A teammate with the same key resolves the IPNS name and
+fetches the content over the swarm.
 
 ```bash
-# One-time auth
-lsh storacha login you@email.com
+# One-time setup for this repo/environment
+lsh sync init
 
-# Check status
-lsh storacha status
+# Push / pull encrypted secrets over IPFS
+lsh sync push
+lsh sync pull
 
-# Disable network sync
-lsh storacha disable
+# Check sync status and view history
+lsh sync status
+lsh sync history
+```
+
+> **Durability:** by default the content is pinned only on the machine that
+> pushed it. For "pull anywhere, anytime" durability, configure a kubo remote
+> pinning service and set `LSH_PIN_SERVICE` (see below).
+
+```bash
+# Configure a remote pinning service (one time)
+ipfs pin remote service add <name> <endpoint> <key>
+export LSH_PIN_SERVICE=<name>
 ```
 
 ## Smart Sync
@@ -144,7 +161,7 @@ lsh cron add --name "job" --schedule "0 * * * *" --command "cmd"
 
 ```bash
 LSH_SECRETS_KEY=xxx          # Encryption key (required)
-LSH_STORACHA_ENABLED=true    # Enable IPFS sync
+LSH_PIN_SERVICE=<name>       # Kubo remote pinning service for durable sync (optional)
 ```
 
 ## New Machine Setup
@@ -153,13 +170,10 @@ LSH_STORACHA_ENABLED=true    # Enable IPFS sync
 # 1. Install
 npm install -g lsh-framework
 
-# 2. Auth with Storacha
-lsh storacha login you@email.com
-
-# 3. Add encryption key (get from 1Password)
+# 2. Add encryption key (get from 1Password)
 echo "LSH_SECRETS_KEY=xxx" > .env
 
-# 4. Pull secrets
+# 3. Pull secrets
 cd ~/repos/my-project
 lsh pull
 ```
