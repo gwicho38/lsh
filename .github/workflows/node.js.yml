@@ -13,7 +13,7 @@ env:
 jobs:
   # Code Quality Check
   lint-and-typecheck:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     name: Code Quality & Type Safety
 
     steps:
@@ -37,7 +37,7 @@ jobs:
 
   # Security Audit
   security-audit:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     name: Security Audit
 
     steps:
@@ -58,7 +58,7 @@ jobs:
 
   # Build and Test
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     name: Build & Test
     needs: [lint-and-typecheck]
 
@@ -95,7 +95,7 @@ jobs:
 
   # Integration Tests (if services are running)
   integration-test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     name: Integration Tests
     needs: [build-and-test]
 
