@@ -339,7 +339,7 @@ export class CloudConfigManager {
       });
     } catch (error) {
       console.error('Failed to import configuration:', error);
-      throw new Error('Invalid configuration JSON');
+      throw new Error('Invalid configuration JSON', { cause: error });
     }
   }
 

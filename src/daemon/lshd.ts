@@ -202,8 +202,8 @@ export class LSHJobDaemon extends EventEmitter {
     let release: (() => Promise<void>) | undefined;
     try {
       release = await lockfile.lock(this.config.pidFile, { stale: 10000, retries: 0 });
-    } catch (_lockErr) {
-      throw new Error('Another daemon instance is starting (could not acquire PID file lock)');
+    } catch (lockErr) {
+      throw new Error('Another daemon instance is starting (could not acquire PID file lock)', { cause: lockErr });
     }
 
     try {

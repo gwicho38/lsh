@@ -319,7 +319,7 @@ export class JobManager extends BaseJobManager {
       job.process.kill('SIGCONT');
       return await this.updateJobStatus(jobId, 'running');
     } catch (error) {
-      throw new Error(`Failed to resume job ${jobId}: ${error}`);
+      throw new Error(`Failed to resume job ${jobId}: ${error}`, { cause: error });
     }
   }
 

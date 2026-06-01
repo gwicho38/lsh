@@ -37,7 +37,7 @@ export class FloatingPointArithmetic {
       // Round to specified precision
       return this.roundToPrecision(result);
     } catch (error) {
-      throw new Error(`Arithmetic error: ${error.message}`);
+      throw new Error(`Arithmetic error: ${error.message}`, { cause: error });
     }
   }
 
@@ -234,7 +234,7 @@ export class FloatingPointArithmetic {
       
       return result;
     } catch (error) {
-      throw new Error(`Expression evaluation failed: ${error.message}`);
+      throw new Error(`Expression evaluation failed: ${error.message}`, { cause: error });
     }
   }
 

@@ -769,6 +769,10 @@ import { Request } from 'express';
  * Extended Express Request with authenticated user context
  */
 export interface AuthenticatedRequest extends Request {
+  // Express 5 widened route-param values to `string | string[]` (ParamsDictionary).
+  // Named route params are always strings at runtime, so narrow back to string to
+  // avoid coercing at every call site.
+  params: Record<string, string>;
   user?: User;
   organizationId?: string;
   organization?: Organization;

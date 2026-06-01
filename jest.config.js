@@ -112,8 +112,10 @@ export default {
             tsconfig: {
                 module: 'ES2022',
                 target: 'ES2022',
-                moduleResolution: 'node',
-                rootDir: undefined,  // Allow test files outside src/
+                // 'bundler' resolution works with ES2022 modules and avoids the node10
+                // deprecation (TS5107) that becomes a hard error under TypeScript 6.
+                moduleResolution: 'bundler',
+                rootDir: '.',  // Repo root covers both src/ and __tests__/ (TS5011 under TS6)
                 rootDirs: ['.', 'src', '__tests__']  // Allow imports from test directories
             },
             useESM: true,
