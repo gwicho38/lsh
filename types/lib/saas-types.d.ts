@@ -466,6 +466,7 @@ import { Request } from 'express';
  * Extended Express Request with authenticated user context
  */
 export interface AuthenticatedRequest extends Request {
+    params: Record<string, string>;
     user?: User;
     organizationId?: string;
     organization?: Organization;
