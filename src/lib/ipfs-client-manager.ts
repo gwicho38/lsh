@@ -238,7 +238,7 @@ export class IPFSClientManager {
         logger.info('✅ IPFS repository initialized');
       } catch (initError) {
         const err = initError as Error;
-        throw new Error(`Failed to auto-initialize IPFS repo: ${err.message}`);
+        throw new Error(`Failed to auto-initialize IPFS repo: ${err.message}`, { cause: initError });
       }
     }
 

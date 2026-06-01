@@ -239,7 +239,8 @@ export class SecretsManager {
           '  2. The key must match the one used during encryption\n' +
           '  3. Generate a shared key with: lsh secrets key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + msg
+          '\nOriginal error: ' + msg,
+          { cause: error }
         );
       }
       throw error;
