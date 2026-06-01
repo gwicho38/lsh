@@ -43,7 +43,7 @@ export class DatabasePersistence {
       } catch (error) {
         // If Supabase is configured but fails, throw error instead of falling back
         console.error('⚠️  Supabase is configured but connection failed:', error);
-        throw new Error('Supabase connection failed. Check your SUPABASE_URL and SUPABASE_ANON_KEY configuration.');
+        throw new Error('Supabase connection failed. Check your SUPABASE_URL and SUPABASE_ANON_KEY configuration.', { cause: error });
       }
     }
 

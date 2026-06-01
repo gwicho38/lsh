@@ -115,8 +115,8 @@ export function verifyToken(token: string, expectedType?: 'access' | 'refresh'):
       email: decoded.email,
       type: decoded.type,
     };
-  } catch (_error) {
-    throw new Error('Invalid or expired token');
+  } catch (error) {
+    throw new Error('Invalid or expired token', { cause: error });
   }
 }
 

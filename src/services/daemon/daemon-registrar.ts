@@ -661,7 +661,7 @@ export class DaemonCommandRegistrar extends BaseCommandRegistrar {
 
     } catch (error) {
       const err = error as Error;
-      throw new Error(`Cleanup failed: ${err.message}`);
+      throw new Error(`Cleanup failed: ${err.message}`, { cause: error });
     }
   }
 }

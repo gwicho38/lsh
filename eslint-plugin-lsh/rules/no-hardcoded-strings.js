@@ -76,7 +76,8 @@ export default {
 
     // Check if current file is in constants directory or test file
     // Use path.normalize for cross-platform compatibility
-    const filename = path.normalize(context.getFilename());
+    // eslint 10 removed the deprecated context.getFilename(); use context.filename (available since eslint 8.40)
+    const filename = path.normalize(context.filename);
     const normalizedConstantsPaths = constantsPaths.map(p => path.normalize(p));
 
     const isConstantsFile = normalizedConstantsPaths.some((constPath) => {

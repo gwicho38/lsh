@@ -236,8 +236,8 @@ export class BillingService {
     // For now, just parse the payload
     try {
       return JSON.parse(payload);
-    } catch (_error) {
-      throw new Error('Invalid webhook payload');
+    } catch (error) {
+      throw new Error('Invalid webhook payload', { cause: error });
     }
   }
 
