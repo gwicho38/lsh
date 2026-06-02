@@ -100,6 +100,18 @@ describe('IPFSClientManager', () => {
       // Just verify the method signature, don't actually install
       expect(manager.install).toBeDefined();
     });
+
+    it('should reject a version that is not strict semver (command-injection guard)', async () => {
+      const manager = new IPFSClientManager();
+      // force:true skips the "already installed" short-circuit so validation runs.
+      // A crafted version must be rejected before it can reach any subprocess.
+      await expect(
+        manager.install({ force: true, version: '0.26.0; touch /tmp/lsh-pwned' }),
+      ).rejects.toThrow('Invalid Kubo version');
+      await expect(
+        manager.install({ force: true, version: '$(rm -rf ~)' }),
+      ).rejects.toThrow('Invalid Kubo version');
+    });
   });
 
   describe('uninstall', () => {
