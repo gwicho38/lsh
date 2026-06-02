@@ -2,13 +2,13 @@
 
 This document describes the high-level architecture and module dependencies of LSH as it exists today.
 
-> **Status note (v3.4.1).** LSH has pivoted from a broad shell/daemon/CI-CD platform into a
+> **Status note (v3.5.0).** LSH has pivoted from a broad shell/daemon/CI-CD platform into a
 > focused **encrypted secrets manager** that syncs `.env` files over **IPFS** (Kubo) with
 > IPNS-based deterministic naming. The shell parser/executor and ZSH-compatibility layers
-> described in older revisions of this document **have been removed**. A cluster of dormant
-> modules (SaaS multi-tenant, job/cron daemon, Supabase/Postgres persistence) still compiles
-> but is **not wired into the CLI**; it is slated for removal in **v3.5.0**. See
-> [Legacy / dormant modules](#legacy--dormant-modules).
+> described in older revisions of this document were removed earlier; in **v3.5.0** the
+> remaining dormant cluster (SaaS multi-tenant, job/cron daemon, Supabase/Postgres
+> persistence) — which compiled but was never wired into the CLI — was **deleted**. What is
+> documented below is now the whole of the codebase, not a subset.
 
 ## Overview
 
@@ -47,9 +47,8 @@ flowchart TD
 | `src/cli.ts` | Sole runtime entry. Registers the secrets-centric command set with Commander. |
 | `dist/cli.js` | The published `lsh` bin (built from `src/cli.ts`). |
 
-> The `package.json` `main` field (`dist/app.js`) is currently **dangling** — there is no
-> `src/app.*` source and nothing builds it. LSH ships as a CLI, not a library; treat the
-> CLI as the only supported surface.
+> LSH ships as a CLI, not a library; the CLI is the only supported surface. The
+> `package.json` `main` field points at `dist/cli.js` (the built entry).
 
 ## Active module graph
 
@@ -189,26 +188,19 @@ running; `lsh init` performs first-time key + Kubo setup.
 - **Network discipline:** any module performing outbound `fetch` (e.g. `ipfs-client-manager.getLatestKuboVersion`) **must** bound the request with `AbortSignal.timeout` so a blocked/slow network falls back instead of hanging the CLI or a test.
 - **Coverage scope (`collectCoverageFrom`):** excludes `cli.ts`, `commands/**`, `services/daemon/**`, and the SaaS API — these require integration testing. Be aware that headline coverage numbers therefore describe the pure-logic core, not the user-facing CLI.
 
-## Legacy / dormant modules
+## Removed in v3.5.0
 
-The following compile but are **not reachable from `src/cli.ts`**. They are remnants of the
-pre-pivot platform and are scheduled for removal in **v3.5.0**. Do not build new features on them.
+The pre-pivot platform cluster — SaaS multi-tenant (`saas-*`, `saas-api-*`), the job/cron
+daemon (`job-manager`, `cron-job-manager`, `daemon-client`, `daemon/lshd`, `services/{cron,daemon}`),
+and Supabase/Postgres persistence (`supabase-client`, `database-persistence`,
+`database-{schema,types}`, `cloud-config-manager`, `enhanced-history-system`) — was deleted in
+v3.5.0. It compiled but had no inbound edges from the CLI, so it was removed as a unit along
+with its tests.
 
-```
-SaaS multi-tenant      src/lib/saas-{auth,organizations,secrets,billing,encryption,audit,email,types}.ts
-                       src/daemon/saas-api-{server,routes}.ts
-Job / cron daemon      src/lib/{job-manager,base-job-manager,cron-job-manager}.ts
-                       src/lib/{job-storage-database,job-storage-memory,optimized-job-scheduler}.ts
-                       src/lib/{daemon-client,daemon-client-helper,base-command-registrar}.ts
-                       src/daemon/{lshd,job-registry}.ts
-                       src/services/{cron,daemon}/**
-Supabase / Postgres    src/lib/{supabase-client,supabase-utils,database-persistence}.ts
-                       src/lib/{database-schema,database-types,cloud-config-manager,enhanced-history-system}.ts
-                       src/services/supabase/**
-```
-
-This cluster is internally interconnected but has **no inbound edges from the active CLI
-surface**, which is why it can be removed as a unit.
+A few generic utilities that are not currently wired into the CLI are intentionally **kept**
+as reusable building blocks (e.g. `command-validator`, `env-validator`, `validation-*`,
+`metrics/*`, `min-heap`, `fuzzy-match`, `string-utils`, `constant-time`). They are dependency-free
+of the removed cluster and carry their own tests.
 
 ## Adding new features
 
