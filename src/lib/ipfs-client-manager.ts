@@ -362,8 +362,12 @@ export class IPFSClientManager {
    */
   private async getLatestKuboVersion(): Promise<string> {
     try {
-      // Use GitHub API to get latest release
-      const response = await fetch('https://api.github.com/repos/ipfs/kubo/releases/latest');
+      // Use GitHub API to get latest release. Bound the request: an unbounded
+      // fetch hangs indefinitely on a blocked/slow network (e.g. CI runners),
+      // which would stall install() and time out tests before the fallback.
+      const response = await fetch('https://api.github.com/repos/ipfs/kubo/releases/latest', {
+        signal: AbortSignal.timeout(3000),
+      });
       const data = await response.json() as { tag_name: string };
 
       // Remove 'v' prefix if present
