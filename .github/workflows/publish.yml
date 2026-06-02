@@ -17,7 +17,11 @@ permissions:
 
 jobs:
   publish:
-    runs-on: [self-hosted, linux, x64]
+    # github-hosted (free for this public repo). REQUIRED for npm OIDC trusted
+    # publishing: it mandates sigstore provenance, which npm only accepts from
+    # github-hosted runners (self-hosted → E422 "Only github-hosted runners are
+    # supported when publishing with provenance"). Keep this job on ubuntu-latest.
+    runs-on: ubuntu-latest
     environment: npm-publish  # GitHub environment for trusted publishing
 
     steps:
@@ -65,14 +69,11 @@ jobs:
     # Trusted Publishing: npm authenticates via OIDC (id-token: write) against the
     # trusted publisher configured on npmjs for this repo+workflow+environment.
     # No NPM_TOKEN — the CLI exchanges the OIDC token for a short-lived publish token.
-    #
-    # NOTE: --provenance is intentionally omitted. This workflow runs on a self-hosted
-    # runner, and npm rejects provenance from self-hosted runners ("Only github-hosted
-    # runners are supported when publishing with provenance", error E422). OIDC trusted
-    # publishing itself works on self-hosted; only sigstore provenance attestation does not.
+    # Provenance is auto-enabled by trusted publishing and requires a github-hosted
+    # runner (this job runs on ubuntu-latest); the flag is explicit for clarity.
     - name: Publish to npm
       if: steps.npm_check.outputs.exists == 'false'
-      run: npm publish --access public
+      run: npm publish --provenance --access public
 
     - name: Skip publish (already exists)
       if: steps.npm_check.outputs.exists == 'true'
