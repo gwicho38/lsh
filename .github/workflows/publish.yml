@@ -65,9 +65,14 @@ jobs:
     # Trusted Publishing: npm authenticates via OIDC (id-token: write) against the
     # trusted publisher configured on npmjs for this repo+workflow+environment.
     # No NPM_TOKEN — the CLI exchanges the OIDC token for a short-lived publish token.
+    #
+    # NOTE: --provenance is intentionally omitted. This workflow runs on a self-hosted
+    # runner, and npm rejects provenance from self-hosted runners ("Only github-hosted
+    # runners are supported when publishing with provenance", error E422). OIDC trusted
+    # publishing itself works on self-hosted; only sigstore provenance attestation does not.
     - name: Publish to npm
       if: steps.npm_check.outputs.exists == 'false'
-      run: npm publish --provenance --access public
+      run: npm publish --access public
 
     - name: Skip publish (already exists)
       if: steps.npm_check.outputs.exists == 'true'
