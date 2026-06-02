@@ -120,6 +120,25 @@ async function fetchLatestVersion(): Promise<{ version: string; publishedAt?: st
 }
 
 /**
+ * Decide build status from the build workflow's runs (pure, unit-testable).
+ *
+ * Only a real `failure` on the most recent COMPLETED run blocks an update.
+ * `cancelled` / `skipped` / `null` are infra noise — the build is frequently
+ * cancelled by concurrency on the self-hosted runner — and must NOT be reported
+ * as a failing build. No completed runs → treat as passing (don't block).
+ */
+export function evaluateBuildRuns(
+  runs: GitHubWorkflowRun[],
+): { passing: boolean; url?: string } {
+  const completed = (runs || []).filter((run) => run.status === 'completed');
+  if (completed.length === 0) {
+    return { passing: true };
+  }
+  const latest = completed[0];
+  return { passing: latest.conclusion !== 'failure', url: latest.html_url };
+}
+
+/**
  * Check GitHub Actions CI status for a specific version tag
  */
 async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?: string }> {
@@ -127,7 +146,9 @@ async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?
     const options = {
       hostname: 'api.github.com',
       port: 443,
-      path: `/repos/gwicho38/lsh/actions/runs?per_page=5`,
+      // Scope to the BUILD workflow only. Querying all workflows let a flaky
+      // security scan (e.g. Codacy timing out on a download) read as "build failing".
+      path: `/repos/gwicho38/lsh/actions/workflows/node.js.yml/runs?branch=main&per_page=5`,
       method: 'GET',
       headers: {
         'User-Agent': 'lsh-cli',
@@ -146,24 +167,9 @@ async function checkCIStatus(_version: string): Promise<{ passing: boolean; url?
         try {
           if (res.statusCode === 200) {
             const ghData = JSON.parse(data);
-            const runs = ghData.workflow_runs || [];
-
-            // Find the most recent workflow run for main branch
-            const mainRuns = (runs as GitHubWorkflowRun[]).filter((run) =>
-              run.head_branch === 'main' && run.status === 'completed'
-            );
-
-            if (mainRuns.length > 0) {
-              const latestRun = mainRuns[0];
-              const passing = latestRun.conclusion === 'success';
-              resolve({
-                passing,
-                url: latestRun.html_url,
-              });
-            } else {
-              // No completed runs found, assume passing
-              resolve({ passing: true });
-            }
+            const runs = (ghData.workflow_runs || []) as GitHubWorkflowRun[];
+            // The path is already scoped to node.js.yml on main; decide via the pure helper.
+            resolve(evaluateBuildRuns(runs));
           } else {
             // If we can't check CI, don't block the update
             resolve({ passing: true });
