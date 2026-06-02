@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exec, spawn } from 'child_process';
+import { exec, execFile, spawn } from 'child_process';
 import { promisify } from 'util';
 import * as readline from 'readline';
 import { createLogger } from './logger.js';
@@ -14,7 +14,14 @@ import { getPlatformInfo } from './platform-utils.js';
 import { getLshConfig } from './lsh-config.js';
 
 const execAsync = promisify(exec);
+// execFile does NOT spawn a shell: arguments are passed literally to the binary,
+// so interpolated values (e.g. a Kubo version) cannot inject shell commands.
+const execFileAsync = promisify(execFile);
 const logger = createLogger('IPFSClientManager');
+
+// Kubo releases are strict semver (e.g. "0.26.0"). Reject anything else before it
+// reaches a download URL or subprocess — defense in depth against command injection.
+const KUBO_VERSION_RE = /^\d+\.\d+\.\d+$/;
 
 export interface IPFSClientInfo {
   installed: boolean;
@@ -116,6 +123,9 @@ export class IPFSClientManager {
 
     // Determine version to install
     const version = options.version || await this.getLatestKuboVersion();
+    if (!KUBO_VERSION_RE.test(version)) {
+      throw new Error(`Invalid Kubo version "${version}": expected semver like 0.26.0`);
+    }
     logger.info(`   Version: ${version}`);
     logger.info(`   Platform: ${platformInfo.platformName} ${platformInfo.arch}`);
 
@@ -362,8 +372,12 @@ export class IPFSClientManager {
    */
   private async getLatestKuboVersion(): Promise<string> {
     try {
-      // Use GitHub API to get latest release
-      const response = await fetch('https://api.github.com/repos/ipfs/kubo/releases/latest');
+      // Use GitHub API to get latest release. Bound the request: an unbounded
+      // fetch hangs indefinitely on a blocked/slow network (e.g. CI runners),
+      // which would stall install() and time out tests before the fallback.
+      const response = await fetch('https://api.github.com/repos/ipfs/kubo/releases/latest', {
+        signal: AbortSignal.timeout(3000),
+      });
       const data = await response.json() as { tag_name: string };
 
       // Remove 'v' prefix if present
@@ -384,13 +398,13 @@ export class IPFSClientManager {
 
     logger.info('   Downloading Kubo...');
 
-    // Download
-    await execAsync(`curl -L -o ${tarPath} ${downloadUrl}`);
+    // Download (execFile: no shell, args passed literally)
+    await execFileAsync('curl', ['-L', '-o', tarPath, downloadUrl]);
 
     logger.info('   Extracting...');
 
     // Extract
-    await execAsync(`tar -xzf ${tarPath} -C ${this.ipfsDir}`);
+    await execFileAsync('tar', ['-xzf', tarPath, '-C', this.ipfsDir]);
 
     // Move binary
     const extractedBinPath = path.join(this.ipfsDir, 'kubo', 'ipfs');
@@ -415,13 +429,13 @@ export class IPFSClientManager {
 
     logger.info('   Downloading Kubo...');
 
-    // Download
-    await execAsync(`curl -L -o ${tarPath} ${downloadUrl}`);
+    // Download (execFile: no shell, args passed literally)
+    await execFileAsync('curl', ['-L', '-o', tarPath, downloadUrl]);
 
     logger.info('   Extracting...');
 
     // Extract
-    await execAsync(`tar -xzf ${tarPath} -C ${this.ipfsDir}`);
+    await execFileAsync('tar', ['-xzf', tarPath, '-C', this.ipfsDir]);
 
     // Move binary
     const extractedBinPath = path.join(this.ipfsDir, 'kubo', 'ipfs');
@@ -445,13 +459,13 @@ export class IPFSClientManager {
 
     logger.info('   Downloading Kubo...');
 
-    // Download
-    await execAsync(`curl -L -o ${zipPath} ${downloadUrl}`);
+    // Download (execFile: no shell, args passed literally)
+    await execFileAsync('curl', ['-L', '-o', zipPath, downloadUrl]);
 
     logger.info('   Extracting...');
 
     // Extract (Windows has built-in tar that supports zip)
-    await execAsync(`tar -xf ${zipPath} -C ${this.ipfsDir}`);
+    await execFileAsync('tar', ['-xf', zipPath, '-C', this.ipfsDir]);
 
     // Move binary
     const extractedBinPath = path.join(this.ipfsDir, 'kubo', 'ipfs.exe');

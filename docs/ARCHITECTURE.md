@@ -1,360 +1,222 @@
 # LSH Architecture
 
-This document describes the high-level architecture and module dependencies of the LSH framework.
+This document describes the high-level architecture and module dependencies of LSH as it exists today.
+
+> **Status note (v3.4.1).** LSH has pivoted from a broad shell/daemon/CI-CD platform into a
+> focused **encrypted secrets manager** that syncs `.env` files over **IPFS** (Kubo) with
+> IPNS-based deterministic naming. The shell parser/executor and ZSH-compatibility layers
+> described in older revisions of this document **have been removed**. A cluster of dormant
+> modules (SaaS multi-tenant, job/cron daemon, Supabase/Postgres persistence) still compiles
+> but is **not wired into the CLI**; it is slated for removal in **v3.5.0**. See
+> [Legacy / dormant modules](#legacy--dormant-modules).
 
 ## Overview
 
-LSH is an encrypted secrets manager with automatic rotation, built on a shell framework with daemon scheduling capabilities.
+LSH is an encrypted secrets manager. The user encrypts a `.env` locally with a key, the
+ciphertext is added to IPFS via a local Kubo daemon, and an IPNS name (derived from the key)
+gives the blob a stable address so any machine sharing the key can resolve and pull it.
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                           CLI Layer                                  │
-│  src/cli.ts - Command registration and option parsing               │
-└─────────────────────────────────────────────────────────────────────┘
-                                    │
-          ┌─────────────────────────┼─────────────────────────┐
-          ▼                         ▼                         ▼
-┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│   Commands       │    │    Services      │    │     Daemon       │
-│  src/commands/   │    │  src/services/   │    │   src/daemon/    │
-└──────────────────┘    └──────────────────┘    └──────────────────┘
-          │                         │                         │
-          └─────────────────────────┼─────────────────────────┘
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Core Library                                 │
-│                        src/lib/                                      │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐ │
-│  │  Secrets    │  │   Shell     │  │    Jobs     │  │    SaaS     │ │
-│  │  Manager    │  │  Executor   │  │   Manager   │  │  Platform   │ │
-│  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘ │
-└─────────────────────────────────────────────────────────────────────┘
-                                    │
-          ┌─────────────────────────┼─────────────────────────┐
-          ▼                         ▼                         ▼
-┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
-│   Persistence    │    │    Constants     │    │    Utilities     │
-│  Supabase/Local  │    │  src/constants/  │    │  Logger, Crypto  │
-└──────────────────┘    └──────────────────┘    └──────────────────┘
+```mermaid
+flowchart TD
+    CLI["CLI Layer — src/cli.ts<br/>(command registration, option parsing)"]
+    CMD["Commands — src/commands/<br/>init · doctor · config · sync · sync-history<br/>ipfs · migrate · context · self · completion"]
+    SVC["Secrets Service — src/services/secrets/secrets.ts<br/>(push · pull · get · set · list · key)"]
+    SM["SecretsManager — src/lib/secrets-manager.ts<br/>(AES-256, git-context, destructive-change detection)"]
+    STORE["IPFSSecretsStorage — src/lib/ipfs-secrets-storage.ts"]
+    SYNC["IPFSSync — src/lib/ipfs-sync.ts"]
+    IPNS["IPNSKeyManager — src/lib/ipns-key-manager.ts"]
+    KUBO["IPFSClientManager — src/lib/ipfs-client-manager.ts<br/>(detect/install/run Kubo, ports 5001/8080)"]
+    KEYS["SyncKeyStore — src/lib/sync-key-store.ts<br/>(persistent key resolution)"]
+
+    CLI --> CMD
+    CLI --> SVC
+    CMD --> SM
+    SVC --> SM
+    SM --> STORE
+    SM --> KEYS
+    STORE --> SYNC
+    STORE --> IPNS
+    SYNC --> KUBO
+    IPNS --> KUBO
 ```
 
-## Module Dependency Graph
-
-### Entry Points
+## Entry points
 
 | File | Purpose |
 |------|---------|
-| `src/cli.ts` | Main CLI entry, registers all commands |
-| `src/app.tsx` | React/Ink terminal UI (interactive features) |
-| `src/daemon/lshd.ts` | Daemon entry point |
+| `src/cli.ts` | Sole runtime entry. Registers the secrets-centric command set with Commander. |
+| `dist/cli.js` | The published `lsh` bin (built from `src/cli.ts`). |
 
-### Core Library (`src/lib/`)
+> The `package.json` `main` field (`dist/app.js`) is currently **dangling** — there is no
+> `src/app.*` source and nothing builds it. LSH ships as a CLI, not a library; treat the
+> CLI as the only supported surface.
 
-#### Secrets Management (Primary Feature)
-```
-secrets-manager.ts
-├── supabase-client.ts (cloud storage)
-├── database-persistence.ts (local storage)
-└── Uses: AES-256 encryption
-```
+## Active module graph
 
-#### Shell Components
-```
-shell-executor.ts (AST execution)
-├── shell-parser.ts (command parsing → AST)
-├── builtin-commands.ts (cd, echo, export, etc.)
-├── variable-expansion.ts ($VAR expansion)
-├── pathname-expansion.ts (glob patterns)
-└── brace-expansion.ts ({a,b,c})
-```
+### Commands (`src/commands/`)
 
-#### ZSH Compatibility
-```
-zsh-compatibility.ts (coordinator)
-├── extended-globbing.ts (**, ^pattern)
-├── extended-parameter-expansion.ts
-├── associative-arrays.ts
-├── zsh-options.ts
-├── zsh-import-manager.ts
-└── theme-manager.ts (Oh-My-Zsh)
-```
+| Command file | Registers | Depends on (lib) |
+|---|---|---|
+| `init.ts` | `lsh init` | `platform-utils`, `git-utils` |
+| `doctor.ts` | `lsh doctor` | `platform-utils`, `ipfs-client-manager`, `ipfs-sync` |
+| `config.ts` | `lsh config` | `config-manager`, `constants` |
+| `sync.ts` | `lsh sync` | `ipfs-sync`, `ipfs-client-manager`, `ipns-key-manager`, `git-utils` |
+| `sync-history.ts` | `lsh sync-history` | `ipfs-sync-logger`, `git-utils` |
+| `ipfs.ts` | `lsh ipfs` | `ipfs-client-manager`, `ipfs-sync`, `ipns-key-manager`, `git-utils` |
+| `migrate.ts` | `lsh migrate` | `git-utils` |
+| `context.ts` | `lsh context` | — (emits llms.txt-style context) |
+| `self.ts` | `lsh self` | `constants` |
+| `completion.ts` | `lsh completion` | — |
 
-#### Job Management
-```
-base-job-manager.ts (abstract base)
-├── job-manager.ts (concrete implementation)
-├── cron-job-manager.ts (scheduling)
-└── daemon/job-registry.ts (execution tracking)
-```
+`src/services/secrets/secrets.ts` registers the core verbs (`push`, `pull`, `get`, `set`,
+`list`, `key`) and depends on `secrets-manager`, `git-utils`, `format-utils`,
+`ipfs-client-manager`, `sync-key-store`, `constants`.
 
-#### SaaS Platform
-```
-saas-types.ts (type definitions)
-├── saas-auth.ts (authentication)
-├── saas-organizations.ts (orgs & teams)
-├── saas-secrets.ts (multi-tenant secrets)
-├── saas-billing.ts (Stripe integration)
-├── saas-encryption.ts (per-team keys)
-└── saas-audit.ts (audit logging)
-```
-
-#### Database Layer
-```
-database-types.ts (Supabase record types)
-├── supabase-client.ts (client config)
-├── database-persistence.ts (PostgreSQL ops)
-├── local-storage-adapter.ts (JSON fallback)
-└── database-schema.ts (schema definitions)
-```
-
-#### Security
-```
-command-validator.ts (injection prevention)
-└── env-validator.ts (startup validation)
-```
-
-#### Error Handling
-```
-lsh-error.ts
-├── LSHError class
-├── ErrorCodes constants
-└── extractErrorMessage/Details utilities
-```
-
-### Services (`src/services/`)
-
-| Service | Purpose | Key File |
-|---------|---------|----------|
-| `daemon/` | Daemon start/stop/status | `daemon.ts` |
-| `cron/` | Cron job management | `cron.ts` |
-| `api/` | API server commands | `api.ts` |
-| `secrets/` | Push/pull secrets | `secrets.ts` |
-| `supabase/` | Supabase commands | `supabase.ts` |
-
-### Daemon (`src/daemon/`)
+### Secrets + IPFS core (`src/lib/`)
 
 ```
-lshd.ts (LSHJobDaemon class)
-├── api-server.ts (REST API)
-├── job-registry.ts (execution tracking)
-└── Uses: Unix socket for IPC
+secrets-manager.ts            AES-256 encrypt/decrypt, git repo/branch context,
+  ├── logger.ts               destructive-change detection
+  ├── git-utils.ts
+  ├── ipfs-sync-logger.ts
+  ├── ipfs-secrets-storage.ts ── orchestrates store/retrieve over IPFS
+  │     ├── ipfs-sync.ts       ── `ipfs add` / cat via Kubo HTTP API (127.0.0.1:5001)
+  │     ├── ipns-key-manager.ts── key-derived IPNS name publish/resolve
+  │     └── (back-ref) secrets-manager.ts
+  ├── sync-key-store.ts        persistent key resolution (env / .env / ~/.config/lsh)
+  └── lsh-error.ts
+
+ipfs-client-manager.ts         detect/install/start/stop Kubo, version pinning, health checks
+config-manager.ts              lsh config read/write
+platform-utils.ts              OS/arch detection for Kubo binaries
+format-utils.ts                table/JSON/yaml output helpers
+constants/                     centralized strings (see below)
 ```
 
-### CI/CD (`src/cicd/`)
-
-```
-webhook-receiver.ts (GitHub/GitLab/Jenkins)
-├── analytics.ts (build trends)
-├── cache-manager.ts (build cache)
-├── auth.ts (JWT verification)
-├── performance-monitor.ts
-└── dashboard/ (HTML monitoring UI)
-```
+> `secrets-manager.ts` and `ipfs-secrets-storage.ts` reference each other (the storage layer
+> reuses the manager's crypto helpers). This is the one intentional cycle in the active core.
 
 ### Constants (`src/constants/`)
 
 | File | Purpose |
 |------|---------|
 | `index.ts` | Re-exports all constants |
-| `paths.ts` | File paths, socket paths |
+| `paths.ts` | File/cache/socket paths (`~/.lsh`, `~/.config/lsh`) |
+| `config.ts` | Defaults, Kubo ports, IPNS settings |
+| `commands.ts` | CLI command/verb names |
 | `errors.ts` | Error messages |
-| `commands.ts` | CLI command names |
-| `config.ts` | Default configuration |
-| `env-vars.ts` | Environment variable names |
-| `tables.ts` | Database table names |
-| `api.ts` | API endpoints, headers |
-| `regex.ts` | Validation patterns |
+| `api.ts` | HTTP endpoints/headers (Kubo API, pinning) |
+| `database.ts` | Table names (used only by dormant cluster) |
+| `ui.ts` | Help text, banners, colors |
+| `validation.ts` | Validation patterns/limits |
 
-## Data Flow
+The custom ESLint rule `lsh/no-hardcoded-strings` (currently `warn`) enforces use of these.
 
-### Secrets Push Flow
-```
-CLI (lsh push)
-    │
-    ▼
-secrets/secrets.ts (command handler)
-    │
-    ▼
-secrets-manager.ts
-    ├── Read .env file
-    ├── Encrypt with AES-256
-    │
-    ▼
-supabase-client.ts
-    │
-    ▼
-Supabase PostgreSQL
-```
-
-### Secrets Pull Flow
-```
-CLI (lsh pull)
-    │
-    ▼
-secrets/secrets.ts
-    │
-    ▼
-secrets-manager.ts
-    │
-    ▼
-supabase-client.ts
-    │
-    ▼
-Decrypt
-    │
-    ▼
-Write .env file
-```
-
-### Daemon Job Execution
-```
-CLI (lsh cron add)
-    │
-    ▼
-cron/cron.ts
-    │
-    ▼
-daemon-client.ts ──IPC──► lshd.ts (daemon)
-                              │
-                              ▼
-                         cron-job-manager.ts
-                              │
-                              ▼
-                         shell-executor.ts
-                              │
-                              ▼
-                         job-registry.ts (track result)
-```
-
-## Type System
-
-### Domain Types vs Database Types
+### Error handling (`src/lib/lsh-error.ts`)
 
 ```
-saas-types.ts (Domain)          database-types.ts (Database)
-─────────────────────           ──────────────────────────
-Organization                    DbOrganizationRecord
-  .createdAt: Date                .created_at: string
-  .subscriptionTier: enum         .subscription_tier: string
-                    ▲
-                    │
-              mapDbOrgToOrg()
-                    │
-                    ▼
-            Supabase Query Result
+LSHError (structured error class)
+  ├── code: ErrorCode          (ErrorCodes.* constants)
+  ├── message: string
+  ├── context?: Record<string, unknown>
+  └── statusCode: number
+Utilities
+  ├── extractErrorMessage(unknown): string   ← use instead of (e as Error).message
+  ├── extractErrorDetails(unknown): object
+  ├── wrapAsLSHError(e, code, ctx): LSHError
+  └── isLSHError(unknown, code?): boolean
 ```
 
-### Error Types
+## Data flows
 
-```
-lsh-error.ts
-├── LSHError (structured error class)
-│   ├── code: ErrorCode
-│   ├── message: string
-│   ├── context?: Record<string, unknown>
-│   └── statusCode: number
-│
-├── ErrorCodes (constant strings)
-│   ├── AUTH_*
-│   ├── SECRETS_*
-│   ├── DB_*
-│   └── ...
-│
-└── Utilities
-    ├── extractErrorMessage(unknown): string
-    ├── extractErrorDetails(unknown): object
-    └── isLSHError(unknown, code?): boolean
-```
+### `lsh push`
 
-## Key Patterns
+```mermaid
+sequenceDiagram
+    participant U as CLI (lsh push)
+    participant S as secrets-manager
+    participant K as SyncKeyStore
+    participant St as ipfs-secrets-storage
+    participant Sy as ipfs-sync
+    participant N as ipns-key-manager
+    participant Kubo as Kubo daemon (127.0.0.1:5001)
 
-### 1. Database Response Handling
-```typescript
-// Always check error first
-const { data, error } = await supabase.from('table').select();
-if (error) throw new LSHError(ErrorCodes.DB_QUERY_FAILED, error.message);
-
-// Map to domain type
-return this.mapDbRecordToDomainObject(data);
+    U->>S: read .env + git context
+    S->>K: resolve LSH_SECRETS_KEY
+    S->>S: AES-256 encrypt + detect destructive changes
+    S->>St: store(ciphertext, metadata)
+    St->>Sy: ipfs add → CID
+    Sy->>Kubo: POST /api/v0/add
+    St->>N: derive IPNS key, publish CID
+    N->>Kubo: POST /api/v0/name/publish
+    Kubo-->>U: IPNS name + CID (cached in ~/.lsh/secrets-cache)
 ```
 
-### 2. Error Handling in Catch Blocks
-```typescript
-try {
-  await riskyOperation();
-} catch (error) {
-  // Use utility instead of type assertion
-  console.error('Failed:', extractErrorMessage(error));
-  throw wrapAsLSHError(error, ErrorCodes.INTERNAL_ERROR);
-}
+### `lsh pull`
+
+```mermaid
+sequenceDiagram
+    participant U as CLI (lsh pull)
+    participant N as ipns-key-manager
+    participant Sy as ipfs-sync
+    participant Kubo as Kubo daemon
+    participant S as secrets-manager
+
+    U->>N: resolve IPNS name (key-derived)
+    N->>Kubo: POST /api/v0/name/resolve → CID
+    U->>Sy: cat CID
+    Sy->>Kubo: POST /api/v0/cat → ciphertext
+    U->>S: AES-256 decrypt
+    S-->>U: write .env
 ```
 
-### 3. Command Registration
-```typescript
-// In src/services/myfeature/myfeature.ts
-export function init_myfeature(program: Command) {
-  program
-    .command('myfeature <arg>')
-    .description('Description')
-    .option('-f, --flag', 'Flag description')
-    .action(async (arg, options) => {
-      // Implementation
-    });
-}
+Optional durability: a remote pinning service (e.g. Pinata) can pin the CID so the blob
+survives when the local Kubo node is offline. `lsh doctor` verifies Kubo is installed and
+running; `lsh init` performs first-time key + Kubo setup.
 
-// In src/cli.ts
-import { init_myfeature } from './services/myfeature/myfeature.js';
-init_myfeature(program);
+## Security considerations
+
+1. **Secrets encryption** — AES-256 for all stored `.env` content; keys never leave the machine.
+2. **Key handling** — `LSH_SECRETS_KEY` resolved via `SyncKeyStore` (env → `.env` → `~/.config/lsh`); shared out-of-band (password manager) for team sync.
+3. **Destructive-change detection** — `secrets-manager` refuses to overwrite a remote blob that would drop keys without an explicit flag.
+4. **Input validation** — `command-validator.ts` / `env-validator.ts` / `validation-framework.ts` remain in the tree with strong coverage; they gate the dormant daemon/API surface and are available for reuse.
+
+## Testing strategy
+
+- **Framework:** Jest + ts-jest, run via `node --experimental-vm-modules ./node_modules/.bin/jest`.
+- **Location:** top-level `__tests__/` (unit + integration).
+- **CI exclusions (`jest.config.*` `testPathIgnorePatterns`):** IPFS/secrets tests that need a live Kubo node or network, multi-host sync, and testcontainer-based security tests are skipped in CI and run manually.
+- **Network discipline:** any module performing outbound `fetch` (e.g. `ipfs-client-manager.getLatestKuboVersion`) **must** bound the request with `AbortSignal.timeout` so a blocked/slow network falls back instead of hanging the CLI or a test.
+- **Coverage scope (`collectCoverageFrom`):** excludes `cli.ts`, `commands/**`, `services/daemon/**`, and the SaaS API — these require integration testing. Be aware that headline coverage numbers therefore describe the pure-logic core, not the user-facing CLI.
+
+## Legacy / dormant modules
+
+The following compile but are **not reachable from `src/cli.ts`**. They are remnants of the
+pre-pivot platform and are scheduled for removal in **v3.5.0**. Do not build new features on them.
+
+```
+SaaS multi-tenant      src/lib/saas-{auth,organizations,secrets,billing,encryption,audit,email,types}.ts
+                       src/daemon/saas-api-{server,routes}.ts
+Job / cron daemon      src/lib/{job-manager,base-job-manager,cron-job-manager}.ts
+                       src/lib/{job-storage-database,job-storage-memory,optimized-job-scheduler}.ts
+                       src/lib/{daemon-client,daemon-client-helper,base-command-registrar}.ts
+                       src/daemon/{lshd,job-registry}.ts
+                       src/services/{cron,daemon}/**
+Supabase / Postgres    src/lib/{supabase-client,supabase-utils,database-persistence}.ts
+                       src/lib/{database-schema,database-types,cloud-config-manager,enhanced-history-system}.ts
+                       src/services/supabase/**
 ```
 
-### 4. Job Specification
-```typescript
-const job: Partial<BaseJobSpec> = {
-  name: 'my-job',
-  command: 'echo "hello"',
-  schedule: {
-    cron: '0 2 * * *', // Daily at 2am
-  },
-  tags: ['secrets', 'rotation'],
-  timeout: 60000, // 1 minute
-};
-await jobManager.createJob(job);
-```
+This cluster is internally interconnected but has **no inbound edges from the active CLI
+surface**, which is why it can be removed as a unit.
 
-## Testing Strategy
+## Adding new features
 
-### Unit Tests
-- Located in `src/__tests__/` and adjacent to source files
-- Use Jest with ts-jest preset
-- Mock Supabase for SaaS tests
-
-### Integration Tests
-- Test CLI commands end-to-end
-- Test daemon IPC communication
-- Test secrets encryption/decryption round-trip
-
-### Test Coverage Targets
-- Security modules: 100% (command-validator, env-validator)
-- Core library: 70%+
-- Services: 60%+
-
-## Security Considerations
-
-1. **Command Validation**: All user commands pass through `command-validator.ts`
-2. **Environment Validation**: Startup checks via `env-validator.ts`
-3. **Webhook Verification**: HMAC signatures for CI/CD webhooks
-4. **Secrets Encryption**: AES-256-CBC for all stored secrets
-5. **JWT Authentication**: Signed tokens for API access
-
-## Adding New Features
-
-### Checklist
-
-1. [ ] Create types in appropriate file (`saas-types.ts` or new)
-2. [ ] Add database types to `database-types.ts` if needed
-3. [ ] Implement in `src/lib/` with proper error handling
-4. [ ] Create service in `src/services/` for CLI integration
-5. [ ] Register command in `src/cli.ts`
-6. [ ] Add constants to `src/constants/`
-7. [ ] Write tests
-8. [ ] Update this document if architecture changes
+1. [ ] Define types alongside the feature (the active core does not use the `saas-types` split).
+2. [ ] Implement in `src/lib/` with `LSHError`-based error handling.
+3. [ ] Add a command in `src/commands/` (or a verb in `src/services/secrets/secrets.ts`).
+4. [ ] Register it in `src/cli.ts`.
+5. [ ] Add user-facing strings to `src/constants/`.
+6. [ ] Bound any outbound network call with a timeout.
+7. [ ] Write tests in `__tests__/`; mock Kubo/network for unit tests.
+8. [ ] Update this document if the architecture changes.
