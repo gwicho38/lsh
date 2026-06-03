@@ -4,526 +4,209 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-LSH is an **encrypted secrets manager** with automatic rotation, team sync, and multi-environment support. Built on a powerful shell framework with daemon scheduling, it enables secure credential management across development teams.
+LSH (`lsh-framework` on npm) is an **encrypted secrets manager**: it syncs `.env` files across
+machines with AES-256 encryption over **IPFS** (Kubo), addressed by content (CID) and published
+under a deterministic **IPNS** name derived from a shared key — so a teammate with the same key
+can pull the latest version with no account or central server.
 
-**Primary Feature: Secrets Management**
-- AES-256 encrypted storage of .env files in Supabase/PostgreSQL
-- Multi-environment support (dev/staging/production)
-- Team collaboration with shared encryption keys
-- Automatic secret rotation with scheduled jobs
-- Push/pull sync across all development machines
-- Masked viewing and audit capabilities
+It is a **CLI-only** tool. The `lsh` bin is the only supported surface (`package.json` `main`
+points at `dist/cli.js`; there is no library entry point).
 
-**Bonus Features (Built-in Shell Framework):**
-- POSIX/ZSH-compatible shell with extended features
-- Persistent job daemon with cron-style scheduling
-- CI/CD webhook receiver (GitHub, GitLab, Jenkins)
-- RESTful API with JWT authentication
-- Electron-based dashboard for monitoring
-- Command validation and security controls
-
-**Positioning:** While LSH is a full-featured shell and automation platform, its primary focus is making secrets management simple, secure, and automated. The built-in daemon and scheduling features uniquely enable automatic secret rotation - something no other secrets manager has built-in.
+> **History:** LSH began as a broad POSIX/ZSH shell + job daemon + CI/CD + SaaS platform. It
+> pivoted to a focused secrets manager. The shell parser/executor, ZSH layer, job/cron daemon,
+> REST API/webhooks, Electron dashboard, SaaS multi-tenant code, and Supabase/Postgres
+> persistence were **removed** (the platform cluster was deleted in v3.5.0). Older docs/releases
+> that mention those features are historical. Don't build on them; they're gone.
 
 ## ML/Agent Context
 
-For ML models and automation agents needing to understand and use this CLI:
-
-- **`llms.txt`** - Machine-readable context file at repository root (standard format like robots.txt)
-- **`lsh context`** - Runtime command that outputs comprehensive, structured usage documentation
-- **`lsh context --json`** - JSON output for programmatic parsing
-
-Quick context for agents:
-```bash
-# Get full context as text
-lsh context
-
-# Get context as JSON for parsing
-lsh context --json
-
-# Or read the static file
-cat llms.txt
-```
+- **`llms.txt`** — machine-readable context at repo root.
+- **`lsh context`** / **`lsh context --json`** — runtime usage documentation.
 
 ## Build & Development Commands
 
-### Building
 ```bash
 npm run build              # Compile TypeScript to dist/
-npm run watch              # Watch mode for development
-npm run typecheck          # Type checking without emit
-npm run clean              # Remove dist/, build/, bin/ directories
+npm run watch              # Watch mode
+npm run typecheck          # tsc --noEmit
+npm run clean              # Remove dist/, build/, bin/
+
+npm test                   # Jest (node --experimental-vm-modules)
+npm run test:coverage      # With coverage
+npm test -- --clearCache   # Clear Jest cache if tests behave oddly
+
+npm run lint               # ESLint (flat config: eslint.config.js)
+npm run lint:fix           # Auto-fix
 ```
-
-### Testing
-```bash
-npm test                   # Run all tests with Jest
-npm run test:coverage      # Run tests with coverage report
-npm run test:integration   # Run integration tests only
-npm test -- --clearCache   # Clear Jest cache if tests fail unexpectedly
-```
-
-**Test Location:** Tests are in `src/__tests__/` and adjacent to source files. Some tests are currently disabled in `jest.config.js` due to strict mode migration (see `testPathIgnorePatterns`).
-
-**Current Coverage:** ~11% baseline (target: 70% per Issue #68). Well-tested modules include `command-validator.ts` (100%) and `env-validator.ts` (74%).
-
-### Linting
-```bash
-npm run lint               # Lint with ESLint
-npm run lint:fix           # Auto-fix lint issues
-```
-
-**Lint Configuration:** Uses flat config (`eslint.config.js`). Prefix unused variables with `_` to avoid lint errors.
 
 ### Running LSH
-```bash
-# After building
-node dist/cli.js                              # Run shell
-node dist/cli.js -i                           # Interactive mode
-node dist/cli.js -c "echo hello"              # Execute command
-node dist/cli.js -s script.sh                 # Execute script
 
-# Or if globally linked
-lsh                                           # Show help
-lsh -i                                        # Interactive shell
-lsh daemon start                              # Start persistent daemon
-lsh cron list                                 # List scheduled jobs
-lsh api start --port 3030                     # Start API server
+```bash
+node dist/cli.js --help            # After building
+node dist/cli.js sync              # Or any command
+lsh                                # If globally linked (npm link)
 ```
 
-### Daemon Operations
-```bash
-# Start/stop daemon
-lsh daemon start
-lsh daemon status
-lsh daemon stop
-
-# API server (requires LSH_API_ENABLED=true)
-LSH_API_ENABLED=true LSH_API_PORT=3030 node dist/daemon/lshd.js start
-
-# Check daemon logs
-cat /tmp/lsh-job-daemon-$USER.log
-```
+Real top-level commands: `init`, `doctor`, `config`, `sync`, `sync-history`, `ipfs`, `migrate`,
+`context`, `self`, `completion`, plus the secrets verbs `push`, `pull`, `get`, `set`, `list`,
+`env`, `key`, `create`, `load`, `status`, `info`, `delete`, `clear`, `cp`. Verify with
+`node dist/cli.js --help` — there is **no** `daemon`, `cron`, `api`, `supabase`, or `storacha`
+command.
 
 ## Secrets Management (Primary Feature)
 
-LSH's primary focus is encrypted secrets management. When working on features, always consider how they relate to or enhance the secrets workflow.
-
-### Quick Start with Secrets
-
 ```bash
-# Generate encryption key
-lsh key
-
-# Push secrets to cloud
-lsh push --env dev
-
-# Pull on another machine
-lsh pull --env dev
-
-# Schedule automatic rotation
-lsh cron add --name "rotate-keys" \
-  --schedule "0 0 1 * *" \
-  --command "./examples/secrets-rotation/rotate-api-keys.sh"
+lsh key                    # Generate encryption key
+lsh init                   # First-time setup (key + Kubo)
+lsh push --env dev         # Encrypt + add to IPFS + publish IPNS
+lsh pull --env dev         # Resolve IPNS + fetch CID + decrypt
+lsh doctor                 # Verify Kubo installed/running
 ```
 
-### Secrets Architecture
+Rotation is **not** a built-in feature — schedule it with an external scheduler (system `cron`,
+a CI job) that runs your rotation script then `lsh push`.
 
-- **`src/lib/secrets-manager.ts`** - Core secrets management, AES-256 encryption
-- **`src/services/secrets/secrets.ts`** - CLI commands for secrets operations
-- **`examples/secrets-rotation/`** - Example scripts for automated rotation
+### Architecture (active code)
 
-### Key Implementation Details
+```
+src/cli.ts                     Sole entry; registers commands with Commander
+src/commands/                  init, doctor, config, sync, sync-history, ipfs, migrate,
+                               context, self, completion
+src/services/secrets/secrets.ts  push/pull/get/set/list/key verbs
 
-1. **Encryption**: Uses AES-256-CBC with user-provided or machine-derived keys
-2. **Storage**: Leverages existing `DatabasePersistence` layer (stores as jobs with command='secrets_sync')
-3. **Multi-environment**: Separate storage by environment name (dev/staging/prod)
-4. **Team Collaboration**: Shared `LSH_SECRETS_KEY` enables team sync
-5. **Automatic Rotation**: Combines cron scheduling + daemon + secrets push/pull
+src/lib/
+  secrets-manager.ts           AES-256 encrypt/decrypt, git repo/branch context,
+                               destructive-change detection
+  ipfs-secrets-storage.ts      orchestrates store/retrieve over IPFS
+  ipfs-sync.ts                 `ipfs add`/cat via Kubo HTTP API (127.0.0.1:5001)
+  ipns-key-manager.ts          key-derived IPNS publish/resolve
+  ipfs-client-manager.ts       detect/install/start/stop Kubo, version pinning
+  sync-key-store.ts            key resolution (env / .env / ~/.config/lsh)
+  ipfs-sync-logger.ts          immutable sync-record log
+  config-manager.ts            lsh config
+  git-utils.ts, platform-utils.ts, format-utils.ts, lsh-error.ts
+  constants/                   centralized strings (see below)
+```
 
-### Integration Points
+See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full module graph and push/pull
+sequence diagrams.
 
-When adding features, consider secrets integration:
-- Can this feature help with secret rotation?
-- Should this feature respect secret environment variables?
-- Could this feature expose secrets unintentionally?
-
-### Secrets Documentation
-
-- **[SECRETS_GUIDE.md](docs/features/secrets/SECRETS_GUIDE.md)** - Complete user guide
-- **[SECRETS_QUICK_REFERENCE.md](docs/features/secrets/SECRETS_QUICK_REFERENCE.md)** - Quick reference for daily use
-- **[SECRETS_CHEATSHEET.txt](SECRETS_CHEATSHEET.txt)** - Command cheatsheet
-- **[examples/secrets-rotation/](examples/secrets-rotation/)** - Rotation examples and tutorials
-
-## Architecture
-
-### Entry Points
-- **`src/cli.ts`** - Main CLI entry point, command registration, option parsing
-- **`src/app.tsx`** - React/Ink terminal UI application (for interactive features)
-
-### Core Shell Components
-- **`src/lib/shell-executor.ts`** - AST execution engine, implements POSIX semantics
-- **`src/lib/shell-parser.ts`** - Shell command parser, produces AST nodes
-- **`src/lib/interactive-shell.ts`** - Interactive REPL with history and completion
-- **`src/lib/builtin-commands.ts`** - POSIX builtin commands (cd, echo, export, etc.)
-- **`src/lib/variable-expansion.ts`** - Variable and parameter expansion
-- **`src/lib/pathname-expansion.ts`** - Glob pattern matching (*, ?, [])
-- **`src/lib/brace-expansion.ts`** - Brace expansion ({a,b,c})
-
-### ZSH Compatibility Features
-- **`src/lib/zsh-compatibility.ts`** - ZSH-specific features coordination
-- **`src/lib/extended-globbing.ts`** - Extended glob patterns (**, ^pattern, etc.)
-- **`src/lib/extended-parameter-expansion.ts`** - Advanced parameter expansion
-- **`src/lib/associative-arrays.ts`** - Associative array support
-- **`src/lib/zsh-options.ts`** - ZSH option management
-- **`src/lib/zsh-import-manager.ts`** - Import ZSH configs/themes
-- **`src/lib/theme-manager.ts`** - Oh-My-Zsh theme support
-
-### Job Management & Daemon
-- **`src/lib/job-manager.ts`** - Job lifecycle management, CRUD operations for `JobSpec`
-- **`src/lib/cron-job-manager.ts`** - Cron-style job scheduling with templates
-- **`src/daemon/lshd.ts`** - Persistent daemon (`LSHJobDaemon` class), IPC via Unix socket
-- **`src/daemon/api-server.ts`** - RESTful API (`LSHApiServer` class) with JWT auth
-- **`src/lib/daemon-client.ts`** - Client for daemon IPC communication
-
-### CI/CD & Webhooks
-- **`src/cicd/webhook-receiver.ts`** - Webhook endpoint server, HMAC verification
-- **`src/cicd/analytics.ts`** - Build analytics and trend analysis
-- **`src/cicd/cache-manager.ts`** - Build cache management
-- **`src/cicd/auth.ts`** - JWT authentication and authorization
-- **`src/cicd/performance-monitor.ts`** - Performance metrics collection
-- **`src/cicd/dashboard/`** - HTML/JS dashboards for monitoring
-
-### Database & Persistence
-- **`src/lib/database-persistence.ts`** - PostgreSQL persistence layer
-- **`src/lib/supabase-client.ts`** - Supabase client configuration
-- **`src/lib/database-schema.ts`** - Database schema definitions
-- **`src/services/supabase/supabase.ts`** - Supabase command registration
-
-### Security
-- **`src/lib/command-validator.ts`** - Validates commands, prevents injection attacks
-- **`src/lib/env-validator.ts`** - Environment variable validation at startup
-- Both modules have comprehensive test coverage and should be used for all command execution
-
-### Commands Registration
-Commands are registered in `src/cli.ts` by importing service initializers:
-- **`src/services/daemon/daemon.ts`** - `init_daemon()` registers daemon commands
-- **`src/services/cron/cron.ts`** - `init_cron()` registers cron commands
-- **`src/services/api/api.ts`** - `registerApiCommands()` registers API commands
-- **`src/commands/self.ts`** - Self-management commands (version, update)
-- **`src/commands/zsh-import.ts`** - `registerZshImportCommands()` for ZSH import
-- **`src/commands/theme.ts`** - `registerThemeCommands()` for theme management
-
-### Electron Desktop App
-- **`src/electron/main.cjs`** - Electron main process
-- Run with: `npm run electron` or `npm run dashboard`
+Some generic utilities are kept but **not currently wired into the CLI** (reusable building
+blocks): `command-validator`, `env-validator`, `validation-*`, `metrics/*`, `min-heap`,
+`fuzzy-match`, `string-utils`, `constant-time`. They have their own tests and no dependency on
+removed code.
 
 ## Environment Configuration
 
-Copy `.env.example` to `.env` and configure:
+```bash
+LSH_SECRETS_KEY=<64-char-hex>   # Required: AES-256 key (from `lsh key`)
+LSH_PIN_SERVICE=<service-name>  # Optional: Kubo remote pinning service for durable sync
+```
 
-**Required for Production:**
-- `LSH_API_KEY` - API authentication (generate with `openssl rand -hex 32`)
-- `LSH_JWT_SECRET` - JWT signing secret (generate with `openssl rand -hex 32`)
-- `GITHUB_WEBHOOK_SECRET`, `GITLAB_WEBHOOK_SECRET`, `JENKINS_WEBHOOK_SECRET` (if webhooks enabled)
-
-**Optional:**
-- `SUPABASE_URL`, `SUPABASE_ANON_KEY` - For cloud persistence
-- `DATABASE_URL` - PostgreSQL connection
-- `REDIS_URL` - For caching
-- `LSH_ALLOW_DANGEROUS_COMMANDS=false` - Security control (keep false in production)
-
-**Startup Validation:** LSH validates environment variables at startup using `env-validator.ts` and fails fast if production secrets are missing or malformed.
+There are no API/JWT/webhook/Supabase environment variables — those features were removed.
 
 ## Key Development Patterns
 
-### TypeScript Configuration
-- **Target:** ES2022, Node.js 20.18.0+ required
-- **Module System:** ES modules (`.js` extensions in imports required)
-- **Strict Mode:** Partially enabled (see `tsconfig.json` comments for migration status)
-- `noImplicitAny` is disabled (~150+ errors to fix in future)
-- Prefix unused vars/args with `_` to satisfy linter
+### TypeScript
+- Target ES2022, Node ≥ 20.18, ES modules (`.js` extensions in imports required).
+- `module`/`moduleResolution`: `nodenext`. **`types: ["node"]`** is pinned in `tsconfig.json` —
+  do not remove it; without it tsc's ambient-type auto-include is fragile and node globals
+  (`process`, `NodeJS`, `Error.captureStackTrace`) can drop out when the file graph changes.
+- Strict mode partially enabled; `noImplicitAny` is off. Prefix unused vars/args with `_`.
 
-### Test Execution
-- **Framework:** Jest with ts-jest preset
-- **Import Mapping:** `moduleNameMapper` maps `.js` imports to `.ts` for testing
-- **Run Command:** `node --experimental-vm-modules ./node_modules/.bin/jest`
-- Some tests disabled in `jest.config.js` (see `testPathIgnorePatterns`) pending refactoring
+### Adding a command
+1. Create a module in `src/commands/` (or a verb in `src/services/secrets/secrets.ts`).
+2. Export an init function that registers with `commander.Command`.
+3. Import + call it in `src/cli.ts`.
+4. Put user-facing strings in `src/constants/`.
 
-### Adding New Commands
-1. Create command module in `src/commands/` or `src/services/<feature>/`
-2. Export initialization function that registers commands with `commander.Command`
-3. Import and call init function in `src/cli.ts`
-4. Example pattern:
-   ```typescript
-   export function init_myfeature(program: Command) {
-     program
-       .command('myfeature <arg>')
-       .description('Description')
-       .action(async (arg) => { /* implementation */ });
-   }
-   ```
+### Error handling — use `lsh-error.ts`, never `(error as Error).message`
+```typescript
+import { extractErrorMessage, extractErrorDetails, wrapAsLSHError, LSHError, ErrorCodes } from './lsh-error.js';
 
-### Job Management
-- **Job Spec Interface:** `JobSpec` defined in `src/lib/job-manager.ts`
-- **Job Types:** 'shell' | 'system' | 'scheduled' | 'service'
-- **Job Status:** 'created' | 'running' | 'stopped' | 'completed' | 'failed' | 'killed'
-- **Scheduling:** Jobs support cron expressions or interval-based scheduling
-- **Persistence:** Jobs can be persisted to PostgreSQL/Supabase or local JSON file
+try { await risky(); }
+catch (error) {
+  console.error('Failed:', extractErrorMessage(error));
+  throw wrapAsLSHError(error, ErrorCodes.INTERNAL_ERROR, { op: 'risky' });
+}
+```
 
-### Security Best Practices
-- **Always use `validateCommand()`** from `command-validator.ts` before executing user input
-- **Always validate environment** with `validateEnvironment()` on daemon/API startup
-- **Never bypass webhook HMAC verification** in production
-- **Keep `LSH_ALLOW_DANGEROUS_COMMANDS=false`** in production
-- See `README.md` Security Best Practices section for production deployment checklist
+### Constants — never hardcode strings (`lsh/no-hardcoded-strings`)
+`src/constants/`: `index.ts`, `paths.ts`, `config.ts`, `commands.ts`, `errors.ts`, `api.ts`,
+`database.ts`, `ui.ts`, `validation.ts`.
+
+### Network calls — always bound them
+Any outbound `fetch`/request MUST use `AbortSignal.timeout(...)`. An unbounded fetch can hang
+the CLI or a test indefinitely on a slow/blocked network (this caused real publish-gate hangs).
+
+## Testing
+
+- Framework: Jest + ts-jest, run via `node --experimental-vm-modules ./node_modules/.bin/jest`.
+- Tests in top-level `__tests__/` and `src/__tests__/`.
+- `jest.config.js testPathIgnorePatterns` excludes tests that need a live Kubo node / network
+  (IPFS, multi-host), testcontainer-based security tests, and a flaky `constant-time`
+  microbenchmark. These pass locally with infra present.
+- **Coverage caveat:** the secrets/IPFS core (`secrets-manager`, `ipfs-*`) is the bulk of the
+  code but its tests are CI-excluded (need Kubo), so CI coverage structurally understates real
+  coverage. Global thresholds are `58/50/70/58` (stmts/branch/funcs/lines) — raise them as the
+  core's tests are made mockable for CI.
+- Write a test for every bug fix (TDD). Prefer extracting pure logic so it can be unit-tested
+  without mocking `https`/Kubo (see `evaluateBuildRuns` in `src/commands/self.ts`).
 
 ## Common Issues & Solutions
 
-### Daemon Won't Start
-```bash
-# Check if already running
-ps aux | grep lshd
-
-# Remove stale PID file
-rm /tmp/lsh-job-daemon-$USER.pid
-```
-
-### Tests Failing
-```bash
-# Clear Jest cache
-npm test -- --clearCache
-
-# Verify Node version
-node --version  # Should be >= 20.18.0
-```
-
-### Import Errors in Tests
-- Ensure `.js` extensions in imports (required for ES modules)
-- Check `moduleNameMapper` in `jest.config.js` is mapping correctly
-
-### TypeScript Errors
-- Check `tsconfig.json` strict mode flags - some are disabled during migration
-- Prefix unused variables with `_` to satisfy both TSC and ESLint
+- **`Cannot find name 'process'` / flood of TS2591 after editing files:** node ambient types
+  dropped — ensure `tsconfig.json` keeps `"types": ["node"]`.
+- **Tests failing oddly:** `npm test -- --clearCache`; confirm Node ≥ 20.18.
+- **Import errors in tests:** ensure `.js` extensions; check `moduleNameMapper` in `jest.config.js`.
 
 ## CI/CD
 
 ### Merge gate: local `act` is authoritative
-The pre-push hook runs `mcli ci preflight` (local `act`) on every push. **A green local `act` run is the merge gate** — when it passes, the branch is good to merge. Do NOT block merges on GitHub-hosted CI: hosted runners here are frequently backlogged, so hosted CI is informational, not the gate.
+The pre-push hook runs `mcli ci preflight` (local `act`). **A green local `act` run is the
+merge gate** — hosted runners here are frequently backlogged, so hosted CI is informational.
 
-1. **Push WITHOUT `--no-verify`** so the `act` gate actually runs. The hook blocks only on a real `act` failure (exit 1); a "cannot validate" outcome — Docker Hub rate-limit, no docker, or an online runner will validate instead (exit 2/3) — allows the push so an environment hiccup never wedges the workflow.
-2. **If local `act` passes → merge** with `gh pr merge --squash --delete-branch`. No need to wait for hosted Build & Test.
-3. `--no-verify` is only for bypassing a *genuinely broken* local gate (e.g. an infra outage you've separately confirmed) — prefer fixing the gate.
-4. Container runtime: `docker` is provided by **podman** (avoids Docker Hub unauthenticated pull rate limits). Verify with `mcli ci doctor` (act / docker / runner status).
+- Push WITHOUT `--no-verify` so the gate runs.
+- The `Integration Tests` job declares a `services: postgres` container, which **act+podman
+  cannot start** (fails at "Set up job"). That is an act limitation, not a code failure — merge
+  on the strength of the other green jobs (Build & Test, Code Quality, Security Audit).
+- Merge with `gh pr merge --squash --delete-branch` once local `act` passes.
+- `docker` is provided by **podman** (avoids Docker Hub pull rate limits). `mcli ci doctor`.
 
-### CI Commands
-```bash
-gh run list --limit 5              # Check recent CI runs
-gh run view <run-id> --log-failed  # View failure logs
-gh run watch <run-id>              # Watch run in real-time
-```
-
-**GitHub Actions:** Workflows in `.github/workflows/`
-- `node.js.yml` - Build and test
-- `publish.yml` - Publish to npm
-- `codacy.yml`, `njsscan.yml` - Security scanning
-
-**Pre-commit:** Always run `npm run lint:fix` and `npm test` before committing.
+### Workflows (`.github/workflows/`)
+- `node.js.yml` — build & test (self-hosted).
+- `publish.yml` — npm publish on `v*.*.*` tags. **Runs on `ubuntu-latest` (github-hosted) — this
+  is required**: npm OIDC trusted publishing auto-enables sigstore provenance, and npm only
+  accepts provenance from github-hosted runners (self-hosted → E422). Do not move it back to
+  self-hosted.
+- `njsscan.yml`, `secret-scan.yml` (Gitleaks + TruffleHog) — security scanning.
 
 ## Release Process
 
 ```bash
-# Build and publish (automated script)
-./scripts/build-and-publish.sh
-
-# Manual steps
 npm run build
 npm version patch|minor|major
-npm publish --access public
-git push && git push --tags
+git tag vX.Y.Z && git push --tags     # triggers publish.yml → npm (OIDC + provenance)
 ```
 
-**Versioning:** M.m.s (Major.minor.patch)
+Every release should be a GitHub release (created by `publish.yml`) and a published npm version.
+Add release notes at `docs/releases/X.Y.Z.md`.
 
 ## Documentation
 
-- **README.md** - Main documentation, installation, quick start
-- **INSTALL.md** - Installation instructions
-- **docs/** - Feature-specific documentation organized by topic
-  - `docs/features/` - Feature documentation
-  - `docs/integration/` - Integration guides
-  - `docs/development/` - Development guides
-  - `docs/releases/` - Release notes with diffs (M.m.s.md format)
+- `README.md` — install, quick start, usage.
+- `docs/ARCHITECTURE.md` — current module graph + data flows.
+- `docs/releases/X.Y.Z.md` — per-release notes.
 
-## Scripts
+## Concurrent Agents → Use Worktrees
 
-Located in `scripts/`:
-- **`install-daemon.sh`** - Install daemon as system service
-- **`setup-monitoring-jobs.sh`** - Setup monitoring cron jobs
-- **`daemon-cleanup.sh`** - Clean up daemon processes/files
-- **`build-and-publish.sh`** - Build and publish to npm
-- **`release.sh`** - Create new release
-- **`monitoring-jobs/`** - Monitoring job scripts
-
-## Additional Notes
-
-- **Electron Dashboards:** Access dashboards at `http://localhost:3034/dashboard/` when monitoring API is running
-- **API Testing:** Use `test-api.js` to test API endpoints
-- **ML Integration:** Supports integration with ML workflows (MCLI) - see `.env` for config
-- **Data Archival:** Optional S3 or local archival (see `.env.example`)
-- **Redis Caching:** Optional Redis integration for performance
+When multiple agents/sessions may touch this repo simultaneously, each MUST work in its own
+`git worktree` (never a shared checkout) to avoid commit commingling. See global
+`~/.claude/CLAUDE.md` § "Concurrent Agents → Use Worktrees (REQUIRED)".
 
 ## External Dependencies
 
-Key libraries:
-- **commander** - CLI framework
-- **ink/react** - Terminal UI
-- **@supabase/supabase-js** - Database client
-- **express** - API server
-- **node-cron** - Cron scheduling
-- **jsonwebtoken** - JWT auth
-- **zx** - Shell scripting utilities
-
-For full dependency list see `package.json`.
-
-## Common Code Patterns
-
-This section documents patterns that AI assistants should follow when working with this codebase.
-
-### Database Response Handling
-
-All Supabase queries return `{ data, error }`. Always check error first:
-
-```typescript
-const { data, error } = await supabase.from('table').select('*').eq('id', id).single();
-
-if (error) {
-  throw new LSHError(ErrorCodes.DB_QUERY_FAILED, error.message, { table: 'table', id });
-}
-
-// Map to domain type
-return this.mapDbRecordToDomainObject(data);
-```
-
-### Error Handling in Catch Blocks
-
-Never use `(error as Error).message`. Use the error utilities from `lsh-error.ts`:
-
-```typescript
-import { extractErrorMessage, extractErrorDetails, LSHError, ErrorCodes } from './lsh-error.js';
-
-try {
-  await riskyOperation();
-} catch (error) {
-  // For logging
-  console.error('Failed:', extractErrorMessage(error));
-
-  // For structured logging
-  this.logger.error('Operation failed', extractErrorDetails(error));
-
-  // For re-throwing with context
-  throw wrapAsLSHError(error, ErrorCodes.INTERNAL_ERROR, { operation: 'riskyOperation' });
-}
-```
-
-### Type Mapping (Database → Domain)
-
-Use types from `database-types.ts` for Supabase records and types from `saas-types.ts` for domain models:
-
-```typescript
-import type { DbOrganizationRecord } from './database-types.js';
-import type { Organization } from './saas-types.js';
-
-// Mapper function with proper types
-private mapDbOrgToOrg(dbOrg: DbOrganizationRecord): Organization {
-  return {
-    id: dbOrg.id,
-    name: dbOrg.name,
-    createdAt: new Date(dbOrg.created_at),  // ISO string → Date
-    subscriptionTier: dbOrg.subscription_tier,  // snake_case → camelCase
-    // ... other fields
-  };
-}
-```
-
-### Adding New SaaS Features
-
-1. Define domain types in `saas-types.ts`
-2. Add database record types in `database-types.ts`
-3. Implement service class in `saas-<feature>.ts`
-4. Add mapper function with JSDoc explaining transformations
-5. Register commands in `cli.ts`
-6. Add constants to `src/constants/`
-7. Write tests using fixtures from `src/__tests__/fixtures/`
-
-### Using Test Fixtures
-
-Test fixtures are in `src/__tests__/fixtures/`. Use factory functions for test data:
-
-```typescript
-import { mockOrganization, mockUser, createMockSupabase } from '../fixtures/supabase-mocks';
-import { createTestJob, SAMPLE_JOBS } from '../fixtures/job-fixtures';
-
-describe('MyService', () => {
-  const mockSupabase = createMockSupabase({
-    organizations: [mockOrganization({ name: 'Test Org' })],
-    users: [mockUser({ email: 'test@example.com' })],
-  });
-
-  beforeEach(() => {
-    jest.mock('../../lib/supabase-client', () => ({
-      getSupabaseClient: () => mockSupabase,
-    }));
-  });
-
-  it('should handle jobs', () => {
-    const job = createTestJob({ name: 'my-job', command: 'echo test' });
-    // ... test
-  });
-});
-```
-
-### Job Specification
-
-Use `BaseJobSpec` for defining jobs:
-
-```typescript
-const job: Partial<BaseJobSpec> = {
-  name: 'rotate-secrets',
-  command: './scripts/rotate.sh',
-  schedule: { cron: '0 2 * * 0' },  // Weekly at 2am Sunday
-  tags: ['secrets', 'maintenance'],
-  timeout: 300000,  // 5 minutes
-  maxRetries: 3,
-};
-
-await jobManager.createJob(job);
-```
-
-### Constants Usage
-
-Never hardcode strings. Use constants from `src/constants/`:
-
-```typescript
-import { ERROR_MESSAGES, ENV_VARS, TABLES, API_ENDPOINTS } from '../constants/index.js';
-
-// Good
-throw new Error(ERROR_MESSAGES.NOT_FOUND);
-const apiKey = process.env[ENV_VARS.LSH_API_KEY];
-await supabase.from(TABLES.ORGANIZATIONS).select();
-
-// Bad - triggers eslint lsh/no-hardcoded-strings
-throw new Error('Resource not found');
-```
-
-## Additional Documentation
-
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Module dependency graph and data flows
-- **[docs/TYPE_SAFETY_TODO.md](docs/TYPE_SAFETY_TODO.md)** - TypeScript strict mode migration status
-- **[src/__tests__/fixtures/README.md](src/__tests__/fixtures/README.md)** - Test fixture usage guide
-
-## Release Notes
-
-Every time you push a new release it should be a new release in GitHub and a new version published to npm.
-## Concurrent Agents → Use Worktrees
-
-When multiple agents/sessions may touch this repo simultaneously, each MUST work in its own `git worktree` (never a shared checkout) to avoid commit commingling. See global `~/.claude/CLAUDE.md` § "Concurrent Agents → Use Worktrees (REQUIRED)" for the full rule.
+`commander` (CLI), `ink`/`react` (terminal UI bits), `express` (kept dep), `zx` (shell utils),
+plus dev tooling (TypeScript 6, ESLint 10, Jest 30). IPFS uses the **system Kubo** binary
+(managed by `ipfs-client-manager`), not a heavy npm IPFS library. See `package.json` for the
+full list.
