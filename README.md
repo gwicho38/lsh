@@ -10,15 +10,13 @@
 [![Node.js CI](https://github.com/gwicho38/lsh/actions/workflows/node.js.yml/badge.svg)](https://github.com/gwicho38/lsh/actions/workflows/node.js.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## What's New in v3.1.19
+## What's New in v3.5.x
 
-- **Type Safety Milestone** - All `@typescript-eslint/no-explicit-any` warnings eliminated (51+ → 0)
-- **Constants Centralization** - Hardcoded strings moved to constants modules
-- **API Response Builder** - Standardized API responses with `sendSuccess`, `sendError`, `ApiErrors`
-- **Test Coverage** - 59 new tests for constants modules (142 total constants tests)
-- **Code Quality** - Lint warnings reduced from 744 to 550 (26.1% reduction)
+- **Focused on secrets** - Removed the dormant pre-pivot platform code (SaaS multi-tenant, job/cron daemon, Supabase/Postgres persistence). LSH is now purely an encrypted `.env` sync tool over IPFS.
+- **Dependency modernization** - Express 5, TypeScript 6, ESLint 10, Jest 30.
+- **Hardening** - Bounded network calls (no hangs), command-injection fix in the Kubo installer, reliable npm publishing.
 
-See [Release Notes](docs/releases/3.1.19.md) for full details.
+See [Release Notes](docs/releases/3.5.0.md) for full details.
 
 ## Quick Start
 
@@ -211,21 +209,16 @@ lsh pull --env prod
 
 ## Automatic Secret Rotation
 
-Use the built-in daemon for automated rotation:
+Schedule rotation with any external scheduler (system `cron`, a CI job, etc.) that
+runs your rotation script and then pushes the updated secrets:
 
 ```bash
-# Start daemon
-lsh daemon start
-
-# Schedule monthly key rotation
-lsh cron add \
-  --name "rotate-keys" \
-  --schedule "0 0 1 * *" \
-  --command "./scripts/rotate.sh && lsh push"
-
-# List scheduled jobs
-lsh cron list
+# Example: monthly rotation via crontab — `crontab -e`
+0 0 1 * * cd /path/to/project && ./scripts/rotate.sh && lsh push
 ```
+
+Or as a scheduled CI job (GitHub Actions, etc.) that runs the script and `lsh push`.
+LSH focuses on encrypting and syncing the `.env`; the rotation policy/schedule is yours.
 
 ## Export Formats
 
@@ -322,27 +315,6 @@ lsh push
 - **[Installation](docs/deployment/INSTALL.md)** - Detailed installation
 - **[Developer Guide](CLAUDE.md)** - Contributing to LSH
 
-## Advanced Features
-
-LSH includes a full automation platform:
-
-- **Persistent Daemon** - Background job execution
-- **Cron Scheduling** - Time-based job scheduling
-- **REST API** - HTTP API for integration
-- **CI/CD Webhooks** - GitHub/GitLab webhook support
-- **POSIX Shell** - Interactive shell with ZSH features
-
-```bash
-# Start daemon
-lsh daemon start
-
-# API server
-LSH_API_KEY=xxx lsh api start --port 3030
-
-# Interactive shell
-lsh -i
-```
-
 ## Configuration
 
 ### Environment Variables
@@ -354,15 +326,6 @@ LSH_SECRETS_KEY=<your-encryption-key>
 # Optional - name of a kubo remote pinning service for durable sync
 # (configure once with: ipfs pin remote service add <name> <endpoint> <key>)
 LSH_PIN_SERVICE=<service-name>
-
-# Optional - Supabase backend
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=<key>
-
-# Optional - API server
-LSH_API_ENABLED=true
-LSH_API_PORT=3030
-LSH_API_KEY=<key>
 ```
 
 ### Configuration Files

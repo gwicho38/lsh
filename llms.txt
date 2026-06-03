@@ -48,23 +48,16 @@ lsh push --env prod                   # Push to production environment
 lsh pull --env prod                   # Pull from production
 lsh push --file .env.local --env local  # Custom file to custom env
 
-### Automation Commands
-lsh daemon start                      # Start persistent background daemon
-lsh daemon stop                       # Stop daemon
-lsh daemon status                     # Check daemon status
-lsh cron add --name <n> --schedule <cron> --command <cmd>  # Schedule job
-lsh cron list                         # List scheduled jobs
-lsh cron remove <name>                # Remove scheduled job
+### IPFS / Sync Commands
+lsh ipfs status                       # Check local Kubo (IPFS) node + install status
+lsh ipfs start                        # Start the local IPFS (Kubo) daemon
+lsh sync                              # Sync secrets via IPFS (push/pull as needed)
+lsh sync-history                      # View immutable sync records stored on IPFS
 
 ### Configuration Commands
 lsh config show                       # Show current configuration
 lsh config set <key> <value>          # Set configuration value
 lsh config get <key>                  # Get configuration value
-
-### Backend Commands
-lsh supabase init                     # Initialize Supabase connection
-lsh supabase test                     # Test Supabase connectivity
-lsh storacha login <email>            # Authenticate with Storacha/IPFS
 
 ### Self-Management
 lsh self update                       # Update to latest version
@@ -94,7 +87,6 @@ lsh push                    # Push any changes
 ```bash
 # Team lead shares LSH_SECRETS_KEY via 1Password
 echo "LSH_SECRETS_KEY=shared-key" >> .env
-lsh storacha login email@company.com
 lsh pull --env prod
 ```
 
@@ -107,12 +99,10 @@ source .env
 ```
 
 ### Automatic Secret Rotation
+# Rotation is driven by your own scheduler (system cron, CI job) — not a built-in daemon.
 ```bash
-lsh daemon start
-lsh cron add \
-  --name "monthly-rotation" \
-  --schedule "0 0 1 * *" \
-  --command "lsh key && lsh push --force"
+# Example crontab entry (crontab -e): monthly rotate + push
+0 0 1 * * cd /path/to/project && ./scripts/rotate.sh && lsh push
 ```
 
 ## Environment Variables
@@ -120,15 +110,8 @@ lsh cron add \
 ### Required
 LSH_SECRETS_KEY=<64-char-hex>         # AES-256 encryption key (from `lsh key`)
 
-### Optional - Storage Backend
-LSH_STORACHA_ENABLED=true             # Enable IPFS sync (default: true)
-SUPABASE_URL=https://xxx.supabase.co  # Alternative Supabase backend
-SUPABASE_ANON_KEY=<key>               # Supabase anonymous key
-
-### Optional - Automation
-LSH_API_ENABLED=true                  # Enable REST API
-LSH_API_PORT=3030                     # API port (default: 3030)
-LSH_API_KEY=<key>                     # API authentication key
+### Optional
+LSH_PIN_SERVICE=<service-name>        # Kubo remote pinning service for durable sync
 
 ## File Locations
 
@@ -158,14 +141,16 @@ Run `lsh env` to see available environments, then `lsh push --env <name>` to cre
 ### "Decryption failed"
 Ensure LSH_SECRETS_KEY matches the key used to encrypt. Generate new key with `lsh key` if lost.
 
-### "Storacha authentication required"
-Run `lsh storacha login your@email.com` and verify via email.
+### "IPFS daemon not running" / sync hangs or fails
+Ensure the local Kubo node is installed and running: `lsh ipfs status`, then
+`lsh ipfs start` (or `lsh doctor` to diagnose). For durable pulls, configure a
+remote pinning service (see README "Durable sync").
 
 ## Security Model
 
 - AES-256-CBC encryption (local)
 - Content-addressed IPFS storage (tamper-proof)
-- Zero-knowledge: Storacha never sees plaintext
+- Zero-knowledge: only encrypted blobs leave the machine; no server sees plaintext
 - Keys never transmitted, only encrypted blobs
 
 ## Integration Points
