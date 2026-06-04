@@ -101,7 +101,16 @@ removed code.
 ```bash
 LSH_SECRETS_KEY=<64-char-hex>   # Required: AES-256 key (from `lsh key`)
 LSH_PIN_SERVICE=<service-name>  # Optional: Kubo remote pinning service for durable sync
+LSH_DISCOVERY=w3name,ipns       # Optional: pointer discovery backends (priority order);
+                                # default durable w3name + DHT-IPNS fallback (issue #194)
 ```
+
+**Discovery layer** (`src/lib/discovery-backend.ts`): the `key→CID` pointer is published/resolved
+through a `DiscoveryBackend`. Default is a composite of `w3name` (durable signed IPNS via
+name.web3.storage — no account, survives offline nodes) + `ipns` (DHT fallback); push dual-writes,
+pull resolves w3name→ipns→cache. `w3name-pointer.ts` lazily imports `w3name`/`@libp2p/crypto`. The
+w3name name is identical to the Kubo-derived IPNS name (same seed). Content availability still needs
+a pin (`LSH_PIN_SERVICE`); discovery durability ≠ byte durability.
 
 There are no API/JWT/webhook/Supabase environment variables — those features were removed.
 

@@ -38,6 +38,9 @@ export const ENV_VARS = {
   // Name of the kubo remote pinning service to use for durable sync
   // (configured via `ipfs pin remote service add <name> <endpoint> <key>`).
   LSH_PIN_SERVICE: 'LSH_PIN_SERVICE',
+  // Discovery backend(s) for the key→CID pointer, comma-separated in priority
+  // order. Supported: 'w3name' (durable, hosted), 'ipns' (DHT). Default: 'w3name,ipns'.
+  LSH_DISCOVERY: 'LSH_DISCOVERY',
 
   // Feature flags
   LSH_LOCAL_STORAGE_QUIET: 'LSH_LOCAL_STORAGE_QUIET',
@@ -171,4 +174,6 @@ export const DEFAULTS = {
   IPNS_RESOLVE_TIMEOUT_MS: 30000,        // 30s for DHT lookup
   IPNS_KEY_PREFIX: 'lsh-',
   IPNS_KEY_DERIVATION_CONTEXT: 'lsh-ipns-v1',
+  // Default discovery backends (priority order): durable w3name, then DHT-IPNS fallback.
+  DISCOVERY_BACKENDS: 'w3name,ipns',
 } as const;
