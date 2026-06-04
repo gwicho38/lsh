@@ -9,6 +9,14 @@
  * - Direct CID sharing: Share CIDs with teammates
  * - Public gateways: Retrieve from ipfs.io, dweb.link, cloudflare-ipfs
  */
+/**
+ * Pure helper: choose which configured remote pinning service to use.
+ * - explicit `LSH_PIN_SERVICE` wins, but only if it's actually configured;
+ * - else the bundled default service (`lsh-pin`) if present;
+ * - else the sole configured service;
+ * - else null (none / ambiguous).
+ */
+export declare function chooseRemoteService(services: string[], explicit: string | undefined, defaultName: string): string | null;
 export interface SyncHistoryEntry {
     cid: string;
     filename: string;
@@ -111,6 +119,15 @@ export declare class IPFSSync {
      * - Returns null when nothing is configured or the choice is ambiguous.
      */
     resolveRemoteService(): Promise<string | null>;
+    /**
+     * Bundled pinner: when LSH_PIN_TOKEN is set and no remote pin service named
+     * `lsh-pin` is registered yet, auto-register one (endpoint defaults to
+     * 4EVERLAND, override via LSH_PIN_ENDPOINT). Lets users get durable pinning
+     * with just a token — no manual `ipfs pin remote service add`. Best-effort;
+     * never throws. Respects an existing service of the same name and the
+     * explicit LSH_PIN_SERVICE (handled by chooseRemoteService).
+     */
+    ensureDefaultPinService(): Promise<void>;
     /**
      * Pin a CID to a configured remote pinning service so the content survives
      * this machine going offline. This is what makes "pull anywhere, anytime"
