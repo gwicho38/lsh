@@ -16,7 +16,7 @@ import * as crypto from 'crypto';
 import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
 import { getIPFSSync } from './ipfs-sync.js';
-import { deriveKeyInfo, ensureKeyImported } from './ipns-key-manager.js';
+import { getDiscoveryBackend } from './discovery-backend.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
 import { extractErrorMessage } from './lsh-error.js';
 
@@ -134,17 +134,14 @@ export class IPFSSecretsStorage {
         try {
           const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
           const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
-          const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
-          const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+          const discovery = getDiscoveryBackend(ipfsSync);
+          const publishedName = await discovery.publish({ secretsKey: encryptionKey, repoName, env, cid });
 
-          if (ipnsName) {
-            const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
-            if (publishedName) {
-              metadata.ipns_name = publishedName;
-              this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
-              await this.saveMetadata();
-              logger.info(`   🔗 Published to IPNS: ${publishedName}`);
-            }
+          if (publishedName) {
+            metadata.ipns_name = publishedName;
+            this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
+            await this.saveMetadata();
+            logger.info(`   🔗 Published to IPNS: ${publishedName}`);
           }
         } catch (error) {
           logger.error(
@@ -188,12 +185,13 @@ export class IPFSSecretsStorage {
         try {
           const repoName = gitRepo || DEFAULTS.DEFAULT_ENVIRONMENT;
           const env = environment || DEFAULTS.DEFAULT_ENVIRONMENT;
-          const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
-          const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
+          const discovery = getDiscoveryBackend(ipfsSync);
+          const resolved = await discovery.resolve({ secretsKey: encryptionKey, repoName, env });
+          const ipnsName = resolved.name;
 
           if (ipnsName) {
             logger.info(`   🔍 Resolving via IPNS: ${ipnsName.substring(0, 20)}...`);
-            resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
+            resolvedCid = resolved.cid;
 
             if (resolvedCid) {
               logger.info(`   ✅ IPNS resolved to CID: ${resolvedCid}`);
