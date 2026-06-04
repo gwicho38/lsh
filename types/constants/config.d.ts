@@ -27,6 +27,8 @@ export declare const ENV_VARS: {
     readonly LSH_MASTER_KEY: "LSH_MASTER_KEY";
     readonly LSH_PIN_SERVICE: "LSH_PIN_SERVICE";
     readonly LSH_DISCOVERY: "LSH_DISCOVERY";
+    readonly LSH_PIN_TOKEN: "LSH_PIN_TOKEN";
+    readonly LSH_PIN_ENDPOINT: "LSH_PIN_ENDPOINT";
     readonly LSH_LOCAL_STORAGE_QUIET: "LSH_LOCAL_STORAGE_QUIET";
     readonly LSH_V1_COMPAT: "LSH_V1_COMPAT";
     readonly DISABLE_IPFS_SYNC: "DISABLE_IPFS_SYNC";
@@ -115,4 +117,6 @@ export declare const DEFAULTS: {
     readonly IPNS_KEY_PREFIX: "lsh-";
     readonly IPNS_KEY_DERIVATION_CONTEXT: "lsh-ipns-v1";
     readonly DISCOVERY_BACKENDS: "w3name,ipns";
+    readonly DEFAULT_PIN_ENDPOINT: "https://api.4everland.dev";
+    readonly DEFAULT_PIN_SERVICE_NAME: "lsh-pin";
 };

@@ -16,7 +16,28 @@ import * as path from 'path';
 import * as os from 'os';
 import { createLogger } from './logger.js';
 import { extractErrorMessage } from './lsh-error.js';
-import { ENV_VARS } from '../constants/config.js';
+import { ENV_VARS, DEFAULTS } from '../constants/config.js';
+
+/**
+ * Pure helper: choose which configured remote pinning service to use.
+ * - explicit `LSH_PIN_SERVICE` wins, but only if it's actually configured;
+ * - else the bundled default service (`lsh-pin`) if present;
+ * - else the sole configured service;
+ * - else null (none / ambiguous).
+ */
+export function chooseRemoteService(
+  services: string[],
+  explicit: string | undefined,
+  defaultName: string,
+): string | null {
+  if (explicit) {
+    return services.includes(explicit) ? explicit : null;
+  }
+  if (services.includes(defaultName)) {
+    return defaultName;
+  }
+  return services.length === 1 ? services[0] : null;
+}
 
 const logger = createLogger('IPFSSync');
 
@@ -428,12 +449,45 @@ export class IPFSSync {
    * - Returns null when nothing is configured or the choice is ambiguous.
    */
   async resolveRemoteService(): Promise<string | null> {
+    await this.ensureDefaultPinService();
     const services = await this.listRemoteServices();
-    const explicit = process.env[ENV_VARS.LSH_PIN_SERVICE];
-    if (explicit) {
-      return services.includes(explicit) ? explicit : null;
+    return chooseRemoteService(
+      services,
+      process.env[ENV_VARS.LSH_PIN_SERVICE],
+      DEFAULTS.DEFAULT_PIN_SERVICE_NAME,
+    );
+  }
+
+  /**
+   * Bundled pinner: when LSH_PIN_TOKEN is set and no remote pin service named
+   * `lsh-pin` is registered yet, auto-register one (endpoint defaults to
+   * 4EVERLAND, override via LSH_PIN_ENDPOINT). Lets users get durable pinning
+   * with just a token — no manual `ipfs pin remote service add`. Best-effort;
+   * never throws. Respects an existing service of the same name and the
+   * explicit LSH_PIN_SERVICE (handled by chooseRemoteService).
+   */
+  async ensureDefaultPinService(): Promise<void> {
+    const token = process.env[ENV_VARS.LSH_PIN_TOKEN];
+    if (!token) return;
+    const name = DEFAULTS.DEFAULT_PIN_SERVICE_NAME;
+    try {
+      const existing = await this.listRemoteServices();
+      if (existing.includes(name)) return;
+      const endpoint = process.env[ENV_VARS.LSH_PIN_ENDPOINT] || DEFAULTS.DEFAULT_PIN_ENDPOINT;
+      const url =
+        `${this.LOCAL_IPFS_API}/pin/remote/service/add` +
+        `?arg=${encodeURIComponent(name)}` +
+        `&arg=${encodeURIComponent(endpoint)}` +
+        `&arg=${encodeURIComponent(token)}`;
+      const response = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(10000) });
+      if (response.ok) {
+        logger.info(`📌 Registered bundled pin service "${name}" → ${endpoint}`);
+      } else {
+        logger.warn(`Could not register pin service "${name}": ${await response.text()}`);
+      }
+    } catch (error) {
+      logger.warn(`Pin service registration error: ${extractErrorMessage(error)}`);
     }
-    return services.length === 1 ? services[0] : null;
   }
 
   /**

@@ -115,6 +115,21 @@ lsh sync push --env dev
 
 If exactly one remote service is configured, `lsh` uses it automatically and `LSH_PIN_SERVICE` is optional.
 
+### Quickest: bundled pinner (just a token)
+
+Skip the manual `ipfs pin remote service add`. Set **`LSH_PIN_TOKEN`** and `lsh` auto-registers a
+remote pinning service for you on first push — defaulting to **4EVERLAND** (free 5GB, standard
+Pinning Service API):
+
+```bash
+# Get a free accessToken from the 4EVERLAND "4EVER Pin" page (https://4everland.org)
+export LSH_PIN_TOKEN=<your-4everland-accessToken>
+lsh push --env dev        # auto-registers "lsh-pin" → https://api.4everland.dev, then pins
+```
+
+Use a different provider by overriding the endpoint: `export LSH_PIN_ENDPOINT=<psa-endpoint>`.
+(Note: Pinata's pin-by-CID PSA is paid-only; 4EVERLAND and Filebase offer it free.)
+
 ## Installation
 
 ### Prerequisites
@@ -331,6 +346,11 @@ LSH_PIN_SERVICE=<service-name>
 # Default 'w3name,ipns': durable w3name (signed IPNS via name.web3.storage, no
 # account, no DHT TTL) with IPNS-over-DHT fallback. Set 'ipns' for DHT-only.
 LSH_DISCOVERY=w3name,ipns
+
+# Optional - bundled pinner: with a token set, lsh auto-registers a remote pin
+# service so pushed content is durable. Endpoint defaults to 4EVERLAND (free 5GB).
+LSH_PIN_TOKEN=<psa-access-token>
+LSH_PIN_ENDPOINT=https://api.4everland.dev   # override for another PSA provider
 ```
 
 ### Configuration Files

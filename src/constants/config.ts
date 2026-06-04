@@ -41,6 +41,12 @@ export const ENV_VARS = {
   // Discovery backend(s) for the key→CID pointer, comma-separated in priority
   // order. Supported: 'w3name' (durable, hosted), 'ipns' (DHT). Default: 'w3name,ipns'.
   LSH_DISCOVERY: 'LSH_DISCOVERY',
+  // Access token for a bundled IPFS remote pinning service. When set (and no
+  // remote pin service is already configured), lsh auto-registers one so pushed
+  // content is durably pinned. Endpoint defaults to 4EVERLAND (free 5GB).
+  LSH_PIN_TOKEN: 'LSH_PIN_TOKEN',
+  // Override the PSA endpoint used with LSH_PIN_TOKEN (any IPFS Pinning Service).
+  LSH_PIN_ENDPOINT: 'LSH_PIN_ENDPOINT',
 
   // Feature flags
   LSH_LOCAL_STORAGE_QUIET: 'LSH_LOCAL_STORAGE_QUIET',
@@ -176,4 +182,8 @@ export const DEFAULTS = {
   IPNS_KEY_DERIVATION_CONTEXT: 'lsh-ipns-v1',
   // Default discovery backends (priority order): durable w3name, then DHT-IPNS fallback.
   DISCOVERY_BACKENDS: 'w3name,ipns',
+  // Bundled remote pinning service (used with LSH_PIN_TOKEN). 4EVERLAND free tier (5GB),
+  // standard IPFS Pinning Service API. Override the endpoint via LSH_PIN_ENDPOINT.
+  DEFAULT_PIN_ENDPOINT: 'https://api.4everland.dev',
+  DEFAULT_PIN_SERVICE_NAME: 'lsh-pin',
 } as const;

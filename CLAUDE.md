@@ -103,6 +103,8 @@ LSH_SECRETS_KEY=<64-char-hex>   # Required: AES-256 key (from `lsh key`)
 LSH_PIN_SERVICE=<service-name>  # Optional: Kubo remote pinning service for durable sync
 LSH_DISCOVERY=w3name,ipns       # Optional: pointer discovery backends (priority order);
                                 # default durable w3name + DHT-IPNS fallback (issue #194)
+LSH_PIN_TOKEN=<psa-token>       # Optional: auto-register a remote pin service (byte durability);
+LSH_PIN_ENDPOINT=<psa-url>      #   endpoint defaults to 4EVERLAND (https://api.4everland.dev)
 ```
 
 **Discovery layer** (`src/lib/discovery-backend.ts`): the `key→CID` pointer is published/resolved

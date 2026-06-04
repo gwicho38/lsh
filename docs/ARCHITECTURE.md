@@ -173,6 +173,35 @@ Optional durability: a remote pinning service (e.g. Pinata) can pin the CID so t
 survives when the local Kubo node is offline. `lsh doctor` verifies Kubo is installed and
 running; `lsh init` performs first-time key + Kubo setup.
 
+## Discovery & durability (issue #194)
+
+Two independent concerns, decoupled:
+
+**Discovery** — "given the key, what's the latest CID?" — goes through a `DiscoveryBackend`
+seam (`src/lib/discovery-backend.ts`):
+
+```
+getDiscoveryBackend(ipfsSync)            reads LSH_DISCOVERY (default "w3name,ipns")
+  ├── W3nameDiscoveryBackend             durable signed IPNS via name.web3.storage
+  │     └── w3name-pointer.ts            lazy-imports w3name + @libp2p/crypto
+  ├── IpnsDiscoveryBackend               IPNS over the DHT (fallback / backward compat)
+  │     └── ipns-key-manager.ts          deterministic key derived from LSH_SECRETS_KEY
+  └── CompositeDiscoveryBackend          dual-write on push; resolve w3name → ipns → cache
+```
+
+Both backends derive the **same** ed25519 key from `LSH_SECRETS_KEY` (HMAC), so the w3name name
+and the Kubo IPNS name are identical — one logical pointer. w3name fixes the DHT-IPNS weakness
+(records expire ~24–48h unless an online node republishes); the DHT remains as fallback.
+
+**Availability** — "can the encrypted bytes be fetched?" — is separate. `IPFSSync.addRemotePin`
+pins the CID to a Kubo remote pinning service. `ensureDefaultPinService` auto-registers a bundled
+service when `LSH_PIN_TOKEN` is set (endpoint defaults to 4EVERLAND, override via
+`LSH_PIN_ENDPOINT`); `chooseRemoteService` (pure) selects among configured services
+(explicit `LSH_PIN_SERVICE` → bundled `lsh-pin` → sole service).
+
+> Discovery durability ≠ byte durability: a durable pointer is useless if no node holds the
+> bytes. Use a pin service (`LSH_PIN_TOKEN`) or keep a node online for the content.
+
 ## Security considerations
 
 1. **Secrets encryption** — AES-256 for all stored `.env` content; keys never leave the machine.
