@@ -1,308 +1,140 @@
 # Automated Secret Rotation Examples
 
-These examples demonstrate how to use LSH's built-in daemon and scheduling features to automate secret rotation and synchronization.
+These examples show how to automate secret rotation and synchronization with LSH.
 
-## Examples
+LSH itself has **no built-in scheduler** — it is a CLI secrets manager. To run
+these on a schedule, use your operating system's scheduler (`cron`, `systemd`
+timers, a CI job, etc.) to invoke the scripts, which call `lsh push` / `lsh pull`.
+
+## Scripts
 
 ### 1. API Key Rotation (`rotate-api-keys.sh`)
 
-Automatically rotate API keys on a schedule (e.g., every 30 days).
-
-**Use case:** Security policies require rotating credentials periodically.
-
-**Setup:**
+Rotates an API key in your `.env` and pushes the updated secrets.
 
 ```bash
-# 1. Make script executable
+# Make executable
 chmod +x examples/secrets-rotation/rotate-api-keys.sh
 
-# 2. Test manually first
+# Test manually first
 ENV_FILE=.env ENVIRONMENT=dev ./examples/secrets-rotation/rotate-api-keys.sh
 
-# 3. Schedule monthly rotation (1st day of month at midnight)
-lsh lib cron add \
-  --name "rotate-api-keys" \
-  --schedule "0 0 1 * *" \
-  --command "cd ~/projects/myapp && ./examples/secrets-rotation/rotate-api-keys.sh"
-
-# 4. Verify job is scheduled
-lsh lib cron list
+# Schedule monthly with system cron (crontab -e):
+0 0 1 * * cd ~/projects/myapp && ENVIRONMENT=production ./rotate-api-keys.sh
 ```
 
-**Customize:**
-
-Edit the script to integrate with your API provider:
+**Customize** — edit the script to call your provider's rotation API:
 
 ```bash
-# Replace this section with your provider's API
 NEW_API_KEY=$(curl -X POST https://api.example.com/keys/rotate \
   -H "Authorization: Bearer $OLD_API_KEY" | jq -r '.new_key')
 ```
 
 ### 2. Auto-Sync Secrets (`auto-sync-secrets.sh`)
 
-Automatically pull latest secrets from cloud and reload your application.
-
-**Use case:** Keep all team members in sync with latest secrets without manual intervention.
-
-**Setup:**
+Pulls the latest secrets and reloads your application.
 
 ```bash
-# 1. Make script executable
 chmod +x examples/secrets-rotation/auto-sync-secrets.sh
 
-# 2. Test manually first
+# Test manually first
 ENV_FILE=.env ENVIRONMENT=dev APP_RELOAD_COMMAND="npm restart" \
   ./examples/secrets-rotation/auto-sync-secrets.sh
 
-# 3. Schedule hourly sync
-lsh lib cron add \
-  --name "auto-sync-secrets" \
-  --interval 3600 \
-  --command "cd ~/projects/myapp && ENV_FILE=.env ENVIRONMENT=dev APP_RELOAD_COMMAND='npm restart' ./examples/secrets-rotation/auto-sync-secrets.sh"
-
-# 4. Verify job is running
-lsh lib cron list
+# Schedule hourly with system cron (crontab -e):
+0 * * * * cd ~/projects/myapp && ENVIRONMENT=dev APP_RELOAD_COMMAND='npm restart' ./auto-sync-secrets.sh
 ```
 
-**Environment Variables:**
+**Environment variables:**
 
-- `ENV_FILE` - Path to .env file (default: `.env`)
-- `ENVIRONMENT` - Environment name (default: `dev`)
-- `APP_RELOAD_COMMAND` - Command to reload app (default: `npm restart`)
+- `ENV_FILE` — path to `.env` file (default: `.env`)
+- `ENVIRONMENT` — environment name (default: `dev` for sync, `production` for rotation)
+- `APP_RELOAD_COMMAND` — command to reload the app (default: `npm restart`)
 
-## Complete Workflow Example
-
-Here's a complete workflow for a team using automated secret rotation:
-
-### Initial Setup (Project Lead)
+## Team Workflow
 
 ```bash
-# 1. Install LSH
-npm install -g gwicho38-lsh
+# Project lead — one-time setup
+npm install -g lsh-framework
+lsh key                                   # generate shared encryption key
+# Store LSH_SECRETS_KEY in the team password manager
+lsh config set LSH_SECRETS_KEY <key>
+lsh config set LSH_PIN_TOKEN <psa-token>  # durable bytes (optional but recommended)
+lsh push --env production
 
-# 2. Generate shared encryption key
-lsh lib secrets key
-# Output: LSH_SECRETS_KEY=abc123...
-
-# 3. Add to team's shared password manager (1Password, LastPass, etc.)
-
-# 4. Configure Supabase
-# Add to .env:
-# SUPABASE_URL=https://your-project.supabase.co
-# SUPABASE_ANON_KEY=your-key
-# LSH_SECRETS_KEY=abc123...
-
-# 5. Push initial secrets
-lsh lib secrets push --env production
-
-# 6. Set up rotation script
-cp examples/secrets-rotation/rotate-api-keys.sh ~/projects/production/
-chmod +x ~/projects/production/rotate-api-keys.sh
-
-# 7. Start daemon
-lsh lib daemon start
-
-# 8. Schedule monthly rotation
-lsh lib cron add \
-  --name "rotate-prod-keys" \
-  --schedule "0 0 1 * *" \
-  --command "cd ~/projects/production && ENVIRONMENT=production ./rotate-api-keys.sh"
+# Schedule monthly rotation (crontab -e):
+0 0 1 * * cd ~/projects/production && ENVIRONMENT=production ./rotate-api-keys.sh
 ```
-
-### Team Member Setup
 
 ```bash
-# 1. Install LSH
-npm install -g gwicho38-lsh
+# Team member
+npm install -g lsh-framework
+lsh config set LSH_SECRETS_KEY <key-from-password-manager>
+lsh pull --env production
 
-# 2. Get encryption key from 1Password
-
-# 3. Create .env with key
-cat > ~/.lsh-config/.env <<EOF
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-key
-LSH_SECRETS_KEY=abc123...
-EOF
-
-# 4. Pull production secrets
-cd ~/projects/production
-lsh lib secrets pull --env production
-
-# 5. Set up auto-sync
-cp examples/secrets-rotation/auto-sync-secrets.sh .
-chmod +x auto-sync-secrets.sh
-
-# 6. Start daemon
-lsh lib daemon start
-
-# 7. Schedule hourly sync
-lsh lib cron add \
-  --name "auto-sync-prod" \
-  --interval 3600 \
-  --command "cd ~/projects/production && ENVIRONMENT=production ./auto-sync-secrets.sh"
+# Schedule hourly auto-sync (crontab -e):
+0 * * * * cd ~/projects/production && ENVIRONMENT=production ./auto-sync-secrets.sh
 ```
 
-## Advanced: Multi-Environment Rotation
-
-Rotate secrets across multiple environments:
+## Multi-Environment Rotation
 
 ```bash
 #!/bin/bash
 # rotate-all-environments.sh
-
 for ENV in dev staging production; do
-  echo "Rotating $ENV environment..."
-
-  # Pull current secrets
-  lsh lib secrets pull --env "$ENV" --file ".env.$ENV"
-
-  # Rotate keys (customize per environment)
+  echo "Rotating $ENV..."
+  lsh pull --env "$ENV" --file ".env.$ENV"
   NEW_KEY=$(openssl rand -hex 32)
-  sed -i "s/^API_KEY=.*/API_KEY=$NEW_KEY/" ".env.$ENV"
-
-  # Push updated secrets
-  lsh lib secrets push --env "$ENV" --file ".env.$ENV"
-
+  sed -i.bak "s/^API_KEY=.*/API_KEY=$NEW_KEY/" ".env.$ENV" && rm -f ".env.$ENV.bak"
+  lsh push --env "$ENV" --file ".env.$ENV"
   echo "✅ $ENV rotated"
 done
 
-# Schedule quarterly rotation
-# lsh lib cron add \
-#   --name "rotate-all-envs" \
-#   --schedule "0 0 1 */3 *" \
-#   --command "./rotate-all-environments.sh"
+# Schedule quarterly (crontab -e):
+# 0 0 1 */3 * cd /path/to/project && ./rotate-all-environments.sh
 ```
 
 ## Monitoring & Alerts
 
-Add monitoring to your rotation scripts:
+Append a notification to the end of `rotate-api-keys.sh`:
 
 ```bash
-# At the end of rotate-api-keys.sh, add:
-
-# Send notification (example using curl to Slack)
-curl -X POST https://hooks.slack.com/services/YOUR/WEBHOOK/URL \
+curl -X POST "$SLACK_WEBHOOK_URL" \
   -H 'Content-Type: application/json' \
   -d "{\"text\":\"🔑 API keys rotated for $ENVIRONMENT at $(date)\"}"
-
-# Or send email
-echo "API keys rotated at $(date)" | mail -s "Key Rotation Alert" team@company.com
-
-# Or log to monitoring system
-curl -X POST https://your-monitoring.com/events \
-  -d "event=secret_rotation&env=$ENVIRONMENT&timestamp=$(date -u +%s)"
 ```
 
 ## Troubleshooting
 
-### Job not running
-
+**Secrets not syncing**
 ```bash
-# Check daemon status
-lsh lib daemon status
-
-# View daemon logs
-cat /tmp/lsh-job-daemon-$USER.log
-
-# Check scheduled jobs
-lsh lib cron list
-
-# Trigger manually to test
-lsh lib cron trigger rotate-api-keys
+lsh config get LSH_SECRETS_KEY   # same key on every machine?
+lsh list                         # inspect local .env
+lsh pull --env production --force
 ```
 
-### Secrets not syncing
-
+**Application not reloading**
 ```bash
-# Verify encryption key is set
-echo $LSH_SECRETS_KEY
-
-# Check Supabase connection
-lsh lib secrets list
-
-# Pull with force to overwrite
-lsh lib secrets pull --env production --force
-```
-
-### Application not reloading
-
-```bash
-# Check reload command
-APP_RELOAD_COMMAND="npm restart" ./auto-sync-secrets.sh
-
-# Use custom reload command
 APP_RELOAD_COMMAND="systemctl restart myapp" ./auto-sync-secrets.sh
 ```
 
 ## Best Practices
 
-1. **Test First**: Always test rotation scripts manually before scheduling
-2. **Backup**: Keep backups before rotating (scripts do this automatically)
-3. **Gradual Rollout**: Test in dev, then staging, then production
-4. **Monitor**: Add logging/alerting to rotation scripts
-5. **Document**: Keep track of rotation schedules in team documentation
-6. **Audit**: Review rotation logs regularly
-7. **Rollback Plan**: Know how to restore from backups if needed
+1. **Test first** — run rotation scripts manually before scheduling.
+2. **Backup** — the scripts snapshot `.env` before changing it.
+3. **Gradual rollout** — dev → staging → production.
+4. **Monitor** — add logging/alerting to the scripts.
+5. **Set `LSH_PIN_TOKEN`** so rotated secrets stay durable when your node is offline.
 
 ## Security Considerations
 
-- Store `LSH_SECRETS_KEY` in password manager, never in git
-- Use separate keys for personal vs team projects
-- Limit who can rotate production secrets
-- Audit rotation logs for unauthorized changes
-- Set appropriate cron schedule (not too frequent)
-- Test rotation in non-production first
-- Have rollback procedure ready
-
-## Integration Examples
-
-### With Docker
-
-```bash
-# Rotate and restart Docker container
-lsh lib cron add \
-  --name "rotate-docker-secrets" \
-  --schedule "0 0 1 * *" \
-  --command "cd ~/app && ./rotate-api-keys.sh && docker-compose restart"
-```
-
-### With systemd
-
-```bash
-# Rotate and reload systemd service
-lsh lib cron add \
-  --name "rotate-systemd-secrets" \
-  --schedule "0 0 1 * *" \
-  --command "cd ~/app && ENVIRONMENT=prod APP_RELOAD_COMMAND='sudo systemctl reload myapp' ./auto-sync-secrets.sh"
-```
-
-### With Kubernetes
-
-```bash
-# Rotate and update k8s secret
-cat > rotate-k8s-secrets.sh <<'EOF'
-#!/bin/bash
-./rotate-api-keys.sh
-kubectl delete secret myapp-secrets
-kubectl create secret generic myapp-secrets --from-env-file=.env
-kubectl rollout restart deployment/myapp
-EOF
-
-lsh lib cron add \
-  --name "rotate-k8s" \
-  --schedule "0 0 1 * *" \
-  --command "./rotate-k8s-secrets.sh"
-```
+- Store `LSH_SECRETS_KEY` in a password manager, never in git.
+- Use separate keys for personal vs team projects.
+- Limit who can rotate production secrets.
+- Don't schedule rotation too frequently.
 
 ## Resources
 
 - [LSH Secrets Guide](../../docs/features/secrets/SECRETS_GUIDE.md)
-- [LSH Cron Documentation](../../docs/features/cron.md)
-- [LSH Daemon Documentation](../../docs/features/daemon.md)
-
----
-
-**No other secrets manager has built-in rotation scheduling!**
-
-With LSH, you get secrets management + automation in one tool.
+- [Configuration Guide](../../docs/CONFIGURATION.md)
+- [Quick Start](../../docs/QUICK_START.md)
