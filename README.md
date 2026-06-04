@@ -326,6 +326,11 @@ LSH_SECRETS_KEY=<your-encryption-key>
 # Optional - name of a kubo remote pinning service for durable sync
 # (configure once with: ipfs pin remote service add <name> <endpoint> <key>)
 LSH_PIN_SERVICE=<service-name>
+
+# Optional - pointer discovery backends, comma-separated in priority order.
+# Default 'w3name,ipns': durable w3name (signed IPNS via name.web3.storage, no
+# account, no DHT TTL) with IPNS-over-DHT fallback. Set 'ipns' for DHT-only.
+LSH_DISCOVERY=w3name,ipns
 ```
 
 ### Configuration Files

@@ -141,7 +141,7 @@ export class IPFSSecretsStorage {
             metadata.ipns_name = publishedName;
             this.metadata[this.getMetadataKey(gitRepo, environment)] = metadata;
             await this.saveMetadata();
-            logger.info(`   🔗 Published to IPNS: ${publishedName}`);
+            logger.info(`   🔗 Published to ${discovery.id}: ${publishedName}`);
           }
         } catch (error) {
           logger.error(

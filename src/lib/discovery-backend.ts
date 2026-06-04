@@ -17,6 +17,14 @@ import {
   ensureKeyImported as defaultEnsureKeyImported,
   type IPNSKeyInfo,
 } from './ipns-key-manager.js';
+import {
+  w3namePublish as defaultW3namePublish,
+  w3nameResolve as defaultW3nameResolve,
+} from './w3name-pointer.js';
+import { ENV_VARS, DEFAULTS } from '../constants/config.js';
+import { createLogger } from './logger.js';
+
+const logger = createLogger('Discovery');
 
 export interface DiscoveryPublishParams {
   secretsKey: string;
@@ -88,13 +96,120 @@ export class IpnsDiscoveryBackend implements DiscoveryBackend {
   }
 }
 
+/** Injectable w3name ops (defaults are the real network impls; tests override). */
+export interface W3nameBackendDeps {
+  deriveKeyInfo: (secretsKey: string, repoName: string, env: string) => IPNSKeyInfo;
+  publish: (seed: Buffer, cid: string) => Promise<string>;
+  resolve: (seed: Buffer) => Promise<{ cid: string | null; name: string }>;
+}
+
 /**
- * Select the discovery backend. Currently always IPNS (behaviour-preserving).
- * Phase 2 (issue #194) will read a `LSH_DISCOVERY` setting to choose/compose
- * backends (e.g. w3name primary + ipns fallback).
+ * Durable discovery via w3name (Storacha). Publishes/resolves a signed IPNS
+ * record hosted at name.web3.storage — survives offline nodes, no DHT TTL, no
+ * account. Uses the SAME seed-derived IPNS name as the `ipns` backend.
+ */
+export class W3nameDiscoveryBackend implements DiscoveryBackend {
+  readonly id = 'w3name';
+
+  constructor(
+    private readonly deps: W3nameBackendDeps = {
+      deriveKeyInfo: defaultDeriveKeyInfo,
+      publish: defaultW3namePublish,
+      resolve: defaultW3nameResolve,
+    },
+  ) {}
+
+  async publish({ secretsKey, repoName, env, cid }: DiscoveryPublishParams): Promise<string | null> {
+    const { seed } = this.deps.deriveKeyInfo(secretsKey, repoName, env);
+    return this.deps.publish(seed, cid);
+  }
+
+  async resolve({ secretsKey, repoName, env }: DiscoveryResolveParams): Promise<DiscoveryResolveResult> {
+    const { seed } = this.deps.deriveKeyInfo(secretsKey, repoName, env);
+    return this.deps.resolve(seed);
+  }
+}
+
+/**
+ * Composes backends in priority order. Publish dual-writes to all (best-effort —
+ * a failure in one doesn't block the others). Resolve tries each in order and
+ * returns the first hit, so a durable backend wins but a fallback still works.
+ */
+export class CompositeDiscoveryBackend implements DiscoveryBackend {
+  readonly id: string;
+
+  constructor(private readonly backends: DiscoveryBackend[]) {
+    this.id = backends.map((b) => b.id).join('+');
+  }
+
+  async publish(params: DiscoveryPublishParams): Promise<string | null> {
+    let firstName: string | null = null;
+    for (const backend of this.backends) {
+      try {
+        const name = await backend.publish(params);
+        if (name && !firstName) {
+          firstName = name;
+        }
+      } catch (error) {
+        logger.warn(`Discovery publish via "${backend.id}" failed: ${(error as Error).message}`);
+      }
+    }
+    return firstName;
+  }
+
+  async resolve(params: DiscoveryResolveParams): Promise<DiscoveryResolveResult> {
+    let firstName: string | null = null;
+    for (const backend of this.backends) {
+      try {
+        const result = await backend.resolve(params);
+        if (result.name && !firstName) {
+          firstName = result.name;
+        }
+        if (result.cid) {
+          return result;
+        }
+      } catch (error) {
+        logger.warn(`Discovery resolve via "${backend.id}" failed: ${(error as Error).message}`);
+      }
+    }
+    return { cid: null, name: firstName };
+  }
+}
+
+/** Construct a single backend by id, or null if unknown. */
+function buildBackend(
+  id: string,
+  ipfsSync: Pick<IPFSSync, 'getApiUrl' | 'publishToIPNS' | 'resolveIPNS'>,
+): DiscoveryBackend | null {
+  switch (id) {
+    case 'ipns':
+      return new IpnsDiscoveryBackend(ipfsSync);
+    case 'w3name':
+      return new W3nameDiscoveryBackend();
+    default:
+      logger.warn(`Unknown discovery backend "${id}" — ignoring.`);
+      return null;
+  }
+}
+
+/**
+ * Select discovery backend(s) from `LSH_DISCOVERY` (comma-separated, priority
+ * order; default 'w3name,ipns'). Returns a single backend or a composite.
+ * Falls back to IPNS if the setting resolves to nothing valid.
  */
 export function getDiscoveryBackend(
   ipfsSync: Pick<IPFSSync, 'getApiUrl' | 'publishToIPNS' | 'resolveIPNS'>,
 ): DiscoveryBackend {
-  return new IpnsDiscoveryBackend(ipfsSync);
+  const setting = process.env[ENV_VARS.LSH_DISCOVERY] || DEFAULTS.DISCOVERY_BACKENDS;
+  const backends = setting
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)
+    .map((id) => buildBackend(id, ipfsSync))
+    .filter((b): b is DiscoveryBackend => b !== null);
+
+  if (backends.length === 0) {
+    return new IpnsDiscoveryBackend(ipfsSync);
+  }
+  return backends.length === 1 ? backends[0] : new CompositeDiscoveryBackend(backends);
 }
