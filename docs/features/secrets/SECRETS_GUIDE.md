@@ -262,16 +262,6 @@ export LSH_PIN_SERVICE=<name>
 Pinning services only ever see ciphertext. See the README section
 "Durable sync (remote pinning)" for details.
 
-### Supabase
-
-Team collaboration with audit logs:
-
-```bash
-# Add to .env
-SUPABASE_URL=https://xxx.supabase.co
-SUPABASE_ANON_KEY=your-key
-```
-
 ## Troubleshooting
 
 ### No secrets found

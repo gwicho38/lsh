@@ -2,8 +2,9 @@
 #
 # Example: Automated API Key Rotation
 #
-# This script rotates API keys and pushes updated secrets to cloud storage.
-# Schedule it with: lsh lib cron add --name "rotate-keys" --schedule "0 0 1 * *" --command "./rotate-api-keys.sh"
+# This script rotates API keys and pushes the updated secrets over IPFS.
+# Schedule it with your system scheduler, e.g. a monthly crontab entry:
+#   0 0 1 * * cd /path/to/project && ENVIRONMENT=production ./rotate-api-keys.sh
 #
 
 set -e
@@ -37,9 +38,9 @@ else
   echo "✅ Added API_KEY to $ENV_FILE"
 fi
 
-# Push updated secrets to cloud
-echo "📤 Pushing updated secrets to cloud..."
-lsh lib secrets push --env "$ENVIRONMENT"
+# Push updated secrets over IPFS
+echo "📤 Pushing updated secrets..."
+lsh push --env "$ENVIRONMENT"
 
 echo ""
 echo "✅ API key rotation complete!"
@@ -48,6 +49,6 @@ echo "🔑 New key: ${NEW_API_KEY:0:8}***"
 echo ""
 echo "💡 Next steps:"
 echo "   1. Pull updated secrets on other machines:"
-echo "      lsh lib secrets pull --env $ENVIRONMENT"
+echo "      lsh pull --env $ENVIRONMENT"
 echo "   2. Restart your application to use new keys"
 echo "   3. Verify new key works before removing old backup"

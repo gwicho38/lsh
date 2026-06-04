@@ -355,7 +355,6 @@ A: Records are lost, but no secrets are lost. Only audit trail is affected.
 
 - [Secrets Management Guide](secrets/SECRETS_GUIDE.md)
 - [Configuration Guide](../CONFIGURATION.md)
-- [Local Storage](../LOCAL_STORAGE.md)
 
 ## Support
 

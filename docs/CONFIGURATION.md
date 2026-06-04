@@ -1,6 +1,6 @@
 # LSH Configuration Guide
 
-LSH uses a centralized configuration file located at `~/.config/lsh/lshrc` to manage all settings.
+LSH uses a centralized configuration file located at `~/.config/lsh/lshrc` to manage settings.
 
 ## Quick Start
 
@@ -9,8 +9,8 @@ LSH uses a centralized configuration file located at `~/.config/lsh/lshrc` to ma
 lsh config
 
 # Or use specific commands
-lsh config get SUPABASE_URL
 lsh config set LSH_SECRETS_KEY <your-key>
+lsh config get LSH_SECRETS_KEY
 lsh config list
 ```
 
@@ -32,96 +32,66 @@ ANOTHER_KEY="value with spaces"
 
 ## Available Configuration Options
 
-### Storage Backend
+LSH is an encrypted secrets manager. It encrypts your `.env` with AES-256, stores
+the ciphertext on **IPFS** (addressed by CID), and publishes the `key→CID` pointer
+so a teammate with the same key can pull it back — no account, no central server.
 
-Choose one of the following:
+### Secrets (required)
 
 ```bash
-# Option 1: Local Storage (Default - no configuration needed)
-# Data stored in ~/.lsh/data/storage.json
-
-# Option 2: Supabase Cloud (Team collaboration)
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-
-# Option 3: PostgreSQL (Local or remote)
-DATABASE_URL=postgresql://user:password@host:port/database
+# AES-256 encryption key — generate with: lsh key
+LSH_SECRETS_KEY=<64-char-hex>
 ```
 
-### Secrets Management
+`LSH_SECRETS_KEY` is the only required value. Everyone who needs to pull your
+secrets must share this same key; the IPNS/w3name pointer is derived from it.
+
+### Discovery (optional)
+
+The `key→CID` pointer is published and resolved through pluggable discovery
+backends (see [ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ```bash
-# Encryption key for secrets (generate with: lsh key)
-LSH_SECRETS_KEY=your-32-byte-hex-key
-
-# Master encryption key (for SaaS platform)
-LSH_MASTER_KEY=your-master-key
+# Pointer discovery backends, in priority order.
+# Default: durable w3name (name.web3.storage) + DHT-IPNS fallback.
+LSH_DISCOVERY=w3name,ipns
 ```
 
-### API Server
+### Durability / Pinning (optional)
+
+Discovery durability (can you *find* the CID) is separate from byte durability
+(does the content still *exist*). For the bytes to survive after your local Kubo
+node goes offline, pin them to a remote pinning service.
 
 ```bash
-# Enable API server
-LSH_API_ENABLED=true
-LSH_API_PORT=3030
+# Auto-register a remote pinning service on first push (recommended).
+# Endpoint defaults to 4EVERLAND's free 5 GB tier.
+LSH_PIN_TOKEN=<psa-token>
+LSH_PIN_ENDPOINT=https://api.4everland.dev   # optional override
 
-# API authentication (generate with: openssl rand -hex 32)
-LSH_API_KEY=your-api-key
-LSH_JWT_SECRET=your-jwt-secret
+# Or point at a pin service you already configured in Kubo:
+LSH_PIN_SERVICE=<service-name>
 ```
 
-### Webhooks
+> **Note:** Pinata's pin-by-CID PSA requires a paid plan; 4EVERLAND and Filebase
+> offer it on their free tiers.
+
+### Advanced (optional)
 
 ```bash
-# Enable webhooks
-LSH_ENABLE_WEBHOOKS=true
-WEBHOOK_PORT=3033
-
-# Webhook secrets
-GITHUB_WEBHOOK_SECRET=your-github-secret
-GITLAB_WEBHOOK_SECRET=your-gitlab-secret
-JENKINS_WEBHOOK_SECRET=your-jenkins-secret
-```
-
-### Security
-
-```bash
-# WARNING: Only enable if you fully trust all job sources
-LSH_ALLOW_DANGEROUS_COMMANDS=false
-```
-
-### Advanced Options
-
-```bash
-# Custom data directory
+# Override the LSH data/cache directory (default: ~/.lsh)
 LSH_DATA_DIR=/custom/path/to/data
 
-# Node environment
-NODE_ENV=development
-
-# Redis caching
-REDIS_URL=redis://localhost:6379
-
-# SaaS Platform
-LSH_SAAS_API_PORT=3031
-LSH_SAAS_API_HOST=0.0.0.0
-LSH_CORS_ORIGINS=http://localhost:3000
-
-# Email (Resend)
-RESEND_API_KEY=your-resend-key
-EMAIL_FROM=noreply@yourdomain.com
-BASE_URL=https://app.yourdomain.com
-
-# Stripe Billing
-STRIPE_SECRET_KEY=your-stripe-secret
-STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+# Logging
+LSH_LOG_LEVEL=info        # debug | info | warn | error
+LSH_LOG_FORMAT=text       # text | json
 ```
 
 ## Command Reference
 
 ### `lsh config`
 
-Open configuration file in `$EDITOR` (defaults to `$VISUAL`, then `$EDITOR`, then `vi`).
+Open the configuration file in `$EDITOR` (defaults to `$VISUAL`, then `$EDITOR`, then `vi`).
 
 ```bash
 lsh config
@@ -129,7 +99,7 @@ lsh config
 
 ### `lsh config init`
 
-Initialize configuration file with default template.
+Initialize the configuration file with a default template.
 
 ```bash
 lsh config init
@@ -140,7 +110,7 @@ lsh config init --force
 
 ### `lsh config path`
 
-Show configuration file path.
+Show the configuration file path.
 
 ```bash
 lsh config path
@@ -152,8 +122,7 @@ lsh config path
 Get a specific configuration value.
 
 ```bash
-lsh config get SUPABASE_URL
-# Output: https://your-project.supabase.co
+lsh config get LSH_SECRETS_KEY
 ```
 
 ### `lsh config set <key> <value>`
@@ -161,8 +130,8 @@ lsh config get SUPABASE_URL
 Set a specific configuration value.
 
 ```bash
-lsh config set LSH_SECRETS_KEY REDACTED
-# Output: ✓ Set LSH_SECRETS_KEY=REDACTED
+lsh config set LSH_SECRETS_KEY <your-key>
+# Output: ✓ Set LSH_SECRETS_KEY=<redacted>
 ```
 
 ### `lsh config delete <key>`
@@ -170,11 +139,11 @@ lsh config set LSH_SECRETS_KEY REDACTED
 Delete a specific configuration value.
 
 ```bash
-lsh config delete LSH_API_KEY
-# Output: ✓ Deleted LSH_API_KEY
+lsh config delete LSH_PIN_TOKEN
+# Output: ✓ Deleted LSH_PIN_TOKEN
 ```
 
-Aliases: `lsh config rm <key>`
+Alias: `lsh config rm <key>`
 
 ### `lsh config list`
 
@@ -187,6 +156,8 @@ lsh config list
 lsh config list --show-secrets
 ```
 
+Alias: `lsh config ls`
+
 ### `lsh config show`
 
 Show raw configuration file contents.
@@ -197,11 +168,11 @@ lsh config show
 
 ### `lsh config reload`
 
-Reload configuration into current environment.
+Reload configuration into the current environment.
 
 ```bash
 lsh config reload
-# Output: ✓ Reloaded 12 config values into environment
+# Output: ✓ Reloaded N config values into environment
 ```
 
 ## Configuration Priority
@@ -211,58 +182,23 @@ LSH loads configuration in this order (later sources override earlier ones):
 1. **Built-in defaults** (hardcoded in LSH)
 2. **`~/.config/lsh/lshrc`** (configuration file) ← **Recommended for LSH config**
 3. **Environment variables** (current shell) ← **Highest priority**
-4. **`.env` file** (project-specific, for secrets only)
+4. **`.env` file** (project-specific — application secrets only)
 
 This means:
-- `lshrc` provides persistent defaults for LSH configuration
-- Environment variables override lshrc (useful for temporary overrides)
-- `.env` is only used for application secrets managed by `lsh push/pull`, NOT for LSH configuration
+- `lshrc` provides persistent defaults for LSH configuration.
+- Environment variables override `lshrc` (useful for temporary overrides).
+- `.env` holds the application secrets managed by `lsh push/pull`, **not** LSH configuration.
 
-### Example: Database Configuration
-
-**Recommended approach (use lshrc):**
-```bash
-lsh config set SUPABASE_URL https://myproject.supabase.co
-lsh config set SUPABASE_ANON_KEY eyJhbG...
-# Now works everywhere without setting env vars
-```
-
-**Override temporarily:**
-```bash
-# Use different database for one command
-SUPABASE_URL=https://test-project.supabase.co lsh push
-```
-
-**Not recommended:**
-```bash
-# DON'T put LSH config in .env - use lshrc instead!
-# .env should only contain application secrets
-```
-
-## Migration from .env
-
-If you've been using `.env` for LSH configuration, migrate to `lshrc`:
+### Example: temporary override
 
 ```bash
-# Initialize lshrc
-lsh config init
-
-# Copy relevant values from .env to lshrc
-lsh config set SUPABASE_URL "$(grep SUPABASE_URL .env | cut -d= -f2)"
-lsh config set SUPABASE_ANON_KEY "$(grep SUPABASE_ANON_KEY .env | cut -d= -f2)"
-lsh config set LSH_SECRETS_KEY "$(grep LSH_SECRETS_KEY .env | cut -d= -f2)"
-
-# Verify
-lsh config list
-
-# Remove LSH-specific variables from .env (keep application secrets only)
+# Use a different discovery backend for one command
+LSH_DISCOVERY=ipns lsh pull --env dev
 ```
-
-**Note:** `.env` files should now only contain application secrets, not LSH configuration.
 
 ## Best Practices
 
-### 1. Separate LSH Config from Application Secrets
+### 1. Separate LSH config from application secrets
 
 **Good:**
 - LSH configuration → `~/.config/lsh/lshrc`
@@ -271,24 +207,15 @@ lsh config list
 **Bad:**
 - Mixing LSH config with app secrets in `.env`
 
-### 2. Use Config File for Persistent Settings
+### 2. Use the config file for persistent settings
 
 ```bash
 # Set once, use everywhere
-lsh config set SUPABASE_URL https://your-project.supabase.co
-lsh config set LSH_SECRETS_KEY your-key
-
-# No need to set environment variables in every shell
+lsh config set LSH_SECRETS_KEY <your-key>
+lsh config set LSH_PIN_TOKEN <psa-token>
 ```
 
-### 3. Use Environment Variables for Overrides
-
-```bash
-# Temporarily use a different Supabase project
-SUPABASE_URL=https://test-project.supabase.co lsh push
-```
-
-### 4. Keep Secrets Safe
+### 3. Keep your key safe
 
 ```bash
 # Never commit lshrc to git
@@ -298,69 +225,54 @@ echo "~/.config/lsh/lshrc" >> ~/.gitignore_global
 chmod 600 ~/.config/lsh/lshrc
 ```
 
-### 5. Team Collaboration
+### 4. Team collaboration
 
-For teams, share these values securely:
+The encryption key is the only thing teammates must share — distribute it through
+a password manager, never in plain text. Each member sets it in their own `lshrc`:
 
 ```bash
-# Share with team (via secure channel)
-SUPABASE_URL=https://team-project.supabase.co
-SUPABASE_ANON_KEY=team-shared-key
-LSH_SECRETS_KEY=team-encryption-key
-
-# Each team member sets in their lshrc
-lsh config set SUPABASE_URL ...
-lsh config set SUPABASE_ANON_KEY ...
-lsh config set LSH_SECRETS_KEY ...
+lsh config set LSH_SECRETS_KEY <team-encryption-key>
+lsh pull --env production
 ```
 
 ## Troubleshooting
 
-### Config File Not Found
+### Config file not found
 
 ```bash
-# Initialize it
 lsh config init
 ```
 
-### Changes Not Taking Effect
+### Changes not taking effect
 
 ```bash
-# Reload configuration
 lsh config reload
-
-# Or restart daemon
-lsh daemon restart
 ```
 
-### Permission Denied
+### Permission denied
 
 ```bash
-# Fix permissions
 chmod 600 ~/.config/lsh/lshrc
 chown $USER ~/.config/lsh/lshrc
 ```
 
-### Can't Find $EDITOR
+### Can't find `$EDITOR`
 
 ```bash
-# Set your editor
-export EDITOR=nano  # or vim, emacs, code, etc.
-
+export EDITOR=nano   # or vim, emacs, code, etc.
 # Or edit directly
 nano ~/.config/lsh/lshrc
 ```
 
-### Secrets Still Showing
+### Secrets still masked
 
 ```bash
-# Use --show-secrets flag
 lsh config list --show-secrets
 ```
 
 ## Examples
 
-### Minimal Local Setup
+### Minimal local setup
 
 ```bash
 # Install LSH
@@ -373,39 +285,21 @@ lsh key
 lsh config set LSH_SECRETS_KEY <generated-key>
 
 # Start using LSH
-lsh push
+lsh push --env dev
 ```
 
-### Team Setup with Supabase
+### Durable setup (survives node going offline)
 
 ```bash
-# Team admin: Create Supabase project and share credentials
-lsh config set SUPABASE_URL https://team-project.supabase.co
-lsh config set SUPABASE_ANON_KEY abc123...
-lsh config set LSH_SECRETS_KEY def456...
+lsh config set LSH_SECRETS_KEY <generated-key>
+lsh config set LSH_PIN_TOKEN <4everland-psa-token>
 
-# Team members: Set same credentials
-lsh config set SUPABASE_URL https://team-project.supabase.co
-lsh config set SUPABASE_ANON_KEY abc123...
-lsh config set LSH_SECRETS_KEY def456...
-
-# Now everyone can sync
-lsh pull --env production
-```
-
-### Multi-Environment Setup
-
-```bash
-# Production config in lshrc
-lsh config set SUPABASE_URL https://prod.supabase.co
-lsh config set LSH_SECRETS_KEY prod-key
-
-# Use different environment temporarily
-SUPABASE_URL=https://staging.supabase.co lsh pull --env staging
+# Pointer (w3name) and bytes (pin service) both persist
+lsh push --env prod
 ```
 
 ## Related Documentation
 
 - [Quick Start Guide](QUICK_START.md)
 - [Secrets Management](features/secrets/SECRETS_GUIDE.md)
-- [Local Storage](LOCAL_STORAGE.md)
+- [Architecture](ARCHITECTURE.md)

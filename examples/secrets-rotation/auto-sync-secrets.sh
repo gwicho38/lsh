@@ -3,7 +3,8 @@
 # Example: Auto-Sync Secrets Across Team
 #
 # This script automatically pulls the latest secrets and reloads your application.
-# Schedule it with: lsh lib cron add --name "auto-sync" --interval 3600 --command "./auto-sync-secrets.sh"
+# Schedule it with your system scheduler, e.g. an hourly crontab entry:
+#   0 * * * * cd /path/to/project && ENVIRONMENT=dev APP_RELOAD_COMMAND='npm restart' ./auto-sync-secrets.sh
 #
 
 set -e
@@ -22,8 +23,8 @@ if [ -f "$ENV_FILE" ]; then
 fi
 
 # Pull latest secrets
-echo "📥 Pulling latest secrets from cloud..."
-lsh lib secrets pull --env "$ENVIRONMENT" --force
+echo "📥 Pulling latest secrets..."
+lsh pull --env "$ENVIRONMENT" --force
 
 # Check if .env changed
 if diff "$ENV_FILE" "$BACKUP_FILE" > /dev/null 2>&1; then
