@@ -48,7 +48,7 @@ lsh                                # If globally linked (npm link)
 ```
 
 Real top-level commands: `init`, `doctor`, `config`, `sync`, `sync-history`, `ipfs`, `migrate`,
-`context`, `self`, `completion`, plus the secrets verbs `push`, `pull`, `get`, `set`, `list`,
+`context`, `self`, `completion`, `shell-init`, plus the secrets verbs `push`, `pull`, `get`, `set`, `list`,
 `env`, `key`, `create`, `load`, `status`, `info`, `delete`, `clear`, `cp`. Verify with
 `node dist/cli.js --help` — there is **no** `daemon`, `cron`, `api`, `supabase`, or `storacha`
 command.

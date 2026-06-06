@@ -66,6 +66,10 @@ printenv | lsh set    # Batch import from stdin
 # Multi-environment
 lsh push --env prod
 lsh pull --env staging
+
+# Load secrets into your shell
+lsh load              # print `export` lines (use with: eval "$(lsh load)")
+lsh shell-init        # wire `lsh load` into ~/.zshrc or ~/.bashrc automatically
 ```
 
 ## How It Works
@@ -248,6 +252,23 @@ lsh list --format export  # Shell export statements
 # Load into current shell
 eval "$(lsh list --format export)"
 ```
+
+### Auto-load in every shell
+
+Rather than pasting an `eval` line into your rc file by hand, let lsh wire it up
+(homebrew-style — idempotent, with a one-time backup):
+
+```bash
+lsh shell-init                 # detect shell, append managed block to ~/.zshrc or ~/.bashrc
+lsh shell-init zsh             # force a shell
+lsh shell-init --file ~/.zshrc # target a specific rc file
+lsh shell-init --dry-run       # show what would be added, write nothing
+lsh shell-init --print         # just print the block (pipe it yourself)
+lsh shell-init --uninstall     # remove the managed block
+```
+
+The block runs `eval "$(lsh load --global --quiet)"`, which loads `$HOME/.env`
+via an **absolute** path — so it never depends on the current directory.
 
 ## Security
 
