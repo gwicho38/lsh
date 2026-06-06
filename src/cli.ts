@@ -10,6 +10,7 @@ import selfCommand from './commands/self.js';
 import { registerInitCommands } from './commands/init.js';
 import { registerDoctorCommands } from './commands/doctor.js';
 import { registerCompletionCommands } from './commands/completion.js';
+import { registerShellInitCommand } from './commands/shell-init.js';
 import { registerConfigCommands } from './commands/config.js';
 import { registerSyncHistoryCommands } from './commands/sync-history.js';
 import { registerSyncCommands } from './commands/sync.js';
@@ -168,6 +169,9 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
 
   // Shell completion
   registerCompletionCommands(program);
+
+  // Shell rc wire-up (eval "$(lsh load)")
+  registerShellInitCommand(program);
 
   // Self-management commands
   program.addCommand(selfCommand);

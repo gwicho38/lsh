@@ -60,3 +60,8 @@ export declare const PLATFORMS: {
     readonly GITLAB: "gitlab";
     readonly JENKINS: "jenkins";
 };
+export declare const SHELL_INIT: {
+    readonly MARKER_START: "# >>> lsh shell-init >>>";
+    readonly MARKER_END: "# <<< lsh shell-init <<<";
+    readonly LOAD_LINE: "eval \"$(lsh load --global --quiet)\"";
+};

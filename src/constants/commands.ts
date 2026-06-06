@@ -70,3 +70,13 @@ export const PLATFORMS = {
   GITLAB: 'gitlab',
   JENKINS: 'jenkins',
 } as const;
+
+// `lsh shell-init` — managed block injected into the user's shell rc file so
+// secrets load into every shell automatically (homebrew-style wire-up).
+export const SHELL_INIT = {
+  MARKER_START: '# >>> lsh shell-init >>>',
+  MARKER_END: '# <<< lsh shell-init <<<',
+  // Absolute ($HOME/.env) path → never calls process.cwd(), so it can't hit
+  // the `uv_cwd` crash a cwd-relative `lsh load` does on a stale directory.
+  LOAD_LINE: 'eval "$(lsh load --global --quiet)"',
+} as const;
