@@ -75,7 +75,7 @@
     "express-rate-limit": "^8.2.1",
     "glob": "^13.0.0",
     "inquirer": "^14.0.1",
-    "js-yaml": "^4.1.0",
+    "js-yaml": "^5.0.0",
     "jsonwebtoken": "^9.0.2",
     "node-cron": "^4.2.1",
     "ora": "^9.0.0",
