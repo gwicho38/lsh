@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+<!-- maister-docs-reference: start -->
+## Project Documentation & Standards (maister)
+
+Read @.maister/docs/INDEX.md at the start of any development task. It is the master index for this project's maister-managed documentation:
+- **Project docs** (`.maister/docs/project/`) — vision, roadmap, tech-stack, and architecture.
+- **Coding standards** (`.maister/docs/standards/`) — global, backend, and testing conventions.
+
+Follow the standards in `.maister/docs/standards/` when writing code; if a standard conflicts with the task, ask. This section supplements (does not replace) the project-specific guidance below.
+<!-- maister-docs-reference: end -->
+
 ## Project Overview
 
 LSH (`lsh-framework` on npm) is an **encrypted secrets manager**: it syncs `.env` files across
