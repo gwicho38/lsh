@@ -14,6 +14,7 @@ import { IPFSSecretsStorage } from './ipfs-secrets-storage.js';
 import { ENV_VARS } from '../constants/index.js';
 import { extractErrorMessage } from './lsh-error.js';
 import { SyncKeyStore } from './sync-key-store.js';
+import { formatAsExport } from './format-utils.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -854,7 +855,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
     const content = fs.readFileSync(envFilePath, 'utf8');
     const lines = content.split('\n');
-    const exports: string[] = [];
+    const secrets: Array<{ key: string; value: string }> = [];
 
     for (const line of lines) {
       // Skip comments and empty lines
@@ -874,18 +875,11 @@ LSH_SECRETS_KEY=${this.encryptionKey}
           value = value.slice(1, -1);
         }
 
-        // Escape special characters for shell
-        const escapedValue = value
-          .replace(/\\/g, '\\\\')
-          .replace(/"/g, '\\"')
-          .replace(/\$/g, '\\$')
-          .replace(/`/g, '\\`');
-
-        exports.push(`export ${key}="${escapedValue}"`);
+        secrets.push({ key, value });
       }
     }
 
-    return exports.join('\n') + '\n';
+    return formatAsExport(secrets) + '\n';
   }
 
   /**

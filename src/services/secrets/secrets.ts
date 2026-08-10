@@ -10,7 +10,11 @@ import * as path from 'path';
 import * as readline from 'readline';
 import { getGitRepoInfo } from '../../lib/git-utils.js';
 import { ENV_VARS } from '../../constants/index.js';
-import type { OutputFormat } from '../../lib/format-utils.js';
+import {
+  formatAsExport,
+  isValidEnvironmentVariableName,
+  type OutputFormat,
+} from '../../lib/format-utils.js';
 import { IPFSClientManager } from '../../lib/ipfs-client-manager.js';
 import { SyncKeyStore } from '../../lib/sync-key-store.js';
 
@@ -275,10 +279,7 @@ export async function init_secrets(program: Command) {
             break;
 
           case 'export':
-            for (const { key, value } of displaySecrets) {
-              const escapedValue = value.replace(/'/g, "'\\''");
-              console.log(`export ${key}='${escapedValue}'`);
-            }
+            console.log(formatAsExport(displaySecrets));
             break;
 
           case 'env':
@@ -610,6 +611,7 @@ API_KEY=
 
         const content = fs.readFileSync(envPath, 'utf8');
         const lines = content.split('\n');
+        const secrets: Array<{ key: string; value: string }> = [];
 
         for (const line of lines) {
           if (line.trim().startsWith('#') || !line.trim()) continue;
@@ -623,11 +625,14 @@ API_KEY=
                 (value.startsWith("'") && value.endsWith("'"))) {
               value = value.slice(1, -1);
             }
-            // Escape single quotes in value
-            const escapedValue = value.replace(/'/g, "'\\''");
-            // Output ONLY the export statement (stdout)
-            console.log(`export ${key}='${escapedValue}'`);
+            secrets.push({ key, value });
           }
+        }
+
+        const output = formatAsExport(secrets);
+        if (output) {
+          // Output ONLY the complete export script (stdout)
+          console.log(output);
         }
 
         // Show hint to stderr (doesn't interfere with eval)
@@ -1012,7 +1017,7 @@ API_KEY=
    */
   async function setSingleSecret(envPath: string, key: string, value: string): Promise<void> {
     // Validate key format
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) {
+    if (!isValidEnvironmentVariableName(key)) {
       console.error(`❌ Invalid key format: ${key}. Must be a valid environment variable name.`);
       process.exit(1);
     }
