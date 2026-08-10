@@ -25,6 +25,7 @@ export declare const ERRORS: {
     readonly INVALID_FILENAME: "Invalid filename: ${filename}. Filenames must not contain path separators or special characters.";
     readonly ERROR_ZSH_COMPAT_PREFIX: "ZSH compatibility error: ${message}";
     readonly INVALID_ENV_CONFIG: "Invalid environment configuration. Check logs for details.";
+    readonly INVALID_ENVIRONMENT_VARIABLE_NAME: "Invalid environment variable name: ${key}";
     readonly COMMAND_EMPTY_STRING: "Command must be a non-empty string";
     readonly COMMAND_WHITESPACE_ONLY: "Command cannot be empty or whitespace only";
     readonly COMMAND_TOO_LONG: "Command exceeds maximum length of ${maxLength} characters";

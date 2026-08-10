@@ -6,6 +6,8 @@
 
 import { ERRORS, RISK_LEVELS } from './errors.js';
 
+export const ENVIRONMENT_VARIABLE_NAME_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
 export interface DangerousPattern {
   pattern: RegExp;
   description: string;

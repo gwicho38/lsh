@@ -122,6 +122,56 @@ describe('Secrets CLI Commands', () => {
     });
   });
 
+  describe('shell export safety', () => {
+    const exportCommands = [
+      { name: 'load', args: ['load', '--quiet'] },
+      { name: 'env --format export', args: ['env', '--format', 'export'] },
+      { name: 'list --format export', args: ['list', '--format', 'export'] },
+      { name: 'get --all --export', args: ['get', '--all', '--export'] },
+    ];
+
+    it.each(exportCommands)(
+      '$name rejects an invalid key before writing a partial export script',
+      async ({ args }) => {
+        fs.writeFileSync(
+          path.join(testDir, '.env'),
+          'SAFE_KEY=safe\nX; printf INJECTED >&2 #=payload\n'
+        );
+
+        const program = new Command();
+        await init_secrets(program);
+
+        await expect(program.parseAsync(['node', 'test', ...args]))
+          .rejects.toThrow('process.exit called');
+
+        const stdout = consoleLogSpy.mock.calls.flat().map(String).join('\n');
+        const stderr = consoleErrorSpy.mock.calls.flat().map(String).join('\n');
+        expect(stdout).not.toContain('export ');
+        expect(stdout).not.toContain('INJECTED');
+        expect(stderr).toContain('Invalid environment variable name');
+      }
+    );
+
+    it.each(exportCommands)(
+      '$name preserves valid names and safely quoted values',
+      async ({ args }) => {
+        fs.writeFileSync(
+          path.join(testDir, '.env'),
+          "_VALID_123=literal ' quote; $(printf NOT_RUN)\n"
+        );
+
+        const program = new Command();
+        await init_secrets(program);
+        await program.parseAsync(['node', 'test', ...args]);
+
+        const stdout = consoleLogSpy.mock.calls.flat().map(String).join('\n');
+        expect(stdout).toContain(
+          "export _VALID_123='literal '\\'' quote; $(printf NOT_RUN)'"
+        );
+      }
+    );
+  });
+
   describe('key command', () => {
     const testKey = 'a'.repeat(64); // Valid 64-char hex key for testing
 

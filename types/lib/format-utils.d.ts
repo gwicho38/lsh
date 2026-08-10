@@ -7,6 +7,7 @@ export interface SecretEntry {
     key: string;
     value: string;
 }
+export declare function isValidEnvironmentVariableName(key: string): boolean;
 /**
  * Mask a secret value showing only first 3 and last 3 characters
  */

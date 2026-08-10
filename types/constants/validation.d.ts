@@ -3,6 +3,7 @@
  *
  * All validation patterns, security rules, and dangerous command patterns.
  */
+export declare const ENVIRONMENT_VARIABLE_NAME_PATTERN: RegExp;
 export interface DangerousPattern {
     pattern: RegExp;
     description: string;

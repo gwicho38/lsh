@@ -4,6 +4,10 @@
  */
 
 import yaml from 'js-yaml';
+import {
+  ENVIRONMENT_VARIABLE_NAME_PATTERN,
+  ERRORS,
+} from '../constants/index.js';
 // Note: We use manual TOML formatting for better control over output
 // import { stringify as stringifyToml } from 'smol-toml';
 
@@ -12,6 +16,10 @@ export type OutputFormat = 'env' | 'json' | 'yaml' | 'toml' | 'export';
 export interface SecretEntry {
   key: string;
   value: string;
+}
+
+export function isValidEnvironmentVariableName(key: string): boolean {
+  return ENVIRONMENT_VARIABLE_NAME_PATTERN.test(key);
 }
 
 /**
@@ -155,6 +163,12 @@ export function formatAsTOML(secrets: SecretEntry[]): string {
  * Format secrets as shell export statements
  */
 export function formatAsExport(secrets: SecretEntry[]): string {
+  for (const { key } of secrets) {
+    if (!isValidEnvironmentVariableName(key)) {
+      throw new Error(ERRORS.INVALID_ENVIRONMENT_VARIABLE_NAME.replace('${key}', key));
+    }
+  }
+
   return secrets
     .map(({ key, value }) => {
       // Escape single quotes in value

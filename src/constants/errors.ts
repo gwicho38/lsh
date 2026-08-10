@@ -39,6 +39,7 @@ export const ERRORS = {
 
   // Environment validation errors
   INVALID_ENV_CONFIG: 'Invalid environment configuration. Check logs for details.',
+  INVALID_ENVIRONMENT_VARIABLE_NAME: 'Invalid environment variable name: ${key}',
 
   // Command validation errors
   COMMAND_EMPTY_STRING: 'Command must be a non-empty string',

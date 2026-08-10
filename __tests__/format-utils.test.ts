@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, beforeAll } from '@jest/globals';
+import { spawnSync } from 'node:child_process';
 
 describe('FormatUtils', () => {
   let maskSecret: typeof import('../src/lib/format-utils.js').maskSecret;
@@ -212,6 +213,46 @@ describe('FormatUtils', () => {
       const result = formatAsExport(secrets);
       expect(result).toContain("export KEY1='val1'");
       expect(result).toContain("export KEY2='val2'");
+    });
+
+    it.each([
+      'X; printf INJECTED >&2 #',
+      '$(printf INJECTED)',
+      'BAD KEY',
+      'BAD\nKEY',
+    ])('should reject invalid shell variable name %j', (key) => {
+      expect(() => formatAsExport([{ key, value: 'payload' }]))
+        .toThrow('Invalid environment variable name');
+    });
+
+    it('should validate every key before formatting any export statement', () => {
+      expect(() => formatAsExport([
+        { key: 'SAFE_KEY', value: 'safe' },
+        { key: 'X; printf INJECTED >&2 #', value: 'payload' },
+      ])).toThrow('Invalid environment variable name');
+    });
+
+    it('should preserve valid names and safely quote values', () => {
+      const result = formatAsExport([
+        { key: '_VALID_123', value: "literal ' quote; $(printf NOT_RUN)\nnext" },
+      ]);
+
+      expect(result).toBe("export _VALID_123='literal '\\'' quote; $(printf NOT_RUN)\nnext'");
+    });
+
+    it('should keep command substitution in values as literal shell data', () => {
+      const script = formatAsExport([
+        { key: 'PAYLOAD', value: '$(printf INJECTED)' },
+      ]);
+      const result = spawnSync(
+        '/bin/sh',
+        ['-c', `${script}\nprintf '%s' "$PAYLOAD"`],
+        { encoding: 'utf8' }
+      );
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe('');
+      expect(result.stdout).toBe('$(printf INJECTED)');
     });
   });
 
