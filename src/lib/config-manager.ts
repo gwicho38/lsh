@@ -7,6 +7,7 @@ import * as fs from 'fs/promises';
 import * as fsSync from 'fs';
 import * as path from 'path';
 import * as os from 'os';
+import { writeSecretFileSync } from './secure-file-writer.js';
 
 export const DEFAULT_CONFIG_DIR = path.join(os.homedir(), '.config', 'lsh');
 export const DEFAULT_CONFIG_FILE = path.join(DEFAULT_CONFIG_DIR, 'lshrc');
@@ -260,8 +261,8 @@ export class ConfigManager {
       return;
     }
 
-    // Write default template
-    await fs.writeFile(this.configFile, DEFAULT_CONFIG_TEMPLATE, 'utf-8');
+    // The config file can carry key material — owner-only and atomic.
+    writeSecretFileSync(this.configFile, DEFAULT_CONFIG_TEMPLATE);
     console.log(`✓ Created config file at ${this.configFile}`);
     console.log(`  Edit with: lsh config`);
   }
@@ -317,7 +318,7 @@ export class ConfigManager {
       this.config = { ...this.config, ...config };
 
       const content = serializeConfig(this.config);
-      await fs.writeFile(this.configFile, content, 'utf-8');
+      writeSecretFileSync(this.configFile, content);
       console.log(`✓ Saved config to ${this.configFile}`);
     } catch (error) {
       console.error(`Failed to save config to ${this.configFile}:`, error);

@@ -218,3 +218,17 @@ export const CRYPTO = {
   /** Plaintext shape written by the structured secrets storage path. */
   PAYLOAD_SECRETS_JSON: 'secrets-json',
 } as const;
+
+/**
+ * Policy for files that can hold plaintext secrets, encryption keys, or
+ * key-bearing backups. Enforced by `src/lib/secure-file-writer.ts`.
+ */
+export const SECURE_FILE = {
+  /** Owner read/write only. */
+  MODE: 0o600,
+  /** Prefix for the same-directory temporary file used for atomic replace. */
+  TEMP_PREFIX: '.lsh-tmp-',
+  /** Operation names used as error context. */
+  WRITE_OPERATION: 'writeSecretFile',
+  COPY_OPERATION: 'copySecretFile',
+} as const;

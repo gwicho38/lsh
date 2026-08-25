@@ -269,6 +269,7 @@ export class IPFSClientManager {
       // Log PID for management
       const pidPath = path.join(this.ipfsDir, 'daemon.pid');
       if (daemon.pid) {
+        // NON_SECRET_WRITE: daemon pid file, no secret material.
         fs.writeFileSync(pidPath, daemon.pid.toString(), 'utf8');
       }
 
