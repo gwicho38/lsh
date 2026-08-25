@@ -14,6 +14,8 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 
+import { writeSecretFileSync } from './secure-file-writer.js';
+
 export const HEX64_REGEX = /^[0-9a-fA-F]{64}$/;
 const FILENAME = 'sync_key.json';
 
@@ -85,10 +87,8 @@ export class SyncKeyStore {
   }
 
   private write(key: string): void {
-    const dir = path.dirname(this.path);
-    fs.mkdirSync(dir, { recursive: true });
-    // Write first, then chmod, so the secret is never world-readable.
-    fs.writeFileSync(this.path, JSON.stringify({ key }));
-    fs.chmodSync(this.path, 0o600);
+    // Atomic same-directory temp file at mode 0600, renamed into place, so the
+    // secret is never world-readable and never partially written.
+    writeSecretFileSync(this.path, JSON.stringify({ key }));
   }
 }

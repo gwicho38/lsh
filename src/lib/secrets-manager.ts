@@ -15,6 +15,7 @@ import { ENV_VARS } from '../constants/index.js';
 import { extractErrorMessage } from './lsh-error.js';
 import { SyncKeyStore } from './sync-key-store.js';
 import { formatAsExport } from './format-utils.js';
+import { copySecretFileSync, writeSecretFileSync } from './secure-file-writer.js';
 
 const logger = createLogger('SecretsManager');
 
@@ -555,7 +556,7 @@ export class SecretsManager {
       // Backup existing .env (unless force is true)
       if (!force) {
         const backup = `${envFilePath}.backup.${Date.now()}`;
-        fs.copyFileSync(envFilePath, backup);
+        copySecretFileSync(envFilePath, backup);
         logger.info(`Backed up existing ${filename} to ${backup}`);
       }
     }
@@ -573,7 +574,7 @@ export class SecretsManager {
     const envContent = this.formatEnvFile(finalEnv);
 
     // Write new .env with restrictive permissions (owner read/write only)
-    fs.writeFileSync(envFilePath, envContent, { encoding: 'utf8', mode: 0o600 });
+    writeSecretFileSync(envFilePath, envContent);
 
     logger.info(`✅ Pulled ${secrets.length} secrets from IPFS`);
 
@@ -805,7 +806,7 @@ export class SecretsManager {
         content += `\n# LSH Secrets Encryption Key (do not commit!)\nLSH_SECRETS_KEY=${key}\n`;
       }
 
-      fs.writeFileSync(envPath, content, { encoding: 'utf8', mode: 0o600 });
+      writeSecretFileSync(envPath, content);
 
       // Set in current process
       process.env[ENV_VARS.LSH_SECRETS_KEY] = key;
@@ -850,7 +851,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 `;
 
       try {
-        fs.writeFileSync(envFilePath, template, { encoding: 'utf8', mode: 0o600 });
+        writeSecretFileSync(envFilePath, template);
         logger.info(`✅ Created ${envFilePath} from template`);
         return true;
       } catch (error) {
@@ -869,7 +870,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
         newContent += `\n# LSH Secrets Encryption Key (auto-generated)\nLSH_SECRETS_KEY=${this.encryptionKey}\n`;
       }
 
-      fs.writeFileSync(envFilePath, newContent, { encoding: 'utf8', mode: 0o600 });
+      writeSecretFileSync(envFilePath, newContent);
       logger.info(`✅ Created ${envFilePath} from ${path.basename(examplePath)}`);
       return true;
     } catch (error) {

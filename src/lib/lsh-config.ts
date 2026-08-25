@@ -11,6 +11,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import { logger } from './logger.js';
+import { extractErrorMessage } from './lsh-error.js';
+import { writeSecretFileSync } from './secure-file-writer.js';
 import { ENV_VARS } from '../constants/index.js';
 
 interface LshConfig {
@@ -44,8 +46,7 @@ export class LshConfigManager {
         return JSON.parse(data);
       }
     } catch (error) {
-      const err = error as Error;
-      logger.warn(`Failed to load config: ${err.message}`);
+      logger.warn(`Failed to load config: ${extractErrorMessage(error)}`);
     }
 
     // Return default config
@@ -60,19 +61,10 @@ export class LshConfigManager {
    */
   private saveConfig(): void {
     try {
-      const dir = path.dirname(this.configPath);
-      if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-      }
-
-      fs.writeFileSync(
-        this.configPath,
-        JSON.stringify(this.config, null, 2),
-        'utf-8'
-      );
+      // Holds per-repository encryption keys — atomic, owner-only.
+      writeSecretFileSync(this.configPath, JSON.stringify(this.config, null, 2));
     } catch (error) {
-      const err = error as Error;
-      logger.error(`Failed to save config: ${err.message}`);
+      logger.error(`Failed to save config: ${extractErrorMessage(error)}`);
       throw error;
     }
   }

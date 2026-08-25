@@ -373,6 +373,7 @@ export class IPFSSync {
         history = history.slice(-100);
       }
 
+      // NON_SECRET_WRITE: CID history only, no secret material.
       await fsPromises.writeFile(this.historyPath, JSON.stringify(history, null, 2), 'utf-8');
     } catch (error) {
       logger.debug(`Failed to save history: ${extractErrorMessage(error)}`);

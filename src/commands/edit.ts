@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import { resolveContext } from '../lib/workspace-context.js';
+import { writeSecretFileSync } from '../lib/secure-file-writer.js';
 import { diffEnv, type EnvDiff } from '../lib/env-file.js';
 import { ensureTargetGitignored, readLocalEnv, writeEnvUpdate } from '../lib/env-store.js';
 import { formatSecrets, type OutputFormat, type SecretEntry } from '../lib/format-utils.js';
@@ -232,7 +233,7 @@ export function registerEditCommand(program: Command): void {
         // Default path: open the editor.
         if (!fs.existsSync(filePath)) {
           ensureTargetGitignored(filePath);
-          fs.writeFileSync(filePath, '', { mode: 0o600 });
+          writeSecretFileSync(filePath, '');
           console.log(chalk.gray(`${EDIT_MESSAGES.CREATED_FILE_PREFIX}${filePath}`));
         }
         await openInEditor(filePath);
