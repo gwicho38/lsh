@@ -196,6 +196,33 @@ describe('secrets-envelope', () => {
     it('should never write the legacy format', () => {
       expect(isLegacyEnvelope(encryptEnvelope(PLAINTEXT, KEY, { environment: 'dev' }))).toBe(false);
     });
+
+    it('should flag a legacy read as unauthenticated, because CBC is malleable', () => {
+      // This documents a residual risk rather than a guarantee. CBC has no MAC, so an
+      // attacker who can serve the bytes can flip IV bits to make controlled edits to the
+      // first plaintext block. The read therefore MUST be reported as `legacy: true` so
+      // callers can warn before trusting or writing it. Only the AEAD envelope has integrity.
+      const payload = legacyCbcPayload(PLAINTEXT, KEY);
+      const [ivHex, ctHex] = payload.split(':');
+      const iv = Buffer.from(ivHex, 'hex');
+      const known = Buffer.from(PLAINTEXT.slice(0, 16), 'utf8');
+      const forged = Buffer.from('EVIL_KEY=pwned!!', 'utf8');
+      for (let i = 0; i < 16; i++) iv[i] ^= known[i] ^ forged[i];
+
+      const opened = decryptEnvelope(`${iv.toString('hex')}:${ctHex}`, KEY);
+
+      expect(opened.legacy).toBe(true);
+      expect(opened.plaintext.startsWith('EVIL_KEY=pwned!!')).toBe(true);
+    });
+
+    it('should authenticate the AEAD envelope against the same class of edit', () => {
+      const parsed = JSON.parse(encryptEnvelope(PLAINTEXT, KEY));
+      const iv = Buffer.from(parsed.iv, 'hex');
+      iv[0] ^= 0x01;
+      parsed.iv = iv.toString('hex');
+
+      expect(() => decryptEnvelope(JSON.stringify(parsed), KEY)).toThrow(/could not be authenticated/);
+    });
   });
 
   describe('deterministic vectors', () => {

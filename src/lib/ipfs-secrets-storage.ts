@@ -367,15 +367,20 @@ export class IPFSSecretsStorage {
       );
     }
 
+    // Never put the underlying parse error in the message or the context: V8 echoes a
+    // prefix of its input, and the input here is decrypted plaintext.
+    let parsed: unknown;
     try {
-      return JSON.parse(opened.plaintext) as Secret[];
-    } catch (error) {
-      throw new LSHError(
-        ErrorCodes.SECRETS_DECRYPTION_FAILED,
-        ERRORS.ENVELOPE_MALFORMED,
-        { reason: extractErrorMessage(error) }
-      );
+      parsed = JSON.parse(opened.plaintext);
+    } catch {
+      throw new LSHError(ErrorCodes.SECRETS_DECRYPTION_FAILED, ERRORS.ENVELOPE_PAYLOAD_NOT_JSON);
     }
+
+    if (!Array.isArray(parsed)) {
+      throw new LSHError(ErrorCodes.SECRETS_DECRYPTION_FAILED, ERRORS.ENVELOPE_PAYLOAD_SHAPE_INVALID);
+    }
+
+    return parsed as Secret[];
   }
 
   /**

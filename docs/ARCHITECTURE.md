@@ -243,8 +243,17 @@ content key is `sha256(LSH_SECRETS_KEY)`.
   non-space character: the envelope is JSON and starts with `{`.
 - Legacy payloads are decrypted for migration only. LSH **never writes** the legacy format
   and **never silently re-publishes** a legacy payload during a pull. A pull that reads one
-  prints a notice; the payload is upgraded only by an explicit push, which leaves the old
-  CID intact for rollback.
+  prints the notice *before* the output file is replaced; the payload is upgraded only by an
+  explicit push, which leaves the old CID intact for rollback.
+- **Residual risk of the legacy path.** Reading CBC at all means reading unauthenticated
+  ciphertext, and no implementation can change that. Concretely, for a payload in the legacy
+  form an attacker who can serve the bytes can (a) bit-flip the IV or a ciphertext block to
+  make controlled edits to the decrypted `.env` — CBC is malleable — and (b) forge a blob that
+  passes PKCS#7 padding roughly once in 256 attempts, yielding arbitrary garbage rather than a
+  clean failure. The distinct legacy failure message is also a padding oracle in principle.
+  These are the reasons legacy support exists only to be migrated away from: upgrade every
+  payload with a push, after which every read of that pointer is authenticated. Only the AEAD
+  envelope provides integrity.
 - An envelope whose `v` is not understood is rejected rather than guessed at, so an older
   LSH fails loudly instead of writing garbage to `.env`.
 - Authentication is verified **before** the plaintext is parsed or written, so a tampered

@@ -108,6 +108,12 @@ To fix this:
     '  1. Confirm LSH_SECRETS_KEY matches the key used to push\n' +
     '  2. Generate a shared key with: lsh key\n' +
     '  3. Re-push from a trusted machine if the payload is suspect',
+  ENVELOPE_PAYLOAD_NOT_JSON:
+    'The decrypted payload is not valid JSON.\n' +
+    'It was probably written by a different lsh surface: `lsh sync push` stores raw .env\n' +
+    'text, while `lsh push` stores a JSON secrets array. Pull it with the matching command.',
+  ENVELOPE_PAYLOAD_SHAPE_INVALID:
+    'The decrypted payload is valid JSON but is not a secrets array.',
   ENVELOPE_LEGACY_DECRYPT_FAILED:
     'Decryption of a legacy (unauthenticated) payload failed.\n' +
     'This usually means LSH_SECRETS_KEY does not match the key used to push.\n' +

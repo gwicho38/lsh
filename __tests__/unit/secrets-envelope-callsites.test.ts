@@ -11,7 +11,8 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { IPFSSecretsStorage } from '../../src/lib/ipfs-secrets-storage.js';
 import type { Secret } from '../../src/lib/secrets-manager.js';
-import { isLegacyEnvelope } from '../../src/lib/secrets-envelope.js';
+import { encryptEnvelope, isLegacyEnvelope } from '../../src/lib/secrets-envelope.js';
+import { extractErrorMessage } from '../../src/lib/lsh-error.js';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
@@ -86,6 +87,36 @@ describe('active sync paths use the AEAD envelope', () => {
     it('should still read a legacy CBC payload for migration', () => {
       const adapter = storageCrypto();
       expect(adapter.decryptSecrets(legacySecretsPayload(SECRETS, KEY), KEY)).toEqual(SECRETS);
+    });
+
+    it('should not echo decrypted plaintext when the payload is not JSON', () => {
+      // `lsh sync push` stores raw .env text; reading it through this adapter fails to
+      // parse. V8's JSON SyntaxError quotes a prefix of its input, so the parse error must
+      // never reach the message or the context — that input is decrypted secret material.
+      const adapter = storageCrypto();
+      const envText = encryptEnvelope('API_KEY=sk_live_TOPSECRET\nDB=postgres://u:pw@h/db\n', KEY, {
+        payload: 'env-text',
+      });
+
+      let reported = '';
+      try {
+        adapter.decryptSecrets(envText, KEY);
+        throw new Error('expected decryptSecrets to throw');
+      } catch (error) {
+        reported = extractErrorMessage(error);
+      }
+
+      expect(reported).not.toContain('API_KEY');
+      expect(reported).not.toContain('sk_live');
+      expect(reported).not.toContain('Unexpected token');
+      expect(reported).toContain('not valid JSON');
+    });
+
+    it('should reject a decrypted payload that parses but is not a secrets array', () => {
+      const adapter = storageCrypto();
+      const notAnArray = encryptEnvelope(JSON.stringify({ API_KEY: 'sk_live_TOPSECRET' }), KEY);
+
+      expect(() => adapter.decryptSecrets(notAnArray, KEY)).toThrow(/not a secrets array/);
     });
   });
 

@@ -70,6 +70,8 @@ export declare const ERRORS: {
     readonly ENVELOPE_UNSUPPORTED_VERSION: "Unsupported secrets envelope version. Upgrade lsh to read this payload.";
     readonly ENVELOPE_UNSUPPORTED_ALGORITHM: "Unsupported secrets envelope algorithm";
     readonly ENVELOPE_AUTHENTICATION_FAILED: string;
+    readonly ENVELOPE_PAYLOAD_NOT_JSON: string;
+    readonly ENVELOPE_PAYLOAD_SHAPE_INVALID: "The decrypted payload is valid JSON but is not a secrets array.";
     readonly ENVELOPE_LEGACY_DECRYPT_FAILED: string;
 };
 export declare const RISK_LEVELS: {
