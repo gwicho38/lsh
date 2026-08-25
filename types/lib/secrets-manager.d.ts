@@ -63,14 +63,6 @@ export declare class SecretsManager {
      */
     private getDefaultEncryptionKey;
     /**
-     * Encrypt a value using AES-256-GCM with authentication tag
-     */
-    private encrypt;
-    /**
-     * Decrypt a value (supports both AES-256-GCM and legacy AES-256-CBC)
-     */
-    private decrypt;
-    /**
      * Parse .env file into key-value pairs
      */
     private parseEnvFile;

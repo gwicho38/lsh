@@ -21,7 +21,8 @@ flowchart TD
     CLI["CLI Layer — src/cli.ts<br/>(command registration, option parsing)"]
     CMD["Commands — src/commands/<br/>init · doctor · config · sync · sync-history<br/>ipfs · migrate · context · self · completion"]
     SVC["Secrets Service — src/services/secrets/secrets.ts<br/>(push · pull · get · set · list · key)"]
-    SM["SecretsManager — src/lib/secrets-manager.ts<br/>(AES-256, git-context, destructive-change detection)"]
+    SM["SecretsManager — src/lib/secrets-manager.ts<br/>(git-context, destructive-change detection)"]
+    ENV["SecretsEnvelope — src/lib/secrets-envelope.ts<br/>(AES-256-GCM versioned envelope)"]
     STORE["IPFSSecretsStorage — src/lib/ipfs-secrets-storage.ts"]
     SYNC["IPFSSync — src/lib/ipfs-sync.ts"]
     IPNS["IPNSKeyManager — src/lib/ipns-key-manager.ts"]
@@ -74,7 +75,8 @@ flowchart TD
 ### Secrets + IPFS core (`src/lib/`)
 
 ```
-secrets-manager.ts            AES-256 encrypt/decrypt, git repo/branch context,
+secrets-envelope.ts           versioned AES-256-GCM envelope (encrypt/decrypt for every sync path)
+secrets-manager.ts            git repo/branch context,
   ├── logger.ts               destructive-change detection
   ├── git-utils.ts
   ├── ipfs-sync-logger.ts
@@ -142,7 +144,7 @@ sequenceDiagram
 
     U->>S: read .env + git context
     S->>K: resolve LSH_SECRETS_KEY
-    S->>S: AES-256 encrypt + detect destructive changes
+    S->>S: AES-256-GCM envelope encrypt + detect destructive changes
     S->>St: store(ciphertext, metadata)
     St->>Sy: ipfs add → CID
     Sy->>Kubo: POST /api/v0/add
@@ -165,7 +167,7 @@ sequenceDiagram
     N->>Kubo: POST /api/v0/name/resolve → CID
     U->>Sy: cat CID
     Sy->>Kubo: POST /api/v0/cat → ciphertext
-    U->>S: AES-256 decrypt
+    U->>S: verify auth tag, then AES-256-GCM decrypt
     S-->>U: write .env
 ```
 
@@ -204,10 +206,53 @@ service when `LSH_PIN_TOKEN` is set (endpoint defaults to 4EVERLAND, override vi
 
 ## Security considerations
 
-1. **Secrets encryption** — AES-256 for all stored `.env` content; keys never leave the machine.
+1. **Secrets encryption** — **AES-256-GCM** (authenticated encryption) for all stored `.env`
+   content, in a versioned envelope; keys never leave the machine. See
+   [Secrets envelope format](#secrets-envelope-format) below.
 2. **Key handling** — `LSH_SECRETS_KEY` resolved via `SyncKeyStore` (env → `.env` → `~/.config/lsh`); shared out-of-band (password manager) for team sync.
 3. **Destructive-change detection** — `secrets-manager` refuses to overwrite a remote blob that would drop keys without an explicit flag.
 4. **Input validation** — `command-validator.ts` / `env-validator.ts` / `validation-framework.ts` remain in the tree with strong coverage; they gate the dormant daemon/API surface and are available for reuse.
+
+### Secrets envelope format
+
+Every active write path — `lsh push`, `lsh sync push`, and `lsh sync now` — serializes its
+ciphertext with `src/lib/secrets-envelope.ts` into one self-describing envelope:
+
+```json
+{"v":1,"alg":"aes-256-gcm","meta":{"environment":"prod","payload":"env-text","repo":"lsh"},
+ "iv":"<24 hex chars>","tag":"<32 hex chars>","ct":"<hex>"}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `v`   | Envelope wire-format version (currently `1`). |
+| `alg` | Exact algorithm. New writes are always `aes-256-gcm`. |
+| `meta`| Bounded authenticated metadata: `environment`, `repo`, `payload` (plaintext shape). Capped at 1 KiB; unknown keys are rejected. |
+| `iv`  | 96-bit random GCM nonce, fresh per write. |
+| `tag` | 128-bit GCM authentication tag. |
+| `ct`  | Hex ciphertext. |
+
+The additional authenticated data is the canonical serialization of `{v, alg, meta}`, so
+tampering with the version, the algorithm name, or the metadata fails authentication. The
+content key is `sha256(LSH_SECRETS_KEY)`.
+
+**Compatibility policy.**
+
+- Reads accept the envelope **and** the legacy unauthenticated two-part
+  `ivHex:ciphertextHex` AES-256-CBC payload. The two are distinguished by the first
+  non-space character: the envelope is JSON and starts with `{`.
+- Legacy payloads are decrypted for migration only. LSH **never writes** the legacy format
+  and **never silently re-publishes** a legacy payload during a pull. A pull that reads one
+  prints a notice; the payload is upgraded only by an explicit push, which leaves the old
+  CID intact for rollback.
+- An envelope whose `v` is not understood is rejected rather than guessed at, so an older
+  LSH fails loudly instead of writing garbage to `.env`.
+- Authentication is verified **before** the plaintext is parsed or written, so a tampered
+  payload can never reach `JSON.parse` or the output file.
+
+> The two write paths still wrap *different plaintext shapes* — raw `.env` text for the
+> `lsh sync` surface and a JSON `Secret[]` for `lsh push`. The `meta.payload` field records
+> which; unifying the shapes is tracked separately.
 
 ## Testing strategy
 
