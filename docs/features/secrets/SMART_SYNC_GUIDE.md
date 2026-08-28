@@ -301,12 +301,6 @@ npm start
 ### Advanced Options
 
 ```bash
-# Dry run - see what would happen without executing
-lsh sync --dry-run
-
-# Legacy mode - just show suggestions, don't auto-execute
-lsh sync --legacy
-
 # Sync and load with custom environment
 eval "$(lsh sync --env production --load)"
 
@@ -390,12 +384,12 @@ If mismatch:
 
 ```bash
 # Setup encryption key
-lsh key
+lsh sync --key
 # Copy key to .env manually
 echo "LSH_SECRETS_KEY=abc..." >> .env
 
 # Check status
-lsh status
+lsh sync --status
 
 # Look at suggestions
 lsh sync
@@ -583,7 +577,8 @@ lsh sync
 
 ### Q: What if I want manual control?
 
-**A:** Use `--dry-run` to see what would happen, or `--legacy` for suggestion-only mode.
+**A:** There's no dry-run mode — `lsh sync --status` shows what sync would do (push, pull, or nothing) without
+doing it.
 
 ### Q: Does it handle multiple .env files?
 
@@ -599,7 +594,7 @@ lsh sync --file .env.staging --env staging
 
 ### Q: Can I disable auto-execution?
 
-**A:** Yes! Use `--dry-run` or `--legacy` flags for manual workflow.
+**A:** Use plain `lsh push` / `lsh pull` for manual control instead of `lsh sync`.
 
 ### Q: I'm getting "zsh: no matches found" errors with --load. What's wrong?
 
@@ -631,7 +626,7 @@ Smart Sync makes secrets management effortless:
 **Before Smart Sync:**
 ```bash
 # 10+ commands to set up and sync
-lsh key
+lsh sync --key
 echo "LSH_SECRETS_KEY=..." >> .env
 lsh push
 # ... on another machine

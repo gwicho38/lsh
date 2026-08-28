@@ -3,7 +3,7 @@
  * Tests for the IPFSSecretsStorage class
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
@@ -152,6 +152,22 @@ describe('IPFS Secrets Storage', () => {
 
       expect(storage.exists('exists-test')).toBe(true);
       expect(storage.exists('nonexistent')).toBe(false);
+    });
+
+    it('clearMetadata should delete the metadata file and drop in-memory entries', async () => {
+      await storage.push([{ key: 'TEST', value: 'value' }], 'repair-test', 'key');
+      const metadataPath = path.join(testDir, '.lsh', 'secrets-metadata.json');
+      expect(fs.existsSync(metadataPath)).toBe(true);
+      expect(storage.exists('repair-test')).toBe(true);
+
+      await storage.clearMetadata();
+
+      expect(fs.existsSync(metadataPath)).toBe(false);
+      expect(storage.exists('repair-test')).toBe(false);
+    });
+
+    it('clearMetadata should not throw when no metadata file exists yet', async () => {
+      await expect(storage.clearMetadata()).resolves.toBeUndefined();
     });
   });
 

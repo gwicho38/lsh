@@ -184,7 +184,7 @@ export const INIT_MESSAGES = {
   WELCOME: '🚀 Welcome to LSH Setup',
   STEP_COMPLETE: '✅ Step complete',
   SETUP_COMPLETE: '✅ Setup complete!',
-  CONNECTION_TEST_SKIPPED: '⚠️  Connection test skipped. Run "lsh doctor" after setup to verify.',
+  CONNECTION_TEST_SKIPPED: '⚠️  Connection test skipped. Run "lsh sync --doctor" after setup to verify.',
 } as const;
 
 /**
@@ -239,89 +239,71 @@ export const CLI_HELP = {
   SEPARATOR: '================================',
 
   // Section headers
-  SECTION_SECRETS: '🔐 Secrets Management Commands:',
-  SECTION_IPFS: '🔄 IPFS Sync:',
+  SECTION_SECRETS: '🔐 Commands:',
   SECTION_QUICK_START: '🚀 Quick Start:',
-  SECTION_MORE: '📚 More Commands:',
+  SECTION_MORE: '📚 More:',
   SECTION_USAGE: 'Usage:',
   SECTION_MAIN_COMMANDS: 'Main Commands:',
-  SECTION_SELF_MANAGEMENT: 'Self-Management:',
+  SECTION_SYNC_FLAGS: 'Sync flags (setup, keys, health):',
+  SECTION_EDIT_FLAGS: 'Edit flags (read/write the local .env):',
   SECTION_EXAMPLES: 'Examples:',
   SECTION_FEATURES: 'Features:',
   SECTION_FIRST_TIME: 'First-Time Setup:',
   SECTION_DAILY_USAGE: 'Daily Usage:',
 
-  // Secrets commands
-  CMD_INIT: '  init                    Interactive setup wizard (first-time setup)',
-  CMD_DOCTOR: '  doctor                  Check configuration and connectivity',
-  CMD_SYNC: '  sync                    Check sync status & get recommendations',
-  CMD_PUSH: '  push                    Upload .env to encrypted cloud storage',
-  CMD_PULL: '  pull                    Download .env from cloud storage',
-  CMD_LIST: '  list                    List secrets in current local .env file',
-  CMD_ENV: '  env [name]              List/view cloud environments',
-  CMD_KEY: '  key                     Generate encryption key',
-  CMD_CREATE: '  create                  Create new .env file',
-  CMD_GET: '  get <key>               Get a specific secret value (--all for all)',
-  CMD_SET: '  set <key> <value>       Set a specific secret value',
-  CMD_DELETE: '  delete                  Delete .env file',
-  CMD_CP: '  cp <from> <to>          Copy env variables between files (--name to copy one variable)',
-  CMD_STATUS: '  status                  Get detailed secrets status',
-
-  // IPFS commands
-  CMD_SYNC_INIT: '  sync init               Full IPFS setup (install, init, start)',
-  CMD_SYNC_PUSH: '  sync push               Push secrets to IPFS → get CID',
-  CMD_SYNC_PULL: '  sync pull <cid>         Pull secrets by CID',
-  CMD_SYNC_STATUS: '  sync status             Check IPFS and sync status',
-  CMD_SYNC_START_STOP: '  sync start/stop         Control IPFS daemon',
+  // Top-level commands
+  CMD_SYNC: '  sync                    Setup, keys, health check, status, two-way sync (see sync --help)',
+  CMD_PUSH: '  push                    Encrypt the local .env and push it to cloud storage',
+  CMD_PULL: '  pull                    Pull and decrypt a .env from cloud storage',
+  CMD_EDIT: '  edit                    Get, set, or list secrets in the local .env',
+  CMD_HELP_OPT: '  --help                  Show all options',
 
   // Quick start commands
-  QUICK_SYNC_INIT: '  lsh sync init                     # One-time IPFS setup',
-  QUICK_SYNC_PUSH: '  lsh sync push                     # Push secrets to IPFS',
-  QUICK_SYNC_PULL: '  lsh sync pull <cid>               # Pull on another machine',
-
-  // More commands
-  CMD_CONFIG: '  config                  Manage LSH configuration (~/.config/lsh/lshrc)',
-  CMD_SELF: '  self                    Self-management commands',
-  CMD_HELP_OPT: '  --help                  Show all options',
+  QUICK_SYNC_INIT: '  lsh sync --init                   # One-time setup: installs IPFS, generates a key',
+  QUICK_PUSH: '  lsh push                          # Push secrets to the cloud',
+  QUICK_PULL: '  lsh pull                          # Pull secrets on another machine',
 
   // Documentation link
   DOCS_LINK: '📖 Documentation: https://github.com/gwicho38/lsh',
 
   // Detailed help - Usage
   USAGE_DEFAULT: '  lsh                    Show help (default)',
-  USAGE_INIT: '  lsh init               Interactive setup wizard',
   USAGE_PUSH: '  lsh push               Push secrets to cloud',
   USAGE_PULL: '  lsh pull               Pull secrets from cloud',
+  USAGE_SYNC: '  lsh sync               Setup, keys, health check, status, two-way sync',
+  USAGE_EDIT: '  lsh edit               Edit the local .env',
 
   // Detailed help - Main commands
-  MAIN_INIT: '  init                   Interactive setup wizard (first-time)',
-  MAIN_DOCTOR: '  doctor                 Health check & troubleshooting',
-  MAIN_ENV: '  env                    Show local .env file contents',
-  MAIN_KEY: '  key                    Generate encryption key',
-  MAIN_STATUS: '  status                 Detailed status report',
+  MAIN_PUSH: '  push                   Encrypt & push .env to cloud storage',
+  MAIN_PULL: '  pull                   Pull & decrypt .env from cloud storage',
+  MAIN_SYNC: '  sync                   Setup, keys, health check, status (see flags below)',
+  MAIN_EDIT: '  edit                   Get, set, or list secrets in the local .env',
 
-  // Detailed help - IPFS Sync
-  DETAIL_SYNC_INIT: '  sync init              Full IPFS setup (install, init, start)',
-  DETAIL_SYNC_PUSH: '  sync push              Push secrets to IPFS → get CID',
-  DETAIL_SYNC_PULL: '  sync pull <cid>        Pull secrets by CID',
-  DETAIL_SYNC_STATUS: '  sync status            Check IPFS client, daemon, and sync status',
-  DETAIL_SYNC_START: '  sync start             Start IPFS daemon',
-  DETAIL_SYNC_STOP: '  sync stop              Stop IPFS daemon',
-  DETAIL_SYNC_HISTORY: '  sync history           View sync history',
+  // Detailed help - sync flags
+  SYNC_FLAG_INIT: '  --init                 Run the setup wizard (installs IPFS, generates a key)',
+  SYNC_FLAG_KEY: '  --key [value]          Print the encryption key, or import one',
+  SYNC_FLAG_DOCTOR: '  --doctor               Run a health check',
+  SYNC_FLAG_STATUS: '  --status               Show context, tracked environment, and IPFS state',
+  SYNC_FLAG_LOAD: '  --load                 Print export lines for eval "$(lsh sync --load)"',
+  SYNC_FLAG_CONFIG: '  --config               Print the resolved configuration and its source path',
+  SYNC_FLAG_REPAIR: '  --repair               Clear local metadata and cache to unstick registries',
+  SYNC_FLAG_HISTORY: '  --history              Show immutable IPFS sync records',
+  SYNC_FLAG_VERIFY: '  --verify <cid>         Check that a CID is retrievable',
 
-  // Detailed help - Self management
-  SELF_UPDATE: '  self update            Update to latest version',
-  SELF_VERSION: '  self version           Show version information',
-  SELF_UNINSTALL: '  self uninstall         Uninstall from system',
+  // Detailed help - edit flags
+  EDIT_FLAG_GET: '  --get [key]            Print one value, or every value with --all',
+  EDIT_FLAG_SET: '  --set <key>=<value>    Set a specific secret value',
+  EDIT_FLAG_LIST: '  --list                 Print a masked table of keys',
+  EDIT_FLAG_COPY_FROM: '  --copy-from <env>      Merge another environment\'s vars into this one',
 
   // Example commands
-  EX_SYNC_INIT: '    lsh sync init                           # One-time IPFS setup',
-  EX_DOCTOR: '    lsh doctor                              # Verify setup',
-  EX_SYNC_PUSH: '    lsh sync push                           # Push to IPFS → get CID',
-  EX_SYNC_PULL: '    lsh sync pull <cid>                     # Pull by CID',
-  EX_ENV_MASKED: '    lsh env --masked                        # View local secrets',
-  EX_GET: '    lsh get API_KEY                         # Get specific secret',
-  EX_SET: '    lsh set API_KEY newvalue                # Update secret',
+  EX_SYNC_INIT: '    lsh sync --init                         # One-time setup',
+  EX_SYNC_DOCTOR: '    lsh sync --doctor                       # Verify setup',
+  EX_PUSH: '    lsh push                                # Push to the cloud',
+  EX_PULL: '    lsh pull                                # Pull on another machine',
+  EX_EDIT_LIST: '    lsh edit --list                         # View local secrets, masked',
+  EX_EDIT_GET: '    lsh edit --get API_KEY                  # Get specific secret',
+  EX_EDIT_SET: '    lsh edit --set API_KEY=newvalue         # Update secret',
 
   // Features
   FEATURE_CROSS_PLATFORM: '  ✅ Cross-platform (Windows, macOS, Linux)',
@@ -333,4 +315,123 @@ export const CLI_HELP = {
 
   // Footer
   NEED_HELP: 'Need help? Visit https://github.com/gwicho38/lsh',
+} as const;
+
+/**
+ * Messages for `lsh pull --cid` / `lsh pull --repo`
+ */
+export const PULL_MESSAGES = {
+  KEY_REQUIRED: 'LSH_SECRETS_KEY is required. Run: lsh sync --init',
+  DOWNLOAD_FAILED: 'Download failed.',
+  CID_UNAVAILABLE_HINT: 'The CID might not be available on public gateways yet.',
+  DAEMON_OFFLINE_HINT: 'Make sure the source machine is online with IPFS daemon running.',
+  INVALID_ENCRYPTED_FORMAT: 'Invalid encrypted data format',
+  DECRYPTION_FAILED: 'Decryption failed. Wrong encryption key!',
+  WRONG_KEY_HINT: 'Make sure LSH_SECRETS_KEY matches the key used to push.',
+  UNRECOGNIZED_PAYLOAD:
+    'CID contents are not in a recognized format (expected pushed secrets or raw .env text). Nothing was written.',
+} as const;
+
+/**
+ * Messages for `lsh edit`
+ */
+export const EDIT_MESSAGES = {
+  DESCRIPTION: 'Edit the local .env, then optionally push the change',
+  OPTION_FILE: 'Path to .env file',
+  OPTION_ENV: 'Environment name (dev/staging/prod)',
+  OPTION_GLOBAL: 'Use global workspace ($HOME)',
+  OPTION_GET: 'Print one value, or every value with --all',
+  OPTION_ALL: 'With --get, print every value',
+  OPTION_SET: 'Set KEY=VALUE',
+  OPTION_LIST: 'Print a masked table of keys',
+  OPTION_COPY_FROM: "Merge another environment's vars into this one",
+  OPTION_NO_PUSH: 'Never prompt to push after editing',
+  OPTION_FORMAT: 'Output format: env, json, yaml, toml, export',
+
+  KEY_NOT_FOUND_PREFIX: 'Key not found: ',
+  NO_ENV_FILE_PREFIX: 'No .env file at ',
+  SET_USAGE: '--set expects KEY=VALUE',
+  CREATED_FILE_PREFIX: 'Created ',
+  NO_CHANGES: 'No changes.',
+  NOT_PUSHED: 'Not pushed.',
+  NOT_PUSHED_HINT_PREFIX: 'Not pushed. Run: lsh push --env ',
+  PUSH_PROMPT_PREFIX: 'Push to ',
+  PUSH_PROMPT_SUFFIX: '? [Y/n] ',
+  MERGED_PREFIX: 'Merged ',
+  MERGED_SUFFIX: ' from ',
+  FAILED_TO_EDIT: 'Failed to edit secrets:',
+  UNKNOWN_FORMAT_PREFIX: 'Unknown format ',
+  VALID_FORMATS_PREFIX: '. Valid: ',
+  KEY_LABEL: 'key',
+  KEYS_LABEL: 'keys',
+  EDITED_SUFFIX: ' edited:  ',
+} as const;
+
+/**
+ * Messages for `lsh sync`
+ */
+export const SYNC_MESSAGES = {
+  DESCRIPTION: 'Two-way sync of secrets, plus setup, keys, and health',
+  OPTION_FILE: 'Path to .env file',
+  OPTION_ENV: 'Environment name (dev/staging/prod)',
+  OPTION_GLOBAL: 'Use global workspace ($HOME)',
+  OPTION_FORCE: 'Accept destructive actions: sync past change detection, or replace an existing key',
+  OPTION_LOAD: 'Print export lines for eval "$(lsh sync --load)"',
+  OPTION_STATUS: 'Show context, tracked environment, and IPFS state',
+  OPTION_FORMAT: 'Output format for --status, --history, --config: table or json',
+  OPTION_INIT: 'Run the setup wizard (installs IPFS, generates a key)',
+  OPTION_KEY: 'Print the encryption key, or import one',
+  OPTION_CONFIG: 'Print the resolved configuration and its source path',
+  OPTION_DOCTOR: 'Run a health check',
+  OPTION_REPAIR: 'Clear local metadata and cache to unstick registries',
+  OPTION_HISTORY: 'Show immutable IPFS sync records',
+  OPTION_VERIFY: 'Check that a CID is retrievable',
+  FAILED_TO_SYNC: 'Failed to sync secrets:',
+  FAILED_TO_CHECK_STATUS: 'Failed to check status:',
+  FAILED_TO_REPAIR: 'Failed to repair:',
+  FAILED_TO_GET_HISTORY: 'Failed to get history:',
+  FAILED_TO_VERIFY: 'Failed to verify:',
+  STATUS_HEADER_PREFIX: 'lsh sync --status - ',
+  LOCAL_LABEL: '  local .env present   ',
+  REMOTE_LABEL: '  remote present       ',
+  REMOTE_UNKNOWN: 'unknown',
+  REMOTE_UNKNOWN_HINT: '  (IPFS daemon not reachable)',
+  KEY_SET_LABEL: '  encryption key set   ',
+  KEY_MATCHES_LABEL: '  key matches remote   ',
+  DAEMON_UNREACHABLE_HINT: '\n  Run `lsh sync --init` to install and start IPFS.',
+  SUGGESTIONS_HEADER: '\nSuggestions:',
+  SUGGESTION_PREFIX: '  - ',
+  KEY_NOT_FOUND: 'No encryption key found. Run: lsh sync --init',
+  KEY_INVALID_FORMAT: 'Invalid key format. Expected 64 hex characters (256-bit key).',
+  KEY_ALREADY_CONFIGURED: 'This key is already configured.',
+  KEY_REPLACE_REFUSED_1_PREFIX: 'An encryption key is already configured in ',
+  KEY_REPLACE_REFUSED_1_SUFFIX: ' and is different from this one.',
+  KEY_REPLACE_REFUSED_2: 'Replacing it makes secrets already pushed with the old key undecryptable.',
+  KEY_REPLACE_REFUSED_3: 'If that is what you want, re-run with --force.',
+  KEY_SHADOW_REFUSED_1_PREFIX: 'The active encryption key currently comes from ',
+  KEY_SHADOW_REFUSED_1_SUFFIX: ', a different key than this one.',
+  KEY_SHADOW_REFUSED_2:
+    'Writing to this file would take priority over it, making secrets already pushed under it undecryptable.',
+  KEY_SAVED_PREFIX: 'Key saved to ',
+  KEY_EFFECTIVE_DIFFERS: 'Note: the active LSH_SECRETS_KEY differs from what was just written — an environment variable or another .env file takes precedence at runtime.',
+  CONFIG_PATH_PREFIX: 'Config file: ',
+  CONFIG_EMPTY: 'No configuration found',
+  HISTORY_RECENT_HEADER: '\nRecent Sync Activity\n',
+  HISTORY_RECENT_EMPTY: 'No recent sync activity found.',
+  HISTORY_FILE_LABEL: 'File: ',
+  HISTORY_SIZE_LABEL: 'Size: ',
+  HISTORY_TIME_LABEL: 'Time: ',
+  HISTORY_REPO_LABEL: 'Repo: ',
+  HISTORY_ENV_LABEL: 'Env:  ',
+  HISTORY_RECORDS_HEADER: '\nImmutable Sync Records\n',
+  HISTORY_RECORDS_EMPTY: 'No immutable sync records found.',
+  HISTORY_NO_REPO: '(no repo)',
+  HISTORY_TOTAL_PREFIX: 'Total: ',
+  HISTORY_TOTAL_SUFFIX: ' records',
+  HISTORY_UNREADABLE_SUFFIX: ' record(s) could not be retrieved',
+  REPAIR_SUCCESS: 'Local sync metadata and cache cleared.',
+  VERIFY_AVAILABLE: 'CID is accessible.',
+  VERIFY_UNAVAILABLE: 'CID is not accessible on the network.',
+  VERIFY_CID_LABEL: 'CID: ',
+  VERIFY_SOURCE_LABEL: 'Source: ',
 } as const;

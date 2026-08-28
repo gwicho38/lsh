@@ -24,3 +24,8 @@ export declare const SYSTEM: {
     readonly UNKNOWN_USER: "unknown";
     readonly DEFAULT_HOSTNAME: "localhost";
 };
+/** .gitignore patterns ensureEnvInGitignore keeps every secrets-bearing local file covered by. */
+export declare const ENV_GITIGNORE_PATTERNS: readonly [".env", ".env.local", ".env.*.local", ".env.copyfrom.*", ".env.backup.*"];
+export declare const ENV_GITIGNORE_HEADER = "# Environment variables (managed by LSH)";
+/** Suffix ensureEnvInGitignore appends to a target file's basename to gitignore its backups. */
+export declare const ENV_BACKUP_SUFFIX_PATTERN = ".backup.*";

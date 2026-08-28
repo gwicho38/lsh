@@ -55,82 +55,56 @@ $ lsh push
 
 ### View History
 
+`lsh sync --history` replaces every v3 `sync-history` subcommand — there is no separate `show`, `list`,
+`--all`, or `--url` flag. One call prints recent local sync activity plus the full immutable record log:
+
 ```bash
-# Show history for current repo/environment
-$ lsh sync-history show
+$ lsh sync --history
 
-📊 Sync History for: myproject/dev
+Recent Sync Activity
 
-2025-11-20 21:00:00  push    60 keys  myproject/dev
-2025-11-20 20:45:00  pull    60 keys  myproject/dev
-2025-11-20 20:30:00  push    58 keys  myproject/dev
+bafkreiabc123...
+  File: .env
+  Size: 412 bytes
+  Time: 11/20/2025, 9:00:00 PM
 
-📦 Total: 3 records
-🔒 All records are permanently stored on IPFS
+Immutable Sync Records
+
+11/20/2025, 9:00:00 PM  push    60 keys     myproject/dev
+11/20/2025, 8:45:00 PM  pull    60 keys     myproject/dev
+11/20/2025, 8:30:00 PM  push    58 keys     myproject/dev
+
+Total: 3 records
 ```
 
-### View All Records
+Records span every repo and environment LSH has synced from this machine — not just the current directory.
+
+### Machine-Readable Output
 
 ```bash
-# Show all records across all repos/environments
-$ lsh sync-history show --all
-
-📊 All Sync History
-
-2025-11-20 21:00:00  push    60 keys  myproject/dev
-2025-11-20 19:30:00  pull    45 keys  otherproject/prod
-2025-11-20 18:15:00  push    32 keys  backend/staging
-
-📦 Total: 3 records
+$ lsh sync --history --format json
+{
+  "recent": [ ... ],
+  "records": [ ... ],
+  "unreadableRecords": 0
+}
 ```
 
-### View Specific Record
+Where the v3 docs showed `--json`, use `--format json` in v4.
+
+### Check a Specific Record
+
+The v3 `sync-history get <cid>` command split into two v4 replacements depending on what you need:
 
 ```bash
-$ lsh sync-history get bafkreiabc123...
+# Confirm a CID is still retrievable from the local daemon or a public gateway
+$ lsh sync --verify bafkreiabc123...
+✓ CID is available
+CID:    bafkreiabc123...
+Source: local daemon
 
-📄 Sync Record
-
-CID:         ipfs://bafkreiabc123...
-Timestamp:   Nov 20, 2025, 9:00 PM
-Command:     lsh sync
-Action:      push
-Environment: myproject_dev
-Keys Count:  60
-
-Git Info:
-  Repository: myproject
-  Branch:     main
-
-Metadata:
-  User:       username
-  Machine ID: def456...
-  LSH Version: 1.5.0
-  Key Fingerprint: sha256:abc123...
-```
-
-### List CIDs
-
-```bash
-# List all CIDs with timestamps
-$ lsh sync-history list
-
-📋 Sync Log Entries
-
-Nov 20, 2025, 9:00 PM  push    bafkreiabc123...
-Nov 20, 2025, 8:45 PM  pull    bafkreidef456...
-Nov 20, 2025, 8:30 PM  push    bafkreighi789...
-
-📦 Total: 3 entries
-```
-
-### Get URLs Only
-
-```bash
-$ lsh sync-history show --url
-ipfs://bafkreiabc123...
-ipfs://bafkreidef456...
-ipfs://bafkreighi789...
+# Fetch full record detail for display (filter the JSON for one CID/timestamp)
+$ lsh sync --history --format json | jq '.records[] | select(.cid == "bafkreiabc123...")'
 ```
 
 ## Storage Location
@@ -223,51 +197,54 @@ Records NEVER contain:
 
 ## Disabling IPFS Sync
 
-To disable automatic recording:
+There is no CLI command to write config in v4 — `lsh sync --config` only reads `~/.config/lsh/lshrc`. Set
+`DISABLE_IPFS_SYNC` directly, either as a shell environment variable or as a line in `lshrc`:
 
 ```bash
-# Disable IPFS sync
-lsh config set DISABLE_IPFS_SYNC true
+# Disable IPFS sync for one shell session
+export DISABLE_IPFS_SYNC=true
 
-# Re-enable
-lsh config delete DISABLE_IPFS_SYNC
+# Or persist it by adding a line to ~/.config/lsh/lshrc
+echo "DISABLE_IPFS_SYNC=true" >> ~/.config/lsh/lshrc
+
+# Re-enable: unset the shell var, or remove/edit the lshrc line
 ```
 
 When disabled:
 - No records are created
 - Existing records remain accessible
-- `lsh sync-history` still works for existing records
+- `lsh sync --history` still works for existing records
 
 ## Use Cases
 
 ### Compliance & Auditing
 
 ```bash
-# Generate audit report
-lsh sync-history show --all > audit-report.txt
+# Generate an audit report
+lsh sync --history --format json > audit-report.json
 
 # Verify when secrets were last updated
-lsh sync-history show | grep "2025-11-20"
+lsh sync --history | grep "11/20/2025"
 ```
 
 ### Team Coordination
 
 ```bash
-# Check who last synced production
-lsh sync-history show -e prod
+# Check who last synced, filtering the JSON for one environment
+lsh sync --history --format json | jq '.records[] | select(.environment | contains("prod"))'
 
 # Verify secrets are up-to-date
-lsh sync-history list | head -1
+lsh sync --history --format json | jq '.records[0]'
 ```
 
 ### Debugging
 
 ```bash
-# View full details of problematic sync
-lsh sync-history get bafkreiabc123...
+# View full details of a problematic sync
+lsh sync --history --format json | jq '.records[] | select(.cid == "bafkreiabc123...")'
 
-# Check key fingerprint matches
-lsh sync-history show | grep "sha256:"
+# Check key fingerprint matches (fingerprints are only in the JSON output)
+lsh sync --history --format json | jq -r '.records[].key_fingerprint'
 ```
 
 ## Future Enhancements
@@ -360,4 +337,4 @@ A: Records are lost, but no secrets are lost. Only audit trail is affected.
 
 For issues or questions about IPFS sync records:
 - GitHub Issues: https://github.com/gwicho38/lsh/issues
-- Disable if problematic: `lsh config set DISABLE_IPFS_SYNC true`
+- Disable if problematic: `export DISABLE_IPFS_SYNC=true` (or add that line to `~/.config/lsh/lshrc`)

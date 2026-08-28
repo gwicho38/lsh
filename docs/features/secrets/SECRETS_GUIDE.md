@@ -1,6 +1,9 @@
-# LSH Secrets Manager v3.0.0
+# LSH Secrets Manager
 
 Sync your `.env` files across all development machines with AES-256 encryption via the IPFS network.
+
+> **v4.0.0:** the CLI surface is four commands plus `help`: `push`, `pull`, `sync`, `edit`. See
+> [docs/releases/4.0.0.md](../../releases/4.0.0.md) for the full v3→v4 command mapping.
 
 ## Quick Start
 
@@ -9,10 +12,10 @@ Sync your `.env` files across all development machines with AES-256 encryption v
 npm install -g lsh-framework
 
 # Interactive setup (recommended)
-lsh init
+lsh sync --init
 
-# Or manual setup
-lsh key                      # Generate encryption key
+# Or manual setup — already have a key from a teammate
+lsh sync --key=<shared-key>
 lsh push                     # Push to cloud
 ```
 
@@ -20,25 +23,28 @@ lsh push                     # Push to cloud
 
 | Command | Description |
 |---------|-------------|
-| `lsh init` | Interactive setup wizard |
+| `lsh sync --init` | Interactive setup wizard |
 | `lsh push` | Upload encrypted .env to cloud |
 | `lsh pull` | Download .env from cloud |
 | `lsh sync` | Smart sync (auto push/pull) |
-| `lsh list` | List secrets in local .env |
-| `lsh env` | List cloud environments |
-| `lsh key` | Generate encryption key |
-| `lsh get <key>` | Get a specific secret |
-| `lsh set <key> <value>` | Set a specific secret |
-| `lsh info` | Show current context |
-| `lsh status` | Get detailed status (JSON) |
-| `lsh clear` | Clear local metadata |
+| `lsh edit --list` | List secrets in local .env (masked) |
+| `lsh edit --get --all --format env` | List secrets in local .env (unmasked) |
+| `lsh sync --key` | Print the effective encryption key |
+| `lsh edit --get <key>` | Get a specific secret |
+| `lsh edit --set <key>=<value>` | Set a specific secret |
+| `lsh sync --status` | Show current context and sync state |
+| `lsh sync --repair` | Clear local sync history and metadata |
+
+Every other v3 top-level command (`init`, `key`, `get`, `set`, `env`, `info`, `status`, `clear`,
+`doctor`, `config`, `sync-history`, `ipfs`, `self`, `context`, `completion`, `list`, `create`,
+`delete`, `cp`, `load`) is gone — running it prints its exact v4 replacement.
 
 ## Setup Options
 
 ### Option 1: Interactive Setup (Recommended)
 
 ```bash
-lsh init
+lsh sync --init
 ```
 
 This wizard will:
@@ -48,15 +54,25 @@ This wizard will:
 
 ### Option 2: Manual Setup
 
+There's no standalone "generate a key" command outside the wizard — generate one yourself and
+set it directly:
+
 ```bash
-# 1. Generate encryption key
-lsh key
-# Output: LSH_SECRETS_KEY=abc123...
+# 1. Generate an encryption key
+openssl rand -hex 32
+# Output: abc123...
 
 # 2. Add to your .env
 echo "LSH_SECRETS_KEY=abc123..." >> .env
 
 # 3. Push your secrets
+lsh push
+```
+
+Importing a key a teammate already generated uses `sync --key` instead:
+
+```bash
+lsh sync --key=abc123...
 lsh push
 ```
 
@@ -95,7 +111,7 @@ lsh pull --file .env.prod --env prod
 lsh pull --force
 ```
 
-### v3.0.0: IPNS Recovery
+### IPNS Recovery
 
 Pull can recover even when local metadata is missing. The IPNS name is derived
 deterministically from your `LSH_SECRETS_KEY`, repo, and environment, so pull
@@ -103,7 +119,7 @@ re-resolves the latest CID over the network:
 
 ```bash
 # Even after clearing metadata, pull re-resolves via IPNS
-lsh clear --all
+lsh sync --repair
 lsh pull  # Re-derives the IPNS name and resolves the latest CID
 ```
 
@@ -135,7 +151,7 @@ cd ~/repos/app2
 lsh push  # Stored as: app2_dev (separate!)
 
 # Check current context
-lsh info
+lsh sync --status
 ```
 
 ## Managing Individual Secrets
@@ -143,52 +159,42 @@ lsh info
 ### Get a Secret
 
 ```bash
-# Get by exact name
-lsh get API_KEY
-
-# Fuzzy matching
-lsh get api  # Finds API_KEY, API_SECRET, etc.
+# Get by exact name (v4 requires an exact match — no fuzzy matching)
+lsh edit --get API_KEY
 
 # Get all secrets
-lsh get --all
-lsh get --all --format json
+lsh edit --get --all
+lsh edit --get --all --format json
 ```
 
 ### Set a Secret
 
 ```bash
 # Set single value
-lsh set API_KEY sk_live_12345
+lsh edit --set API_KEY=my-api-key-value
 
-# Batch import from stdin
-printenv | lsh set
-cat .env.backup | lsh set
+# Multiple values: one call per key — v4 has no batch/stdin import
+lsh edit --set AWS_ACCESS_KEY_ID=AKIA...
+lsh edit --set AWS_SECRET_ACCESS_KEY=...
 
-# Import specific variables
-printenv | grep "^AWS_" | lsh set
+# Merge another environment's values into this one instead
+lsh edit --env prod --copy-from staging
 ```
 
 ## Export Formats
 
 ```bash
-# Default (masked)
-lsh list
+# Default (masked table)
+lsh edit --list
 
-# JSON
-lsh list --format json
+# JSON / YAML / TOML (still masked — --list always masks)
+lsh edit --list --format json
+lsh edit --list --format yaml
+lsh edit --list --format toml
 
-# YAML
-lsh list --format yaml
-
-# TOML (auto-detects namespaces)
-lsh list --format toml
-
-# Shell export (for sourcing)
-lsh list --format export
-eval "$(lsh list --format export)"
-
-# Show full values (no masking)
-lsh list --no-mask
+# Full values, no masking (any format)
+lsh edit --get --all --format export
+eval "$(lsh sync --load)"   # load straight into the current shell
 ```
 
 ## Multi-Host Sync
@@ -208,7 +214,7 @@ lsh push
 npm install -g lsh-framework
 
 # 2. Install and start a local Kubo (IPFS) daemon
-lsh sync init
+lsh sync --init
 
 # 3. Add encryption key
 echo "LSH_SECRETS_KEY=same-key-as-first-machine" > .env
@@ -238,7 +244,7 @@ On `lsh pull` from another machine:
 One-time setup (installs and starts the local Kubo daemon):
 
 ```bash
-lsh sync init
+lsh sync --init
 ```
 
 ### Durability caveat
@@ -267,14 +273,14 @@ Pinning services only ever see ciphertext. See the README section
 ### No secrets found
 
 ```bash
-# Check available environments
-lsh env
+# Check what's in your local .env
+lsh edit --get --all --format env
 
 # Push if missing
 lsh push
 
 # Check current context
-lsh info
+lsh sync --status
 ```
 
 ### Decryption failed
@@ -286,7 +292,7 @@ Wrong encryption key:
 cat .env | grep LSH_SECRETS_KEY
 
 # Generate new and re-push
-lsh key
+lsh sync --init
 lsh push --force
 ```
 
@@ -296,10 +302,10 @@ The local Kubo daemon may not be running, or no online node holds the content:
 
 ```bash
 # Ensure the local Kubo (IPFS) daemon is installed and running
-lsh sync init
+lsh sync --init
 
 # Check sync status
-lsh sync status
+lsh sync --status
 ```
 
 If the pushing machine is offline and no remote pinning service is configured,
@@ -307,12 +313,11 @@ the content may be unreachable. See the "Durability caveat" section above.
 
 ### Clear stale metadata
 
-```bash
-# Clear all local metadata
-lsh clear --all
+`--repair` clears local sync history and secrets metadata **globally** — there is no per-repo
+scoping in v4:
 
-# Clear specific repo
-lsh clear --repo my-project
+```bash
+lsh sync --repair
 
 # Pull re-resolves the latest CID via IPNS
 lsh pull

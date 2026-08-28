@@ -62,6 +62,11 @@ export declare class IPFSSecretsStorage {
      */
     deleteLocal(environment: string, gitRepo?: string): Promise<void>;
     /**
+     * Clear all local secrets metadata (~/.lsh/secrets-metadata.json), unsticking a registry
+     * that no longer matches what's actually on IPFS. Local encrypted caches are left in place.
+     */
+    clearMetadata(): Promise<void>;
+    /**
      * Encrypt secrets using AES-256
      */
     private encryptSecrets;

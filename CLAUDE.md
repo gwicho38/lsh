@@ -25,13 +25,16 @@ points at `dist/cli.js`; there is no library entry point).
 > **History:** LSH began as a broad POSIX/ZSH shell + job daemon + CI/CD + SaaS platform. It
 > pivoted to a focused secrets manager. The shell parser/executor, ZSH layer, job/cron daemon,
 > REST API/webhooks, Electron dashboard, SaaS multi-tenant code, and Supabase/Postgres
-> persistence were **removed** (the platform cluster was deleted in v3.5.0). Older docs/releases
-> that mention those features are historical. Don't build on them; they're gone.
+> persistence were **removed** (the platform cluster was deleted in v3.5.0). In v4.0.0 the CLI
+> surface itself was consolidated from 23 top-level commands down to four (`push`, `pull`,
+> `sync`, `edit`) plus `help` — see [docs/releases/4.0.0.md](docs/releases/4.0.0.md). Older
+> docs/releases that mention removed commands or the pre-3.5.0 platform are historical. Don't
+> build on them; they're gone.
 
 ## ML/Agent Context
 
-- **`llms.txt`** — machine-readable context at repo root.
-- **`lsh context`** / **`lsh context --json`** — runtime usage documentation.
+- **`llms.txt`** — machine-readable context at repo root; this file *is* the context (there is
+  no `lsh context` command in v4 — that was removed, replacement: `cat llms.txt`).
 
 ## Build & Development Commands
 
@@ -57,20 +60,20 @@ node dist/cli.js sync              # Or any command
 lsh                                # If globally linked (npm link)
 ```
 
-Real top-level commands: `init`, `doctor`, `config`, `sync`, `sync-history`, `ipfs`, `migrate`,
-`context`, `self`, `completion`, plus the secrets verbs `push`, `pull`, `get`, `set`, `list`,
-`env`, `key`, `create`, `load`, `status`, `info`, `delete`, `clear`, `cp`. Verify with
-`node dist/cli.js --help` — there is **no** `daemon`, `cron`, `api`, `supabase`, or `storacha`
-command.
+Real top-level commands: `help`, `push`, `pull`, `sync`, `edit`. That's it — v4.0.0 consolidated
+every other v3 command (setup, keys, config, health, IPFS management, individual secret get/set,
+sync history, self-update, shell completion, and more) into a flag on one of the four, or removed
+it outright. Verify with `node dist/cli.js --help` — there is **no** `daemon`, `cron`, `api`,
+`supabase`, or `storacha` command, and running any removed v3 command name fails immediately with
+its v4 replacement (see `src/lib/removed-commands.ts`).
 
 ## Secrets Management (Primary Feature)
 
 ```bash
-lsh key                    # Generate encryption key
-lsh init                   # First-time setup (key + Kubo)
-lsh push --env dev         # Encrypt + add to IPFS + publish IPNS
-lsh pull --env dev         # Resolve IPNS + fetch CID + decrypt
-lsh doctor                 # Verify Kubo installed/running
+lsh sync --init             # First-time setup: generates a key, installs/starts Kubo
+lsh push --env dev          # Encrypt + add to IPFS + publish IPNS
+lsh pull --env dev          # Resolve IPNS + fetch CID + decrypt
+lsh sync --doctor           # Verify Kubo installed/running
 ```
 
 Rotation is **not** a built-in feature — schedule it with an external scheduler (system `cron`,
@@ -80,18 +83,23 @@ a CI job) that runs your rotation script then `lsh push`.
 
 ```
 src/cli.ts                     Sole entry; registers commands with Commander
-src/commands/                  init, doctor, config, sync, sync-history, ipfs, migrate,
-                               context, self, completion
-src/services/secrets/secrets.ts  push/pull/get/set/list/key verbs
+src/commands/                  push.ts, pull.ts, sync.ts, edit.ts — the only four subcommands
 
 src/lib/
   secrets-manager.ts           AES-256 encrypt/decrypt, git repo/branch context,
                                destructive-change detection
+  removed-commands.ts          v3→v4 removal error messages (REMOVED_COMMANDS,
+                               REMOVED_SYNC_SUBCOMMANDS) — the single source of truth for the
+                               old→new command mapping
+  doctor.ts                    health check, invoked via `sync --doctor`
+  setup-wizard.ts               interactive setup, invoked via `sync --init`
+  env-file.ts                  .env parsing/serialization (parseEnv/serializeEnv/upsertEnv/diffEnv)
+  workspace-context.ts         per-repo/`-g` workspace and file-path resolution shared by all four commands
   ipfs-secrets-storage.ts      orchestrates store/retrieve over IPFS
   ipfs-sync.ts                 `ipfs add`/cat via Kubo HTTP API (127.0.0.1:5001)
   ipns-key-manager.ts          key-derived IPNS publish/resolve
   ipfs-client-manager.ts       detect/install/start/stop Kubo, version pinning
-  sync-key-store.ts            key resolution (env / .env / ~/.config/lsh)
+  sync-key-store.ts            persistent key store + key resolution (env / .env / ~/.lsh)
   ipfs-sync-logger.ts          immutable sync-record log
   config-manager.ts            lsh config
   git-utils.ts, platform-utils.ts, format-utils.ts, lsh-error.ts
@@ -109,7 +117,7 @@ removed code.
 ## Environment Configuration
 
 ```bash
-LSH_SECRETS_KEY=<64-char-hex>   # Required: AES-256 key (from `lsh key`)
+LSH_SECRETS_KEY=<64-char-hex>   # Required: AES-256 key (from `lsh sync --init`)
 LSH_PIN_SERVICE=<service-name>  # Optional: Kubo remote pinning service for durable sync
 LSH_DISCOVERY=w3name,ipns       # Optional: pointer discovery backends (priority order);
                                 # default durable w3name + DHT-IPNS fallback (issue #194)
@@ -136,10 +144,15 @@ There are no API/JWT/webhook/Supabase environment variables — those features w
 - Strict mode partially enabled; `noImplicitAny` is off. Prefix unused vars/args with `_`.
 
 ### Adding a command
-1. Create a module in `src/commands/` (or a verb in `src/services/secrets/secrets.ts`).
-2. Export an init function that registers with `commander.Command`.
-3. Import + call it in `src/cli.ts`.
-4. Put user-facing strings in `src/constants/`.
+The v4 surface is deliberately fixed at four commands. Prefer adding a flag to one of the
+existing modules (`push.ts`, `pull.ts`, `sync.ts`, `edit.ts`) over introducing a new top-level
+command.
+1. Add the flag with `.option(...)` in the relevant `src/commands/*.ts` module.
+2. Export an init function that registers with `commander.Command` (already the pattern in each
+   of the four files) and import + call it in `src/cli.ts`.
+3. Put user-facing strings in `src/constants/`.
+4. If a v3 command name should now error with a replacement message, add it to
+   `REMOVED_COMMANDS` (or `REMOVED_SYNC_SUBCOMMANDS`) in `src/lib/removed-commands.ts`.
 
 ### Error handling — use `lsh-error.ts`, never `(error as Error).message`
 ```typescript
@@ -172,7 +185,8 @@ the CLI or a test indefinitely on a slow/blocked network (this caused real publi
   coverage. Global thresholds are `58/50/70/58` (stmts/branch/funcs/lines) — raise them as the
   core's tests are made mockable for CI.
 - Write a test for every bug fix (TDD). Prefer extracting pure logic so it can be unit-tested
-  without mocking `https`/Kubo (see `evaluateBuildRuns` in `src/commands/self.ts`).
+  without mocking `https`/Kubo or the filesystem (see the pure helpers exported from
+  `src/commands/edit.ts`, e.g. `resolveGetOrList`, `parseSetAssignment`, `formatEditSummary`).
 
 ## Common Issues & Solutions
 

@@ -314,32 +314,31 @@ describe('UI Constants', () => {
     });
 
     it('should have section headers', () => {
-      expect(CLI_HELP.SECTION_SECRETS).toContain('Secrets Management');
-      expect(CLI_HELP.SECTION_IPFS).toContain('IPFS');
+      expect(CLI_HELP.SECTION_SECRETS).toContain('Commands');
       expect(CLI_HELP.SECTION_QUICK_START).toContain('Quick Start');
-      expect(CLI_HELP.SECTION_MORE).toContain('More Commands');
+      expect(CLI_HELP.SECTION_MORE).toContain('More');
       expect(CLI_HELP.SECTION_USAGE).toBe('Usage:');
       expect(CLI_HELP.SECTION_MAIN_COMMANDS).toBe('Main Commands:');
-      expect(CLI_HELP.SECTION_SELF_MANAGEMENT).toBe('Self-Management:');
+      expect(CLI_HELP.SECTION_SYNC_FLAGS).toContain('Sync flags');
+      expect(CLI_HELP.SECTION_EDIT_FLAGS).toContain('Edit flags');
+      expect(CLI_HELP.SECTION_FIRST_TIME).toBe('First-Time Setup:');
+      expect(CLI_HELP.SECTION_DAILY_USAGE).toBe('Daily Usage:');
       expect(CLI_HELP.SECTION_EXAMPLES).toBe('Examples:');
       expect(CLI_HELP.SECTION_FEATURES).toBe('Features:');
     });
 
-    it('should have secrets command descriptions', () => {
-      expect(CLI_HELP.CMD_INIT).toContain('init');
-      expect(CLI_HELP.CMD_DOCTOR).toContain('doctor');
+    it('should have top-level command descriptions', () => {
       expect(CLI_HELP.CMD_SYNC).toContain('sync');
       expect(CLI_HELP.CMD_PUSH).toContain('push');
       expect(CLI_HELP.CMD_PULL).toContain('pull');
-      expect(CLI_HELP.CMD_LIST).toContain('list');
-      expect(CLI_HELP.CMD_KEY).toContain('key');
+      expect(CLI_HELP.CMD_EDIT).toContain('edit');
     });
 
-    it('should have IPFS command descriptions', () => {
-      expect(CLI_HELP.CMD_SYNC_INIT).toContain('sync init');
-      expect(CLI_HELP.CMD_SYNC_PUSH).toContain('sync push');
-      expect(CLI_HELP.CMD_SYNC_PULL).toContain('sync pull');
-      expect(CLI_HELP.CMD_SYNC_STATUS).toContain('sync status');
+    it('should have sync flag descriptions', () => {
+      expect(CLI_HELP.SYNC_FLAG_INIT).toContain('--init');
+      expect(CLI_HELP.SYNC_FLAG_KEY).toContain('--key');
+      expect(CLI_HELP.SYNC_FLAG_DOCTOR).toContain('--doctor');
+      expect(CLI_HELP.SYNC_FLAG_STATUS).toContain('--status');
     });
 
     it('should have feature descriptions', () => {

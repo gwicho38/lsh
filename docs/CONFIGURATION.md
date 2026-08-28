@@ -5,13 +5,11 @@ LSH uses a centralized configuration file located at `~/.config/lsh/lshrc` to ma
 ## Quick Start
 
 ```bash
-# Edit configuration
-lsh config
+# View the resolved configuration (read-only, masked)
+lsh sync --config
 
-# Or use specific commands
-lsh config set LSH_SECRETS_KEY <your-key>
-lsh config get LSH_SECRETS_KEY
-lsh config list
+# Edit the config file directly — it's a plain .env-format file
+lsh edit --file ~/.config/lsh/lshrc --set LSH_SECRETS_KEY=<your-key>
 ```
 
 ## Configuration File Location
@@ -39,7 +37,7 @@ so a teammate with the same key can pull it back — no account, no central serv
 ### Secrets (required)
 
 ```bash
-# AES-256 encryption key — generate with: lsh key
+# AES-256 encryption key — generate with: lsh sync --init
 LSH_SECRETS_KEY=<64-char-hex>
 ```
 
@@ -89,91 +87,28 @@ LSH_LOG_FORMAT=text       # text | json
 
 ## Command Reference
 
-### `lsh config`
+### `lsh sync --config`
 
-Open the configuration file in `$EDITOR` (defaults to `$VISUAL`, then `$EDITOR`, then `vi`).
-
-```bash
-lsh config
-```
-
-### `lsh config init`
-
-Initialize the configuration file with a default template.
+Print the resolved configuration and its source path. Read-only, and values are masked.
 
 ```bash
-lsh config init
-
-# Overwrite existing config
-lsh config init --force
+lsh sync --config
+lsh sync --config --format json
 ```
 
-### `lsh config path`
-
-Show the configuration file path.
+There is no dedicated `config get/set/delete/list` subcommand group in v4 — `~/.config/lsh/lshrc`
+is a plain `.env`-format file. Edit it with any text editor, or with `lsh edit --file <path>`,
+which understands the same `KEY=VALUE` format and offers `--get`, `--set`, and `--list`:
 
 ```bash
-lsh config path
-# Output: /Users/username/.config/lsh/lshrc
+lsh edit --file ~/.config/lsh/lshrc --set LSH_SECRETS_KEY=<your-key>
+lsh edit --file ~/.config/lsh/lshrc --get LSH_SECRETS_KEY
+lsh edit --file ~/.config/lsh/lshrc --list
+lsh edit --file ~/.config/lsh/lshrc            # open in $EDITOR
 ```
 
-### `lsh config get <key>`
-
-Get a specific configuration value.
-
-```bash
-lsh config get LSH_SECRETS_KEY
-```
-
-### `lsh config set <key> <value>`
-
-Set a specific configuration value.
-
-```bash
-lsh config set LSH_SECRETS_KEY <your-key>
-# Output: ✓ Set LSH_SECRETS_KEY=<redacted>
-```
-
-### `lsh config delete <key>`
-
-Delete a specific configuration value.
-
-```bash
-lsh config delete LSH_PIN_TOKEN
-# Output: ✓ Deleted LSH_PIN_TOKEN
-```
-
-Alias: `lsh config rm <key>`
-
-### `lsh config list`
-
-List all configuration values.
-
-```bash
-lsh config list
-
-# Show secret values (default: masked)
-lsh config list --show-secrets
-```
-
-Alias: `lsh config ls`
-
-### `lsh config show`
-
-Show raw configuration file contents.
-
-```bash
-lsh config show
-```
-
-### `lsh config reload`
-
-Reload configuration into the current environment.
-
-```bash
-lsh config reload
-# Output: ✓ Reloaded N config values into environment
-```
+> `lsh edit`'s push-after-edit prompt applies to any file it targets — answer `n` (or pass
+> `--no-push`) when prompted, since `~/.config/lsh/lshrc` is not something you push to IPFS.
 
 ## Configuration Priority
 
@@ -211,8 +146,8 @@ LSH_DISCOVERY=ipns lsh pull --env dev
 
 ```bash
 # Set once, use everywhere
-lsh config set LSH_SECRETS_KEY <your-key>
-lsh config set LSH_PIN_TOKEN <psa-token>
+lsh edit --file ~/.config/lsh/lshrc --set LSH_SECRETS_KEY=<your-key>
+lsh edit --file ~/.config/lsh/lshrc --set LSH_PIN_TOKEN=<psa-token>
 ```
 
 ### 3. Keep your key safe
@@ -231,7 +166,7 @@ The encryption key is the only thing teammates must share — distribute it thro
 a password manager, never in plain text. Each member sets it in their own `lshrc`:
 
 ```bash
-lsh config set LSH_SECRETS_KEY <team-encryption-key>
+lsh edit --file ~/.config/lsh/lshrc --set LSH_SECRETS_KEY=<team-encryption-key>
 lsh pull --env production
 ```
 
@@ -239,14 +174,22 @@ lsh pull --env production
 
 ### Config file not found
 
+LSH doesn't require `lshrc` to exist — environment variables and `.env` work without it.
+Create one manually if you want persistent settings:
+
 ```bash
-lsh config init
+mkdir -p ~/.config/lsh
+touch ~/.config/lsh/lshrc
+chmod 600 ~/.config/lsh/lshrc
 ```
 
 ### Changes not taking effect
 
+Configuration is reloaded fresh on every `lsh` invocation — there is no cache to clear. If a
+change still isn't showing up, confirm you edited the file LSH is actually reading:
+
 ```bash
-lsh config reload
+lsh sync --config
 ```
 
 ### Permission denied
@@ -266,8 +209,10 @@ nano ~/.config/lsh/lshrc
 
 ### Secrets still masked
 
+`lsh sync --config` always masks. To see an unmasked value, use `edit --get`:
+
 ```bash
-lsh config list --show-secrets
+lsh edit --file ~/.config/lsh/lshrc --get --all
 ```
 
 ## Examples
@@ -278,11 +223,8 @@ lsh config list --show-secrets
 # Install LSH
 npm install -g lsh-framework
 
-# Generate encryption key
-lsh key
-
-# Set it in config
-lsh config set LSH_SECRETS_KEY <generated-key>
+# Interactive setup — generates a key and installs/starts Kubo
+lsh sync --init
 
 # Start using LSH
 lsh push --env dev
@@ -291,8 +233,8 @@ lsh push --env dev
 ### Durable setup (survives node going offline)
 
 ```bash
-lsh config set LSH_SECRETS_KEY <generated-key>
-lsh config set LSH_PIN_TOKEN <4everland-psa-token>
+lsh edit --file ~/.config/lsh/lshrc --set LSH_SECRETS_KEY=<generated-key>
+lsh edit --file ~/.config/lsh/lshrc --set LSH_PIN_TOKEN=<4everland-psa-token>
 
 # Pointer (w3name) and bytes (pin service) both persist
 lsh push --env prod

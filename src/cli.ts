@@ -6,18 +6,12 @@
  */
 
 import { Command } from 'commander';
-import selfCommand from './commands/self.js';
-import { registerInitCommands } from './commands/init.js';
-import { registerDoctorCommands } from './commands/doctor.js';
-import { registerCompletionCommands } from './commands/completion.js';
-import { registerConfigCommands } from './commands/config.js';
-import { registerSyncHistoryCommands } from './commands/sync-history.js';
-import { registerSyncCommands } from './commands/sync.js';
-import { registerMigrateCommand } from './commands/migrate.js';
-import { registerContextCommand } from './commands/context.js';
-import { registerIPFSCommands } from './commands/ipfs.js';
-import { init_secrets } from './services/secrets/secrets.js';
+import { registerPushCommand } from './commands/push.js';
+import { registerPullCommand } from './commands/pull.js';
+import { registerSyncCommand } from './commands/sync.js';
+import { registerEditCommand } from './commands/edit.js';
 import { loadGlobalConfigSync } from './lib/config-manager.js';
+import { removalMessage, syncSubcommandMessage } from './lib/removed-commands.js';
 import { CLI_TEXT, CLI_HELP } from './constants/ui.js';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -57,36 +51,17 @@ program
     console.log(CLI_HELP.TITLE);
     console.log('');
     console.log(CLI_HELP.SECTION_SECRETS);
-    console.log(CLI_HELP.CMD_INIT);
-    console.log(CLI_HELP.CMD_DOCTOR);
     console.log(CLI_HELP.CMD_SYNC);
     console.log(CLI_HELP.CMD_PUSH);
     console.log(CLI_HELP.CMD_PULL);
-    console.log(CLI_HELP.CMD_LIST);
-    console.log(CLI_HELP.CMD_ENV);
-    console.log(CLI_HELP.CMD_KEY);
-    console.log(CLI_HELP.CMD_CREATE);
-    console.log(CLI_HELP.CMD_GET);
-    console.log(CLI_HELP.CMD_SET);
-    console.log(CLI_HELP.CMD_DELETE);
-    console.log(CLI_HELP.CMD_CP);
-    console.log(CLI_HELP.CMD_STATUS);
-    console.log('');
-    console.log(CLI_HELP.SECTION_IPFS);
-    console.log(CLI_HELP.CMD_SYNC_INIT);
-    console.log(CLI_HELP.CMD_SYNC_PUSH);
-    console.log(CLI_HELP.CMD_SYNC_PULL);
-    console.log(CLI_HELP.CMD_SYNC_STATUS);
-    console.log(CLI_HELP.CMD_SYNC_START_STOP);
+    console.log(CLI_HELP.CMD_EDIT);
     console.log('');
     console.log(CLI_HELP.SECTION_QUICK_START);
     console.log(CLI_HELP.QUICK_SYNC_INIT);
-    console.log(CLI_HELP.QUICK_SYNC_PUSH);
-    console.log(CLI_HELP.QUICK_SYNC_PULL);
+    console.log(CLI_HELP.QUICK_PUSH);
+    console.log(CLI_HELP.QUICK_PULL);
     console.log('');
     console.log(CLI_HELP.SECTION_MORE);
-    console.log(CLI_HELP.CMD_CONFIG);
-    console.log(CLI_HELP.CMD_SELF);
     console.log(CLI_HELP.CMD_HELP_OPT);
     console.log('');
     console.log(CLI_HELP.DOCS_LINK);
@@ -154,23 +129,10 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   // Load global configuration before anything else
   loadGlobalConfigSync();
 
-  registerInitCommands(program);
-  registerDoctorCommands(program);
-  registerConfigCommands(program);
-  registerSyncHistoryCommands(program);
-  registerSyncCommands(program);
-  registerMigrateCommand(program);
-  registerContextCommand(program);
-  registerIPFSCommands(program);
-
-  // Secrets management (primary feature)
-  await init_secrets(program);
-
-  // Shell completion
-  registerCompletionCommands(program);
-
-  // Self-management commands
-  program.addCommand(selfCommand);
+  registerPushCommand(program);
+  registerPullCommand(program);
+  registerSyncCommand(program);
+  registerEditCommand(program);
 
   // Pre-parse check for unknown commands
   const args = process.argv.slice(2);
@@ -187,10 +149,26 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
     });
     const validOptions = ['-v', '--verbose', '-d', '--debug', '-h', '--help', '-V', '--version'];
 
+    // commander arity-checks excess operands before any action runs, so a removed
+    // `sync <subcommand>` must be caught here rather than inside sync's own action.
+    if (firstArg === 'sync' && args[1] && !args[1].startsWith('-')) {
+      const message = syncSubcommandMessage(args[1]);
+      if (message) {
+        console.error(message);
+        process.exit(1);
+      }
+    }
+
     // Check if first argument looks like a command but isn't valid
     if (!firstArg.startsWith('-') &&
         !validCommands.includes(firstArg) &&
         !validOptions.some(opt => args.includes(opt))) {
+
+      const removed = removalMessage(firstArg);
+      if (removed) {
+        console.error(removed);
+        process.exit(1);
+      }
 
       // For suggestions, only use primary command names (not aliases)
       const primaryCommands = program.commands.map(cmd => cmd.name());
@@ -261,43 +239,46 @@ function showDetailedHelp(): void {
   console.log('');
   console.log(CLI_HELP.SECTION_USAGE);
   console.log(CLI_HELP.USAGE_DEFAULT);
-  console.log(CLI_HELP.USAGE_INIT);
   console.log(CLI_HELP.USAGE_PUSH);
   console.log(CLI_HELP.USAGE_PULL);
+  console.log(CLI_HELP.USAGE_SYNC);
+  console.log(CLI_HELP.USAGE_EDIT);
   console.log('');
   console.log(CLI_HELP.SECTION_MAIN_COMMANDS);
-  console.log(CLI_HELP.MAIN_INIT);
-  console.log(CLI_HELP.MAIN_DOCTOR);
-  console.log(CLI_HELP.MAIN_ENV);
-  console.log(CLI_HELP.MAIN_KEY);
-  console.log(CLI_HELP.MAIN_STATUS);
+  console.log(CLI_HELP.MAIN_PUSH);
+  console.log(CLI_HELP.MAIN_PULL);
+  console.log(CLI_HELP.MAIN_SYNC);
+  console.log(CLI_HELP.MAIN_EDIT);
   console.log('');
-  console.log(CLI_HELP.SECTION_IPFS);
-  console.log(CLI_HELP.DETAIL_SYNC_INIT);
-  console.log(CLI_HELP.DETAIL_SYNC_PUSH);
-  console.log(CLI_HELP.DETAIL_SYNC_PULL);
-  console.log(CLI_HELP.DETAIL_SYNC_STATUS);
-  console.log(CLI_HELP.DETAIL_SYNC_START);
-  console.log(CLI_HELP.DETAIL_SYNC_STOP);
-  console.log(CLI_HELP.DETAIL_SYNC_HISTORY);
+  console.log(CLI_HELP.SECTION_SYNC_FLAGS);
+  console.log(CLI_HELP.SYNC_FLAG_INIT);
+  console.log(CLI_HELP.SYNC_FLAG_KEY);
+  console.log(CLI_HELP.SYNC_FLAG_DOCTOR);
+  console.log(CLI_HELP.SYNC_FLAG_STATUS);
+  console.log(CLI_HELP.SYNC_FLAG_LOAD);
+  console.log(CLI_HELP.SYNC_FLAG_CONFIG);
+  console.log(CLI_HELP.SYNC_FLAG_REPAIR);
+  console.log(CLI_HELP.SYNC_FLAG_HISTORY);
+  console.log(CLI_HELP.SYNC_FLAG_VERIFY);
   console.log('');
-  console.log(CLI_HELP.SECTION_SELF_MANAGEMENT);
-  console.log(CLI_HELP.SELF_UPDATE);
-  console.log(CLI_HELP.SELF_VERSION);
-  console.log(CLI_HELP.SELF_UNINSTALL);
+  console.log(CLI_HELP.SECTION_EDIT_FLAGS);
+  console.log(CLI_HELP.EDIT_FLAG_GET);
+  console.log(CLI_HELP.EDIT_FLAG_SET);
+  console.log(CLI_HELP.EDIT_FLAG_LIST);
+  console.log(CLI_HELP.EDIT_FLAG_COPY_FROM);
   console.log('');
   console.log(CLI_HELP.SECTION_EXAMPLES);
   console.log('');
   console.log(`  ${CLI_HELP.SECTION_FIRST_TIME}`);
   console.log(CLI_HELP.EX_SYNC_INIT);
-  console.log(CLI_HELP.EX_DOCTOR);
+  console.log(CLI_HELP.EX_SYNC_DOCTOR);
   console.log('');
   console.log(`  ${CLI_HELP.SECTION_DAILY_USAGE}`);
-  console.log(CLI_HELP.EX_SYNC_PUSH);
-  console.log(CLI_HELP.EX_SYNC_PULL);
-  console.log(CLI_HELP.EX_ENV_MASKED);
-  console.log(CLI_HELP.EX_GET);
-  console.log(CLI_HELP.EX_SET);
+  console.log(CLI_HELP.EX_PUSH);
+  console.log(CLI_HELP.EX_PULL);
+  console.log(CLI_HELP.EX_EDIT_LIST);
+  console.log(CLI_HELP.EX_EDIT_GET);
+  console.log(CLI_HELP.EX_EDIT_SET);
   console.log('');
   console.log(CLI_HELP.SECTION_FEATURES);
   console.log(CLI_HELP.FEATURE_CROSS_PLATFORM);

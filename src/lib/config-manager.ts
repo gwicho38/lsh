@@ -94,7 +94,7 @@ export const DEFAULT_CONFIG_TEMPLATE = `# LSH Configuration File
 # Secrets Management
 # ============================================================================
 
-# Encryption key for secrets (generate with: lsh key)
+# Encryption key for secrets (generate with: lsh sync --key)
 # Share this key with your team for collaboration
 # LSH_SECRETS_KEY=
 

@@ -1,25 +1,27 @@
-# LSH Quick Reference v3.0.0
+# LSH Quick Reference
 
 Daily commands for managing secrets with LSH.
+
+> **v4.0.0:** the CLI surface is four commands plus `help`: `push`, `pull`, `sync`, `edit`. See
+> [docs/releases/4.0.0.md](../../releases/4.0.0.md) for the full v3→v4 command mapping.
 
 ## Installation
 
 ```bash
 npm install -g lsh-framework
-lsh init
+lsh sync --init
 ```
 
 ## Core Commands
 
 | Command | Description |
 |---------|-------------|
-| `lsh init` | Interactive setup wizard |
+| `lsh sync --init` | Interactive setup wizard |
 | `lsh push` | Push .env to cloud |
 | `lsh pull` | Pull .env from cloud |
 | `lsh sync` | Smart sync (auto) |
-| `lsh list` | List local secrets |
-| `lsh env` | List cloud environments |
-| `lsh info` | Show current context |
+| `lsh edit --list` | List local secrets (masked) |
+| `lsh sync --status` | Show current context |
 
 ## Push & Pull
 
@@ -38,18 +40,18 @@ lsh pull --env staging
 ## Get & Set
 
 ```bash
-# Get single secret
-lsh get API_KEY
+# Get single secret (exact match only — no fuzzy matching in v4)
+lsh edit --get API_KEY
 
 # Get all secrets
-lsh get --all
-lsh get --all --format json
+lsh edit --get --all
+lsh edit --get --all --format json
 
 # Set secret
-lsh set API_KEY sk_live_xxx
+lsh edit --set API_KEY=my-api-key-value
 
-# Batch import
-printenv | lsh set
+# No batch/stdin import in v4 — one --set per key, or merge an environment:
+lsh edit --env prod --copy-from staging
 ```
 
 ## Multi-Environment
@@ -65,13 +67,16 @@ lsh pull --env prod
 ## Export Formats
 
 ```bash
-lsh list --format json
-lsh list --format yaml
-lsh list --format toml
-lsh list --format export
+# Masked table, any format (--list always masks)
+lsh edit --list --format json
+lsh edit --list --format yaml
+lsh edit --list --format toml
+
+# Full values, no masking
+lsh edit --get --all --format export
 
 # Load into shell
-eval "$(lsh list --format export)"
+eval "$(lsh sync --load)"
 ```
 
 ## IPFS Sync
@@ -83,15 +88,15 @@ fetches the content over the swarm.
 
 ```bash
 # One-time setup for this repo/environment
-lsh sync init
+lsh sync --init
 
 # Push / pull encrypted secrets over IPFS
-lsh sync push
-lsh sync pull
+lsh push
+lsh pull
 
 # Check sync status and view history
-lsh sync status
-lsh sync history
+lsh sync --status
+lsh sync --history
 ```
 
 > **Durability:** by default the content is pinned only on the machine that
@@ -118,26 +123,33 @@ eval "$(lsh sync --load)"
 
 ```bash
 # Check context
-lsh info
+lsh sync --status
 
-# List environments
-lsh env
+# List what's in your local .env
+lsh edit --get --all --format env
 
-# Clear metadata
-lsh clear --all
+# Clear metadata (global — no per-repo scoping in v4)
+lsh sync --repair
 
 # Diagnostics
-lsh doctor
+lsh sync --doctor
 ```
 
 ## Key Management
 
 ```bash
-# Generate key
-lsh key
+# Generate a key (no standalone CLI command — the wizard does it)
+lsh sync --init
+
+# Or generate one yourself and import it
+openssl rand -hex 32
+lsh sync --key=<generated-key>
+
+# Print the effective key
+lsh sync --key
 
 # Export format
-lsh key --export
+echo "export LSH_SECRETS_KEY=$(lsh sync --key)"
 ```
 
 ## Daemon & Cron
@@ -189,8 +201,11 @@ lsh pull
 
 ```bash
 lsh --help
+lsh help
 lsh push --help
 lsh pull --help
+lsh sync --help
+lsh edit --help
 ```
 
 **Full docs:** [SECRETS_GUIDE.md](./SECRETS_GUIDE.md)

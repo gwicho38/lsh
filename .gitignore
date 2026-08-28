@@ -190,3 +190,6 @@ lightweight_models/
 
 # Environment backups
 .env.backup.*
+
+# SDD scratch workspace
+.superpowers/

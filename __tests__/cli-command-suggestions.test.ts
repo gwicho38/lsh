@@ -8,25 +8,25 @@ const describeIfSupported = nodeVersion >= 21 ? describe : describe.skip;
 describeIfSupported('CLI Command Suggestions', () => {
   const cliPath = 'node dist/cli.js';
 
-  it('should suggest "list" when user types "listt"', () => {
+  it('should suggest "edit" when user types "edt"', () => {
     try {
-      execSync(`${cliPath} listt`, { encoding: 'utf8', stdio: 'pipe' });
+      execSync(`${cliPath} edt`, { encoding: 'utf8', stdio: 'pipe' });
     } catch (error: any) {
       const stderr = error.stderr || error.stdout;
-      expect(stderr).toContain("error: unknown command 'listt'");
+      expect(stderr).toContain("error: unknown command 'edt'");
       expect(stderr).toContain('Did you mean one of these?');
-      expect(stderr).toContain('list');
+      expect(stderr).toContain('edit');
     }
   });
 
-  it('should suggest "self" when user types "selg"', () => {
+  it('should suggest "sync" when user types "synk"', () => {
     try {
-      execSync(`${cliPath} selg`, { encoding: 'utf8', stdio: 'pipe' });
+      execSync(`${cliPath} synk`, { encoding: 'utf8', stdio: 'pipe' });
     } catch (error: any) {
       const stderr = error.stderr || error.stdout;
-      expect(stderr).toContain("error: unknown command 'selg'");
+      expect(stderr).toContain("error: unknown command 'synk'");
       expect(stderr).toContain('Did you mean one of these?');
-      expect(stderr).toContain('self');
+      expect(stderr).toContain('sync');
     }
   });
 
@@ -60,8 +60,8 @@ describeIfSupported('CLI Command Suggestions', () => {
   });
 
   it('should still allow valid commands to work', () => {
-    const result = execSync(`${cliPath} list --help`, { encoding: 'utf8', stdio: 'pipe' });
-    expect(result).toContain('List secrets in the current local .env file');
+    const result = execSync(`${cliPath} edit --help`, { encoding: 'utf8', stdio: 'pipe' });
+    expect(result).toContain('Edit the local .env, then optionally push the change');
   });
 
   it('should work correctly with options flags', () => {
