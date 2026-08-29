@@ -2,7 +2,7 @@
 
 Daily commands for managing secrets with LSH.
 
-> **v4.0.0:** the CLI surface is four commands plus `help`: `push`, `pull`, `sync`, `edit`. See
+> **v4.0.0:** the CLI surface is five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. See
 > [docs/releases/4.0.0.md](../../releases/4.0.0.md) for the full v3→v4 command mapping.
 
 ## Installation
@@ -20,7 +20,7 @@ lsh sync --init
 | `lsh push` | Push .env to cloud |
 | `lsh pull` | Pull .env from cloud |
 | `lsh sync` | Smart sync (auto) |
-| `lsh edit --list` | List local secrets (masked) |
+| `lsh list` | List local secrets (masked) |
 | `lsh sync --status` | Show current context |
 
 ## Push & Pull
@@ -67,12 +67,13 @@ lsh pull --env prod
 ## Export Formats
 
 ```bash
-# Masked table, any format (--list always masks)
-lsh edit --list --format json
-lsh edit --list --format yaml
-lsh edit --list --format toml
+# Masked table, any format (list always masks unless --no-mask is given)
+lsh list --format json
+lsh list --format yaml
+lsh list --format toml
 
 # Full values, no masking
+lsh list --no-mask --format export
 lsh edit --get --all --format export
 
 # Load into shell
@@ -206,6 +207,7 @@ lsh push --help
 lsh pull --help
 lsh sync --help
 lsh edit --help
+lsh list --help
 ```
 
 **Full docs:** [SECRETS_GUIDE.md](./SECRETS_GUIDE.md)

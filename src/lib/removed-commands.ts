@@ -3,8 +3,6 @@
  */
 
 export const REMOVED_COMMANDS: Record<string, string> = {
-  list: 'lsh edit --list',
-  ls: 'lsh edit --list',
   get: 'lsh edit --get <key>',
   set: 'lsh edit --set <key>=<value>',
   env: 'lsh edit --get --all --format env',

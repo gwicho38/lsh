@@ -2,7 +2,7 @@
 
 Sync your `.env` files across all development machines with AES-256 encryption via the IPFS network.
 
-> **v4.0.0:** the CLI surface is four commands plus `help`: `push`, `pull`, `sync`, `edit`. See
+> **v4.0.0:** the CLI surface is five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. See
 > [docs/releases/4.0.0.md](../../releases/4.0.0.md) for the full v3→v4 command mapping.
 
 ## Quick Start
@@ -27,7 +27,7 @@ lsh push                     # Push to cloud
 | `lsh push` | Upload encrypted .env to cloud |
 | `lsh pull` | Download .env from cloud |
 | `lsh sync` | Smart sync (auto push/pull) |
-| `lsh edit --list` | List secrets in local .env (masked) |
+| `lsh list` | List secrets in local .env (masked) |
 | `lsh edit --get --all --format env` | List secrets in local .env (unmasked) |
 | `lsh sync --key` | Print the effective encryption key |
 | `lsh edit --get <key>` | Get a specific secret |
@@ -185,14 +185,15 @@ lsh edit --env prod --copy-from staging
 
 ```bash
 # Default (masked table)
-lsh edit --list
+lsh list
 
-# JSON / YAML / TOML (still masked — --list always masks)
-lsh edit --list --format json
-lsh edit --list --format yaml
-lsh edit --list --format toml
+# JSON / YAML / TOML (still masked — list always masks unless --no-mask is given)
+lsh list --format json
+lsh list --format yaml
+lsh list --format toml
 
 # Full values, no masking (any format)
+lsh list --no-mask --format export
 lsh edit --get --all --format export
 eval "$(lsh sync --load)"   # load straight into the current shell
 ```

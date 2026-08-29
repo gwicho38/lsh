@@ -15,7 +15,7 @@ Docs: https://github.com/gwicho38/lsh/blob/main/README.md
 
 ## v4.0.0 Breaking Change
 
-The CLI surface is now four commands plus `help`: `push`, `pull`, `sync`, `edit`. Every other v3 top-level
+The CLI surface is now five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. Every other v3 top-level
 command was removed. Running a removed command prints its exact v4 replacement. See
 [docs/releases/4.0.0.md](docs/releases/4.0.0.md) for the full removal table.
 
@@ -38,8 +38,10 @@ lsh sync --doctor                 # Verify configuration and connectivity
 lsh push [--env <name>] [--file <path>]    # Upload encrypted .env to cloud
 lsh pull [--env <name>] [--file <path>]    # Download .env from cloud
 lsh sync                                    # Smart sync (push or pull, whichever is newer)
-lsh edit --list [--format <type>]           # List local secrets, masked (env|json|yaml|toml|export)
-lsh edit --get --all --format <type>        # List local secrets, unmasked
+lsh list [--format <type>]                  # List local secrets, masked (env|json|yaml|toml|export)
+lsh list --no-mask [--format <type>]        # List local secrets, unmasked
+lsh list --keys-only                        # List only key names
+lsh edit --get --all --format <type>        # List local secrets, unmasked (via edit)
 lsh sync --status                           # Detailed sync status report
 
 ### Individual Secret Operations

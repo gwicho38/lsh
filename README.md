@@ -12,8 +12,8 @@
 
 ## What's New in v4.0.0
 
-**Breaking change.** The CLI surface is now four commands plus `help`: `push`, `pull`, `sync`, `edit`. Every other
-v3 top-level command was removed; `lsh --help` lists exactly these five entries. See
+**Breaking change.** The CLI surface is now five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. Every
+other v3 top-level command was removed; `lsh --help` lists exactly these six entries. See
 [Release Notes](docs/releases/4.0.0.md) for the full removal table and upgrade guide.
 
 ## Quick Start
@@ -44,7 +44,8 @@ That's it! Your secrets are now encrypted and synced.
 
 ## Core Commands
 
-`lsh` has four commands. Each accepts `-f/--file`, `-e/--env`, and `-g/--global`.
+`lsh` has five commands. `push`, `pull`, `sync`, and `edit` each accept `-f/--file`, `-e/--env`, and `-g/--global`;
+`list` accepts `-f/--file` and `-g/--global` (no `-e/--env` — it only ever reads the local file).
 
 ```bash
 # Setup, keys, config, and health all live under sync
@@ -58,7 +59,7 @@ lsh pull                       # Download .env from cloud
 lsh sync                       # Two-way sync (push or pull, whichever is newer)
 
 # Edit, read, or write local secrets
-lsh edit --list                # Masked table of local keys
+lsh list                       # Masked table of local keys
 lsh edit --get API_KEY         # Print one value
 lsh edit --set API_KEY=xxx     # Set one value
 
@@ -67,7 +68,7 @@ lsh push --env prod
 lsh pull --env staging
 ```
 
-Full flag reference: `lsh push --help`, `lsh pull --help`, `lsh sync --help`, `lsh edit --help`, or
+Full flag reference: `lsh push --help`, `lsh pull --help`, `lsh sync --help`, `lsh edit --help`, `lsh list --help`, or
 [docs/releases/4.0.0.md](docs/releases/4.0.0.md).
 
 ## How It Works

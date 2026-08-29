@@ -26,8 +26,8 @@ describeIfBuilt('v4 command surface', () => {
       .split('\n')
       .map((l) => l.trim().split(/[\s|[]/)[0])
       .filter(Boolean);
-    // `help` is meta, not one of the four functional commands.
-    expect(new Set(names)).toEqual(new Set(['help', 'push', 'pull', 'sync', 'edit']));
+    // `help` is meta, not one of the five functional commands.
+    expect(new Set(names)).toEqual(new Set(['help', 'push', 'pull', 'sync', 'edit', 'list']));
   });
 
   it('never lists a live command as removed', () => {
@@ -61,7 +61,6 @@ describeIfBuilt('v4 command surface', () => {
   it.each([
     ['get', 'lsh edit --get'],
     ['set', 'lsh edit --set'],
-    ['list', 'lsh edit --list'],
     ['load', 'lsh sync --load'],
     ['key', 'lsh sync --key'],
     ['doctor', 'lsh sync --doctor'],

@@ -191,6 +191,7 @@ export declare const CLI_HELP: {
     readonly SECTION_MAIN_COMMANDS: "Main Commands:";
     readonly SECTION_SYNC_FLAGS: "Sync flags (setup, keys, health):";
     readonly SECTION_EDIT_FLAGS: "Edit flags (read/write the local .env):";
+    readonly SECTION_LIST_FLAGS: "List flags (view the local .env):";
     readonly SECTION_EXAMPLES: "Examples:";
     readonly SECTION_FEATURES: "Features:";
     readonly SECTION_FIRST_TIME: "First-Time Setup:";
@@ -199,6 +200,7 @@ export declare const CLI_HELP: {
     readonly CMD_PUSH: "  push                    Encrypt the local .env and push it to cloud storage";
     readonly CMD_PULL: "  pull                    Pull and decrypt a .env from cloud storage";
     readonly CMD_EDIT: "  edit                    Get, set, or list secrets in the local .env";
+    readonly CMD_LIST: "  list                    List secrets in the current local .env file";
     readonly CMD_HELP_OPT: "  --help                  Show all options";
     readonly QUICK_SYNC_INIT: "  lsh sync --init                   # One-time setup: installs IPFS, generates a key";
     readonly QUICK_PUSH: "  lsh push                          # Push secrets to the cloud";
@@ -209,10 +211,12 @@ export declare const CLI_HELP: {
     readonly USAGE_PULL: "  lsh pull               Pull secrets from cloud";
     readonly USAGE_SYNC: "  lsh sync               Setup, keys, health check, status, two-way sync";
     readonly USAGE_EDIT: "  lsh edit               Edit the local .env";
+    readonly USAGE_LIST: "  lsh list               List secrets in the local .env";
     readonly MAIN_PUSH: "  push                   Encrypt & push .env to cloud storage";
     readonly MAIN_PULL: "  pull                   Pull & decrypt .env from cloud storage";
     readonly MAIN_SYNC: "  sync                   Setup, keys, health check, status (see flags below)";
     readonly MAIN_EDIT: "  edit                   Get, set, or list secrets in the local .env";
+    readonly MAIN_LIST: "  list                   List secrets in the current local .env file";
     readonly SYNC_FLAG_INIT: "  --init                 Run the setup wizard (installs IPFS, generates a key)";
     readonly SYNC_FLAG_KEY: "  --key [value]          Print the encryption key, or import one";
     readonly SYNC_FLAG_DOCTOR: "  --doctor               Run a health check";
@@ -226,6 +230,9 @@ export declare const CLI_HELP: {
     readonly EDIT_FLAG_SET: "  --set <key>=<value>    Set a specific secret value";
     readonly EDIT_FLAG_LIST: "  --list                 Print a masked table of keys";
     readonly EDIT_FLAG_COPY_FROM: "  --copy-from <env>      Merge another environment's vars into this one";
+    readonly LIST_FLAG_KEYS_ONLY: "  --keys-only            Show only keys, not values";
+    readonly LIST_FLAG_FORMAT: "  --format <type>        Output format: env, json, yaml, toml, export";
+    readonly LIST_FLAG_NO_MASK: "  --no-mask              Show full values (default: masked)";
     readonly EX_SYNC_INIT: "    lsh sync --init                         # One-time setup";
     readonly EX_SYNC_DOCTOR: "    lsh sync --doctor                       # Verify setup";
     readonly EX_PUSH: "    lsh push                                # Push to the cloud";
@@ -233,6 +240,7 @@ export declare const CLI_HELP: {
     readonly EX_EDIT_LIST: "    lsh edit --list                         # View local secrets, masked";
     readonly EX_EDIT_GET: "    lsh edit --get API_KEY                  # Get specific secret";
     readonly EX_EDIT_SET: "    lsh edit --set API_KEY=newvalue         # Update secret";
+    readonly EX_LIST: "    lsh list                                # View local secrets, masked";
     readonly FEATURE_CROSS_PLATFORM: "  ✅ Cross-platform (Windows, macOS, Linux)";
     readonly FEATURE_ENCRYPTION: "  ✅ AES-256 encryption";
     readonly FEATURE_MULTI_ENV: "  ✅ Multi-environment support";
@@ -276,7 +284,9 @@ export declare const EDIT_MESSAGES: {
     readonly NO_CHANGES: "No changes.";
     readonly NOT_PUSHED: "Not pushed.";
     readonly NOT_PUSHED_HINT_PREFIX: "Not pushed. Run: lsh push --env ";
+    readonly NOT_PUSHED_HINT_BARE: "Not pushed. Run: lsh push";
     readonly PUSH_PROMPT_PREFIX: "Push to ";
+    readonly PUSH_PROMPT_BARE: "Push";
     readonly PUSH_PROMPT_SUFFIX: "? [Y/n] ";
     readonly MERGED_PREFIX: "Merged ";
     readonly MERGED_SUFFIX: " from ";
@@ -286,6 +296,22 @@ export declare const EDIT_MESSAGES: {
     readonly KEY_LABEL: "key";
     readonly KEYS_LABEL: "keys";
     readonly EDITED_SUFFIX: " edited:  ";
+};
+/**
+ * Messages for `lsh list`
+ */
+export declare const LIST_MESSAGES: {
+    readonly DESCRIPTION: "List secrets in the current local .env file";
+    readonly OPTION_FILE: "Path to .env file";
+    readonly OPTION_GLOBAL: "Use global workspace ($HOME)";
+    readonly OPTION_KEYS_ONLY: "Show only keys, not values";
+    readonly OPTION_FORMAT: "Output format: env, json, yaml, toml, export";
+    readonly OPTION_NO_MASK: "Show full values (default: masked)";
+    readonly NO_ENV_FILE_PREFIX: "No .env file at ";
+    readonly PULL_HINT_PREFIX: "Tip: Pull from cloud with: lsh pull --env ";
+    readonly UNKNOWN_FORMAT_PREFIX: "Unknown format ";
+    readonly VALID_FORMATS_PREFIX: ". Valid: ";
+    readonly FAILED_TO_LIST: "Failed to list secrets:";
 };
 /**
  * Messages for `lsh sync`

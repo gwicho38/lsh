@@ -10,6 +10,7 @@ import { registerPushCommand } from './commands/push.js';
 import { registerPullCommand } from './commands/pull.js';
 import { registerSyncCommand } from './commands/sync.js';
 import { registerEditCommand } from './commands/edit.js';
+import { registerListCommand } from './commands/list.js';
 import { loadGlobalConfigSync } from './lib/config-manager.js';
 import { removalMessage, syncSubcommandMessage } from './lib/removed-commands.js';
 import { CLI_TEXT, CLI_HELP } from './constants/ui.js';
@@ -55,6 +56,7 @@ program
     console.log(CLI_HELP.CMD_PUSH);
     console.log(CLI_HELP.CMD_PULL);
     console.log(CLI_HELP.CMD_EDIT);
+    console.log(CLI_HELP.CMD_LIST);
     console.log('');
     console.log(CLI_HELP.SECTION_QUICK_START);
     console.log(CLI_HELP.QUICK_SYNC_INIT);
@@ -133,6 +135,7 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   registerPullCommand(program);
   registerSyncCommand(program);
   registerEditCommand(program);
+  registerListCommand(program);
 
   // Pre-parse check for unknown commands
   const args = process.argv.slice(2);
@@ -243,12 +246,14 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.USAGE_PULL);
   console.log(CLI_HELP.USAGE_SYNC);
   console.log(CLI_HELP.USAGE_EDIT);
+  console.log(CLI_HELP.USAGE_LIST);
   console.log('');
   console.log(CLI_HELP.SECTION_MAIN_COMMANDS);
   console.log(CLI_HELP.MAIN_PUSH);
   console.log(CLI_HELP.MAIN_PULL);
   console.log(CLI_HELP.MAIN_SYNC);
   console.log(CLI_HELP.MAIN_EDIT);
+  console.log(CLI_HELP.MAIN_LIST);
   console.log('');
   console.log(CLI_HELP.SECTION_SYNC_FLAGS);
   console.log(CLI_HELP.SYNC_FLAG_INIT);
@@ -267,6 +272,11 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.EDIT_FLAG_LIST);
   console.log(CLI_HELP.EDIT_FLAG_COPY_FROM);
   console.log('');
+  console.log(CLI_HELP.SECTION_LIST_FLAGS);
+  console.log(CLI_HELP.LIST_FLAG_KEYS_ONLY);
+  console.log(CLI_HELP.LIST_FLAG_FORMAT);
+  console.log(CLI_HELP.LIST_FLAG_NO_MASK);
+  console.log('');
   console.log(CLI_HELP.SECTION_EXAMPLES);
   console.log('');
   console.log(`  ${CLI_HELP.SECTION_FIRST_TIME}`);
@@ -279,6 +289,7 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.EX_EDIT_LIST);
   console.log(CLI_HELP.EX_EDIT_GET);
   console.log(CLI_HELP.EX_EDIT_SET);
+  console.log(CLI_HELP.EX_LIST);
   console.log('');
   console.log(CLI_HELP.SECTION_FEATURES);
   console.log(CLI_HELP.FEATURE_CROSS_PLATFORM);

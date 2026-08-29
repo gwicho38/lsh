@@ -11,7 +11,7 @@ const TOP_LEVEL_ACCEPTABLE =
 describe('REMOVED_COMMANDS', () => {
   it('covers every command removed in v4', () => {
     const expected = [
-      'list', 'ls', 'get', 'set', 'env', 'load', 'create', 'delete', 'cp',
+      'get', 'set', 'env', 'load', 'create', 'delete', 'cp',
       'key', 'init', 'doctor', 'config', 'status', 'info', 'clear',
       'sync-history', 'ipfs', 'migrate', 'self', 'context', 'completion',
     ];
@@ -44,7 +44,7 @@ describe('REMOVED_COMMANDS', () => {
   });
 
   it('does not list any surviving command as removed', () => {
-    for (const surviving of ['push', 'pull', 'sync', 'edit']) {
+    for (const surviving of ['push', 'pull', 'sync', 'edit', 'list', 'ls']) {
       expect(Object.keys(REMOVED_COMMANDS)).not.toContain(surviving);
     }
   });

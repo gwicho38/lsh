@@ -198,11 +198,17 @@ async function maybePush(
   console.log(formatEditSummary(diff));
 
   if (!pushAllowed || !shouldPrompt()) {
-    console.log(chalk.gray(`${EDIT_MESSAGES.NOT_PUSHED_HINT_PREFIX}${environment}`));
+    const hint = environment
+      ? `${EDIT_MESSAGES.NOT_PUSHED_HINT_PREFIX}${environment}`
+      : EDIT_MESSAGES.NOT_PUSHED_HINT_BARE;
+    console.log(chalk.gray(hint));
     return;
   }
 
-  const yes = await confirm(`${EDIT_MESSAGES.PUSH_PROMPT_PREFIX}${environment}${EDIT_MESSAGES.PUSH_PROMPT_SUFFIX}`);
+  const question = environment
+    ? `${EDIT_MESSAGES.PUSH_PROMPT_PREFIX}${environment}${EDIT_MESSAGES.PUSH_PROMPT_SUFFIX}`
+    : `${EDIT_MESSAGES.PUSH_PROMPT_BARE}${EDIT_MESSAGES.PUSH_PROMPT_SUFFIX}`;
+  const yes = await confirm(question);
   if (!yes) {
     console.log(chalk.gray(EDIT_MESSAGES.NOT_PUSHED));
     return;

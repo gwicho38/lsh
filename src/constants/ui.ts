@@ -246,6 +246,7 @@ export const CLI_HELP = {
   SECTION_MAIN_COMMANDS: 'Main Commands:',
   SECTION_SYNC_FLAGS: 'Sync flags (setup, keys, health):',
   SECTION_EDIT_FLAGS: 'Edit flags (read/write the local .env):',
+  SECTION_LIST_FLAGS: 'List flags (view the local .env):',
   SECTION_EXAMPLES: 'Examples:',
   SECTION_FEATURES: 'Features:',
   SECTION_FIRST_TIME: 'First-Time Setup:',
@@ -256,6 +257,7 @@ export const CLI_HELP = {
   CMD_PUSH: '  push                    Encrypt the local .env and push it to cloud storage',
   CMD_PULL: '  pull                    Pull and decrypt a .env from cloud storage',
   CMD_EDIT: '  edit                    Get, set, or list secrets in the local .env',
+  CMD_LIST: '  list                    List secrets in the current local .env file',
   CMD_HELP_OPT: '  --help                  Show all options',
 
   // Quick start commands
@@ -272,12 +274,14 @@ export const CLI_HELP = {
   USAGE_PULL: '  lsh pull               Pull secrets from cloud',
   USAGE_SYNC: '  lsh sync               Setup, keys, health check, status, two-way sync',
   USAGE_EDIT: '  lsh edit               Edit the local .env',
+  USAGE_LIST: '  lsh list               List secrets in the local .env',
 
   // Detailed help - Main commands
   MAIN_PUSH: '  push                   Encrypt & push .env to cloud storage',
   MAIN_PULL: '  pull                   Pull & decrypt .env from cloud storage',
   MAIN_SYNC: '  sync                   Setup, keys, health check, status (see flags below)',
   MAIN_EDIT: '  edit                   Get, set, or list secrets in the local .env',
+  MAIN_LIST: '  list                   List secrets in the current local .env file',
 
   // Detailed help - sync flags
   SYNC_FLAG_INIT: '  --init                 Run the setup wizard (installs IPFS, generates a key)',
@@ -296,6 +300,11 @@ export const CLI_HELP = {
   EDIT_FLAG_LIST: '  --list                 Print a masked table of keys',
   EDIT_FLAG_COPY_FROM: '  --copy-from <env>      Merge another environment\'s vars into this one',
 
+  // Detailed help - list flags
+  LIST_FLAG_KEYS_ONLY: '  --keys-only            Show only keys, not values',
+  LIST_FLAG_FORMAT: '  --format <type>        Output format: env, json, yaml, toml, export',
+  LIST_FLAG_NO_MASK: '  --no-mask              Show full values (default: masked)',
+
   // Example commands
   EX_SYNC_INIT: '    lsh sync --init                         # One-time setup',
   EX_SYNC_DOCTOR: '    lsh sync --doctor                       # Verify setup',
@@ -304,6 +313,7 @@ export const CLI_HELP = {
   EX_EDIT_LIST: '    lsh edit --list                         # View local secrets, masked',
   EX_EDIT_GET: '    lsh edit --get API_KEY                  # Get specific secret',
   EX_EDIT_SET: '    lsh edit --set API_KEY=newvalue         # Update secret',
+  EX_LIST: '    lsh list                                # View local secrets, masked',
 
   // Features
   FEATURE_CROSS_PLATFORM: '  ✅ Cross-platform (Windows, macOS, Linux)',
@@ -355,7 +365,9 @@ export const EDIT_MESSAGES = {
   NO_CHANGES: 'No changes.',
   NOT_PUSHED: 'Not pushed.',
   NOT_PUSHED_HINT_PREFIX: 'Not pushed. Run: lsh push --env ',
+  NOT_PUSHED_HINT_BARE: 'Not pushed. Run: lsh push',
   PUSH_PROMPT_PREFIX: 'Push to ',
+  PUSH_PROMPT_BARE: 'Push',
   PUSH_PROMPT_SUFFIX: '? [Y/n] ',
   MERGED_PREFIX: 'Merged ',
   MERGED_SUFFIX: ' from ',
@@ -365,6 +377,24 @@ export const EDIT_MESSAGES = {
   KEY_LABEL: 'key',
   KEYS_LABEL: 'keys',
   EDITED_SUFFIX: ' edited:  ',
+} as const;
+
+/**
+ * Messages for `lsh list`
+ */
+export const LIST_MESSAGES = {
+  DESCRIPTION: 'List secrets in the current local .env file',
+  OPTION_FILE: 'Path to .env file',
+  OPTION_GLOBAL: 'Use global workspace ($HOME)',
+  OPTION_KEYS_ONLY: 'Show only keys, not values',
+  OPTION_FORMAT: 'Output format: env, json, yaml, toml, export',
+  OPTION_NO_MASK: 'Show full values (default: masked)',
+
+  NO_ENV_FILE_PREFIX: 'No .env file at ',
+  PULL_HINT_PREFIX: 'Tip: Pull from cloud with: lsh pull --env ',
+  UNKNOWN_FORMAT_PREFIX: 'Unknown format ',
+  VALID_FORMATS_PREFIX: '. Valid: ',
+  FAILED_TO_LIST: 'Failed to list secrets:',
 } as const;
 
 /**
