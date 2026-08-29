@@ -83,6 +83,46 @@ describeIfBuilt('lsh list', () => {
     assertShape(stdout);
   });
 
+  // Masking is per-format by default: the human-browsing `env` format masks, the
+  // machine-consumption formats (json/yaml/toml/export) do not — a masked value silently
+  // corrupts anything that evals or parses the output, which is worse than refusing.
+  it.each([
+    ['env', true],
+    ['json', false],
+    ['yaml', false],
+    ['toml', false],
+    ['export', false],
+  ])('--format %s masks by default: %s', (format, masked) => {
+    const { stdout, status } = runCli(['list', '--file', envFile, '--format', format], workDir, tempHome);
+    expect(status).toBe(0);
+    if (masked) {
+      expect(stdout).not.toContain('fixture-api-key-abcdef');
+      expect(stdout).toContain('***');
+    } else {
+      expect(stdout).toContain('fixture-api-key-abcdef');
+      expect(stdout).not.toContain('***');
+    }
+  });
+
+  it('--format export emits a real value an eval could consume, not a masked one', () => {
+    const { stdout, status } = runCli(['list', '--file', envFile, '--format', 'export'], workDir, tempHome);
+    expect(status).toBe(0);
+    expect(stdout).toContain("export API_KEY='fixture-api-key-abcdef'");
+    expect(stdout).not.toContain('***');
+  });
+
+  it('--format json emits a real value a JSON parser could consume, not a masked one', () => {
+    const { stdout, status } = runCli(['list', '--file', envFile, '--format', 'json'], workDir, tempHome);
+    expect(status).toBe(0);
+    expect(JSON.parse(stdout)).toEqual({ API_KEY: 'fixture-api-key-abcdef', PLAIN: 'short' });
+  });
+
+  it('--format json --no-mask is a no-op — already unmasked, as in v3', () => {
+    const { stdout, status } = runCli(['list', '--file', envFile, '--format', 'json', '--no-mask'], workDir, tempHome);
+    expect(status).toBe(0);
+    expect(JSON.parse(stdout)).toEqual({ API_KEY: 'fixture-api-key-abcdef', PLAIN: 'short' });
+  });
+
   it('rejects an unknown format instead of silently coercing it', () => {
     const { stdout, status } = runCli(['list', '--file', envFile, '--format', 'table'], workDir, tempHome);
     expect(status).toBe(1);

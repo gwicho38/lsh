@@ -53,7 +53,7 @@ export function registerListCommand(program: Command): void {
         }
 
         const format = normalizeFormat(options.format);
-        const mask = options.mask !== false;
+        const mask = options.mask === false ? false : format === 'env';
         console.log(formatSecrets(toEntries(vars), format, mask));
       } catch (error) {
         console.error(LIST_MESSAGES.FAILED_TO_LIST, extractErrorMessage(error));

@@ -38,8 +38,9 @@ lsh sync --doctor                 # Verify configuration and connectivity
 lsh push [--env <name>] [--file <path>]    # Upload encrypted .env to cloud
 lsh pull [--env <name>] [--file <path>]    # Download .env from cloud
 lsh sync                                    # Smart sync (push or pull, whichever is newer)
-lsh list [--format <type>]                  # List local secrets, masked (env|json|yaml|toml|export)
-lsh list --no-mask [--format <type>]        # List local secrets, unmasked
+lsh list                                    # List local secrets (env format, masked)
+lsh list --format json|yaml|toml|export     # List local secrets (unmasked — for eval/jq/etc.)
+lsh list --no-mask                          # Force real values in the env format
 lsh list --keys-only                        # List only key names
 lsh edit --get --all --format <type>        # List local secrets, unmasked (via edit)
 lsh sync --status                           # Detailed sync status report

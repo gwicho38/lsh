@@ -303,7 +303,7 @@ export const CLI_HELP = {
   // Detailed help - list flags
   LIST_FLAG_KEYS_ONLY: '  --keys-only            Show only keys, not values',
   LIST_FLAG_FORMAT: '  --format <type>        Output format: env, json, yaml, toml, export',
-  LIST_FLAG_NO_MASK: '  --no-mask              Show full values (default: masked)',
+  LIST_FLAG_NO_MASK: '  --no-mask              Show full values (default: auto based on format)',
 
   // Example commands
   EX_SYNC_INIT: '    lsh sync --init                         # One-time setup',
@@ -388,7 +388,7 @@ export const LIST_MESSAGES = {
   OPTION_GLOBAL: 'Use global workspace ($HOME)',
   OPTION_KEYS_ONLY: 'Show only keys, not values',
   OPTION_FORMAT: 'Output format: env, json, yaml, toml, export',
-  OPTION_NO_MASK: 'Show full values (default: masked)',
+  OPTION_NO_MASK: 'Show full values (default: auto based on format)',
 
   NO_ENV_FILE_PREFIX: 'No .env file at ',
   PULL_HINT_PREFIX: 'Tip: Pull from cloud with: lsh pull --env ',

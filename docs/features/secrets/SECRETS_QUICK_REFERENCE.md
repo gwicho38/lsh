@@ -67,13 +67,14 @@ lsh pull --env prod
 ## Export Formats
 
 ```bash
-# Masked table, any format (list always masks unless --no-mask is given)
+# Masked table (env format only — the format meant for reading, not piping)
+lsh list
+
+# json/yaml/toml/export are unmasked by default — meant to feed jq/eval/other tools
 lsh list --format json
 lsh list --format yaml
 lsh list --format toml
-
-# Full values, no masking
-lsh list --no-mask --format export
+lsh list --format export
 lsh edit --get --all --format export
 
 # Load into shell

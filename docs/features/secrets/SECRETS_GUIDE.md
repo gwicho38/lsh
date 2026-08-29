@@ -184,16 +184,15 @@ lsh edit --env prod --copy-from staging
 ## Export Formats
 
 ```bash
-# Default (masked table)
+# Default (env format, masked table)
 lsh list
 
-# JSON / YAML / TOML (still masked — list always masks unless --no-mask is given)
+# JSON / YAML / TOML / export are unmasked by default — they're meant for jq/eval/other tools,
+# not for reading, so a masked value would silently be the wrong value fed downstream
 lsh list --format json
 lsh list --format yaml
 lsh list --format toml
-
-# Full values, no masking (any format)
-lsh list --no-mask --format export
+lsh list --format export
 lsh edit --get --all --format export
 eval "$(lsh sync --load)"   # load straight into the current shell
 ```

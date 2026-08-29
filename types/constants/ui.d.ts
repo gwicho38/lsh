@@ -232,7 +232,7 @@ export declare const CLI_HELP: {
     readonly EDIT_FLAG_COPY_FROM: "  --copy-from <env>      Merge another environment's vars into this one";
     readonly LIST_FLAG_KEYS_ONLY: "  --keys-only            Show only keys, not values";
     readonly LIST_FLAG_FORMAT: "  --format <type>        Output format: env, json, yaml, toml, export";
-    readonly LIST_FLAG_NO_MASK: "  --no-mask              Show full values (default: masked)";
+    readonly LIST_FLAG_NO_MASK: "  --no-mask              Show full values (default: auto based on format)";
     readonly EX_SYNC_INIT: "    lsh sync --init                         # One-time setup";
     readonly EX_SYNC_DOCTOR: "    lsh sync --doctor                       # Verify setup";
     readonly EX_PUSH: "    lsh push                                # Push to the cloud";
@@ -306,7 +306,7 @@ export declare const LIST_MESSAGES: {
     readonly OPTION_GLOBAL: "Use global workspace ($HOME)";
     readonly OPTION_KEYS_ONLY: "Show only keys, not values";
     readonly OPTION_FORMAT: "Output format: env, json, yaml, toml, export";
-    readonly OPTION_NO_MASK: "Show full values (default: masked)";
+    readonly OPTION_NO_MASK: "Show full values (default: auto based on format)";
     readonly NO_ENV_FILE_PREFIX: "No .env file at ";
     readonly PULL_HINT_PREFIX: "Tip: Pull from cloud with: lsh pull --env ";
     readonly UNKNOWN_FORMAT_PREFIX: "Unknown format ";
