@@ -12,8 +12,8 @@
 
 ## What's New in v4.0.0
 
-**Breaking change.** The CLI surface is now five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. Every
-other v3 top-level command was removed; `lsh --help` lists exactly these six entries. See
+**Breaking change.** The CLI surface is now seven commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`,
+`get`, `set`. Every other v3 top-level command was removed; `lsh --help` lists exactly these eight entries. See
 [Release Notes](docs/releases/4.0.0.md) for the full removal table and upgrade guide.
 
 ## Quick Start
@@ -44,8 +44,8 @@ That's it! Your secrets are now encrypted and synced.
 
 ## Core Commands
 
-`lsh` has five commands. `push`, `pull`, `sync`, and `edit` each accept `-f/--file`, `-e/--env`, and `-g/--global`;
-`list` accepts `-f/--file` and `-g/--global` (no `-e/--env` — it only ever reads the local file).
+`lsh` has seven commands. `push`, `pull`, `sync`, and `edit` each accept `-f/--file`, `-e/--env`, and `-g/--global`;
+`list`, `get`, and `set` accept `-f/--file` and `-g/--global` (no `-e/--env` — they only ever touch the local file).
 
 ```bash
 # Setup, keys, config, and health all live under sync
@@ -60,16 +60,17 @@ lsh sync                       # Two-way sync (push or pull, whichever is newer)
 
 # Edit, read, or write local secrets
 lsh list                       # Masked table of local keys
-lsh edit --get API_KEY         # Print one value
-lsh edit --set API_KEY=xxx     # Set one value
+lsh get API_KEY                # Print one value
+lsh set API_KEY xxx            # Set one value (local only — publish with lsh push)
+lsh edit                       # Open the local .env in $EDITOR
 
 # Multi-environment
 lsh push --env prod
 lsh pull --env staging
 ```
 
-Full flag reference: `lsh push --help`, `lsh pull --help`, `lsh sync --help`, `lsh edit --help`, `lsh list --help`, or
-[docs/releases/4.0.0.md](docs/releases/4.0.0.md).
+Full flag reference: `lsh push --help`, `lsh pull --help`, `lsh sync --help`, `lsh edit --help`, `lsh list --help`,
+`lsh get --help`, `lsh set --help`, or [docs/releases/4.0.0.md](docs/releases/4.0.0.md).
 
 ## How It Works
 
@@ -241,10 +242,10 @@ LSH focuses on encrypting and syncing the `.env`; the rotation policy/schedule i
 Export secrets in multiple formats:
 
 ```bash
-lsh edit --get --all --format json    # JSON
-lsh edit --get --all --format yaml    # YAML
-lsh edit --get --all --format toml    # TOML
-lsh edit --get --all --format export  # Shell export statements
+lsh get --all --format json    # JSON
+lsh get --all --format yaml    # YAML
+lsh get --all --format toml    # TOML
+lsh get --all --format export  # Shell export statements
 
 # Load into current shell
 eval "$(lsh sync --load)"
@@ -276,7 +277,7 @@ eval "$(lsh sync --load)"
 
 ```bash
 # Check what's in your local .env
-lsh edit --get --all --format env
+lsh get --all --format env
 
 # Push if missing
 lsh push --env dev

@@ -11,6 +11,8 @@ import { registerPullCommand } from './commands/pull.js';
 import { registerSyncCommand } from './commands/sync.js';
 import { registerEditCommand } from './commands/edit.js';
 import { registerListCommand } from './commands/list.js';
+import { registerGetCommand } from './commands/get.js';
+import { registerSetCommand } from './commands/set.js';
 import { loadGlobalConfigSync } from './lib/config-manager.js';
 import { removalMessage, syncSubcommandMessage } from './lib/removed-commands.js';
 import { CLI_TEXT, CLI_HELP } from './constants/ui.js';
@@ -57,6 +59,8 @@ program
     console.log(CLI_HELP.CMD_PULL);
     console.log(CLI_HELP.CMD_EDIT);
     console.log(CLI_HELP.CMD_LIST);
+    console.log(CLI_HELP.CMD_GET);
+    console.log(CLI_HELP.CMD_SET);
     console.log('');
     console.log(CLI_HELP.SECTION_QUICK_START);
     console.log(CLI_HELP.QUICK_SYNC_INIT);
@@ -136,6 +140,8 @@ function findSimilarCommands(input: string, validCommands: string[]): string[] {
   registerSyncCommand(program);
   registerEditCommand(program);
   registerListCommand(program);
+  registerGetCommand(program);
+  registerSetCommand(program);
 
   // Pre-parse check for unknown commands
   const args = process.argv.slice(2);
@@ -247,6 +253,8 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.USAGE_SYNC);
   console.log(CLI_HELP.USAGE_EDIT);
   console.log(CLI_HELP.USAGE_LIST);
+  console.log(CLI_HELP.USAGE_GET);
+  console.log(CLI_HELP.USAGE_SET);
   console.log('');
   console.log(CLI_HELP.SECTION_MAIN_COMMANDS);
   console.log(CLI_HELP.MAIN_PUSH);
@@ -254,6 +262,8 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.MAIN_SYNC);
   console.log(CLI_HELP.MAIN_EDIT);
   console.log(CLI_HELP.MAIN_LIST);
+  console.log(CLI_HELP.MAIN_GET);
+  console.log(CLI_HELP.MAIN_SET);
   console.log('');
   console.log(CLI_HELP.SECTION_SYNC_FLAGS);
   console.log(CLI_HELP.SYNC_FLAG_INIT);
@@ -277,6 +287,14 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.LIST_FLAG_FORMAT);
   console.log(CLI_HELP.LIST_FLAG_NO_MASK);
   console.log('');
+  console.log(CLI_HELP.SECTION_GET_FLAGS);
+  console.log(CLI_HELP.GET_FLAG_ALL);
+  console.log(CLI_HELP.GET_FLAG_FORMAT);
+  console.log(CLI_HELP.GET_FLAG_EXACT);
+  console.log('');
+  console.log(CLI_HELP.SECTION_SET_FLAGS);
+  console.log(CLI_HELP.SET_FLAG_STDIN);
+  console.log('');
   console.log(CLI_HELP.SECTION_EXAMPLES);
   console.log('');
   console.log(`  ${CLI_HELP.SECTION_FIRST_TIME}`);
@@ -290,6 +308,8 @@ function showDetailedHelp(): void {
   console.log(CLI_HELP.EX_EDIT_GET);
   console.log(CLI_HELP.EX_EDIT_SET);
   console.log(CLI_HELP.EX_LIST);
+  console.log(CLI_HELP.EX_GET);
+  console.log(CLI_HELP.EX_SET);
   console.log('');
   console.log(CLI_HELP.SECTION_FEATURES);
   console.log(CLI_HELP.FEATURE_CROSS_PLATFORM);

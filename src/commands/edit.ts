@@ -5,19 +5,16 @@
 import { Command } from 'commander';
 import { spawn } from 'child_process';
 import * as fs from 'fs';
-import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
 import chalk from 'chalk';
 import { resolveContext } from '../lib/workspace-context.js';
-import { getGitRepoInfo, ensureEnvInGitignore } from '../lib/git-utils.js';
-import { parseEnv, serializeEnv, upsertEnv, diffEnv, type EnvDiff } from '../lib/env-file.js';
+import { diffEnv, type EnvDiff } from '../lib/env-file.js';
+import { ensureTargetGitignored, readLocalEnv, writeEnvUpdate } from '../lib/env-store.js';
 import { formatSecrets, type OutputFormat, type SecretEntry } from '../lib/format-utils.js';
 import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
 import { extractErrorMessage } from '../lib/lsh-error.js';
 import { EDIT_MESSAGES } from '../constants/ui.js';
-import { ENV_BACKUP_SUFFIX_PATTERN } from '../constants/paths.js';
-import { ENV_VARS } from '../constants/config.js';
 
 const DEFAULT_EDITOR = 'vi';
 const VALID_FORMATS: OutputFormat[] = ['env', 'json', 'yaml', 'toml', 'export'];
@@ -118,64 +115,6 @@ function confirm(question: string): Promise<boolean> {
   });
 }
 
-function homeDir(): string {
-  return process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || os.homedir();
-}
-
-/**
- * The gitignore patterns that cover `filePath` itself and its `.backup.<timestamp>` siblings,
- * regardless of the file's basename — so `--file app.env` is covered exactly like `.env`.
- */
-function gitignorePatternsForFile(filePath: string): string[] {
-  const base = path.basename(filePath);
-  return [base, `${base}${ENV_BACKUP_SUFFIX_PATTERN}`];
-}
-
-/**
- * Installs gitignore coverage for `filePath` before it's written, so a freshly created or
- * backed-up plaintext secrets file is never briefly stageable. Skipped at the home directory
- * itself — a `--global` write must not touch a user's personal dotfiles `.gitignore`.
- */
-function ensureTargetGitignored(filePath: string): void {
-  const dir = path.dirname(filePath);
-  if (dir === homeDir()) return;
-  if (getGitRepoInfo(dir)?.isGitRepo) {
-    ensureEnvInGitignore(dir, gitignorePatternsForFile(filePath));
-  }
-}
-
-/**
- * Backs up an existing secrets file before a targeted edit overwrites it, mirroring
- * SecretsManager.pull. The backup carries the same plaintext secrets as the file it's
- * copied from, so the git-ignore patterns that cover it must exist before it's written.
- */
-export function backupEnvFile(filePath: string): void {
-  if (!fs.existsSync(filePath)) return;
-  ensureTargetGitignored(filePath);
-  fs.copyFileSync(filePath, `${filePath}.backup.${Date.now()}`);
-}
-
-function readLocal(filePath: string): Record<string, string> {
-  if (!fs.existsSync(filePath)) return {};
-  return parseEnv(fs.readFileSync(filePath, 'utf8'));
-}
-
-/**
- * Writes `updates` into `filePath`. An existing file is backed up, then patched in place with
- * `upsertEnv` to preserve every line `updates` doesn't touch; a missing file is created fresh
- * from `fullContent` since there is nothing to preserve.
- */
-function writeEnvUpdate(filePath: string, updates: Record<string, string>, fullContent: Record<string, string>): void {
-  if (fs.existsSync(filePath)) {
-    backupEnvFile(filePath);
-    const raw = fs.readFileSync(filePath, 'utf8');
-    fs.writeFileSync(filePath, upsertEnv(raw, updates), { mode: 0o600 });
-    return;
-  }
-  ensureTargetGitignored(filePath);
-  fs.writeFileSync(filePath, serializeEnv(fullContent), { mode: 0o600 });
-}
-
 interface PushCapableManager {
   push: (f: string, e: string, force?: boolean) => Promise<void>;
   pull: (f: string, e: string, force?: boolean) => Promise<void>;
@@ -242,7 +181,7 @@ export function registerEditCommand(program: Command): void {
             process.exitCode = 1;
             return;
           }
-          const vars = readLocal(filePath);
+          const vars = readLocalEnv(filePath);
           const format = normalizeFormat(options.format);
           const result = resolveGetOrList(vars, { get: options.get, all: options.all, list: options.list, format });
 
@@ -255,7 +194,7 @@ export function registerEditCommand(program: Command): void {
           return;
         }
 
-        const before = readLocal(filePath);
+        const before = readLocalEnv(filePath);
 
         if (options.set) {
           const assignment = parseSetAssignment(options.set);
@@ -275,7 +214,7 @@ export function registerEditCommand(program: Command): void {
           try {
             await new IPFSClientManager().ensureDaemonRunning();
             await manager.pull(tmp, options.copyFrom, true);
-            const incoming = readLocal(tmp);
+            const incoming = readLocalEnv(tmp);
             const merged = { ...before, ...incoming };
             writeEnvUpdate(filePath, incoming, merged);
             const mergedCount = Object.keys(incoming).length;
@@ -297,7 +236,7 @@ export function registerEditCommand(program: Command): void {
           console.log(chalk.gray(`${EDIT_MESSAGES.CREATED_FILE_PREFIX}${filePath}`));
         }
         await openInEditor(filePath);
-        const after = readLocal(filePath);
+        const after = readLocalEnv(filePath);
         await maybePush(manager, filePath, environment, before, after, options.push);
       } catch (error) {
         console.error(EDIT_MESSAGES.FAILED_TO_EDIT, extractErrorMessage(error));

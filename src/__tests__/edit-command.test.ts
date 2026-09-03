@@ -7,7 +7,6 @@ import {
   resolveGetOrList,
   copyFromTempPath,
   parseConfirmAnswer,
-  backupEnvFile,
 } from '../commands/edit.js';
 
 describe('shouldPrompt', () => {
@@ -104,38 +103,6 @@ describe('parseConfirmAnswer', () => {
   it('treats unrecognized input as cancel, not as yes', () => {
     expect(parseConfirmAnswer('maybe')).toBe(false);
     expect(parseConfirmAnswer('nope')).toBe(false);
-  });
-});
-
-describe('backupEnvFile', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lsh-backup-'));
-  });
-
-  afterEach(() => {
-    fs.rmSync(dir, { recursive: true, force: true });
-  });
-
-  it('copies an existing file to a .backup.<timestamp> sibling, leaving the original untouched', () => {
-    const file = path.join(dir, '.env');
-    fs.writeFileSync(file, 'A=1\n');
-
-    backupEnvFile(file);
-
-    const backups = fs.readdirSync(dir).filter((name) => name.startsWith('.env.backup.'));
-    expect(backups).toHaveLength(1);
-    expect(fs.readFileSync(path.join(dir, backups[0]), 'utf8')).toBe('A=1\n');
-    expect(fs.readFileSync(file, 'utf8')).toBe('A=1\n');
-  });
-
-  it('does nothing when the file does not exist', () => {
-    const file = path.join(dir, '.env');
-
-    backupEnvFile(file);
-
-    expect(fs.readdirSync(dir)).toEqual([]);
   });
 });
 

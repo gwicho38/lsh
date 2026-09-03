@@ -247,6 +247,8 @@ export const CLI_HELP = {
   SECTION_SYNC_FLAGS: 'Sync flags (setup, keys, health):',
   SECTION_EDIT_FLAGS: 'Edit flags (read/write the local .env):',
   SECTION_LIST_FLAGS: 'List flags (view the local .env):',
+  SECTION_GET_FLAGS: 'Get flags (read one value):',
+  SECTION_SET_FLAGS: 'Set flags (write one value):',
   SECTION_EXAMPLES: 'Examples:',
   SECTION_FEATURES: 'Features:',
   SECTION_FIRST_TIME: 'First-Time Setup:',
@@ -258,6 +260,8 @@ export const CLI_HELP = {
   CMD_PULL: '  pull                    Pull and decrypt a .env from cloud storage',
   CMD_EDIT: '  edit                    Get, set, or list secrets in the local .env',
   CMD_LIST: '  list                    List secrets in the current local .env file',
+  CMD_GET: '  get                     Print one secret value from the local .env file',
+  CMD_SET: '  set                     Set a secret in the local .env file',
   CMD_HELP_OPT: '  --help                  Show all options',
 
   // Quick start commands
@@ -275,6 +279,8 @@ export const CLI_HELP = {
   USAGE_SYNC: '  lsh sync               Setup, keys, health check, status, two-way sync',
   USAGE_EDIT: '  lsh edit               Edit the local .env',
   USAGE_LIST: '  lsh list               List secrets in the local .env',
+  USAGE_GET: '  lsh get <key>          Print one secret value',
+  USAGE_SET: '  lsh set <key> <value>  Set one secret value',
 
   // Detailed help - Main commands
   MAIN_PUSH: '  push                   Encrypt & push .env to cloud storage',
@@ -282,6 +288,8 @@ export const CLI_HELP = {
   MAIN_SYNC: '  sync                   Setup, keys, health check, status (see flags below)',
   MAIN_EDIT: '  edit                   Get, set, or list secrets in the local .env',
   MAIN_LIST: '  list                   List secrets in the current local .env file',
+  MAIN_GET: '  get                    Print one secret value from the local .env file',
+  MAIN_SET: '  set                    Set a secret in the local .env file',
 
   // Detailed help - sync flags
   SYNC_FLAG_INIT: '  --init                 Run the setup wizard (installs IPFS, generates a key)',
@@ -305,6 +313,14 @@ export const CLI_HELP = {
   LIST_FLAG_FORMAT: '  --format <type>        Output format: env, json, yaml, toml, export',
   LIST_FLAG_NO_MASK: '  --no-mask              Show full values (default: auto based on format)',
 
+  // Detailed help - get flags
+  GET_FLAG_ALL: '  --all                  Print every secret in the file',
+  GET_FLAG_FORMAT: '  --format <type>        Output format for --all: env, json, yaml, toml, export',
+  GET_FLAG_EXACT: '  --exact                Require an exact key match (disable fuzzy matching)',
+
+  // Detailed help - set flags
+  SET_FLAG_STDIN: '  --stdin                Read KEY=VALUE pairs from stdin, one per line',
+
   // Example commands
   EX_SYNC_INIT: '    lsh sync --init                         # One-time setup',
   EX_SYNC_DOCTOR: '    lsh sync --doctor                       # Verify setup',
@@ -314,6 +330,8 @@ export const CLI_HELP = {
   EX_EDIT_GET: '    lsh edit --get API_KEY                  # Get specific secret',
   EX_EDIT_SET: '    lsh edit --set API_KEY=newvalue         # Update secret',
   EX_LIST: '    lsh list                                # View local secrets, masked',
+  EX_GET: '    lsh get API_KEY                         # Print one value',
+  EX_SET: '    lsh set API_KEY newvalue                # Set one value',
 
   // Features
   FEATURE_CROSS_PLATFORM: '  ✅ Cross-platform (Windows, macOS, Linux)',
@@ -395,6 +413,54 @@ export const LIST_MESSAGES = {
   UNKNOWN_FORMAT_PREFIX: 'Unknown format ',
   VALID_FORMATS_PREFIX: '. Valid: ',
   FAILED_TO_LIST: 'Failed to list secrets:',
+} as const;
+
+/**
+ * Messages for `lsh get`
+ */
+export const GET_MESSAGES = {
+  DESCRIPTION: 'Print one secret value from the local .env file, or every value with --all',
+  OPTION_FILE: 'Path to .env file',
+  OPTION_GLOBAL: 'Use global workspace ($HOME)',
+  OPTION_ALL: 'Print every secret in the file',
+  OPTION_EXPORT: 'Shorthand for --format export',
+  OPTION_FORMAT: 'Output format for --all: env, json, yaml, toml, export',
+  OPTION_EXACT: 'Require an exact key match (disable fuzzy matching)',
+  OPTION_NO_MASK: 'Show full values in the ambiguous-match list',
+
+  NO_ENV_FILE_PREFIX: 'No .env file at ',
+  PULL_HINT_PREFIX: 'Tip: Pull from cloud with: lsh pull --env ',
+  UNKNOWN_FORMAT_PREFIX: 'Unknown format ',
+  VALID_FORMATS_PREFIX: '. Valid: ',
+  KEY_REQUIRED: 'Usage: lsh get <key>   (or: lsh get --all)',
+  KEY_NOT_FOUND_PREFIX: 'Key not found: ',
+  EXACT_HINT: 'Tip: drop --exact to search by fuzzy match',
+  AMBIGUOUS_PREFIX: 'Ambiguous key ',
+  AMBIGUOUS_SUFFIX: ' matches:',
+  AMBIGUOUS_HINT: 'Name one of them exactly, or re-run with --exact',
+  FAILED_TO_GET: 'Failed to get secret:',
+} as const;
+
+/**
+ * Messages for `lsh set`
+ */
+export const SET_MESSAGES = {
+  DESCRIPTION: 'Set a secret in the local .env file, or batch upsert KEY=VALUE lines from stdin',
+  OPTION_FILE: 'Path to .env file',
+  OPTION_GLOBAL: 'Use global workspace ($HOME)',
+  OPTION_STDIN: 'Read KEY=VALUE pairs from stdin, one per line',
+
+  USAGE: 'Usage: lsh set <key> <value>',
+  USAGE_STDIN: '   or: printenv | lsh set          (batch upsert from stdin)',
+  STDIN_IS_TTY: 'No input on stdin. Pipe KEY=VALUE lines, or pass <key> <value>.',
+  NO_ASSIGNMENTS: 'No valid KEY=VALUE pairs on stdin',
+  INVALID_KEY_PREFIX: 'Invalid key ',
+  INVALID_KEY_SUFFIX: ' — must be a valid environment variable name',
+  INVALID_LINE_PREFIX: 'Skipped unparseable line: ',
+  SET_PREFIX: 'Set ',
+  SET_COUNT_SUFFIX: ' in ',
+  PUSH_HINT: 'Not pushed. Run: lsh push',
+  FAILED_TO_SET: 'Failed to set secret:',
 } as const;
 
 /**

@@ -40,10 +40,4 @@ export declare function formatEditSummary(diff: EnvDiff): string;
  * publish can't be retracted and the safe default is not to publish.
  */
 export declare function parseConfirmAnswer(answer: string): boolean;
-/**
- * Backs up an existing secrets file before a targeted edit overwrites it, mirroring
- * SecretsManager.pull. The backup carries the same plaintext secrets as the file it's
- * copied from, so the git-ignore patterns that cover it must exist before it's written.
- */
-export declare function backupEnvFile(filePath: string): void;
 export declare function registerEditCommand(program: Command): void;

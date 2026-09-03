@@ -192,6 +192,8 @@ export declare const CLI_HELP: {
     readonly SECTION_SYNC_FLAGS: "Sync flags (setup, keys, health):";
     readonly SECTION_EDIT_FLAGS: "Edit flags (read/write the local .env):";
     readonly SECTION_LIST_FLAGS: "List flags (view the local .env):";
+    readonly SECTION_GET_FLAGS: "Get flags (read one value):";
+    readonly SECTION_SET_FLAGS: "Set flags (write one value):";
     readonly SECTION_EXAMPLES: "Examples:";
     readonly SECTION_FEATURES: "Features:";
     readonly SECTION_FIRST_TIME: "First-Time Setup:";
@@ -201,6 +203,8 @@ export declare const CLI_HELP: {
     readonly CMD_PULL: "  pull                    Pull and decrypt a .env from cloud storage";
     readonly CMD_EDIT: "  edit                    Get, set, or list secrets in the local .env";
     readonly CMD_LIST: "  list                    List secrets in the current local .env file";
+    readonly CMD_GET: "  get                     Print one secret value from the local .env file";
+    readonly CMD_SET: "  set                     Set a secret in the local .env file";
     readonly CMD_HELP_OPT: "  --help                  Show all options";
     readonly QUICK_SYNC_INIT: "  lsh sync --init                   # One-time setup: installs IPFS, generates a key";
     readonly QUICK_PUSH: "  lsh push                          # Push secrets to the cloud";
@@ -212,11 +216,15 @@ export declare const CLI_HELP: {
     readonly USAGE_SYNC: "  lsh sync               Setup, keys, health check, status, two-way sync";
     readonly USAGE_EDIT: "  lsh edit               Edit the local .env";
     readonly USAGE_LIST: "  lsh list               List secrets in the local .env";
+    readonly USAGE_GET: "  lsh get <key>          Print one secret value";
+    readonly USAGE_SET: "  lsh set <key> <value>  Set one secret value";
     readonly MAIN_PUSH: "  push                   Encrypt & push .env to cloud storage";
     readonly MAIN_PULL: "  pull                   Pull & decrypt .env from cloud storage";
     readonly MAIN_SYNC: "  sync                   Setup, keys, health check, status (see flags below)";
     readonly MAIN_EDIT: "  edit                   Get, set, or list secrets in the local .env";
     readonly MAIN_LIST: "  list                   List secrets in the current local .env file";
+    readonly MAIN_GET: "  get                    Print one secret value from the local .env file";
+    readonly MAIN_SET: "  set                    Set a secret in the local .env file";
     readonly SYNC_FLAG_INIT: "  --init                 Run the setup wizard (installs IPFS, generates a key)";
     readonly SYNC_FLAG_KEY: "  --key [value]          Print the encryption key, or import one";
     readonly SYNC_FLAG_DOCTOR: "  --doctor               Run a health check";
@@ -233,6 +241,10 @@ export declare const CLI_HELP: {
     readonly LIST_FLAG_KEYS_ONLY: "  --keys-only            Show only keys, not values";
     readonly LIST_FLAG_FORMAT: "  --format <type>        Output format: env, json, yaml, toml, export";
     readonly LIST_FLAG_NO_MASK: "  --no-mask              Show full values (default: auto based on format)";
+    readonly GET_FLAG_ALL: "  --all                  Print every secret in the file";
+    readonly GET_FLAG_FORMAT: "  --format <type>        Output format for --all: env, json, yaml, toml, export";
+    readonly GET_FLAG_EXACT: "  --exact                Require an exact key match (disable fuzzy matching)";
+    readonly SET_FLAG_STDIN: "  --stdin                Read KEY=VALUE pairs from stdin, one per line";
     readonly EX_SYNC_INIT: "    lsh sync --init                         # One-time setup";
     readonly EX_SYNC_DOCTOR: "    lsh sync --doctor                       # Verify setup";
     readonly EX_PUSH: "    lsh push                                # Push to the cloud";
@@ -241,6 +253,8 @@ export declare const CLI_HELP: {
     readonly EX_EDIT_GET: "    lsh edit --get API_KEY                  # Get specific secret";
     readonly EX_EDIT_SET: "    lsh edit --set API_KEY=newvalue         # Update secret";
     readonly EX_LIST: "    lsh list                                # View local secrets, masked";
+    readonly EX_GET: "    lsh get API_KEY                         # Print one value";
+    readonly EX_SET: "    lsh set API_KEY newvalue                # Set one value";
     readonly FEATURE_CROSS_PLATFORM: "  ✅ Cross-platform (Windows, macOS, Linux)";
     readonly FEATURE_ENCRYPTION: "  ✅ AES-256 encryption";
     readonly FEATURE_MULTI_ENV: "  ✅ Multi-environment support";
@@ -312,6 +326,50 @@ export declare const LIST_MESSAGES: {
     readonly UNKNOWN_FORMAT_PREFIX: "Unknown format ";
     readonly VALID_FORMATS_PREFIX: ". Valid: ";
     readonly FAILED_TO_LIST: "Failed to list secrets:";
+};
+/**
+ * Messages for `lsh get`
+ */
+export declare const GET_MESSAGES: {
+    readonly DESCRIPTION: "Print one secret value from the local .env file, or every value with --all";
+    readonly OPTION_FILE: "Path to .env file";
+    readonly OPTION_GLOBAL: "Use global workspace ($HOME)";
+    readonly OPTION_ALL: "Print every secret in the file";
+    readonly OPTION_EXPORT: "Shorthand for --format export";
+    readonly OPTION_FORMAT: "Output format for --all: env, json, yaml, toml, export";
+    readonly OPTION_EXACT: "Require an exact key match (disable fuzzy matching)";
+    readonly OPTION_NO_MASK: "Show full values in the ambiguous-match list";
+    readonly NO_ENV_FILE_PREFIX: "No .env file at ";
+    readonly PULL_HINT_PREFIX: "Tip: Pull from cloud with: lsh pull --env ";
+    readonly UNKNOWN_FORMAT_PREFIX: "Unknown format ";
+    readonly VALID_FORMATS_PREFIX: ". Valid: ";
+    readonly KEY_REQUIRED: "Usage: lsh get <key>   (or: lsh get --all)";
+    readonly KEY_NOT_FOUND_PREFIX: "Key not found: ";
+    readonly EXACT_HINT: "Tip: drop --exact to search by fuzzy match";
+    readonly AMBIGUOUS_PREFIX: "Ambiguous key ";
+    readonly AMBIGUOUS_SUFFIX: " matches:";
+    readonly AMBIGUOUS_HINT: "Name one of them exactly, or re-run with --exact";
+    readonly FAILED_TO_GET: "Failed to get secret:";
+};
+/**
+ * Messages for `lsh set`
+ */
+export declare const SET_MESSAGES: {
+    readonly DESCRIPTION: "Set a secret in the local .env file, or batch upsert KEY=VALUE lines from stdin";
+    readonly OPTION_FILE: "Path to .env file";
+    readonly OPTION_GLOBAL: "Use global workspace ($HOME)";
+    readonly OPTION_STDIN: "Read KEY=VALUE pairs from stdin, one per line";
+    readonly USAGE: "Usage: lsh set <key> <value>";
+    readonly USAGE_STDIN: "   or: printenv | lsh set          (batch upsert from stdin)";
+    readonly STDIN_IS_TTY: "No input on stdin. Pipe KEY=VALUE lines, or pass <key> <value>.";
+    readonly NO_ASSIGNMENTS: "No valid KEY=VALUE pairs on stdin";
+    readonly INVALID_KEY_PREFIX: "Invalid key ";
+    readonly INVALID_KEY_SUFFIX: " — must be a valid environment variable name";
+    readonly INVALID_LINE_PREFIX: "Skipped unparseable line: ";
+    readonly SET_PREFIX: "Set ";
+    readonly SET_COUNT_SUFFIX: " in ";
+    readonly PUSH_HINT: "Not pushed. Run: lsh push";
+    readonly FAILED_TO_SET: "Failed to set secret:";
 };
 /**
  * Messages for `lsh sync`

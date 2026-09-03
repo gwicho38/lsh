@@ -11,7 +11,7 @@ const TOP_LEVEL_ACCEPTABLE =
 describe('REMOVED_COMMANDS', () => {
   it('covers every command removed in v4', () => {
     const expected = [
-      'get', 'set', 'env', 'load', 'create', 'delete', 'cp',
+      'env', 'load', 'create', 'delete', 'cp',
       'key', 'init', 'doctor', 'config', 'status', 'info', 'clear',
       'sync-history', 'ipfs', 'migrate', 'self', 'context', 'completion',
     ];
@@ -35,6 +35,8 @@ describe('REMOVED_COMMANDS', () => {
         guidance.startsWith('lsh pull') ||
         guidance.startsWith('lsh sync') ||
         guidance.startsWith('lsh edit') ||
+        guidance.startsWith('lsh get') ||
+        guidance.startsWith('lsh set') ||
         guidance.startsWith('rm .env') ||
         guidance.startsWith('npm install') ||
         guidance.startsWith('cat llms.txt') ||
@@ -44,7 +46,7 @@ describe('REMOVED_COMMANDS', () => {
   });
 
   it('does not list any surviving command as removed', () => {
-    for (const surviving of ['push', 'pull', 'sync', 'edit', 'list', 'ls']) {
+    for (const surviving of ['push', 'pull', 'sync', 'edit', 'list', 'ls', 'get', 'set']) {
       expect(Object.keys(REMOVED_COMMANDS)).not.toContain(surviving);
     }
   });
@@ -52,9 +54,9 @@ describe('REMOVED_COMMANDS', () => {
 
 describe('removalMessage', () => {
   it('names the version and the replacement', () => {
-    const msg = removalMessage('get');
-    expect(msg).toContain("'lsh get' was removed in v4.0.0");
-    expect(msg).toContain('lsh edit --get');
+    const msg = removalMessage('doctor');
+    expect(msg).toContain("'lsh doctor' was removed in v4.0.0");
+    expect(msg).toContain('lsh sync --doctor');
   });
 
   it('maps key to the sync control plane', () => {
@@ -69,9 +71,9 @@ describe('removalMessage', () => {
     expect(removalMessage('clear')).toContain('lsh sync --repair');
   });
 
-  it('maps env to the unmasked replacement, not --list which masks values', () => {
+  it('maps env to the unmasked replacement, not list which masks values', () => {
     const msg = removalMessage('env');
-    expect(msg).toContain('lsh edit --get --all --format env');
+    expect(msg).toContain('lsh get --all --format env');
   });
 
   it('returns null for a name that was never a command', () => {
@@ -80,6 +82,8 @@ describe('removalMessage', () => {
 
   it('returns null for a surviving command', () => {
     expect(removalMessage('push')).toBeNull();
+    expect(removalMessage('get')).toBeNull();
+    expect(removalMessage('set')).toBeNull();
   });
 });
 

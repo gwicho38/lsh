@@ -16,27 +16,30 @@ function runCli(args: string[]): { stdout: string; status: number } {
   }
 }
 
+/**
+ * Commander wraps a long description onto continuation lines indented to the description
+ * column, so only lines at the two-space command indent name a command.
+ */
+function commandNames(helpOutput: string): string[] {
+  const commandBlock = helpOutput.split('Commands:')[1] ?? '';
+  return commandBlock
+    .split('\n')
+    .map((line) => line.match(/^ {2}(\S+)/)?.[1])
+    .filter((name): name is string => Boolean(name))
+    .map((name) => name.split('|')[0]);
+}
+
 describeIfBuilt('v4 command surface', () => {
   // Requires `npm run build` first; CI builds before `npm test`.
 
-  it('exposes exactly the four commands plus help', () => {
-    const { stdout } = runCli(['--help']);
-    const commandBlock = stdout.split('Commands:')[1] ?? '';
-    const names = commandBlock
-      .split('\n')
-      .map((l) => l.trim().split(/[\s|[]/)[0])
-      .filter(Boolean);
-    // `help` is meta, not one of the five functional commands.
-    expect(new Set(names)).toEqual(new Set(['help', 'push', 'pull', 'sync', 'edit', 'list']));
+  it('exposes exactly the functional commands plus help', () => {
+    const names = commandNames(runCli(['--help']).stdout);
+    // `help` is meta, not one of the functional commands.
+    expect(new Set(names)).toEqual(new Set(['help', 'push', 'pull', 'sync', 'edit', 'list', 'get', 'set']));
   });
 
   it('never lists a live command as removed', () => {
-    const { stdout } = runCli(['--help']);
-    const commandBlock = stdout.split('Commands:')[1] ?? '';
-    const live = commandBlock
-      .split('\n')
-      .map((l) => l.trim().split(/[\s|[]/)[0])
-      .filter(Boolean);
+    const live = commandNames(runCli(['--help']).stdout);
     for (const removed of Object.keys(REMOVED_COMMANDS)) {
       expect(live).not.toContain(removed);
     }
@@ -51,7 +54,7 @@ describeIfBuilt('v4 command surface', () => {
 
     const allGuidance = [...Object.values(REMOVED_COMMANDS), ...Object.values(REMOVED_SYNC_SUBCOMMANDS)];
     for (const guidance of allGuidance) {
-      const match = guidance.match(/^lsh (push|pull|sync|edit) (--[a-z-]+)/);
+      const match = guidance.match(/^lsh (push|pull|sync|edit|get|set) (--[a-z-]+)/);
       if (!match) continue;
       const [, command, flag] = match;
       expect(helpFor(command)).toContain(flag);
@@ -59,8 +62,6 @@ describeIfBuilt('v4 command surface', () => {
   });
 
   it.each([
-    ['get', 'lsh edit --get'],
-    ['set', 'lsh edit --set'],
     ['load', 'lsh sync --load'],
     ['key', 'lsh sync --key'],
     ['doctor', 'lsh sync --doctor'],

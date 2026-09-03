@@ -209,10 +209,10 @@ nano ~/.config/lsh/lshrc
 
 ### Secrets still masked
 
-`lsh sync --config` always masks. To see an unmasked value, use `edit --get`:
+`lsh sync --config` always masks. To see an unmasked value, use `lsh get`:
 
 ```bash
-lsh edit --file ~/.config/lsh/lshrc --get --all
+lsh get --file ~/.config/lsh/lshrc --all
 ```
 
 ## Examples

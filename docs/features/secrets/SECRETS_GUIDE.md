@@ -2,7 +2,7 @@
 
 Sync your `.env` files across all development machines with AES-256 encryption via the IPFS network.
 
-> **v4.0.0:** the CLI surface is five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. See
+> **v4.0.0:** the CLI surface is seven commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`, `get`, `set`. See
 > [docs/releases/4.0.0.md](../../releases/4.0.0.md) for the full v3→v4 command mapping.
 
 ## Quick Start
@@ -28,16 +28,16 @@ lsh push                     # Push to cloud
 | `lsh pull` | Download .env from cloud |
 | `lsh sync` | Smart sync (auto push/pull) |
 | `lsh list` | List secrets in local .env (masked) |
-| `lsh edit --get --all --format env` | List secrets in local .env (unmasked) |
+| `lsh get --all --format env` | List secrets in local .env (unmasked) |
 | `lsh sync --key` | Print the effective encryption key |
-| `lsh edit --get <key>` | Get a specific secret |
-| `lsh edit --set <key>=<value>` | Set a specific secret |
+| `lsh get <key>` | Get a specific secret |
+| `lsh set <key> <value>` | Set a specific secret (local only) |
 | `lsh sync --status` | Show current context and sync state |
 | `lsh sync --repair` | Clear local sync history and metadata |
 
-Every other v3 top-level command (`init`, `key`, `get`, `set`, `env`, `info`, `status`, `clear`,
-`doctor`, `config`, `sync-history`, `ipfs`, `self`, `context`, `completion`, `list`, `create`,
-`delete`, `cp`, `load`) is gone — running it prints its exact v4 replacement.
+Every other v3 top-level command (`init`, `key`, `env`, `info`, `status`, `clear`, `doctor`,
+`config`, `sync-history`, `ipfs`, `self`, `context`, `completion`, `create`, `delete`, `cp`,
+`load`) is gone — running it prints its exact v4 replacement.
 
 ## Setup Options
 
@@ -159,23 +159,27 @@ lsh sync --status
 ### Get a Secret
 
 ```bash
-# Get by exact name (v4 requires an exact match — no fuzzy matching)
-lsh edit --get API_KEY
+# Get by exact name; an exact key always wins over any fuzzy candidate
+lsh get API_KEY
+
+# Fuzzy search when no key matches exactly
+lsh get "stripe api"          # resolves STRIPE_API_KEY
+lsh get API_KEY --exact       # refuse to fuzzy-match
 
 # Get all secrets
-lsh edit --get --all
-lsh edit --get --all --format json
+lsh get --all
+lsh get --all --format json
 ```
 
 ### Set a Secret
 
 ```bash
-# Set single value
-lsh edit --set API_KEY=my-api-key-value
+# Set single value — writes locally only; publish with lsh push
+lsh set API_KEY my-api-key-value
 
-# Multiple values: one call per key — v4 has no batch/stdin import
-lsh edit --set AWS_ACCESS_KEY_ID=AKIA...
-lsh edit --set AWS_SECRET_ACCESS_KEY=...
+# Batch upsert from stdin (tolerates an `export ` prefix)
+printenv | lsh set
+lsh set --stdin < .env.backup
 
 # Merge another environment's values into this one instead
 lsh edit --env prod --copy-from staging
@@ -193,7 +197,7 @@ lsh list --format json
 lsh list --format yaml
 lsh list --format toml
 lsh list --format export
-lsh edit --get --all --format export
+lsh get --all --format export
 eval "$(lsh sync --load)"   # load straight into the current shell
 ```
 
@@ -274,7 +278,7 @@ Pinning services only ever see ciphertext. See the README section
 
 ```bash
 # Check what's in your local .env
-lsh edit --get --all --format env
+lsh get --all --format env
 
 # Push if missing
 lsh push

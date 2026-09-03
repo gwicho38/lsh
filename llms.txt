@@ -15,8 +15,8 @@ Docs: https://github.com/gwicho38/lsh/blob/main/README.md
 
 ## v4.0.0 Breaking Change
 
-The CLI surface is now five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. Every other v3 top-level
-command was removed. Running a removed command prints its exact v4 replacement. See
+The CLI surface is now seven commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`, `get`, `set`. Every other
+v3 top-level command was removed. Running a removed command prints its exact v4 replacement. See
 [docs/releases/4.0.0.md](docs/releases/4.0.0.md) for the full removal table.
 
 ## Primary Use Case
@@ -42,12 +42,14 @@ lsh list                                    # List local secrets (env format, ma
 lsh list --format json|yaml|toml|export     # List local secrets (unmasked — for eval/jq/etc.)
 lsh list --no-mask                          # Force real values in the env format
 lsh list --keys-only                        # List only key names
-lsh edit --get --all --format <type>        # List local secrets, unmasked (via edit)
+lsh get --all --format <type>               # List local secrets, unmasked
 lsh sync --status                           # Detailed sync status report
 
 ### Individual Secret Operations
-lsh edit --get <key>                  # Get specific secret value (unmasked)
-lsh edit --set <key>=<value>          # Set specific secret value
+lsh get <key>                         # Get specific secret value (unmasked, fuzzy key match)
+lsh get <key> --exact                 # Get specific secret value, exact key match only
+lsh set <key> <value>                 # Set specific secret value (local only; publish with lsh push)
+printenv | lsh set                    # Batch upsert KEY=VALUE lines from stdin
 rm .env                               # Delete .env file
 lsh edit                              # Open .env in $EDITOR (creates it if missing)
 
@@ -135,16 +137,16 @@ LSH_PIN_SERVICE=<service-name>        # Kubo remote pinning service for durable 
 
 ## Output Formats
 
-lsh edit --get --all --format env     # KEY=value (default)
-lsh edit --get --all --format json    # {"KEY": "value"}
-lsh edit --get --all --format yaml    # KEY: value
-lsh edit --get --all --format toml    # KEY = "value"
-lsh edit --get --all --format export  # export KEY='value' (shell-sourceable)
+lsh get --all --format env            # KEY=value (default)
+lsh get --all --format json           # {"KEY": "value"}
+lsh get --all --format yaml           # KEY: value
+lsh get --all --format toml           # KEY = "value"
+lsh get --all --format export         # export KEY='value' (shell-sourceable)
 
 ## Error Resolution
 
 ### "No secrets found for environment"
-Run `lsh edit --get --all --format env` to see what's in your local .env, then
+Run `lsh get --all --format env` to see what's in your local .env, then
 `lsh push --env <name>` to create the environment on first push.
 
 ### "Decryption failed"
@@ -171,7 +173,7 @@ eval "$(lsh sync --load)"
 
 ### Load Specific Secret
 ```bash
-API_KEY=$(lsh edit --get API_KEY)
+API_KEY=$(lsh get API_KEY)
 ```
 
 ### Check if Synced

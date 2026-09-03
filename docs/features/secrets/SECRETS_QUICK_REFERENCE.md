@@ -2,7 +2,7 @@
 
 Daily commands for managing secrets with LSH.
 
-> **v4.0.0:** the CLI surface is five commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`. See
+> **v4.0.0:** the CLI surface is seven commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`, `get`, `set`. See
 > [docs/releases/4.0.0.md](../../releases/4.0.0.md) for the full v3→v4 command mapping.
 
 ## Installation
@@ -40,17 +40,20 @@ lsh pull --env staging
 ## Get & Set
 
 ```bash
-# Get single secret (exact match only — no fuzzy matching in v4)
-lsh edit --get API_KEY
+# Get single secret (exact key wins; otherwise fuzzy match)
+lsh get API_KEY
+lsh get "stripe api"           # resolves STRIPE_API_KEY
+lsh get API_KEY --exact        # exact key only
 
 # Get all secrets
-lsh edit --get --all
-lsh edit --get --all --format json
+lsh get --all
+lsh get --all --format json
 
-# Set secret
-lsh edit --set API_KEY=my-api-key-value
+# Set secret (local only — publish with lsh push)
+lsh set API_KEY my-api-key-value
 
-# No batch/stdin import in v4 — one --set per key, or merge an environment:
+# Batch upsert from stdin, or merge another environment
+printenv | lsh set
 lsh edit --env prod --copy-from staging
 ```
 
@@ -75,7 +78,7 @@ lsh list --format json
 lsh list --format yaml
 lsh list --format toml
 lsh list --format export
-lsh edit --get --all --format export
+lsh get --all --format export
 
 # Load into shell
 eval "$(lsh sync --load)"
@@ -128,7 +131,7 @@ eval "$(lsh sync --load)"
 lsh sync --status
 
 # List what's in your local .env
-lsh edit --get --all --format env
+lsh get --all --format env
 
 # Clear metadata (global — no per-repo scoping in v4)
 lsh sync --repair

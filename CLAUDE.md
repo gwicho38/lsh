@@ -26,8 +26,9 @@ points at `dist/cli.js`; there is no library entry point).
 > pivoted to a focused secrets manager. The shell parser/executor, ZSH layer, job/cron daemon,
 > REST API/webhooks, Electron dashboard, SaaS multi-tenant code, and Supabase/Postgres
 > persistence were **removed** (the platform cluster was deleted in v3.5.0). In v4.0.0 the CLI
-> surface itself was consolidated from 23 top-level commands down to four (`push`, `pull`,
-> `sync`, `edit`) plus `help` — see [docs/releases/4.0.0.md](docs/releases/4.0.0.md). Older
+> surface itself was consolidated from 23 top-level commands down to seven (`push`, `pull`,
+> `sync`, `edit`, `list`, `get`, `set`) plus `help` — see
+> [docs/releases/4.0.0.md](docs/releases/4.0.0.md). Older
 > docs/releases that mention removed commands or the pre-3.5.0 platform are historical. Don't
 > build on them; they're gone.
 
@@ -60,10 +61,10 @@ node dist/cli.js sync              # Or any command
 lsh                                # If globally linked (npm link)
 ```
 
-Real top-level commands: `help`, `push`, `pull`, `sync`, `edit`. That's it — v4.0.0 consolidated
-every other v3 command (setup, keys, config, health, IPFS management, individual secret get/set,
-sync history, self-update, shell completion, and more) into a flag on one of the four, or removed
-it outright. Verify with `node dist/cli.js --help` — there is **no** `daemon`, `cron`, `api`,
+Real top-level commands: `help`, `push`, `pull`, `sync`, `edit`, `list`, `get`, `set`. That's it —
+v4.0.0 consolidated every other v3 command (setup, keys, config, health, IPFS management, sync
+history, self-update, shell completion, and more) into a flag on one of these, or removed it
+outright. Verify with `node dist/cli.js --help` — there is **no** `daemon`, `cron`, `api`,
 `supabase`, or `storacha` command, and running any removed v3 command name fails immediately with
 its v4 replacement (see `src/lib/removed-commands.ts`).
 
@@ -83,7 +84,8 @@ a CI job) that runs your rotation script then `lsh push`.
 
 ```
 src/cli.ts                     Sole entry; registers commands with Commander
-src/commands/                  push.ts, pull.ts, sync.ts, edit.ts — the only four subcommands
+src/commands/                  push.ts, pull.ts, sync.ts, edit.ts, list.ts, get.ts, set.ts —
+                               the only subcommands
 
 src/lib/
   secrets-manager.ts           AES-256 encrypt/decrypt, git repo/branch context,
@@ -94,7 +96,8 @@ src/lib/
   doctor.ts                    health check, invoked via `sync --doctor`
   setup-wizard.ts               interactive setup, invoked via `sync --init`
   env-file.ts                  .env parsing/serialization (parseEnv/serializeEnv/upsertEnv/diffEnv)
-  workspace-context.ts         per-repo/`-g` workspace and file-path resolution shared by all four commands
+  env-store.ts                 .env filesystem side (read, gitignore guard, backup, in-place write)
+  workspace-context.ts         per-repo/`-g` workspace and file-path resolution shared by every command
   ipfs-secrets-storage.ts      orchestrates store/retrieve over IPFS
   ipfs-sync.ts                 `ipfs add`/cat via Kubo HTTP API (127.0.0.1:5001)
   ipns-key-manager.ts          key-derived IPNS publish/resolve
@@ -144,12 +147,12 @@ There are no API/JWT/webhook/Supabase environment variables — those features w
 - Strict mode partially enabled; `noImplicitAny` is off. Prefix unused vars/args with `_`.
 
 ### Adding a command
-The v4 surface is deliberately fixed at four commands. Prefer adding a flag to one of the
-existing modules (`push.ts`, `pull.ts`, `sync.ts`, `edit.ts`) over introducing a new top-level
-command.
+The v4 surface is deliberately small. Prefer adding a flag to one of the existing modules
+(`push.ts`, `pull.ts`, `sync.ts`, `edit.ts`, `list.ts`, `get.ts`, `set.ts`) over introducing a
+new top-level command.
 1. Add the flag with `.option(...)` in the relevant `src/commands/*.ts` module.
 2. Export an init function that registers with `commander.Command` (already the pattern in each
-   of the four files) and import + call it in `src/cli.ts`.
+   of those files) and import + call it in `src/cli.ts`.
 3. Put user-facing strings in `src/constants/`.
 4. If a v3 command name should now error with a replacement message, add it to
    `REMOVED_COMMANDS` (or `REMOVED_SYNC_SUBCOMMANDS`) in `src/lib/removed-commands.ts`.
@@ -186,7 +189,8 @@ the CLI or a test indefinitely on a slow/blocked network (this caused real publi
   core's tests are made mockable for CI.
 - Write a test for every bug fix (TDD). Prefer extracting pure logic so it can be unit-tested
   without mocking `https`/Kubo or the filesystem (see the pure helpers exported from
-  `src/commands/edit.ts`, e.g. `resolveGetOrList`, `parseSetAssignment`, `formatEditSummary`).
+  `src/commands/edit.ts`, e.g. `resolveGetOrList`, `parseSetAssignment`, `formatEditSummary`;
+  and `resolveGet` in `get.ts`, `parseAssignments` in `set.ts`).
 
 ## Common Issues & Solutions
 
