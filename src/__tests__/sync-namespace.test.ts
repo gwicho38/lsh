@@ -7,13 +7,15 @@ import { SecretsManager } from '../lib/secrets-manager.js';
 
 describe('smartSync storage namespace', () => {
   const key = crypto.randomBytes(32).toString('hex');
+  let envDir: string;
   let envFile: string;
   let originalKey: string | undefined;
 
   beforeEach(() => {
     originalKey = process.env.LSH_SECRETS_KEY;
     process.env.LSH_SECRETS_KEY = key;
-    envFile = path.join(os.tmpdir(), `.env.sync-ns-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    envDir = fs.mkdtempSync(path.join(os.tmpdir(), 'lsh-sync-ns-'));
+    envFile = path.join(envDir, '.env');
     fs.writeFileSync(envFile, 'API_KEY=abc\n', 'utf8');
     jest.spyOn(console, 'log').mockImplementation(() => {});
   });
@@ -21,7 +23,7 @@ describe('smartSync storage namespace', () => {
   afterEach(() => {
     if (originalKey === undefined) delete process.env.LSH_SECRETS_KEY;
     else process.env.LSH_SECRETS_KEY = originalKey;
-    if (fs.existsSync(envFile)) fs.unlinkSync(envFile);
+    fs.rmSync(envDir, { recursive: true, force: true });
   });
 
   function managerWithRecordingStorage(repoName: string) {

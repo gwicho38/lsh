@@ -16,7 +16,7 @@ import { describe, it, expect, jest, beforeEach, afterEach, beforeAll } from '@j
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { Command } from 'commander';
 import { EDIT_MESSAGES, SYNC_MESSAGES } from '../src/constants/ui.js';
 
@@ -366,7 +366,7 @@ describe('Edit/Sync CLI Commands', () => {
     });
 
     it('git-ignores the backup it writes, in a fresh repo with no prior .gitignore', async () => {
-      execSync('git init -q', { cwd: testDir });
+      execFileSync('git', ['init', '-q'], { cwd: testDir });
       fs.writeFileSync(path.join(testDir, '.env'), 'A=1\n');
 
       await newProgram().parseAsync(['node', 'test', 'edit', '--set', 'B=2', '--no-push']);
@@ -380,11 +380,11 @@ describe('Edit/Sync CLI Commands', () => {
       const backups = fs.readdirSync(testDir).filter((name) => name.startsWith('.env.backup.'));
       expect(backups).toHaveLength(1);
 
-      const dryRun = execSync('git add -A --dry-run', { cwd: testDir }).toString();
+      const dryRun = execFileSync('git', ['add', '-A', '--dry-run'], { cwd: testDir }).toString();
       expect(dryRun).not.toContain('.env.backup.');
       expect(dryRun).not.toContain("add '.env'");
 
-      const ignoreCheck = execSync(`git check-ignore ${backups[0]}`, { cwd: testDir }).toString().trim();
+      const ignoreCheck = execFileSync('git', ['check-ignore', backups[0]], { cwd: testDir }).toString().trim();
       expect(ignoreCheck).toBe(backups[0]);
     });
 
@@ -404,7 +404,7 @@ describe('Edit/Sync CLI Commands', () => {
     });
 
     it('git-ignores the backup and the target itself when --file names a custom file', async () => {
-      execSync('git init -q', { cwd: testDir });
+      execFileSync('git', ['init', '-q'], { cwd: testDir });
       fs.writeFileSync(path.join(testDir, 'app.env'), 'A=1\n');
 
       await newProgram().parseAsync(['node', 'test', 'edit', '--set', 'B=2', '--file', 'app.env', '--no-push']);
@@ -413,24 +413,24 @@ describe('Edit/Sync CLI Commands', () => {
       expect(gitignoreContent).toContain('app.env.backup.*');
       expect(gitignoreContent).toContain('app.env');
 
-      const dryRun = execSync('git add -A --dry-run', { cwd: testDir }).toString();
+      const dryRun = execFileSync('git', ['add', '-A', '--dry-run'], { cwd: testDir }).toString();
       expect(dryRun).not.toMatch(/\.env|backup|copyfrom/);
     });
 
     it('git-ignores a custom --file target created fresh, with no prior file to back up', async () => {
-      execSync('git init -q', { cwd: testDir });
+      execFileSync('git', ['init', '-q'], { cwd: testDir });
 
       await newProgram().parseAsync(['node', 'test', 'edit', '--set', 'B=2', '--file', 'app.env', '--no-push']);
 
       const gitignoreContent = fs.readFileSync(path.join(testDir, '.gitignore'), 'utf8');
       expect(gitignoreContent).toContain('app.env');
 
-      const dryRun = execSync('git add -A --dry-run', { cwd: testDir }).toString();
+      const dryRun = execFileSync('git', ['add', '-A', '--dry-run'], { cwd: testDir }).toString();
       expect(dryRun).not.toMatch(/\.env|backup|copyfrom/);
     });
 
     it('still git-ignores the backup when .gitignore already has a bare .env line', async () => {
-      execSync('git init -q', { cwd: testDir });
+      execFileSync('git', ['init', '-q'], { cwd: testDir });
       fs.writeFileSync(path.join(testDir, '.gitignore'), '.env\n');
       fs.writeFileSync(path.join(testDir, '.env'), 'A=1\n');
 
@@ -444,7 +444,7 @@ describe('Edit/Sync CLI Commands', () => {
       const backups = fs.readdirSync(testDir).filter((name) => name.startsWith('.env.backup.'));
       expect(backups).toHaveLength(1);
 
-      const ignoreCheck = execSync(`git check-ignore ${backups[0]}`, { cwd: testDir }).toString().trim();
+      const ignoreCheck = execFileSync('git', ['check-ignore', backups[0]], { cwd: testDir }).toString().trim();
       expect(ignoreCheck).toBe(backups[0]);
     });
   });
@@ -481,7 +481,7 @@ describe('Edit/Sync CLI Commands', () => {
   describe('edit --set --global', () => {
     it('does not touch a dotfiles-style ~/.gitignore when $HOME is itself a git repo', async () => {
       const fakeHome = fs.mkdtempSync(path.join(os.tmpdir(), 'lsh-global-home-'));
-      execSync('git init -q', { cwd: fakeHome });
+      execFileSync('git', ['init', '-q'], { cwd: fakeHome });
       const originalHome = process.env.HOME;
       process.env.HOME = fakeHome;
 
