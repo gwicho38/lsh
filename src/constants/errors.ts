@@ -32,6 +32,7 @@ export const ERRORS = {
 
   // File errors
   FILE_NOT_FOUND: 'File not found: ${filePath}',
+  ENV_PARENT_DIR_MISSING: 'Directory does not exist: ${dirPath}',
   INVALID_FILENAME: 'Invalid filename: ${filename}. Filenames must not contain path separators or special characters.',
 
   // ZSH compatibility errors

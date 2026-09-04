@@ -150,7 +150,6 @@ export declare const CRYPTO: {
     /** Plaintext shape written by the structured secrets storage path. */
     readonly PAYLOAD_SECRETS_JSON: "secrets-json";
 };
-
 /**
  * Policy for files that can hold plaintext secrets, encryption keys, or
  * key-bearing backups. Enforced by `src/lib/secure-file-writer.ts`.

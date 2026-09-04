@@ -22,6 +22,7 @@ export declare const ERRORS: {
     readonly ERROR_SCRIPT_NOT_FOUND: "Script file not found: ${scriptPath}";
     readonly ERROR_CONFIG_NOT_FOUND: "Configuration file not found: ${rcFile}";
     readonly FILE_NOT_FOUND: "File not found: ${filePath}";
+    readonly ENV_PARENT_DIR_MISSING: "Directory does not exist: ${dirPath}";
     readonly INVALID_FILENAME: "Invalid filename: ${filename}. Filenames must not contain path separators or special characters.";
     readonly ERROR_ZSH_COMPAT_PREFIX: "ZSH compatibility error: ${message}";
     readonly INVALID_ENV_CONFIG: "Invalid environment configuration. Check logs for details.";
