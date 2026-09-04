@@ -215,5 +215,13 @@ describe('GitUtils', () => {
       const envCount = (content.match(/^\.env$/gm) || []).length;
       expect(envCount).toBe(1);
     });
+
+    it('still appends the copyfrom/backup patterns when only a bare .env line already exists', () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), '.env\n');
+      ensureEnvInGitignore(tempDir);
+      const content = fs.readFileSync(path.join(tempDir, '.gitignore'), 'utf8');
+      expect(content).toContain('.env.copyfrom.*');
+      expect(content).toContain('.env.backup.*');
+    });
   });
 });

@@ -42,9 +42,14 @@ export declare function hasEnvExample(dir?: string): string | undefined;
  */
 export declare function isEnvIgnored(dir?: string): boolean;
 /**
- * Add .env to .gitignore if not already present
+ * Add each pattern in ENV_GITIGNORE_PATTERNS, plus any caller-supplied `extraPatterns`, to
+ * .gitignore that isn't already there as an exact line. Unlike isEnvIgnored's fuzzy "is .env
+ * covered by something" check, this compares per pattern so a .gitignore that already has a
+ * bare `.env` line still gains the newer `.env.copyfrom.*` / `.env.backup.*` patterns instead
+ * of being skipped wholesale. Only ever appends — an existing line is never touched, reordered,
+ * or duplicated.
  */
-export declare function ensureEnvInGitignore(dir?: string): void;
+export declare function ensureEnvInGitignore(dir?: string, extraPatterns?: readonly string[]): void;
 declare const _default: {
     isInGitRepo: typeof isInGitRepo;
     getGitRootPath: typeof getGitRootPath;

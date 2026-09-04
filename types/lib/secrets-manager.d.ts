@@ -8,6 +8,17 @@
  * Returns null if no explicit key is found (does not generate a fallback).
  */
 export declare function findEncryptionKey(): string | null;
+export interface EncryptionKeySource {
+    key: string;
+    /** 'env' for the environment variable, otherwise the file path it was read from. */
+    source: 'env' | string;
+}
+/**
+ * Same tier order as findEncryptionKey(), but reports which tier the key came from —
+ * needed so a lower-priority write can detect it would silently shadow a higher-priority
+ * key already in effect.
+ */
+export declare function findEncryptionKeyWithSource(): EncryptionKeySource | null;
 export interface Secret {
     key: string;
     value: string;

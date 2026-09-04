@@ -10,158 +10,37 @@ IPFS (InterPlanetary File System) is a distributed, content-addressed storage pr
 - **Audit logs** - Immutable audit trail storage
 - **Team sync** - Encrypted secrets published to IPNS and retrieved peer-to-peer over the IPFS swarm/DHT (with public gateway fallback for downloads)
 
-## Quick Start
+## The IPFS lifecycle is automatic (v4.0.0)
 
-### Check IPFS Status
+There is no `lsh ipfs` command in v4. `push`, `pull`, and `sync` each call
+`IPFSClientManager.ensureDaemonRunning()` before they touch the network — this detects an
+existing installation (including a system-wide one), installs the latest Kubo if missing,
+initializes the repository if needed, and starts the daemon if it isn't already running. There
+is no separate install, init, or start step to run yourself, and no CLI flag to pin a specific
+Kubo version or force a reinstall — `ensureDaemonRunning()` always resolves to the latest stable
+release.
 
 ```bash
-lsh ipfs status
+# Just use the four commands — IPFS comes up automatically on first use
+lsh push --env dev
 ```
 
-Output:
+For a health check that includes IPFS client status, use:
+
+```bash
+lsh sync --doctor
 ```
-📦 IPFS Client Status
+
+Example output (abridged):
+```
+🏥 LSH Health Check
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✅ IPFS client installed
-   Type: kubo
-   Version: 0.26.0
-   Path: /Users/username/.lsh/ipfs/bin/ipfs
-```
+✅ IPFS Client - kubo v0.26.0 installed
+✅ IPFS Daemon - running
+...
 
-### Install IPFS Client
-
-```bash
-lsh ipfs install
-```
-
-This will:
-1. Detect your platform (macOS, Linux, Windows)
-2. Download the latest Kubo (official IPFS implementation)
-3. Install to `~/.lsh/ipfs/bin/`
-4. Verify installation
-
-**Platform Support:**
-- ✅ macOS (Intel & Apple Silicon)
-- ✅ Linux (amd64 & arm64)
-- ✅ Windows (amd64)
-
-### Initialize IPFS Repository
-
-```bash
-lsh ipfs init
-```
-
-This creates an IPFS repository at `~/.lsh/ipfs/repo/` with:
-- IPFS configuration
-- Local datastore
-- Peer identity
-
-### Start IPFS Daemon (Optional)
-
-```bash
-lsh ipfs start
-```
-
-This starts the IPFS daemon in the background, enabling:
-- Local IPFS gateway at `http://localhost:8080`
-- IPFS API at `http://localhost:5001`
-- P2P network connectivity
-
-**Note:** The daemon is optional. LSH uses local IPFS-compatible storage by default and doesn't require a running daemon.
-
-### Stop IPFS Daemon
-
-```bash
-lsh ipfs stop
-```
-
-## Commands Reference
-
-### `lsh ipfs status`
-
-Check IPFS client installation status.
-
-**Options:**
-- `--json` - Output as JSON
-
-**Example:**
-```bash
-lsh ipfs status --json
-```
-
-Output:
-```json
-{
-  "installed": true,
-  "version": "0.26.0",
-  "path": "/Users/username/.lsh/ipfs/bin/ipfs",
-  "type": "kubo"
-}
-```
-
-### `lsh ipfs install`
-
-Install IPFS client (Kubo).
-
-**Options:**
-- `-f, --force` - Force reinstall even if already installed
-- `-v, --version <version>` - Install specific version
-
-**Examples:**
-```bash
-# Install latest version
-lsh ipfs install
-
-# Install specific version
-lsh ipfs install --version 0.26.0
-
-# Force reinstall
-lsh ipfs install --force
-```
-
-### `lsh ipfs uninstall`
-
-Uninstall LSH-managed IPFS client.
-
-**Note:** This only removes LSH-managed installations (installed via `lsh ipfs install`). System-wide IPFS installations are not affected.
-
-**Example:**
-```bash
-lsh ipfs uninstall
-```
-
-### `lsh ipfs init`
-
-Initialize IPFS repository.
-
-**Example:**
-```bash
-lsh ipfs init
-```
-
-### `lsh ipfs start`
-
-Start IPFS daemon in the background.
-
-**Example:**
-```bash
-lsh ipfs start
-```
-
-**Daemon Details:**
-- PID stored at `~/.lsh/ipfs/daemon.pid`
-- Logs available via IPFS logs
-- API: `http://localhost:5001`
-- Gateway: `http://localhost:8080`
-
-### `lsh ipfs stop`
-
-Stop IPFS daemon.
-
-**Example:**
-```bash
-lsh ipfs stop
+🎉 All checks passed!
 ```
 
 ## Installation Details
@@ -237,6 +116,12 @@ IPFS is used for immutable audit trail storage:
 ls ~/.lsh/ipfs/
 ```
 
+View them with:
+
+```bash
+lsh sync --history
+```
+
 ### Distributed Storage & Team Sync
 
 LSH shells out to your local Kubo (IPFS) daemon for cross-machine secrets sync:
@@ -260,15 +145,13 @@ LSH then calls the daemon's `/pin/remote/add` on push. No extra dependency is re
 
 ### IPFS Client Not Found
 
-**Symptom:**
-```
-⚠️  IPFS client not installed (optional for local storage)
-   Install with: lsh ipfs install
-```
+**Symptom:** `lsh sync --doctor` reports the IPFS client as missing.
 
-**Solution:**
+**Solution:** Nothing to run manually — the next `push`, `pull`, or `sync` installs it
+automatically. To trigger installation immediately without touching secrets:
+
 ```bash
-lsh ipfs install
+lsh sync --doctor
 ```
 
 ### Installation Fails
@@ -288,11 +171,8 @@ lsh ipfs install
 # Check internet connection
 curl -I https://dist.ipfs.tech
 
-# Check platform
-lsh doctor
-
-# Try specific version
-lsh ipfs install --version 0.25.0
+# Check platform + client status
+lsh sync --doctor
 ```
 
 ### Daemon Won't Start
@@ -307,14 +187,11 @@ lsh ipfs install --version 0.25.0
 # Check if IPFS is already running
 ps aux | grep ipfs
 
-# Stop existing daemon
-lsh ipfs stop
-
-# Or kill manually
+# Stop it manually — there is no `lsh ipfs stop` in v4
 pkill -f 'ipfs daemon'
 
-# Try starting again
-lsh ipfs start
+# Try again — the next push/pull/sync restarts it
+lsh sync --doctor
 ```
 
 ### Permission Denied
@@ -337,8 +214,10 @@ ls -la ~/.lsh/ipfs/bin/ipfs
 
 ### Remove LSH-Managed IPFS
 
+There is no `lsh ipfs uninstall` command in v4. Remove the managed installation directly:
+
 ```bash
-lsh ipfs uninstall
+rm -rf ~/.lsh/ipfs
 ```
 
 This removes:
@@ -346,17 +225,14 @@ This removes:
 - All downloaded binaries
 - IPFS repository data
 
-**Note:** Your secrets and metadata (`~/.lsh/secrets-cache/` and `~/.lsh/secrets-metadata.json`) are **not** affected.
+**Note:** Your secrets and metadata (`~/.lsh/secrets-cache/` and `~/.lsh/secrets-metadata.json`) are **not** affected. The next `push`, `pull`, or `sync` reinstalls Kubo from scratch.
 
 ### Complete Cleanup
 
 To remove all LSH data including IPFS:
 
 ```bash
-# Remove IPFS
-lsh ipfs uninstall
-
-# Remove entire LSH directory (⚠️ WARNING: This deletes all secrets!)
+# ⚠️ WARNING: This deletes all secrets and the IPFS installation!
 rm -rf ~/.lsh
 ```
 
@@ -370,16 +246,13 @@ If you have IPFS installed system-wide, LSH will detect and use it automatically
 # Install IPFS via Homebrew (macOS)
 brew install ipfs
 
-# LSH will detect it
-lsh ipfs status
+# LSH will detect it on the next push/pull/sync
+lsh sync --doctor
 ```
 
-Output:
+Output (abridged):
 ```
-✅ IPFS client installed
-   Type: kubo
-   Version: 0.26.0
-   Path: /usr/local/bin/ipfs
+✅ IPFS Client - kubo v0.26.0 installed
 ```
 
 ### Manual IPFS Configuration
@@ -396,9 +269,9 @@ Example:
 # Edit IPFS config
 nano ~/.lsh/ipfs/repo/config
 
-# Restart daemon to apply changes
-lsh ipfs stop
-lsh ipfs start
+# Restart the daemon to apply changes — there is no `lsh ipfs stop`/`start` in v4
+pkill -f 'ipfs daemon'
+lsh sync --doctor
 ```
 
 ### Environment Variables
@@ -443,7 +316,8 @@ When running IPFS daemon:
 
 ### Do I need IPFS to use LSH?
 
-**No.** LSH works perfectly without a full IPFS installation. It uses IPFS-compatible local storage (content-addressed with CIDs) but doesn't require the IPFS daemon for basic secrets management.
+**No, not manually.** `push`, `pull`, and `sync` install and manage Kubo for you the first time
+you run them. There is no separate installation step.
 
 ### What's the difference between Kubo and IPFS?
 
@@ -451,7 +325,8 @@ Kubo is the official Go implementation of IPFS (formerly called `go-ipfs`). When
 
 ### Can I use an existing IPFS installation?
 
-**Yes.** LSH detects system-wide IPFS installations automatically. You don't need to install via `lsh ipfs install` if you already have IPFS.
+**Yes.** LSH detects system-wide IPFS installations automatically and uses them instead of
+installing its own copy.
 
 ### Does LSH upload secrets to the IPFS network?
 

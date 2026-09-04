@@ -62,6 +62,39 @@ export function findEncryptionKey(): string | null {
   return null;
 }
 
+export interface EncryptionKeySource {
+  key: string;
+  /** 'env' for the environment variable, otherwise the file path it was read from. */
+  source: 'env' | string;
+}
+
+/**
+ * Same tier order as findEncryptionKey(), but reports which tier the key came from —
+ * needed so a lower-priority write can detect it would silently shadow a higher-priority
+ * key already in effect.
+ */
+export function findEncryptionKeyWithSource(): EncryptionKeySource | null {
+  const envKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
+  if (envKey) return { key: envKey, source: 'env' };
+
+  const localPath = path.join(process.cwd(), '.env');
+  const localKey = readKeyFromEnvFile(localPath);
+  if (localKey) return { key: localKey, source: localPath };
+
+  const home = process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || '';
+  if (home) {
+    const globalPath = path.join(home, '.env');
+    const globalKey = readKeyFromEnvFile(globalPath);
+    if (globalKey) return { key: globalKey, source: globalPath };
+  }
+
+  const store = new SyncKeyStore();
+  const stored = store.get();
+  if (stored) return { key: stored, source: store.path };
+
+  return null;
+}
+
 export interface Secret {
   key: string;
   value: string;
@@ -396,7 +429,7 @@ export class SecretsManager {
     // Warn if using machine-derived fallback key (no explicit key found anywhere)
     if (!findEncryptionKey()) {
       logger.warn('⚠️  Warning: No LSH_SECRETS_KEY set. Using machine-specific key.');
-      logger.warn('   To share secrets across machines, generate a key with: lsh key');
+      logger.warn('   To share secrets across machines, generate a key with: lsh sync --key');
       logger.warn('   Then add LSH_SECRETS_KEY=<key> to your .env on all machines');
       console.log();
     }
@@ -493,7 +526,7 @@ export class SecretsManager {
 
     if (secrets.length === 0) {
       throw new Error(`No secrets found for environment: ${effectiveEnv}\n\n` +
-        `💡 Tip: Check available environments with: lsh env\n` +
+        `💡 Tip: Check available environments with: lsh edit --list\n` +
         `   Or push secrets first with: lsh push --env ${environment}`);
     }
 
@@ -895,8 +928,6 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     }
 
     try {
-      // Use repo-aware environment if in git repo
-      const effectiveEnv = this.getRepoAwareEnvironment(environment);
       const displayEnv = this.gitInfo?.repoName ? `${this.gitInfo.repoName}/${environment}` : environment;
 
       // In load mode, suppress all output except the final export commands
@@ -931,8 +962,8 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       ensureEnvInGitignore(process.cwd());
     }
 
-    // Step 3: Check current status
-    const status = await this.status(envFilePath, effectiveEnv);
+    // Step 3: Check current status (raw environment, matching push/pull below)
+    const status = await this.status(envFilePath, environment);
 
     out('📊 Current Status:');
     out(`   Encryption key: ${status.keySet ? '✅' : '❌'}`);
@@ -962,7 +993,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
           }
 
           out('   Pushing to cloud with new key...');
-          await this.push(envFilePath, environment, true); // Force push (use original environment, not effectiveEnv)
+          await this.push(envFilePath, environment, true);
           out();
           out('✅ Re-keying complete! Cloud secrets now encrypted with current key.');
         } else {
@@ -998,11 +1029,11 @@ LSH_SECRETS_KEY=${this.encryptionKey}
       if (autoExecute) {
         await this.createEnvFromExample(envFilePath);
         out('   Pushing to cloud...');
-        await this.push(envFilePath, environment, force); // Use raw environment, not effectiveEnv
+        await this.push(envFilePath, environment, force);
         out();
         out('✅ Setup complete! Edit your .env and run sync again to update.');
       } else {
-        out('💡 Run: lsh create && lsh push');
+        out('💡 Run: lsh edit && lsh push');
       }
       out();
 
@@ -1019,7 +1050,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
       if (autoExecute) {
         out('   Pushing to cloud...');
-        await this.push(envFilePath, environment, force); // Use raw environment, not effectiveEnv
+        await this.push(envFilePath, environment, force);
         out('✅ Secrets pushed to cloud!');
       } else {
         out(`💡 Run: lsh push -f ${envFilePath} -e ${environment}`);
@@ -1039,7 +1070,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
       if (autoExecute) {
         out('   Pulling from cloud...');
-        await this.pull(envFilePath, environment, false); // Use raw environment, not effectiveEnv
+        await this.pull(envFilePath, environment, false);
         out('✅ Secrets pulled from cloud!');
       } else {
         out(`💡 Run: lsh pull -f ${envFilePath} -e ${environment}`);
@@ -1080,7 +1111,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
           if (autoExecute) {
             out('   Pushing to cloud...');
-            await this.push(envFilePath, environment, force); // Use raw environment, not effectiveEnv
+            await this.push(envFilePath, environment, force);
             out('✅ Secrets synced to cloud!');
           } else {
             out(`💡 Run: lsh push -f ${envFilePath} -e ${environment}`);
@@ -1093,7 +1124,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
           if (autoExecute) {
             out('   Pulling from cloud (backup created)...');
-            await this.pull(envFilePath, environment, false); // Use raw environment, not effectiveEnv
+            await this.pull(envFilePath, environment, false);
             out('✅ Secrets synced from cloud!');
           } else {
             out(`💡 Run: lsh pull -f ${envFilePath} -e ${environment}`);
@@ -1141,7 +1172,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
     console.log(`   export (cat ${envFilePath} | grep -v '^#')`);
     console.log();
     console.log('   Or use lsh to load:');
-    console.log(`   eval "$(lsh get --all --export)"`);
+    console.log(`   eval "$(lsh edit --get --all --format export)"`);
     console.log();
   }
 
@@ -1170,7 +1201,7 @@ LSH_SECRETS_KEY=${this.encryptionKey}
 
     if (!status.keySet) {
       suggestions.push('⚠️  No encryption key set!');
-      suggestions.push('   Generate a key: lsh key');
+      suggestions.push('   Generate a key: lsh sync --key');
       suggestions.push('   Add it to .env: LSH_SECRETS_KEY=<your-key>');
       suggestions.push('   Load it: export $(cat .env | xargs)');
     }

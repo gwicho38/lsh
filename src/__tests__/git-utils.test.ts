@@ -237,6 +237,14 @@ describe('Git Utilities', () => {
       expect(content).toContain('.env');
     });
 
+    it('should also ignore edit --copy-from temp files and .env.backup.* files', () => {
+      ensureEnvInGitignore(testDir);
+
+      const content = fs.readFileSync(path.join(testDir, '.gitignore'), 'utf8');
+      expect(content).toContain('.env.copyfrom.*');
+      expect(content).toContain('.env.backup.*');
+    });
+
     it('should add .env to existing .gitignore', () => {
       const gitignorePath = path.join(testDir, '.gitignore');
       fs.writeFileSync(gitignorePath, 'node_modules/\n');
@@ -248,15 +256,32 @@ describe('Git Utilities', () => {
       expect(content).toContain('.env');
     });
 
-    it('should not duplicate .env if already present', () => {
+    it('does not duplicate an existing .env line, but still appends the newer patterns', () => {
       const gitignorePath = path.join(testDir, '.gitignore');
       fs.writeFileSync(gitignorePath, '.env\n');
 
       ensureEnvInGitignore(testDir);
 
       const content = fs.readFileSync(gitignorePath, 'utf8');
-      const matches = (content.match(/\.env/g) || []).length;
-      expect(matches).toBeLessThanOrEqual(3); // .env, .env.local, .env.*.local
+      const envLines = content.split('\n').filter((line) => line.trim() === '.env');
+      expect(envLines).toHaveLength(1);
+      expect(content).toContain('.env.local');
+      expect(content).toContain('.env.*.local');
+      expect(content).toContain('.env.copyfrom.*');
+      expect(content).toContain('.env.backup.*');
+    });
+
+    it('is a no-op once every pattern is already an exact line', () => {
+      const gitignorePath = path.join(testDir, '.gitignore');
+      fs.writeFileSync(
+        gitignorePath,
+        '.env\n.env.local\n.env.*.local\n.env.copyfrom.*\n.env.backup.*\n',
+      );
+      const before = fs.readFileSync(gitignorePath, 'utf8');
+
+      ensureEnvInGitignore(testDir);
+
+      expect(fs.readFileSync(gitignorePath, 'utf8')).toBe(before);
     });
   });
 });

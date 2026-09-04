@@ -190,7 +190,7 @@ export class IPFSClientManager {
     const clientInfo = await this.detect();
 
     if (!clientInfo.installed) {
-      throw new Error('IPFS client not installed. Run: lsh ipfs install');
+      throw new Error('IPFS client not installed. Run: lsh sync --init');
     }
 
     const ipfsRepoPath = path.join(this.ipfsDir, 'repo');
@@ -232,7 +232,7 @@ export class IPFSClientManager {
     const clientInfo = await this.detect();
 
     if (!clientInfo.installed) {
-      throw new Error('IPFS client not installed. Run: lsh ipfs install');
+      throw new Error('IPFS client not installed. Run: lsh sync --init');
     }
 
     const ipfsRepoPath = this.getRepoPath();
@@ -501,7 +501,7 @@ export class IPFSClientManager {
         if (!process.stdin.isTTY) {
           throw new Error(
             'IPFS (Kubo) is required for sync but is not installed.\n' +
-            'Install manually: lsh ipfs install && lsh ipfs start'
+            'Run: lsh sync --init'
           );
         }
 
@@ -511,8 +511,7 @@ export class IPFSClientManager {
 
         if (consent.toLowerCase() === 'n') {
           throw new Error(
-            'IPFS is required for push/pull.\n' +
-            'Install manually: lsh ipfs install && lsh ipfs start'
+            'IPFS is required for push and pull. Run: lsh sync --init'
           );
         }
 
@@ -532,7 +531,7 @@ export class IPFSClientManager {
     if (!ready) {
       throw new Error(
         'IPFS daemon started but API is not responding.\n' +
-        'Try manually: lsh ipfs start'
+        'Run: lsh sync --init'
       );
     }
 

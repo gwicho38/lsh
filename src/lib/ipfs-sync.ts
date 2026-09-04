@@ -135,7 +135,7 @@ export class IPFSSync {
   async upload(data: Buffer, filename: string, metadata?: { environment?: string; gitRepo?: string }): Promise<string | null> {
     const isDaemonRunning = await this.checkDaemon();
     if (!isDaemonRunning) {
-      logger.error('IPFS daemon not running. Start with: lsh ipfs start');
+      logger.error('IPFS daemon not running. Run: lsh sync --init');
       return null;
     }
 

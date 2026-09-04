@@ -103,7 +103,7 @@ export class IPFSSecretsStorage {
       );
 
       if (!cid) {
-        throw new Error('IPFS upload failed. Is the daemon running? Check: lsh ipfs status');
+        throw new Error('IPFS upload failed. Is the daemon running? Check: lsh sync --status');
       }
 
       // Cache locally for fast re-reads
@@ -226,8 +226,8 @@ export class IPFSSecretsStorage {
           '  - IPNS record expired from DHT (records are cached ~24-48h;\n' +
           '    the publishing machine must be online periodically)\n\n' +
           'Troubleshooting:\n' +
-          '  lsh ipfs status    # Check local daemon\n' +
-          '  lsh doctor         # Full health check'
+          '  lsh sync --status  # Check local daemon\n' +
+          '  lsh sync --doctor  # Full health check'
         );
       }
 
@@ -256,6 +256,13 @@ export class IPFSSecretsStorage {
 
       // Step 3: Decrypt
       const secrets = this.decryptSecrets(cachedData, encryptionKey);
+
+      // Now that the payload is decrypted, record the real key count
+      const metadataKey = this.getMetadataKey(gitRepo, environment);
+      if (this.metadata[metadataKey]) {
+        this.metadata[metadataKey].keys_count = secrets.length;
+        await this.saveMetadata();
+      }
 
       logger.info(`📥 Retrieved ${secrets.length} secrets from IPFS`);
       logger.info(`   CID: ${resolvedCid}`);
@@ -317,6 +324,19 @@ export class IPFSSecretsStorage {
   }
 
   /**
+   * Clear all local secrets metadata (~/.lsh/secrets-metadata.json), unsticking a registry
+   * that no longer matches what's actually on IPFS. Local encrypted caches are left in place.
+   */
+  async clearMetadata(): Promise<void> {
+    this.metadata = {};
+    try {
+      await fsPromises.unlink(this.metadataPath);
+    } catch {
+      // File doesn't exist, which is fine
+    }
+  }
+
+  /**
    * Encrypt secrets using AES-256
    */
   private encryptSecrets(secrets: Secret[], encryptionKey: string): string {
@@ -358,7 +378,7 @@ export class IPFSSecretsStorage {
           'Decryption failed. This usually means:\n' +
           '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
           '  2. The key must match the one used during encryption\n' +
-          '  3. Generate a shared key with: lsh key\n' +
+          '  3. Generate a shared key with: lsh sync --key\n' +
           '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
           '\nOriginal error: ' + msg,
           { cause: error }

@@ -1,796 +1,422 @@
 /**
- * Sync Commands
- * Native IPFS sync for secrets management (mirrors mcli pattern)
- *
- * Usage: lsh sync <command>
+ * lsh sync — reconcile local and remote secrets, and report sync/IPFS state.
+ * Also carries the operational control plane: setup, keys, config, and health.
  */
 
 import { Command } from 'commander';
 import chalk from 'chalk';
-import ora from 'ora';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as crypto from 'crypto';
-import { getIPFSSync } from '../lib/ipfs-sync.js';
-import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
-import { getGitRepoInfo } from '../lib/git-utils.js';
-import { deriveKeyInfo, ensureKeyImported } from '../lib/ipns-key-manager.js';
-import { ENV_VARS, DEFAULTS } from '../constants/index.js';
+import * as os from 'os';
+import { resolveContext } from '../lib/workspace-context.js';
 import { extractErrorMessage } from '../lib/lsh-error.js';
+import { IPFSClientManager } from '../lib/ipfs-client-manager.js';
+import { getIPFSSync } from '../lib/ipfs-sync.js';
+import { IPFSSecretsStorage } from '../lib/ipfs-secrets-storage.js';
+import { IPFSSyncLogger } from '../lib/ipfs-sync-logger.js';
+import { getGitRepoInfo } from '../lib/git-utils.js';
+import { getConfigManager } from '../lib/config-manager.js';
+import { findEncryptionKey, findEncryptionKeyWithSource } from '../lib/secrets-manager.js';
+import { ENV_VARS } from '../constants/config.js';
+import { runDoctor } from '../lib/doctor.js';
+import { runSetupWizard } from '../lib/setup-wizard.js';
+import { SYNC_MESSAGES } from '../constants/ui.js';
+
+export interface SyncStatus {
+  localExists: boolean;
+  localKeys: number;
+  cloudExists: boolean;
+  cloudKeys: number;
+  keySet: boolean;
+  keyMatches?: boolean;
+  suggestions: string[];
+}
+
+interface SmartSyncCapable {
+  smartSync: (
+    filePath: string,
+    environment: string,
+    autoExecute: boolean,
+    loadMode: boolean,
+    force: boolean,
+  ) => Promise<void>;
+}
+
+export function isExportLine(value: unknown): value is string {
+  return typeof value === 'string' && value.startsWith('export ');
+}
+
+// Loggers in IPFSSync/IPFSSecretsStorage/IPNSKeyManager/IPFSClientManager are built at import time and write straight to console.log.
+export async function withFilteredStdout<T>(shouldPrint: (value: unknown) => boolean, fn: () => Promise<T>): Promise<T> {
+  const originalLog = console.log;
+  console.log = (...args: unknown[]) => {
+    if (shouldPrint(args[0])) originalLog(...args);
+  };
+  try {
+    return await fn();
+  } finally {
+    // Safe - single process, no concurrent console.log writers.
+    // eslint-disable-next-line require-atomic-updates
+    console.log = originalLog;
+  }
+}
+
+export async function runSmartSync(
+  manager: SmartSyncCapable,
+  filePath: string,
+  environment: string,
+  loadMode: boolean,
+  force: boolean,
+): Promise<void> {
+  if (!loadMode) {
+    await new IPFSClientManager().ensureDaemonRunning();
+    await manager.smartSync(filePath, environment, true, false, force);
+    return;
+  }
+  await withFilteredStdout(isExportLine, async () => {
+    await new IPFSClientManager().ensureDaemonRunning();
+    await manager.smartSync(filePath, environment, true, true, force);
+  });
+}
+
+export function printStatus(status: SyncStatus, environment: string, daemonReachable: boolean): void {
+  const mark = (ok: boolean) => (ok ? chalk.green('yes') : chalk.yellow('no'));
+  console.log(chalk.bold(`\n${SYNC_MESSAGES.STATUS_HEADER_PREFIX}${environment}\n`));
+  console.log(`${SYNC_MESSAGES.LOCAL_LABEL}${mark(status.localExists)}  (${status.localKeys} keys)`);
+  if (daemonReachable) {
+    console.log(`${SYNC_MESSAGES.REMOTE_LABEL}${mark(status.cloudExists)}  (${status.cloudKeys} keys)`);
+  } else {
+    console.log(
+      `${SYNC_MESSAGES.REMOTE_LABEL}${chalk.yellow(SYNC_MESSAGES.REMOTE_UNKNOWN)}${SYNC_MESSAGES.REMOTE_UNKNOWN_HINT}`,
+    );
+  }
+  console.log(`${SYNC_MESSAGES.KEY_SET_LABEL}${mark(status.keySet)}`);
+  if (status.keyMatches !== undefined) {
+    console.log(`${SYNC_MESSAGES.KEY_MATCHES_LABEL}${mark(status.keyMatches)}`);
+  }
+  if (!daemonReachable) {
+    console.log(chalk.gray(SYNC_MESSAGES.DAEMON_UNREACHABLE_HINT));
+  }
+  if (status.suggestions.length > 0) {
+    console.log(chalk.bold(SYNC_MESSAGES.SUGGESTIONS_HEADER));
+    status.suggestions.forEach((s) => console.log(`${SYNC_MESSAGES.SUGGESTION_PREFIX}${s}`));
+  }
+  console.log('');
+}
 
 /**
- * Register sync commands
+ * Reads LSH_SECRETS_KEY directly out of a specific .env file, tolerating
+ * optional surrounding quotes. Mirrors secrets-manager.ts's private
+ * readKeyFromEnvFile so the two behave identically on quoted values.
  */
-export function registerSyncCommands(program: Command): void {
-  const syncCommand = program
+export function readKeyFrom(envPath: string): string | null {
+  if (!fs.existsSync(envPath)) return null;
+  const content = fs.readFileSync(envPath, 'utf-8');
+  const match = content.match(/^LSH_SECRETS_KEY=['"]?([^'"\n]+)['"]?/m);
+  return match ? match[1] : null;
+}
+
+/**
+ * Import an encryption key into a local .env file. Replacing an existing, different key
+ * makes secrets already pushed with the old key permanently undecryptable, so that path
+ * is refused unless `force` is set. Two independent risks are guarded:
+ *   - the file about to be written already holds a different key (an overwrite), and
+ *   - a non-global write would take priority over a different key that is currently
+ *     effective from the lower-priority global ~/.env (a silent shadow).
+ * A global write is already the lowest-priority tier, so it can never shadow anything —
+ * checking it against `findEncryptionKeyWithSource()` there would refuse based on a key
+ * (e.g. an env var) that the write can't actually affect.
+ */
+export function importKey(value: string, force: boolean, global: boolean, file: string): void {
+  if (!/^[0-9a-fA-F]{64}$/.test(value)) {
+    console.error(SYNC_MESSAGES.KEY_INVALID_FORMAT);
+    process.exitCode = 1;
+    return;
+  }
+
+  // Matches findEncryptionKeyWithSource()'s own global-tier resolution exactly, so a --global
+  // write always lands on the same path the guard (and future lookups) will check against.
+  const homeDir = process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || os.homedir();
+  const envPath = global ? path.join(homeDir, '.env') : path.resolve(file);
+  const inFile = readKeyFrom(envPath);
+  const effective = findEncryptionKeyWithSource();
+
+  // Idempotent only when the write is a true no-op: the target file already holds this exact
+  // key. A key merely effective from elsewhere still needs persisting into the target file.
+  if (inFile === value) {
+    console.log(SYNC_MESSAGES.KEY_ALREADY_CONFIGURED);
+    return;
+  }
+
+  if (!force) {
+    if (inFile && inFile !== value) {
+      console.error(`${SYNC_MESSAGES.KEY_REPLACE_REFUSED_1_PREFIX}${envPath}${SYNC_MESSAGES.KEY_REPLACE_REFUSED_1_SUFFIX}`);
+      console.error(SYNC_MESSAGES.KEY_REPLACE_REFUSED_2);
+      console.error(SYNC_MESSAGES.KEY_REPLACE_REFUSED_3);
+      process.exitCode = 1;
+      return;
+    }
+
+    // The shadow risk only exists when `envPath` is the exact file findEncryptionKeyWithSource()
+    // consults for the local tier — writing anywhere else can't take priority over anything.
+    const localLookupPath = path.join(process.cwd(), '.env');
+    if (!global && envPath === localLookupPath && effective && effective.source !== 'env' && effective.key !== value) {
+      console.error(`${SYNC_MESSAGES.KEY_SHADOW_REFUSED_1_PREFIX}${effective.source}${SYNC_MESSAGES.KEY_SHADOW_REFUSED_1_SUFFIX}`);
+      console.error(SYNC_MESSAGES.KEY_SHADOW_REFUSED_2);
+      console.error(SYNC_MESSAGES.KEY_REPLACE_REFUSED_3);
+      process.exitCode = 1;
+      return;
+    }
+  }
+
+  let content: string;
+  if (fs.existsSync(envPath)) {
+    const existing = fs.readFileSync(envPath, 'utf-8');
+    content = /^LSH_SECRETS_KEY=/m.test(existing)
+      ? existing.replace(/^LSH_SECRETS_KEY=.*/m, `LSH_SECRETS_KEY=${value}`)
+      : `${existing.trimEnd()}\nLSH_SECRETS_KEY=${value}\n`;
+  } else {
+    content = `LSH_SECRETS_KEY=${value}\n`;
+  }
+  fs.writeFileSync(envPath, content, { mode: 0o600 });
+  console.log(`${SYNC_MESSAGES.KEY_SAVED_PREFIX}${envPath}`);
+
+  const effectiveAfter = findEncryptionKey();
+  if (effectiveAfter !== value) {
+    console.log(SYNC_MESSAGES.KEY_EFFECTIVE_DIFFERS);
+  }
+}
+
+const SECRET_CONFIG_KEY_SUBSTRINGS = [
+  'LSH_SECRETS_KEY',
+  'LSH_MASTER_KEY',
+  'LSH_API_KEY',
+  'LSH_JWT_SECRET',
+  'SUPABASE_ANON_KEY',
+  'GITHUB_WEBHOOK_SECRET',
+  'GITLAB_WEBHOOK_SECRET',
+  'JENKINS_WEBHOOK_SECRET',
+  'RESEND_API_KEY',
+  'STRIPE_SECRET_KEY',
+  'STRIPE_WEBHOOK_SECRET',
+  'DATABASE_URL',
+];
+
+export function maskConfigValue(key: string, value: string): string {
+  const isSecret = SECRET_CONFIG_KEY_SUBSTRINGS.some((substr) => key.includes(substr));
+  return isSecret ? `***${value.slice(-4)}` : value;
+}
+
+/** Prints the resolved LSH configuration (~/.config/lsh/lshrc) and its path. */
+export async function printConfig(format: string): Promise<void> {
+  const manager = getConfigManager();
+  const configPath = manager.getConfigPath();
+  const config = await manager.load();
+  const keys = Object.keys(config)
+    .filter((key) => config[key] !== undefined && config[key] !== '')
+    .sort();
+
+  if (format === 'json') {
+    const masked = Object.fromEntries(keys.map((key) => [key, maskConfigValue(key, config[key] as string)]));
+    console.log(JSON.stringify({ path: configPath, config: masked }, null, 2));
+    return;
+  }
+
+  console.log(`${SYNC_MESSAGES.CONFIG_PATH_PREFIX}${configPath}`);
+  console.log('');
+  if (keys.length === 0) {
+    console.log(SYNC_MESSAGES.CONFIG_EMPTY);
+    return;
+  }
+  for (const key of keys) {
+    console.log(`  ${key}=${maskConfigValue(key, config[key] as string)}`);
+  }
+  console.log('');
+}
+
+const HISTORY_LIMIT = 10;
+
+/**
+ * Prints recent local sync activity plus the immutable IPFS sync record log.
+ * `getAllRecords` drops any log entry whose backing record file can't be
+ * read; that omission is surfaced via `unreadableRecords` rather than
+ * silently shrinking the list, since a clean-looking audit trail that hides
+ * gaps is the wrong failure mode for a secrets manager.
+ */
+export async function printHistory(environment: string, format: string): Promise<void> {
+  const recent = await getIPFSSync().getHistory(HISTORY_LIMIT);
+
+  const logger = new IPFSSyncLogger();
+  const gitInfo = getGitRepoInfo();
+  const records = logger.isEnabled() ? await logger.getAllRecords(gitInfo.repoName, environment) : [];
+  const unreadableRecords = logger.isEnabled()
+    ? logger.getSyncLog(gitInfo.repoName, environment).length - records.length
+    : 0;
+  records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  if (format === 'json') {
+    console.log(JSON.stringify({ recent, records, unreadableRecords }, null, 2));
+    return;
+  }
+
+  console.log(chalk.bold.cyan(SYNC_MESSAGES.HISTORY_RECENT_HEADER));
+  if (recent.length === 0) {
+    console.log(chalk.gray(SYNC_MESSAGES.HISTORY_RECENT_EMPTY));
+  } else {
+    for (const entry of recent) {
+      console.log(chalk.bold(`${entry.cid.substring(0, 16)}...`));
+      console.log(`  ${SYNC_MESSAGES.HISTORY_FILE_LABEL}${entry.filename}`);
+      console.log(`  ${SYNC_MESSAGES.HISTORY_SIZE_LABEL}${entry.size} bytes`);
+      console.log(`  ${SYNC_MESSAGES.HISTORY_TIME_LABEL}${new Date(entry.timestamp).toLocaleString()}`);
+      if (entry.gitRepo) console.log(`  ${SYNC_MESSAGES.HISTORY_REPO_LABEL}${entry.gitRepo}`);
+      if (entry.environment) console.log(`  ${SYNC_MESSAGES.HISTORY_ENV_LABEL}${entry.environment}`);
+      console.log('');
+    }
+  }
+
+  console.log(chalk.bold.cyan(SYNC_MESSAGES.HISTORY_RECORDS_HEADER));
+  if (records.length === 0) {
+    console.log(chalk.gray(SYNC_MESSAGES.HISTORY_RECORDS_EMPTY));
+  } else {
+    for (const record of records) {
+      const date = new Date(record.timestamp).toLocaleString();
+      const action = record.action.padEnd(6);
+      const keyCount = `${record.keys_count} keys`.padEnd(10);
+      const repo = record.git_repo || SYNC_MESSAGES.HISTORY_NO_REPO;
+      console.log(`${date}  ${action}  ${keyCount}  ${repo}/${record.environment}`);
+    }
+    console.log(chalk.gray(`${SYNC_MESSAGES.HISTORY_TOTAL_PREFIX}${records.length}${SYNC_MESSAGES.HISTORY_TOTAL_SUFFIX}`));
+  }
+  if (unreadableRecords > 0) {
+    console.log(chalk.yellow(`${unreadableRecords}${SYNC_MESSAGES.HISTORY_UNREADABLE_SUFFIX}`));
+  }
+  console.log('');
+}
+
+/** Clears local sync metadata and cache so a stuck registry can start clean. */
+export async function runRepair(): Promise<void> {
+  await getIPFSSync().clearHistory();
+  await new IPFSSecretsStorage().clearMetadata();
+  console.log(chalk.green(SYNC_MESSAGES.REPAIR_SUCCESS));
+}
+
+/** Checks whether a CID is retrievable from the local daemon or public gateways. */
+export async function runVerify(cid: string): Promise<void> {
+  const result = await getIPFSSync().verifyCid(cid);
+  if (result.available) {
+    console.log(chalk.green(SYNC_MESSAGES.VERIFY_AVAILABLE));
+    console.log(`${SYNC_MESSAGES.VERIFY_CID_LABEL}${cid}`);
+    console.log(`${SYNC_MESSAGES.VERIFY_SOURCE_LABEL}${result.source}`);
+  } else {
+    console.error(chalk.red(SYNC_MESSAGES.VERIFY_UNAVAILABLE));
+  }
+}
+
+export function registerSyncCommand(program: Command): void {
+  program
     .command('sync')
-    .description('Sync secrets via native IPFS')
-    .action(() => {
-      // Show help when running `lsh sync` without subcommand
-      console.log(chalk.bold.cyan('\n🔄 LSH Sync - IPFS Secrets Sync\n'));
-      console.log(chalk.gray('Sync encrypted secrets via native IPFS (no auth required)\n'));
-      console.log(chalk.bold('Quick:'));
-      console.log(`  ${chalk.cyan('now')}       ⚡ Auto-setup and push secrets in one command`);
-      console.log('');
-      console.log(chalk.bold('Setup:'));
-      console.log(`  ${chalk.cyan('init')}      🚀 Full setup: install IPFS, initialize, and start daemon`);
-      console.log(`  ${chalk.cyan('status')}    📊 Show IPFS client, daemon, and sync status`);
-      console.log(`  ${chalk.cyan('start')}     ▶️  Start IPFS daemon`);
-      console.log(`  ${chalk.cyan('stop')}      ⏹️  Stop IPFS daemon`);
-      console.log('');
-      console.log(chalk.bold('Sync:'));
-      console.log(`  ${chalk.cyan('push')}      ⬆️  Push encrypted secrets to IPFS`);
-      console.log(`  ${chalk.cyan('pull')}      ⬇️  Pull secrets from IPFS by CID`);
-      console.log(`  ${chalk.cyan('history')}   📜 Show IPFS sync history`);
-      console.log(`  ${chalk.cyan('verify')}    ✅ Verify that a CID is accessible on IPFS`);
-      console.log(`  ${chalk.cyan('clear')}     🗑️  Clear sync history`);
-      console.log('');
-      console.log(chalk.bold('Examples:'));
-      console.log(chalk.gray('  lsh sync now           # Auto-setup + push (recommended)'));
-      console.log(chalk.gray('  lsh sync now -d "v1.0" # Push with description'));
-      console.log(chalk.gray('  lsh sync pull <cid>    # Pull secrets by CID'));
-      console.log('');
-      console.log(chalk.gray('Run "lsh sync <command> --help" for more info.'));
-      console.log('');
-    });
-
-  // lsh sync init
-  syncCommand
-    .command('init')
-    .description('🚀 Full setup: install IPFS, initialize repo, and start daemon')
-    .option('-f, --force', 'Force reinstall even if already installed')
+    .description(SYNC_MESSAGES.DESCRIPTION)
+    .option('-f, --file <path>', SYNC_MESSAGES.OPTION_FILE, '.env')
+    .option('-e, --env <name>', SYNC_MESSAGES.OPTION_ENV, 'dev')
+    .option('-g, --global', SYNC_MESSAGES.OPTION_GLOBAL)
+    .option('--force', SYNC_MESSAGES.OPTION_FORCE)
+    .option('--load', SYNC_MESSAGES.OPTION_LOAD)
+    .option('--status', SYNC_MESSAGES.OPTION_STATUS)
+    .option('--format <format>', SYNC_MESSAGES.OPTION_FORMAT, 'table')
+    .option('--init', SYNC_MESSAGES.OPTION_INIT)
+    .option('--key [value]', SYNC_MESSAGES.OPTION_KEY)
+    .option('--config', SYNC_MESSAGES.OPTION_CONFIG)
+    .option('--doctor', SYNC_MESSAGES.OPTION_DOCTOR)
+    .option('--repair', SYNC_MESSAGES.OPTION_REPAIR)
+    .option('--history', SYNC_MESSAGES.OPTION_HISTORY)
+    .option('--verify <cid>', SYNC_MESSAGES.OPTION_VERIFY)
     .action(async (options) => {
-      console.log(chalk.bold.cyan('\n🚀 Setting up IPFS for sync...\n'));
-
-      const manager = new IPFSClientManager();
-      const ipfsSync = getIPFSSync();
-
-      // Step 1: Check if daemon is already running
-      if (await ipfsSync.checkDaemon()) {
-        const info = await ipfsSync.getDaemonInfo();
-        console.log(chalk.green('✅ IPFS is already set up and running!'));
-        if (info) {
-          console.log(chalk.gray(`   Peer ID: ${info.peerId.substring(0, 16)}...`));
-          console.log(chalk.gray(`   Version: ${info.version}`));
-        }
-        console.log('');
-        console.log(chalk.gray('You can now sync secrets:'));
-        console.log(chalk.cyan('  lsh sync push'));
-        console.log('');
+      if (options.init) {
+        await runSetupWizard({ global: Boolean(options.global), force: Boolean(options.force) });
         return;
       }
 
-      // Step 2: Check if IPFS is installed
-      const clientInfo = await manager.detect();
-
-      if (!clientInfo.installed || options.force) {
-        const installSpinner = ora('Installing IPFS client (Kubo)...').start();
-        try {
-          await manager.install({ force: options.force });
-          installSpinner.succeed(chalk.green('IPFS client installed'));
-        } catch (error) {
-          installSpinner.fail(chalk.red('Failed to install IPFS'));
-          console.error(chalk.red(extractErrorMessage(error)));
-          process.exit(1);
-        }
-      } else {
-        console.log(chalk.green('✅ IPFS client already installed'));
-        console.log(chalk.gray(`   Version: ${clientInfo.version}`));
+      if (options.doctor) {
+        await runDoctor({
+          global: Boolean(options.global),
+          verbose: Boolean(program.opts().verbose),
+          json: options.format === 'json',
+        });
+        return;
       }
 
-      // Step 3: Initialize IPFS repository if needed
-      const initSpinner = ora('Initializing IPFS repository...').start();
-      try {
-        await manager.init();
-        initSpinner.succeed(chalk.green('IPFS repository initialized'));
-      } catch (error) {
-        const msg = extractErrorMessage(error);
-        // Check if already initialized
-        if (msg.includes('already') || msg.includes('exists')) {
-          initSpinner.succeed(chalk.green('IPFS repository already initialized'));
+      if (options.key !== undefined) {
+        if (options.key === true) {
+          const key = findEncryptionKey();
+          if (!key) {
+            console.error(SYNC_MESSAGES.KEY_NOT_FOUND);
+            process.exitCode = 1;
+            return;
+          }
+          console.log(key);
         } else {
-          initSpinner.fail(chalk.red('Failed to initialize IPFS'));
-          console.error(chalk.red(msg));
-          process.exit(1);
+          importKey(String(options.key), Boolean(options.force), Boolean(options.global), options.file);
         }
+        return;
       }
 
-      // Step 4: Start the daemon
-      const startSpinner = ora('Starting IPFS daemon...').start();
+      if (options.config) {
+        await printConfig(options.format);
+        return;
+      }
+
+      const { manager, filePath, environment } = resolveContext(options);
       try {
-        await manager.start();
-        startSpinner.succeed(chalk.green('IPFS daemon started'));
-      } catch (error) {
-        startSpinner.fail(chalk.red('Failed to start daemon'));
-        console.error(chalk.red(extractErrorMessage(error)));
-        process.exit(1);
-      }
-
-      // Final status
-      console.log('');
-      console.log(chalk.green.bold('✅ IPFS setup complete!'));
-      console.log('');
-      console.log(chalk.gray('You can now sync secrets:'));
-      console.log(chalk.cyan('  lsh sync push          # Push secrets → get CID'));
-      console.log(chalk.cyan('  lsh sync pull <cid>    # Pull secrets by CID'));
-      console.log('');
-    });
-
-  // lsh sync now - convenience command that does everything
-  syncCommand
-    .command('now')
-    .description('⚡ Auto-setup and push secrets in one command')
-    .option('-f, --file <path>', 'Path to .env file', '.env')
-    .option('-e, --env <name>', 'Environment name', '')
-    .option('-d, --description <text>', 'Description for this sync')
-    .action(async (options) => {
-      console.log(chalk.bold.cyan('\n⚡ LSH Sync Now\n'));
-
-      const manager = new IPFSClientManager();
-      const ipfsSync = getIPFSSync();
-      const gitInfo = getGitRepoInfo();
-
-      // Step 1: Ensure IPFS is set up and daemon is running
-      try {
-        await manager.ensureDaemonRunning();
-        console.log(chalk.green('✓ IPFS daemon running'));
-      } catch (error) {
-        console.error(chalk.red(extractErrorMessage(error)));
-        process.exit(1);
-      }
-
-      // Step 2: Read and validate .env file
-      const envPath = path.resolve(options.file);
-      if (!fs.existsSync(envPath)) {
-        console.error(chalk.red(`\n✖ File not found: ${envPath}`));
-        process.exit(1);
-      }
-
-      const content = fs.readFileSync(envPath, 'utf-8');
-
-      // Step 3: Get encryption key
-      let encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
-
-      if (!encryptionKey) {
-        const keyMatch = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
-        if (keyMatch) {
-          encryptionKey = keyMatch[1].trim();
-          if ((encryptionKey.startsWith('"') && encryptionKey.endsWith('"')) ||
-              (encryptionKey.startsWith("'") && encryptionKey.endsWith("'"))) {
-            encryptionKey = encryptionKey.slice(1, -1);
-          }
-        }
-      }
-
-      if (!encryptionKey) {
-        console.error(chalk.red('\n✖ LSH_SECRETS_KEY not set'));
-        console.log('');
-        console.log(chalk.gray('Generate a key with:'));
-        console.log(chalk.cyan('  lsh key'));
-        process.exit(1);
-      }
-
-      // Step 4: Encrypt and upload
-      const uploadSpinner = ora('Encrypting and uploading...').start();
-
-      try {
-        const key = crypto.createHash('sha256').update(encryptionKey).digest();
-        const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-        let encrypted = cipher.update(content, 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-        const encryptedData = iv.toString('hex') + ':' + encrypted;
-
-        const filename = `lsh-secrets-${options.env || 'default'}.encrypted`;
-        const cid = await ipfsSync.upload(
-          Buffer.from(encryptedData, 'utf-8'),
-          filename,
-          {
-            environment: options.env || undefined,
-            gitRepo: gitInfo?.repoName || undefined,
-          }
-        );
-
-        if (!cid) {
-          uploadSpinner.fail(chalk.red('Upload failed'));
-          process.exit(1);
-        }
-
-        uploadSpinner.succeed(chalk.green('Synced to IPFS!'));
-        console.log('');
-        console.log(chalk.bold('CID:'), chalk.cyan(cid));
-        if (options.description) {
-          console.log(chalk.bold('Description:'), chalk.gray(options.description));
-        }
-
-        // Publish to IPNS
-        if (encryptionKey) {
-          try {
-            const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
-            const env = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
-            const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
-            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
-
-            if (ipnsName) {
-              const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
-              if (publishedName) {
-                console.log(chalk.bold('IPNS:'), chalk.cyan(publishedName));
-              }
-            }
-          } catch {
-            // Non-fatal: IPNS is a convenience
-          }
-        }
-
-        console.log('');
-        console.log(chalk.gray('Pull on another machine:'));
-        console.log(chalk.cyan('  lsh sync pull'));
-        console.log(chalk.gray('Or by specific CID:'));
-        console.log(chalk.cyan(`  lsh sync pull ${cid}`));
-        console.log('');
-      } catch (error) {
-        uploadSpinner.fail(chalk.red('Sync failed'));
-        console.error(chalk.red(extractErrorMessage(error)));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync push
-  syncCommand
-    .command('push')
-    .description('⬆️  Push encrypted secrets to IPFS, returns CID')
-    .option('-f, --file <path>', 'Path to .env file', '.env')
-    .option('-e, --env <name>', 'Environment name', '')
-    .action(async (options) => {
-      const spinner = ora('Uploading to IPFS...').start();
-
-      try {
-        const ipfsSync = getIPFSSync();
-        const gitInfo = getGitRepoInfo();
-
-        // Ensure daemon is running (auto-setup if needed)
-        try {
-          const ipfsManager = new IPFSClientManager();
-          await ipfsManager.ensureDaemonRunning();
-        } catch (error) {
-          spinner.fail(chalk.red(extractErrorMessage(error)));
-          process.exit(1);
-        }
-
-        // Read .env file
-        const envPath = path.resolve(options.file);
-        if (!fs.existsSync(envPath)) {
-          spinner.fail(chalk.red(`File not found: ${envPath}`));
-          process.exit(1);
-        }
-
-        const content = fs.readFileSync(envPath, 'utf-8');
-
-        // Get encryption key - check env first, then .env file
-        let encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
-
-        if (!encryptionKey) {
-          // Try to read from .env file
-          const keyMatch = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
-          if (keyMatch) {
-            encryptionKey = keyMatch[1].trim();
-            // Remove quotes if present
-            if ((encryptionKey.startsWith('"') && encryptionKey.endsWith('"')) ||
-                (encryptionKey.startsWith("'") && encryptionKey.endsWith("'"))) {
-              encryptionKey = encryptionKey.slice(1, -1);
-            }
-          }
-        }
-
-        if (!encryptionKey) {
-          spinner.fail(chalk.red('LSH_SECRETS_KEY not set'));
-          console.log('');
-          console.log(chalk.gray('Generate a key with:'));
-          console.log(chalk.cyan('  lsh key'));
-          console.log('');
-          console.log(chalk.gray('Then add it to .env or set it:'));
-          console.log(chalk.cyan('  export LSH_SECRETS_KEY=<your-key>'));
-          process.exit(1);
-        }
-
-        // Encrypt content
-        const key = crypto.createHash('sha256').update(encryptionKey).digest();
-        const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-        let encrypted = cipher.update(content, 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-        const encryptedData = iv.toString('hex') + ':' + encrypted;
-
-        // Upload to IPFS
-        const filename = `lsh-secrets-${options.env || 'default'}.encrypted`;
-        const cid = await ipfsSync.upload(
-          Buffer.from(encryptedData, 'utf-8'),
-          filename,
-          {
-            environment: options.env || undefined,
-            gitRepo: gitInfo?.repoName || undefined,
-          }
-        );
-
-        if (!cid) {
-          spinner.fail(chalk.red('Upload failed'));
-          process.exit(1);
-        }
-
-        spinner.succeed(chalk.green('Uploaded to IPFS!'));
-        console.log('');
-        console.log(chalk.bold('CID:'), chalk.cyan(cid));
-
-        const repoName = gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
-        const env = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
-
-        // Publish to IPNS so teammates can `lsh sync pull` without a CID.
-        let ipnsPublished = false;
-        if (encryptionKey) {
-          try {
-            const keyInfo = deriveKeyInfo(encryptionKey, repoName, env);
-            const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
-
-            if (ipnsName) {
-              const publishedName = await ipfsSync.publishToIPNS(cid, keyInfo.keyName);
-              if (publishedName) {
-                console.log(chalk.bold('IPNS:'), chalk.cyan(publishedName));
-                ipnsPublished = true;
-              }
-            }
-          } catch (error) {
-            console.error(chalk.yellow(`IPNS publish error: ${extractErrorMessage(error)}`));
-          }
-        }
-
-        // Durable remote pin (best-effort): makes the content survive this
-        // machine going offline. No-op unless a pinning service is configured.
-        const pinnedService = await ipfsSync.addRemotePin(cid, `lsh-${repoName}-${env}`);
-        if (pinnedService) {
-          console.log(chalk.bold('Pinned:'), chalk.cyan(`${pinnedService} (durable)`));
-        }
-
-        console.log('');
-        console.log(chalk.gray('Teammates can pull with just:'));
-        console.log(chalk.cyan('  lsh sync pull'));
-        console.log(chalk.gray('Or by specific CID:'));
-        console.log(chalk.cyan(`  lsh sync pull ${cid}`));
-        console.log('');
-
-        // Honest durability reporting — do not claim success the user cannot rely on.
-        if (!pinnedService) {
-          console.log(chalk.yellow('⚠️  No remote pin — this content lives ONLY on this machine.'));
-          console.log(chalk.gray('   If this machine goes offline, teammates cannot fetch it.'));
-          console.log(chalk.gray('   Enable durable pinning (one-time):'));
-          console.log(chalk.gray('     ipfs pin remote service add <name> <endpoint> <key>'));
-          console.log(chalk.gray('     export LSH_PIN_SERVICE=<name>'));
-          console.log('');
-        }
-        if (!ipnsPublished) {
-          spinner.warn(chalk.yellow('IPNS publish failed — teammates CANNOT `lsh sync pull` (no CID) until you re-push.'));
-          console.log(chalk.gray(`   They can still pull by explicit CID:  lsh sync pull ${cid}`));
-          console.log('');
-          // The headline promise ("teammates can pull with just: lsh sync pull") failed,
-          // so exit non-zero rather than reporting a success the user cannot rely on.
-          process.exit(1);
-        }
-      } catch (error) {
-        spinner.fail(chalk.red('Push failed'));
-        console.error(chalk.red(extractErrorMessage(error)));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync pull [cid]
-  syncCommand
-    .command('pull [cid]')
-    .description('⬇️  Pull secrets from IPFS (auto-resolves via IPNS if no CID given)')
-    .option('-o, --output <path>', 'Output file path', '.env')
-    .option('-e, --env <name>', 'Environment name', '')
-    .option('-r, --repo <name>', 'Source repo name for IPNS resolution (overrides auto-detected repo)')
-    .option('--force', 'Overwrite existing file without backup')
-    .action(async (cid, options) => {
-      const spinner = ora(cid ? 'Downloading from IPFS...' : 'Resolving latest secrets via IPNS...').start();
-
-      // If no CID provided, resolve via IPNS
-      if (!cid) {
-        try {
-          const ipfsSync = getIPFSSync();
-          try {
-            const ipfsManager = new IPFSClientManager();
-            await ipfsManager.ensureDaemonRunning();
-          } catch (error) {
-            spinner.fail(chalk.red(extractErrorMessage(error)));
-            process.exit(1);
-          }
-
-          // Get encryption key
-          let ipnsKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
-          if (!ipnsKey) {
-            const outputPath = path.resolve(options.output);
-            if (fs.existsSync(outputPath)) {
-              const content = fs.readFileSync(outputPath, 'utf-8');
-              const keyMatch = content.match(/^LSH_SECRETS_KEY=(.+)$/m);
-              if (keyMatch) {
-                ipnsKey = keyMatch[1].trim().replace(/^["']|["']$/g, '');
-              }
-            }
-          }
-
-          if (!ipnsKey) {
-            spinner.fail(chalk.red('LSH_SECRETS_KEY required for IPNS resolution'));
-            console.log(chalk.gray('  Set it: export LSH_SECRETS_KEY=<key>'));
-            process.exit(1);
-          }
-
-          const gitInfo = getGitRepoInfo();
-          const repoName = options.repo || gitInfo?.repoName || DEFAULTS.DEFAULT_ENVIRONMENT;
-          const environment = options.env || DEFAULTS.DEFAULT_ENVIRONMENT;
-          const keyInfo = deriveKeyInfo(ipnsKey, repoName, environment);
-          const ipnsName = await ensureKeyImported(ipfsSync.getApiUrl(), keyInfo);
-
-          if (!ipnsName) {
-            spinner.fail(chalk.red('Failed to derive IPNS key'));
-            process.exit(1);
-          }
-
-          spinner.text = `Resolving IPNS: ${ipnsName.substring(0, 20)}...`;
-          const resolvedCid = await ipfsSync.resolveIPNS(ipnsName);
-
-          if (!resolvedCid) {
-            spinner.fail(chalk.red('No secrets found via IPNS'));
-            console.log(chalk.gray('  No one has pushed secrets for this repo/environment yet.'));
-            console.log(chalk.gray('  Push first: lsh sync push'));
-            process.exit(1);
-          }
-
-          cid = resolvedCid;
-          spinner.succeed(chalk.green(`Resolved IPNS → CID: ${cid.substring(0, 16)}...`));
-          spinner.start('Downloading from IPFS...');
-        } catch (error) {
-          spinner.fail(chalk.red(`IPNS resolution failed: ${extractErrorMessage(error)}`));
-          process.exit(1);
-        }
-      }
-
-      try {
-        const ipfsSync = getIPFSSync();
-
-        // Download from IPFS
-        const data = await ipfsSync.download(cid);
-        if (!data) {
-          spinner.fail(chalk.red('Download failed'));
-          console.log('');
-          console.log(chalk.gray('The CID might not be available on public gateways yet.'));
-          console.log(chalk.gray('Make sure the source machine is online with IPFS daemon running.'));
-          process.exit(1);
-        }
-
-        // Get encryption key - check env first, then existing .env file
-        let encryptionKey = process.env[ENV_VARS.LSH_SECRETS_KEY];
-
-        if (!encryptionKey) {
-          // Try to read from existing .env file
-          const outputPath = path.resolve(options.output);
-          if (fs.existsSync(outputPath)) {
-            const existingContent = fs.readFileSync(outputPath, 'utf-8');
-            const keyMatch = existingContent.match(/^LSH_SECRETS_KEY=(.+)$/m);
-            if (keyMatch) {
-              encryptionKey = keyMatch[1].trim();
-              // Remove quotes if present
-              if ((encryptionKey.startsWith('"') && encryptionKey.endsWith('"')) ||
-                  (encryptionKey.startsWith("'") && encryptionKey.endsWith("'"))) {
-                encryptionKey = encryptionKey.slice(1, -1);
-              }
-            }
-          }
-        }
-
-        if (!encryptionKey) {
-          spinner.fail(chalk.red('LSH_SECRETS_KEY not set'));
-          console.log('');
-          console.log(chalk.gray('You need the same encryption key used to push.'));
-          console.log(chalk.gray('Set it in your environment or .env file:'));
-          console.log(chalk.cyan('  export LSH_SECRETS_KEY=<key-from-teammate>'));
-          process.exit(1);
-        }
-
-        // Decrypt content
-        const encryptedData = data.toString('utf-8');
-        const [ivHex, encrypted] = encryptedData.split(':');
-
-        if (!ivHex || !encrypted) {
-          spinner.fail(chalk.red('Invalid encrypted data format'));
-          process.exit(1);
-        }
-
-        const key = crypto.createHash('sha256').update(encryptionKey).digest();
-        const iv = Buffer.from(ivHex, 'hex');
-
-        let decrypted: string;
-        try {
-          const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-          decrypted = decipher.update(encrypted, 'hex', 'utf8');
-          decrypted += decipher.final('utf8');
-        } catch {
-          spinner.fail(chalk.red('Decryption failed'));
-          console.log('');
-          console.log(chalk.red('Wrong encryption key!'));
-          console.log(chalk.gray('Make sure LSH_SECRETS_KEY matches the key used to push.'));
-          process.exit(1);
-        }
-
-        // Write output file
-        const outputPath = path.resolve(options.output);
-
-        // Backup existing file if it exists (unless --force)
-        if (fs.existsSync(outputPath) && !options.force) {
-          const backupPath = `${outputPath}.backup.${Date.now()}`;
-          fs.copyFileSync(outputPath, backupPath);
-          console.log(chalk.gray(`Backed up existing file to: ${backupPath}`));
-        }
-
-        fs.writeFileSync(outputPath, decrypted, 'utf-8');
-
-        spinner.succeed(chalk.green('Downloaded and decrypted!'));
-        console.log('');
-        console.log(chalk.bold('Output:'), chalk.cyan(outputPath));
-        console.log(chalk.bold('CID:'), chalk.gray(cid));
-        console.log('');
-      } catch (error) {
-        spinner.fail(chalk.red('Pull failed'));
-        console.error(chalk.red(extractErrorMessage(error)));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync status
-  syncCommand
-    .command('status')
-    .description('📊 Show IPFS client, daemon, and sync status')
-    .option('--json', 'Output as JSON')
-    .action(async (options) => {
-      try {
-        const manager = new IPFSClientManager();
-        const clientInfo = await manager.detect();
-        const ipfsSync = getIPFSSync();
-        const daemonInfo = await ipfsSync.getDaemonInfo();
-        const history = await ipfsSync.getHistory(5);
-
-        if (options.json) {
-          console.log(JSON.stringify({
-            client: clientInfo,
-            daemonRunning: !!daemonInfo,
-            daemonInfo,
-            recentSyncs: history.length,
-          }, null, 2));
+        if (options.repair) {
+          await runRepair();
           return;
         }
 
-        console.log(chalk.bold.cyan('\n📊 Sync Status\n'));
-        console.log(chalk.gray('━'.repeat(50)));
-        console.log('');
-
-        // Client status
-        console.log(chalk.bold('IPFS Client:'));
-        if (clientInfo.installed) {
-          console.log(chalk.green('  ✅ Installed'));
-          console.log(`     Type: ${clientInfo.type}`);
-          console.log(`     Version: ${clientInfo.version}`);
-        } else {
-          console.log(chalk.yellow('  ⚠️  Not installed'));
-          console.log(chalk.gray('     Run: lsh sync init'));
-        }
-        console.log('');
-
-        // Daemon status
-        console.log(chalk.bold('IPFS Daemon:'));
-        if (daemonInfo) {
-          console.log(chalk.green('  ✅ Running'));
-          console.log(`     Peer ID: ${daemonInfo.peerId.substring(0, 16)}...`);
-          console.log(`     API: http://127.0.0.1:5001`);
-          console.log(`     Gateway: http://127.0.0.1:8080`);
-        } else {
-          console.log(chalk.yellow('  ⚠️  Not running'));
-          console.log(chalk.gray('     Run: lsh sync start'));
-        }
-        console.log('');
-
-        // Recent syncs
-        console.log(chalk.bold('Recent Syncs:'));
-        if (history.length > 0) {
-          console.log(`  ${history.length} recent sync(s)`);
-          const latest = history[0];
-          const date = new Date(latest.timestamp);
-          console.log(`  Latest: ${date.toLocaleString()}`);
-          console.log(`  CID: ${latest.cid.substring(0, 20)}...`);
-        } else {
-          console.log(chalk.gray('  No sync history'));
-        }
-        console.log('');
-
-        // Quick actions
-        if (clientInfo.installed && daemonInfo) {
-          console.log(chalk.bold('Ready to sync:'));
-          console.log(chalk.cyan('  lsh sync push        # Push secrets'));
-          console.log(chalk.cyan('  lsh sync pull <cid>  # Pull by CID'));
-        } else if (!clientInfo.installed) {
-          console.log(chalk.bold('Get started:'));
-          console.log(chalk.cyan('  lsh sync init        # Full setup'));
-        } else {
-          console.log(chalk.bold('Start daemon:'));
-          console.log(chalk.cyan('  lsh sync start'));
-        }
-        console.log('');
-      } catch (error) {
-        console.error(chalk.red('Failed to check status:'), extractErrorMessage(error));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync history
-  syncCommand
-    .command('history')
-    .description('📜 Show IPFS sync history')
-    .option('-n, --limit <number>', 'Number of entries to show', '10')
-    .option('--json', 'Output as JSON')
-    .action(async (options) => {
-      try {
-        const ipfsSync = getIPFSSync();
-        const limit = parseInt(options.limit, 10);
-        const history = await ipfsSync.getHistory(limit);
-
-        if (options.json) {
-          console.log(JSON.stringify(history, null, 2));
+        if (options.history) {
+          await printHistory(environment, options.format);
           return;
         }
 
-        console.log(chalk.bold.cyan('\n📜 Sync History\n'));
-        console.log(chalk.gray('━'.repeat(60)));
-        console.log('');
-
-        if (history.length === 0) {
-          console.log(chalk.gray('No sync history found.'));
-          console.log('');
-          console.log(chalk.gray('Push your first secrets with:'));
-          console.log(chalk.cyan('  lsh sync push'));
-          console.log('');
+        if (options.verify) {
+          await runVerify(options.verify);
           return;
         }
 
-        for (const entry of history) {
-          const date = new Date(entry.timestamp);
-          const dateStr = date.toLocaleString();
+        if (options.status) {
+          let daemonReachable = true;
+          const status = await withFilteredStdout(
+            () => false,
+            async () => {
+              try {
+                await new IPFSClientManager().ensureDaemonRunning();
+              } catch {
+                daemonReachable = false;
+              }
+              return manager.status(filePath, environment);
+            },
+          );
 
-          console.log(chalk.bold(`${entry.cid.substring(0, 16)}...`));
-          console.log(`  File: ${entry.filename}`);
-          console.log(`  Size: ${entry.size} bytes`);
-          console.log(`  Time: ${dateStr}`);
-          if (entry.gitRepo) {
-            console.log(`  Repo: ${entry.gitRepo}`);
-          }
-          if (entry.environment) {
-            console.log(`  Env:  ${entry.environment}`);
-          }
-          console.log('');
-        }
-
-        console.log(chalk.gray(`Showing ${history.length} entries. Use -n to show more.`));
-        console.log('');
-      } catch (error) {
-        console.error(chalk.red('Failed to get history:'), extractErrorMessage(error));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync verify <cid>
-  syncCommand
-    .command('verify <cid>')
-    .description('✅ Verify that a CID is accessible on IPFS')
-    .action(async (cid) => {
-      const spinner = ora('Verifying CID accessibility...').start();
-
-      try {
-        const ipfsSync = getIPFSSync();
-        const result = await ipfsSync.verifyCid(cid);
-
-        if (result.available) {
-          spinner.succeed(chalk.green('CID is accessible!'));
-          console.log('');
-          console.log(chalk.bold('CID:'), chalk.cyan(cid));
-          console.log(chalk.bold('Source:'), chalk.gray(result.source));
-          console.log('');
-        } else {
-          spinner.fail(chalk.red('CID not accessible'));
-          console.log('');
-          console.log(chalk.gray('The CID could not be found on the network.'));
-          console.log(chalk.gray('Possible reasons:'));
-          console.log(chalk.gray('  - Source machine is offline'));
-          console.log(chalk.gray('  - Content not yet propagated to gateways'));
-          console.log(chalk.gray('  - Invalid CID'));
-          console.log('');
-        }
-      } catch (error) {
-        spinner.fail(chalk.red('Verification failed'));
-        console.error(chalk.red(extractErrorMessage(error)));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync clear
-  syncCommand
-    .command('clear')
-    .description('🗑️  Clear sync history')
-    .action(async () => {
-      try {
-        const ipfsSync = getIPFSSync();
-        await ipfsSync.clearHistory();
-        console.log(chalk.green('✅ Sync history cleared'));
-      } catch (error) {
-        console.error(chalk.red('Failed to clear history:'), extractErrorMessage(error));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync start
-  syncCommand
-    .command('start')
-    .description('▶️  Start IPFS daemon')
-    .action(async () => {
-      try {
-        const manager = new IPFSClientManager();
-        const ipfsSync = getIPFSSync();
-
-        // Check if already running
-        if (await ipfsSync.checkDaemon()) {
-          const info = await ipfsSync.getDaemonInfo();
-          console.log(chalk.green('✅ IPFS daemon is already running'));
-          if (info) {
-            console.log(chalk.gray(`   Peer ID: ${info.peerId.substring(0, 16)}...`));
+          if (options.format === 'json') {
+            console.log(JSON.stringify({ ...status, daemonReachable }, null, 2));
+          } else {
+            printStatus(status, environment, daemonReachable);
           }
           return;
         }
 
-        await manager.start();
+        await runSmartSync(manager, filePath, environment, Boolean(options.load), Boolean(options.force));
       } catch (error) {
-        console.error(chalk.red('Failed to start daemon:'), extractErrorMessage(error));
-        process.exit(1);
-      }
-    });
-
-  // lsh sync stop
-  syncCommand
-    .command('stop')
-    .description('⏹️  Stop IPFS daemon')
-    .action(async () => {
-      try {
-        const manager = new IPFSClientManager();
-        await manager.stop();
-      } catch (error) {
-        console.error(chalk.red('Failed to stop daemon:'), extractErrorMessage(error));
-        process.exit(1);
+        const failureMessages: Array<[boolean, string]> = [
+          [Boolean(options.repair), SYNC_MESSAGES.FAILED_TO_REPAIR],
+          [Boolean(options.history), SYNC_MESSAGES.FAILED_TO_GET_HISTORY],
+          [Boolean(options.verify), SYNC_MESSAGES.FAILED_TO_VERIFY],
+          [Boolean(options.status), SYNC_MESSAGES.FAILED_TO_CHECK_STATUS],
+        ];
+        const message = failureMessages.find(([active]) => active)?.[1] ?? SYNC_MESSAGES.FAILED_TO_SYNC;
+        console.error(message, extractErrorMessage(error));
+        process.exitCode = 1;
+      } finally {
+        await manager.cleanup();
       }
     });
 }
-
-export default registerSyncCommands;

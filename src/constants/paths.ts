@@ -36,3 +36,17 @@ export const SYSTEM = {
   UNKNOWN_USER: 'unknown',
   DEFAULT_HOSTNAME: 'localhost',
 } as const;
+
+/** .gitignore patterns ensureEnvInGitignore keeps every secrets-bearing local file covered by. */
+export const ENV_GITIGNORE_PATTERNS = [
+  '.env',
+  '.env.local',
+  '.env.*.local',
+  '.env.copyfrom.*',
+  '.env.backup.*',
+] as const;
+
+export const ENV_GITIGNORE_HEADER = '# Environment variables (managed by LSH)';
+
+/** Suffix ensureEnvInGitignore appends to a target file's basename to gitignore its backups. */
+export const ENV_BACKUP_SUFFIX_PATTERN = '.backup.*';

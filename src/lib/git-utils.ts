@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { createLogger } from './logger.js';
+import { ENV_GITIGNORE_PATTERNS, ENV_GITIGNORE_HEADER } from '../constants/paths.js';
 
 const logger = createLogger('GitUtils');
 
@@ -175,27 +176,33 @@ export function isEnvIgnored(dir: string = process.cwd()): boolean {
 }
 
 /**
- * Add .env to .gitignore if not already present
+ * Add each pattern in ENV_GITIGNORE_PATTERNS, plus any caller-supplied `extraPatterns`, to
+ * .gitignore that isn't already there as an exact line. Unlike isEnvIgnored's fuzzy "is .env
+ * covered by something" check, this compares per pattern so a .gitignore that already has a
+ * bare `.env` line still gains the newer `.env.copyfrom.*` / `.env.backup.*` patterns instead
+ * of being skipped wholesale. Only ever appends — an existing line is never touched, reordered,
+ * or duplicated.
  */
-export function ensureEnvInGitignore(dir: string = process.cwd()): void {
+export function ensureEnvInGitignore(dir: string = process.cwd(), extraPatterns: readonly string[] = []): void {
   const gitignorePath = path.join(dir, '.gitignore');
 
-  if (isEnvIgnored(dir)) {
-    return; // Already ignored
-  }
-
   try {
-    let content = '';
+    let content = fs.existsSync(gitignorePath) ? fs.readFileSync(gitignorePath, 'utf8') : '';
 
-    if (fs.existsSync(gitignorePath)) {
-      content = fs.readFileSync(gitignorePath, 'utf8');
-      // Ensure newline at end
-      if (!content.endsWith('\n')) {
-        content += '\n';
-      }
+    const existingLines = new Set(content.split('\n').map((line) => line.trim()));
+    const patterns = Array.from(new Set([...ENV_GITIGNORE_PATTERNS, ...extraPatterns]));
+    const missing = patterns.filter((pattern) => !existingLines.has(pattern));
+    if (missing.length === 0) {
+      return; // Every pattern is already an exact line in the file.
     }
 
-    content += '\n# Environment variables (managed by LSH)\n.env\n.env.local\n.env.*.local\n';
+    if (content && !content.endsWith('\n')) {
+      content += '\n';
+    }
+    if (!existingLines.has(ENV_GITIGNORE_HEADER)) {
+      content += `\n${ENV_GITIGNORE_HEADER}\n`;
+    }
+    content += `${missing.join('\n')}\n`;
 
     fs.writeFileSync(gitignorePath, content, 'utf8');
     logger.info('✅ Added .env to .gitignore');

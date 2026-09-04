@@ -1,7 +1,7 @@
 # llms.txt - Machine-Readable Context for LSH
 # https://github.com/gwicho38/lsh
 # For ML models/agents to quickly understand this CLI tool
-# Run `lsh context` for comprehensive usage information
+# This file IS the machine-readable context — there is no `lsh context` command in v4. Read it directly: `cat llms.txt`
 
 > LSH is an encrypted secrets manager for .env files with cloud sync via IPFS/Storacha.
 
@@ -13,33 +13,45 @@ Install: npm install -g lsh-framework
 Repository: https://github.com/gwicho38/lsh
 Docs: https://github.com/gwicho38/lsh/blob/main/README.md
 
+## v4.0.0 Breaking Change
+
+The CLI surface is now seven commands plus `help`: `push`, `pull`, `sync`, `edit`, `list`, `get`, `set`. Every other
+v3 top-level command was removed. Running a removed command prints its exact v4 replacement. See
+[docs/releases/4.0.0.md](docs/releases/4.0.0.md) for the full removal table.
+
 ## Primary Use Case
 
 Sync .env files across development machines with AES-256 encryption:
-1. Generate encryption key once: `lsh key`
+1. Generate encryption key once: `lsh sync --init`
 2. Push secrets to cloud: `lsh push`
 3. Pull on another machine: `lsh pull`
 
 ## Command Reference
 
 ### Setup Commands (First-Time)
-lsh init                          # Interactive setup wizard
-lsh key                           # Generate AES-256 encryption key
-lsh doctor                        # Verify configuration and connectivity
+lsh sync --init                   # Interactive setup wizard (installs IPFS, generates a key)
+lsh sync --key                    # Print the effective encryption key
+lsh sync --key=<value>            # Import/persist a shared encryption key
+lsh sync --doctor                 # Verify configuration and connectivity
 
 ### Core Secrets Commands
 lsh push [--env <name>] [--file <path>]    # Upload encrypted .env to cloud
 lsh pull [--env <name>] [--file <path>]    # Download .env from cloud
-lsh sync                                    # Smart sync (check status, auto-resolve)
-lsh list [--format <type>]                  # List local secrets (env|json|yaml|toml|export)
-lsh env [<name>]                            # List/view cloud environments
-lsh status                                  # Detailed sync status report
+lsh sync                                    # Smart sync (push or pull, whichever is newer)
+lsh list                                    # List local secrets (env format, masked)
+lsh list --format json|yaml|toml|export     # List local secrets (unmasked — for eval/jq/etc.)
+lsh list --no-mask                          # Force real values in the env format
+lsh list --keys-only                        # List only key names
+lsh get --all --format <type>               # List local secrets, unmasked
+lsh sync --status                           # Detailed sync status report
 
 ### Individual Secret Operations
-lsh get <key> [--all] [--no-mask]    # Get specific secret value
-lsh set <key> <value>                 # Set specific secret value
-lsh delete                            # Delete .env file
-lsh create                            # Create new .env file
+lsh get <key>                         # Get specific secret value (unmasked, fuzzy key match)
+lsh get <key> --exact                 # Get specific secret value, exact key match only
+lsh set <key> <value>                 # Set specific secret value (local only; publish with lsh push)
+printenv | lsh set                    # Batch upsert KEY=VALUE lines from stdin
+rm .env                               # Delete .env file
+lsh edit                              # Open .env in $EDITOR (creates it if missing)
 
 ### Multi-Environment Support
 lsh push --env dev                    # Push to dev environment
@@ -49,30 +61,28 @@ lsh pull --env prod                   # Pull from production
 lsh push --file .env.local --env local  # Custom file to custom env
 
 ### IPFS / Sync Commands
-lsh ipfs status                       # Check local Kubo (IPFS) node + install status
-lsh ipfs start                        # Start the local IPFS (Kubo) daemon
+lsh sync --doctor                     # Check local Kubo (IPFS) node + install status
 lsh sync                              # Sync secrets via IPFS (push/pull as needed)
-lsh sync-history                      # View immutable sync records stored on IPFS
+lsh sync --history                    # View immutable sync records stored on IPFS
 
-### Configuration Commands
-lsh config show                       # Show current configuration
-lsh config set <key> <value>          # Set configuration value
-lsh config get <key>                  # Get configuration value
+The IPFS daemon itself is managed automatically — `push`, `pull`, and `sync` each install Kubo if
+missing and start the daemon if it isn't running. There is no separate start/stop command.
 
-### Self-Management
-lsh self update                       # Update to latest version
-lsh self version                      # Show version information
-lsh self info                         # Show installation info
-lsh --help                            # Show help
+### Configuration
+lsh sync --config                     # Print the resolved configuration and its source path
+
+### Version / Update
+npm install -g lsh-framework          # Update to latest version
 lsh --version                         # Show version
+lsh --help                            # Show help
 
 ## Common Patterns
 
 ### First-Time Setup on Any Machine
 ```bash
 npm install -g lsh-framework
-lsh init                    # Interactive setup
-lsh doctor                  # Verify everything works
+lsh sync --init              # Interactive setup
+lsh sync --doctor            # Verify everything works
 ```
 
 ### Daily Developer Workflow
@@ -108,7 +118,7 @@ source .env
 ## Environment Variables
 
 ### Required
-LSH_SECRETS_KEY=<64-char-hex>         # AES-256 encryption key (from `lsh key`)
+LSH_SECRETS_KEY=<64-char-hex>         # AES-256 encryption key (from `lsh sync --init`)
 
 ### Optional
 LSH_PIN_SERVICE=<service-name>        # Kubo remote pinning service for durable sync
@@ -127,24 +137,25 @@ LSH_PIN_SERVICE=<service-name>        # Kubo remote pinning service for durable 
 
 ## Output Formats
 
-lsh list --format env                 # KEY=value (default)
-lsh list --format json                # {"KEY": "value"}
-lsh list --format yaml                # KEY: value
-lsh list --format toml                # KEY = "value"
-lsh list --format export              # export KEY="value" (shell-sourceable)
+lsh get --all --format env            # KEY=value (default)
+lsh get --all --format json           # {"KEY": "value"}
+lsh get --all --format yaml           # KEY: value
+lsh get --all --format toml           # KEY = "value"
+lsh get --all --format export         # export KEY='value' (shell-sourceable)
 
 ## Error Resolution
 
 ### "No secrets found for environment"
-Run `lsh env` to see available environments, then `lsh push --env <name>` to create.
+Run `lsh get --all --format env` to see what's in your local .env, then
+`lsh push --env <name>` to create the environment on first push.
 
 ### "Decryption failed"
-Ensure LSH_SECRETS_KEY matches the key used to encrypt. Generate new key with `lsh key` if lost.
+Ensure LSH_SECRETS_KEY matches the key used to encrypt. Generate a new key with `lsh sync --init` if lost.
 
 ### "IPFS daemon not running" / sync hangs or fails
-Ensure the local Kubo node is installed and running: `lsh ipfs status`, then
-`lsh ipfs start` (or `lsh doctor` to diagnose). For durable pulls, configure a
-remote pinning service (see README "Durable sync").
+`push`, `pull`, and `sync` install and start the local Kubo node automatically — run
+`lsh sync --doctor` to diagnose, or `lsh sync --status` for current state. For durable pulls,
+configure a remote pinning service (see README "Durable sync").
 
 ## Security Model
 
@@ -157,25 +168,25 @@ remote pinning service (see README "Durable sync").
 
 ### Load Secrets into Shell
 ```bash
-eval "$(lsh list --format export)"
+eval "$(lsh sync --load)"
 ```
 
 ### Load Specific Secret
 ```bash
-API_KEY=$(lsh get API_KEY --no-mask)
+API_KEY=$(lsh get API_KEY)
 ```
 
 ### Check if Synced
 ```bash
-lsh status --quiet && echo "synced" || echo "needs sync"
+lsh sync --status --format json
 ```
 
 ## For ML Agents
 
-To get comprehensive, structured context for building automations:
+This file (`llms.txt`) is the full machine-readable context for LSH — there is no separate
+`lsh context` command in v4.0.0. Read it directly:
 ```bash
-lsh context                           # Full usage documentation (machine-readable)
-lsh context --json                    # JSON format for parsing
+cat llms.txt
 ```
 
 ## Version
