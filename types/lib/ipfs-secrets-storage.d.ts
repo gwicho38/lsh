@@ -67,7 +67,8 @@ export declare class IPFSSecretsStorage {
      */
     clearMetadata(): Promise<void>;
     /**
-     * Encrypt secrets into the versioned AES-256-GCM envelope.     */
+     * Encrypt secrets into the versioned AES-256-GCM envelope.
+     */
     private encryptSecrets;
     /**
      * Decrypt secrets from the versioned envelope, or from a legacy CBC payload.

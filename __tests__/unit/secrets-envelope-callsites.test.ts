@@ -122,6 +122,8 @@ describe('active sync paths use the AEAD envelope', () => {
 
   describe('source-level regression guard', () => {
     const guarded = [
+      'src/commands/pull.ts',
+      'src/commands/push.ts',
       'src/commands/sync.ts',
       'src/lib/ipfs-secrets-storage.ts',
       'src/lib/secrets-manager.ts',
@@ -134,11 +136,17 @@ describe('active sync paths use the AEAD envelope', () => {
       expect(source).not.toContain('aes-256-cbc');
     });
 
-    it('should route every sync-path encryption through secrets-envelope', () => {
-      const syncSource = fs.readFileSync(path.join(REPO_ROOT, 'src/commands/sync.ts'), 'utf-8');
-      expect(syncSource).toContain("from '../lib/secrets-envelope.js'");
-      expect(syncSource).toContain('encryptEnvelope(');
-      expect(syncSource).toContain('decryptEnvelope(');
+    it('should route storage encryption and decryption through secrets-envelope', () => {
+      const source = fs.readFileSync(path.join(REPO_ROOT, 'src/lib/ipfs-secrets-storage.ts'), 'utf-8');
+      expect(source).toContain("from './secrets-envelope.js'");
+      expect(source).toContain('encryptEnvelope(');
+      expect(source).toContain('decryptEnvelope(');
+    });
+
+    it('should open an explicit CID through secrets-envelope', () => {
+      const source = fs.readFileSync(path.join(REPO_ROOT, 'src/commands/pull.ts'), 'utf-8');
+      expect(source).toContain("from '../lib/secrets-envelope.js'");
+      expect(source).toContain('decryptEnvelope(');
     });
   });
 });

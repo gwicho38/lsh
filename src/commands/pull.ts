@@ -2,7 +2,6 @@
  * lsh pull — fetch and decrypt a .env from cloud storage.
  */
 
-import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 import { Command } from 'commander';
@@ -16,6 +15,7 @@ import { getGitRepoInfo } from '../lib/git-utils.js';
 import { DEFAULTS } from '../constants/index.js';
 import { PULL_MESSAGES } from '../constants/ui.js';
 import { serializeEnv } from '../lib/env-file.js';
+import { decryptEnvelope } from '../lib/secrets-envelope.js';
 
 export type PulledPayload =
   | { kind: 'secrets'; vars: Record<string, string> }
@@ -84,9 +84,8 @@ async function pullViaStorage(
 }
 
 /**
- * Pull an exact CID. `storage.pull` cannot target an explicit CID, so this downloads and
- * decrypts directly — the same AES-256-CBC scheme every push writes with — then classifies
- * the decrypted payload before ever touching the user's .env.
+ * Pull an exact CID. `storage.pull` cannot target an explicit CID, so this opens the envelope
+ * directly, then classifies the decrypted payload before ever touching the user's .env.
  */
 async function pullByCid(outputPath: string, cid: string, encryptionKey: string, force: boolean): Promise<void> {
   const ipfsSync = getIPFSSync();
@@ -99,22 +98,9 @@ async function pullByCid(outputPath: string, cid: string, encryptionKey: string,
     return;
   }
 
-  const encryptedData = data.toString('utf-8');
-  const [ivHex, encrypted] = encryptedData.split(':');
-  if (!ivHex || !encrypted) {
-    console.error(PULL_MESSAGES.INVALID_ENCRYPTED_FORMAT);
-    process.exitCode = 1;
-    return;
-  }
-
-  const key = crypto.createHash('sha256').update(encryptionKey).digest();
-  const iv = Buffer.from(ivHex, 'hex');
-
-  let decrypted: string;
+  let opened: ReturnType<typeof decryptEnvelope>;
   try {
-    const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-    decrypted = decipher.update(encrypted, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    opened = decryptEnvelope(data.toString('utf-8'), encryptionKey);
   } catch {
     console.error(PULL_MESSAGES.DECRYPTION_FAILED);
     console.error(PULL_MESSAGES.WRONG_KEY_HINT);
@@ -122,11 +108,18 @@ async function pullByCid(outputPath: string, cid: string, encryptionKey: string,
     return;
   }
 
-  const payload = classifyPayload(decrypted);
+  const payload = classifyPayload(opened.plaintext);
   if (payload.kind === 'unknown') {
     console.error(PULL_MESSAGES.UNRECOGNIZED_PAYLOAD);
     process.exitCode = 1;
     return;
+  }
+
+  // Warn while the existing .env is still intact: a legacy payload carries no auth tag.
+  if (opened.legacy) {
+    console.warn(PULL_MESSAGES.LEGACY_PAYLOAD_WARNING);
+    console.warn(PULL_MESSAGES.LEGACY_PAYLOAD_TAMPER_HINT);
+    console.warn(PULL_MESSAGES.LEGACY_PAYLOAD_REPUBLISH_HINT);
   }
 
   backupExisting(outputPath, force);
