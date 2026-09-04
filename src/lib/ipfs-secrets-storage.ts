@@ -257,6 +257,13 @@ export class IPFSSecretsStorage {
       // Step 3: Decrypt
       const secrets = this.decryptSecrets(cachedData, encryptionKey);
 
+      // Now that the payload is decrypted, record the real key count
+      const metadataKey = this.getMetadataKey(gitRepo, environment);
+      if (this.metadata[metadataKey]) {
+        this.metadata[metadataKey].keys_count = secrets.length;
+        await this.saveMetadata();
+      }
+
       logger.info(`📥 Retrieved ${secrets.length} secrets from IPFS`);
       logger.info(`   CID: ${resolvedCid}`);
       logger.info(`   Environment: ${environment}`);
