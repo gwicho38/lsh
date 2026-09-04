@@ -418,6 +418,7 @@ async function checkPermissions(verbose?: boolean, _baseDir?: string): Promise<H
     const testFile = path.join(paths.tmpDir, `lsh-test-${randomSuffix}`);
 
     // Create file with secure permissions (mode 0o600 = rw-------)
+    // NON_SECRET_WRITE: throwaway writability probe, no secret material.
     await fs.writeFile(testFile, 'test', { mode: 0o600 });
     await fs.unlink(testFile);
 

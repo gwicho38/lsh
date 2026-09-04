@@ -62,7 +62,8 @@ export class LshrcManager {
         );
       }
 
-      fs.writeFileSync(this.lshrcPath, content, 'utf8');
+      // NON_SECRET_WRITE: .lshrc is shell configuration, never secret material.
+    fs.writeFileSync(this.lshrcPath, content, 'utf8');
       console.log(`✅ Created ${this.lshrcPath}`);
 
       return true;
@@ -87,6 +88,7 @@ zsh-source${options.importOptions ? ' ' + options.importOptions.join(' ') : ''}
 # Add your aliases, functions, and environment variables here
 `;
 
+    // NON_SECRET_WRITE: .lshrc is shell configuration, never secret material.
     fs.writeFileSync(this.lshrcPath, content, 'utf8');
     console.log(`✅ Created ${this.lshrcPath}`);
   }
@@ -164,7 +166,8 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
         content = autoImportBlock + '\n' + content;
       }
 
-      fs.writeFileSync(this.lshrcPath, content, 'utf8');
+      // NON_SECRET_WRITE: .lshrc is shell configuration, never secret material.
+    fs.writeFileSync(this.lshrcPath, content, 'utf8');
       console.log('✅ Auto-import enabled in .lshrc');
       return true;
     } catch (error) {
@@ -191,7 +194,8 @@ zsh-source${options.length > 0 ? ' ' + options.join(' ') : ''}
       // Remove auto-import blocks
       content = content.replace(/# ZSH Auto-Import[\s\S]*?(?=\n#|\n\n|$)/g, '');
 
-      fs.writeFileSync(this.lshrcPath, content, 'utf8');
+      // NON_SECRET_WRITE: .lshrc is shell configuration, never secret material.
+    fs.writeFileSync(this.lshrcPath, content, 'utf8');
       console.log('✅ Auto-import disabled in .lshrc');
       return true;
     } catch (error) {

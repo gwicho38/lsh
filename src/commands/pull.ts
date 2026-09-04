@@ -16,6 +16,7 @@ import { getGitRepoInfo } from '../lib/git-utils.js';
 import { DEFAULTS } from '../constants/index.js';
 import { PULL_MESSAGES } from '../constants/ui.js';
 import { serializeEnv } from '../lib/env-file.js';
+import { copySecretFileSync, writeSecretFileSync } from '../lib/secure-file-writer.js';
 
 export type PulledPayload =
   | { kind: 'secrets'; vars: Record<string, string> }
@@ -55,7 +56,7 @@ export function classifyPayload(decrypted: string): PulledPayload {
 function backupExisting(outputPath: string, force: boolean): void {
   if (fs.existsSync(outputPath) && !force) {
     const backupPath = `${outputPath}.backup.${Date.now()}`;
-    fs.copyFileSync(outputPath, backupPath);
+    copySecretFileSync(outputPath, backupPath);
     console.log(`Backed up existing file to: ${backupPath}`);
   }
 }
@@ -79,7 +80,7 @@ async function pullViaStorage(
   const vars = Object.fromEntries(secrets.map((s) => [s.key, s.value]));
 
   backupExisting(outputPath, force);
-  fs.writeFileSync(outputPath, serializeEnv(vars), { mode: 0o600 });
+  writeSecretFileSync(outputPath, serializeEnv(vars));
   console.log(`Downloaded and decrypted: ${outputPath}`);
 }
 
@@ -131,7 +132,7 @@ async function pullByCid(outputPath: string, cid: string, encryptionKey: string,
 
   backupExisting(outputPath, force);
   const content = payload.kind === 'secrets' ? serializeEnv(payload.vars) : payload.text;
-  fs.writeFileSync(outputPath, content, { mode: 0o600 });
+  writeSecretFileSync(outputPath, content);
   console.log(`Downloaded and decrypted: ${outputPath}`);
   console.log(`CID: ${cid}`);
 }

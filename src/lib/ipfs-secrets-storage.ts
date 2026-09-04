@@ -19,6 +19,7 @@ import { getIPFSSync } from './ipfs-sync.js';
 import { getDiscoveryBackend } from './discovery-backend.js';
 import { ENV_VARS, DEFAULTS } from '../constants/index.js';
 import { extractErrorMessage } from './lsh-error.js';
+import { writeSecretFileSync } from './secure-file-writer.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -394,11 +395,8 @@ export class IPFSSecretsStorage {
   private async storeLocally(cid: string, encryptedData: string, _environment: string): Promise<void> {
     const cachePath = path.join(this.cacheDir, `${cid}.encrypted`);
 
-    // Ensure parent directory exists
-    await fsPromises.mkdir(this.cacheDir, { recursive: true });
-
-    // Write file without locking (simpler approach)
-    await fsPromises.writeFile(cachePath, encryptedData, 'utf8');
+    // Ciphertext cache: still key-derived material, so owner-only and atomic.
+    writeSecretFileSync(cachePath, encryptedData);
     logger.debug(`Cached secrets locally: ${cachePath}`);
   }
 
@@ -463,14 +461,7 @@ export class IPFSSecretsStorage {
    * Save metadata to disk
    */
   private async saveMetadata(): Promise<void> {
-    // Ensure parent directory exists
-    const parentDir = path.dirname(this.metadataPath);
-    await fsPromises.mkdir(parentDir, { recursive: true });
-
-    await fsPromises.writeFile(
-      this.metadataPath,
-      JSON.stringify(this.metadata, null, 2),
-      'utf8'
-    );
+    // Metadata records key fingerprints alongside CIDs — owner-only and atomic.
+    writeSecretFileSync(this.metadataPath, JSON.stringify(this.metadata, null, 2));
   }
 }

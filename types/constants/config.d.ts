@@ -120,3 +120,16 @@ export declare const DEFAULTS: {
     readonly DEFAULT_PIN_ENDPOINT: "https://api.4everland.dev";
     readonly DEFAULT_PIN_SERVICE_NAME: "lsh-pin";
 };
+/**
+ * Policy for files that can hold plaintext secrets, encryption keys, or
+ * key-bearing backups. Enforced by `src/lib/secure-file-writer.ts`.
+ */
+export declare const SECURE_FILE: {
+    /** Owner read/write only. */
+    readonly MODE: 384;
+    /** Prefix for the same-directory temporary file used for atomic replace. */
+    readonly TEMP_PREFIX: ".lsh-tmp-";
+    /** Operation names used as error context. */
+    readonly WRITE_OPERATION: "writeSecretFile";
+    readonly COPY_OPERATION: "copySecretFile";
+};

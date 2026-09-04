@@ -204,6 +204,7 @@ export function ensureEnvInGitignore(dir: string = process.cwd(), extraPatterns:
     }
     content += `${missing.join('\n')}\n`;
 
+    // NON_SECRET_WRITE: .gitignore holds no secret material.
     fs.writeFileSync(gitignorePath, content, 'utf8');
     logger.info('✅ Added .env to .gitignore');
   } catch (error) {

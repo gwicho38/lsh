@@ -85,6 +85,7 @@ secrets-manager.ts            AES-256 encrypt/decrypt, git repo/branch context,
   ├── sync-key-store.ts        persistent key resolution (env / .env / ~/.config/lsh)
   └── lsh-error.ts
 
+secure-file-writer.ts          atomic 0600 writer for every secret-bearing file
 ipfs-client-manager.ts         detect/install/start/stop Kubo, version pinning, health checks
 config-manager.ts              lsh config read/write
 platform-utils.ts              OS/arch detection for Kubo binaries
@@ -208,6 +209,27 @@ service when `LSH_PIN_TOKEN` is set (endpoint defaults to 4EVERLAND, override vi
 2. **Key handling** — `LSH_SECRETS_KEY` resolved via `SyncKeyStore` (env → `.env` → `~/.config/lsh`); shared out-of-band (password manager) for team sync.
 3. **Destructive-change detection** — `secrets-manager` refuses to overwrite a remote blob that would drop keys without an explicit flag.
 4. **Input validation** — `command-validator.ts` / `env-validator.ts` / `validation-framework.ts` remain in the tree with strong coverage; they gate the dormant daemon/API surface and are available for reuse.
+5. **On-disk file permissions (`secure-file-writer.ts`, issue #223)** — every file that can hold a
+   plaintext secret, an encryption key, a key fingerprint, or a plaintext backup is written through
+   `writeSecretFileSync` / `copySecretFileSync`. The writer creates a same-directory temporary file
+   with mode `0600`, `fsync`s it, renames it over the destination, and restates the mode.
+
+   | Guarantee | Mechanism |
+   |---|---|
+   | Fresh file is owner-only | `open(..., 'wx', 0o600)` then `chmod` (defeats a permissive umask) |
+   | An existing `0644` file is repaired | `rename(2)` discards the old permissive inode instead of writing through it — a create-mode option alone cannot do this |
+   | No partial destination | `rename(2)` is atomic within a filesystem; on failure the temp file is unlinked and the destination is untouched |
+   | Symlinked `.env` keeps working | A symlinked destination is resolved to its real path before the write |
+
+   **Windows:** POSIX mode bits do not exist, so the `chmod` steps are skipped and the directory
+   `fsync` is not attempted. The atomic-replace and content guarantees are identical; confidentiality
+   there relies on the ACLs of the user profile / repository directory. Tests assert mode bits only
+   on POSIX and assert content/existence on both platforms.
+
+   Non-secret writes (`.gitignore`, `.lshrc`, the Kubo pid file, CID history, the `doctor`
+   writability probe) opt out with a `NON_SECRET_WRITE:` comment at the call site.
+   `__tests__/secret-file-permissions.test.ts` scans all of `src/` and fails when a filesystem write
+   appears without either the secure writer or that marker.
 
 ## Testing strategy
 

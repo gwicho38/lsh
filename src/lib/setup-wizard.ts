@@ -11,6 +11,7 @@ import * as crypto from 'crypto';
 import ora from 'ora';
 import { getPlatformPaths } from './platform-utils.js';
 import { getGitRepoInfo } from './git-utils.js';
+import { writeSecretFileSync } from './secure-file-writer.js';
 import * as os from 'os';
 
 interface InitConfig {
@@ -334,8 +335,8 @@ async function saveConfiguration(config: InitConfig, baseDir: string, globalMode
       }
     }
 
-    // Write .env file
-    await fs.writeFile(envPath, envContent, 'utf-8');
+    // Write .env file (holds LSH_SECRETS_KEY — atomic, owner-only)
+    writeSecretFileSync(envPath, envContent);
 
     // Update .gitignore (skip for global mode since it's in $HOME)
     if (!globalMode) {
@@ -368,6 +369,7 @@ async function updateGitignore(): Promise<void> {
         gitignoreContent += '\n';
       }
       gitignoreContent += '\n# LSH secrets\n.env\n';
+      // NON_SECRET_WRITE: .gitignore holds no secret material.
       await fs.writeFile(gitignorePath, gitignoreContent, 'utf-8');
     }
   } catch {

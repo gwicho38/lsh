@@ -8,6 +8,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as crypto from 'crypto';
 import { getGitRepoInfo } from './git-utils.js';
+import { writeSecretFileSync } from './secure-file-writer.js';
 import { ENV_VARS } from '../constants/index.js';
 
 export interface SyncRecord {
@@ -200,14 +201,8 @@ export class IPFSSyncLogger {
    * Store record locally (acts as IPFS cache)
    */
   private async storeRecordLocally(cid: string, record: SyncRecord): Promise<void> {
-    const recordPath = this.getRecordPath(cid);
-    const recordDir = path.dirname(recordPath);
-
-    if (!fs.existsSync(recordDir)) {
-      fs.mkdirSync(recordDir, { recursive: true });
-    }
-
-    fs.writeFileSync(recordPath, JSON.stringify(record, null, 2), 'utf8');
+    // Records carry the encryption-key fingerprint — owner-only and atomic.
+    writeSecretFileSync(this.getRecordPath(cid), JSON.stringify(record, null, 2));
   }
 
   /**
@@ -246,11 +241,7 @@ export class IPFSSyncLogger {
    * Save sync log to disk
    */
   private saveSyncLog(): void {
-    fs.writeFileSync(
-      this.syncLogPath,
-      JSON.stringify(this.syncLog, null, 2),
-      'utf8'
-    );
+    writeSecretFileSync(this.syncLogPath, JSON.stringify(this.syncLog, null, 2));
   }
 
   /**
