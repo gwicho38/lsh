@@ -10,6 +10,7 @@ import { parseEnv, serializeEnv, upsertEnv } from './env-file.js';
 import { copySecretFileSync, writeSecretFileSync } from './secure-file-writer.js';
 import { ENV_BACKUP_SUFFIX_PATTERN } from '../constants/paths.js';
 import { ENV_VARS } from '../constants/config.js';
+import { ERRORS } from '../constants/errors.js';
 
 function homeDir(): string {
   return process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || os.homedir();
@@ -68,6 +69,12 @@ export function writeEnvUpdate(
     const raw = fs.readFileSync(filePath, 'utf8');
     writeSecretFileSync(filePath, upsertEnv(raw, updates));
     return;
+  }
+  // The secure writer creates missing parents for its own stores under ~/.lsh; a
+  // user-supplied --file path must not silently grow directories from a typo.
+  const parent = path.dirname(path.resolve(filePath));
+  if (!fs.existsSync(parent)) {
+    throw new Error(ERRORS.ENV_PARENT_DIR_MISSING.replace('${dirPath}', parent));
   }
   ensureTargetGitignored(filePath);
   writeSecretFileSync(filePath, serializeEnv(fullContent));
