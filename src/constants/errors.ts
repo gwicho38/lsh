@@ -93,6 +93,31 @@ To fix this:
   EXCESSIVE_PIPES: 'Excessive pipe usage detected',
   NESTED_SUBSTITUTION: 'Nested command substitution detected',
   CONTROL_CHARS: 'Control characters detected in command',
+
+  // Secrets envelope errors
+  ENVELOPE_KEY_REQUIRED: 'An encryption key is required. Generate one with: lsh key',
+  ENVELOPE_EMPTY: 'Encrypted payload is empty',
+  ENVELOPE_TOO_LARGE: 'Encrypted payload exceeds the maximum accepted size',
+  ENVELOPE_MALFORMED: 'Encrypted payload is malformed',
+  ENVELOPE_METADATA_INVALID: 'Envelope metadata is invalid or exceeds the maximum accepted size',
+  ENVELOPE_UNSUPPORTED_VERSION: 'Unsupported secrets envelope version. Upgrade lsh to read this payload.',
+  ENVELOPE_UNSUPPORTED_ALGORITHM: 'Unsupported secrets envelope algorithm',
+  ENVELOPE_AUTHENTICATION_FAILED:
+    'Decryption failed: the payload could not be authenticated.\n' +
+    'This means either the encryption key is wrong or the payload was modified in transit.\n' +
+    '  1. Confirm LSH_SECRETS_KEY matches the key used to push\n' +
+    '  2. Generate a shared key with: lsh key\n' +
+    '  3. Re-push from a trusted machine if the payload is suspect',
+  ENVELOPE_PAYLOAD_NOT_JSON:
+    'The decrypted payload is not valid JSON.\n' +
+    'It was probably written by a different lsh surface: `lsh sync push` stores raw .env\n' +
+    'text, while `lsh push` stores a JSON secrets array. Pull it with the matching command.',
+  ENVELOPE_PAYLOAD_SHAPE_INVALID:
+    'The decrypted payload is valid JSON but is not a secrets array.',
+  ENVELOPE_LEGACY_DECRYPT_FAILED:
+    'Decryption of a legacy (unauthenticated) payload failed.\n' +
+    'This usually means LSH_SECRETS_KEY does not match the key used to push.\n' +
+    'Legacy payloads carry no authentication tag; re-push to upgrade them.',
 } as const;
 
 export const RISK_LEVELS = {

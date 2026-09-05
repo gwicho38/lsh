@@ -187,3 +187,34 @@ export const DEFAULTS = {
   DEFAULT_PIN_ENDPOINT: 'https://api.4everland.dev',
   DEFAULT_PIN_SERVICE_NAME: 'lsh-pin',
 } as const;
+
+/**
+ * Cryptographic parameters for the versioned secrets envelope.
+ *
+ * `AEAD_ALGORITHM` is used for every new write. `LEGACY_ALGORITHM` is accepted
+ * on read only, so pre-envelope payloads stay recoverable during migration.
+ */
+export const CRYPTO = {
+  /** Envelope wire-format version. */
+  ENVELOPE_VERSION: 1,
+  /** Authenticated algorithm used for all new writes. */
+  AEAD_ALGORITHM: 'aes-256-gcm',
+  /** Unauthenticated algorithm accepted for migration reads only. */
+  LEGACY_ALGORITHM: 'aes-256-cbc',
+  /** Hash used to derive the 32-byte content key from the shared secret. */
+  KEY_DERIVATION_HASH: 'sha256',
+  /** 96-bit nonce, the recommended size for GCM. */
+  AEAD_NONCE_BYTES: 12,
+  /** 128-bit GCM authentication tag. */
+  AEAD_TAG_BYTES: 16,
+  /** 128-bit CBC initialization vector (legacy payloads). */
+  LEGACY_IV_BYTES: 16,
+  /** Largest payload accepted for parsing (32 MiB). */
+  MAX_ENVELOPE_BYTES: 32 * 1024 * 1024,
+  /** Largest serialized authenticated metadata accepted (1 KiB). */
+  MAX_METADATA_BYTES: 1024,
+  /** Plaintext shape written by the raw `.env` sync path. */
+  PAYLOAD_ENV_TEXT: 'env-text',
+  /** Plaintext shape written by the structured secrets storage path. */
+  PAYLOAD_SECRETS_JSON: 'secrets-json',
+} as const;

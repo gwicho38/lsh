@@ -275,6 +275,9 @@ export declare const PULL_MESSAGES: {
     readonly DECRYPTION_FAILED: "Decryption failed. Wrong encryption key!";
     readonly WRONG_KEY_HINT: "Make sure LSH_SECRETS_KEY matches the key used to push.";
     readonly UNRECOGNIZED_PAYLOAD: "CID contents are not in a recognized format (expected pushed secrets or raw .env text). Nothing was written.";
+    readonly LEGACY_PAYLOAD_WARNING: "⚠ This CID holds a legacy unauthenticated payload.";
+    readonly LEGACY_PAYLOAD_TAMPER_HINT: "It carries no authentication tag, so anyone able to serve this CID could have altered it undetectably.";
+    readonly LEGACY_PAYLOAD_REPUBLISH_HINT: "Run `lsh push` to re-publish it as an authenticated envelope.";
 };
 /**
  * Messages for `lsh edit`

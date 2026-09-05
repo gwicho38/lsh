@@ -88,8 +88,9 @@ src/commands/                  push.ts, pull.ts, sync.ts, edit.ts, list.ts, get.
                                the only subcommands
 
 src/lib/
-  secrets-manager.ts           AES-256 encrypt/decrypt, git repo/branch context,
-                               destructive-change detection
+  secrets-manager.ts           git repo/branch context, destructive-change detection
+  secrets-envelope.ts          versioned AES-256-GCM envelope (all encrypt/decrypt);
+                               reads legacy CBC for migration only
   removed-commands.ts          v3→v4 removal error messages (REMOVED_COMMANDS,
                                REMOVED_SYNC_SUBCOMMANDS) — the single source of truth for the
                                old→new command mapping

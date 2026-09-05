@@ -81,86 +81,9 @@ describe('SecretsManager', () => {
     testEnv.cleanup();
   });
 
-  describe('Encryption and Decryption', () => {
-    it('should encrypt and decrypt text correctly', async () => {
-      const manager = new SecretsManager(undefined, testKey);
-      const original = 'Hello, World!';
-
-      // Access private methods via any cast for testing
-      const encrypted = (manager as any).encrypt(original);
-      const decrypted = (manager as any).decrypt(encrypted);
-
-      expect(decrypted).toBe(original);
-      expect(encrypted).not.toBe(original);
-      expect(encrypted).toContain(':'); // Format: iv:encrypted
-    });
-
-    it('should use AES-256-CBC encryption', async () => {
-      const manager = new SecretsManager(undefined, testKey);
-      const text = 'Secret data';
-
-      const encrypted = (manager as any).encrypt(text);
-      const parts = encrypted.split(':');
-
-      expect(parts).toHaveLength(2);
-      expect(parts[0]).toHaveLength(32); // 16 bytes IV in hex = 32 chars
-      expect(parts[1].length).toBeGreaterThan(0); // Encrypted content
-    });
-
-    it('should fail to decrypt with wrong key', async () => {
-      const manager1 = new SecretsManager(undefined, generateTestKey());
-      const manager2 = new SecretsManager(undefined, generateTestKey());
-
-      const encrypted = (manager1 as any).encrypt('Secret');
-
-      expect(() => {
-        (manager2 as any).decrypt(encrypted);
-      }).toThrow(/Decryption failed/);
-    });
-
-    it('should use LSH_SECRETS_KEY from environment', async () => {
-      const customKey = generateTestKey();
-      testEnv.setEnv('LSH_SECRETS_KEY', customKey);
-
-      const manager = new SecretsManager();
-
-      // Verify it uses the environment key
-      const encrypted = (manager as any).encrypt('test');
-      const managerWithSameKey = new SecretsManager(undefined, customKey);
-      const decrypted = (managerWithSameKey as any).decrypt(encrypted);
-
-      expect(decrypted).toBe('test');
-    });
-
-    it('should generate deterministic key from machine ID', async () => {
-      const manager1 = new SecretsManager();
-      const manager2 = new SecretsManager();
-
-      const encrypted = (manager1 as any).encrypt('test');
-      const decrypted = (manager2 as any).decrypt(encrypted);
-
-      expect(decrypted).toBe('test');
-    });
-
-    it('should handle empty string encryption', async () => {
-      const manager = new SecretsManager(undefined, testKey);
-
-      const encrypted = (manager as any).encrypt('');
-      const decrypted = (manager as any).decrypt(encrypted);
-
-      expect(decrypted).toBe('');
-    });
-
-    it('should handle large text encryption', async () => {
-      const manager = new SecretsManager(undefined, testKey);
-      const largeText = 'A'.repeat(10000);
-
-      const encrypted = (manager as any).encrypt(largeText);
-      const decrypted = (manager as any).decrypt(encrypted);
-
-      expect(decrypted).toBe(largeText);
-    });
-  });
+  // Envelope encryption/decryption is covered by __tests__/unit/secrets-envelope.test.ts.
+  // SecretsManager no longer carries its own (unused) crypto implementation; every sync
+  // path goes through src/lib/secrets-envelope.ts (issue #221).
 
   describe('Environment File Parsing', () => {
     it('should parse KEY=VALUE format', async () => {
@@ -466,13 +389,6 @@ describe('SecretsManager', () => {
       }
     });
 
-    it('should handle invalid encrypted format', async () => {
-      const manager = new SecretsManager(undefined, testKey);
-
-      expect(() => {
-        (manager as any).decrypt('invalid-format-no-colon');
-      }).toThrow(/Invalid encrypted format/);
-    });
   });
 
   describe('LSH Internal Key Filtering', () => {

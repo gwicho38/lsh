@@ -12,13 +12,13 @@ import * as fsPromises from 'fs/promises';
 
 import * as path from 'path';
 import * as os from 'os';
-import * as crypto from 'crypto';
 import { Secret } from './secrets-manager.js';
 import { createLogger } from './logger.js';
 import { getIPFSSync } from './ipfs-sync.js';
 import { getDiscoveryBackend } from './discovery-backend.js';
-import { ENV_VARS, DEFAULTS } from '../constants/index.js';
-import { extractErrorMessage } from './lsh-error.js';
+import { ENV_VARS, DEFAULTS, CRYPTO, ERRORS } from '../constants/index.js';
+import { extractErrorMessage, LSHError, ErrorCodes } from './lsh-error.js';
+import { encryptEnvelope, decryptEnvelope } from './secrets-envelope.js';
 
 const logger = createLogger('IPFSSecretsStorage');
 
@@ -91,7 +91,7 @@ export class IPFSSecretsStorage {
   ): Promise<string> {
     try {
       // Encrypt secrets
-      const encryptedData = this.encryptSecrets(secrets, encryptionKey);
+      const encryptedData = this.encryptSecrets(secrets, encryptionKey, environment, gitRepo);
 
       // Upload to IPFS (daemon guaranteed running by ensureDaemonRunning)
       const ipfsSync = getIPFSSync();
@@ -337,55 +337,50 @@ export class IPFSSecretsStorage {
   }
 
   /**
-   * Encrypt secrets using AES-256
+   * Encrypt secrets into the versioned AES-256-GCM envelope.
    */
-  private encryptSecrets(secrets: Secret[], encryptionKey: string): string {
-    const data = JSON.stringify(secrets);
-    const key = crypto.createHash('sha256').update(encryptionKey).digest();
-    const iv = crypto.randomBytes(16);
-
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-    let encrypted = cipher.update(data, 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-
-    // Return IV + encrypted data
-    return iv.toString('hex') + ':' + encrypted;
+  private encryptSecrets(
+    secrets: Secret[],
+    encryptionKey: string,
+    environment?: string,
+    gitRepo?: string
+  ): string {
+    return encryptEnvelope(JSON.stringify(secrets), encryptionKey, {
+      environment,
+      repo: gitRepo,
+      payload: CRYPTO.PAYLOAD_SECRETS_JSON,
+    });
   }
 
   /**
-   * Decrypt secrets using AES-256
+   * Decrypt secrets from the versioned envelope, or from a legacy CBC payload.
+   *
+   * Authentication is verified before the plaintext is parsed, so a tampered
+   * payload can never reach `JSON.parse`.
    */
   private decryptSecrets(encryptedData: string, encryptionKey: string): Secret[] {
-    try {
-      const [ivHex, encrypted] = encryptedData.split(':');
-      const key = crypto.createHash('sha256').update(encryptionKey).digest();
-      const iv = Buffer.from(ivHex, 'hex');
+    const opened = decryptEnvelope(encryptedData, encryptionKey);
 
-      const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-
-      return JSON.parse(decrypted) as Secret[];
-    } catch (error) {
-      const msg = extractErrorMessage(error);
-      // Catch crypto errors (bad decrypt, wrong block length) AND JSON parse errors
-      // (wrong key can produce garbage that fails JSON.parse)
-      if (msg.includes('bad decrypt') ||
-          msg.includes('wrong final block length') ||
-          msg.includes('Unexpected token') ||
-          msg.includes('JSON')) {
-        throw new Error(
-          'Decryption failed. This usually means:\n' +
-          '  1. You need to set LSH_SECRETS_KEY environment variable\n' +
-          '  2. The key must match the one used during encryption\n' +
-          '  3. Generate a shared key with: lsh sync --key\n' +
-          '  4. Add it to your .env: LSH_SECRETS_KEY=<key>\n' +
-          '\nOriginal error: ' + msg,
-          { cause: error }
-        );
-      }
-      throw error;
+    if (opened.legacy) {
+      logger.warn(
+        '   \u26a0 Legacy unauthenticated payload. Run `lsh push` to re-publish it as an authenticated envelope.'
+      );
     }
+
+    // Never put the underlying parse error in the message or the context: V8 echoes a
+    // prefix of its input, and the input here is decrypted plaintext.
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(opened.plaintext);
+    } catch {
+      throw new LSHError(ErrorCodes.SECRETS_DECRYPTION_FAILED, ERRORS.ENVELOPE_PAYLOAD_NOT_JSON);
+    }
+
+    if (!Array.isArray(parsed)) {
+      throw new LSHError(ErrorCodes.SECRETS_DECRYPTION_FAILED, ERRORS.ENVELOPE_PAYLOAD_SHAPE_INVALID);
+    }
+
+    return parsed as Secret[];
   }
 
   /**

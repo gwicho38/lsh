@@ -62,6 +62,17 @@ export declare const ERRORS: {
     readonly EXCESSIVE_PIPES: "Excessive pipe usage detected";
     readonly NESTED_SUBSTITUTION: "Nested command substitution detected";
     readonly CONTROL_CHARS: "Control characters detected in command";
+    readonly ENVELOPE_KEY_REQUIRED: "An encryption key is required. Generate one with: lsh key";
+    readonly ENVELOPE_EMPTY: "Encrypted payload is empty";
+    readonly ENVELOPE_TOO_LARGE: "Encrypted payload exceeds the maximum accepted size";
+    readonly ENVELOPE_MALFORMED: "Encrypted payload is malformed";
+    readonly ENVELOPE_METADATA_INVALID: "Envelope metadata is invalid or exceeds the maximum accepted size";
+    readonly ENVELOPE_UNSUPPORTED_VERSION: "Unsupported secrets envelope version. Upgrade lsh to read this payload.";
+    readonly ENVELOPE_UNSUPPORTED_ALGORITHM: "Unsupported secrets envelope algorithm";
+    readonly ENVELOPE_AUTHENTICATION_FAILED: string;
+    readonly ENVELOPE_PAYLOAD_NOT_JSON: string;
+    readonly ENVELOPE_PAYLOAD_SHAPE_INVALID: "The decrypted payload is valid JSON but is not a secrets array.";
+    readonly ENVELOPE_LEGACY_DECRYPT_FAILED: string;
 };
 export declare const RISK_LEVELS: {
     readonly CRITICAL: "critical";

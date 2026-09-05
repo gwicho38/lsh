@@ -358,6 +358,10 @@ export const PULL_MESSAGES = {
   WRONG_KEY_HINT: 'Make sure LSH_SECRETS_KEY matches the key used to push.',
   UNRECOGNIZED_PAYLOAD:
     'CID contents are not in a recognized format (expected pushed secrets or raw .env text). Nothing was written.',
+  LEGACY_PAYLOAD_WARNING: '⚠ This CID holds a legacy unauthenticated payload.',
+  LEGACY_PAYLOAD_TAMPER_HINT:
+    'It carries no authentication tag, so anyone able to serve this CID could have altered it undetectably.',
+  LEGACY_PAYLOAD_REPUBLISH_HINT: 'Run `lsh push` to re-publish it as an authenticated envelope.',
 } as const;
 
 /**
