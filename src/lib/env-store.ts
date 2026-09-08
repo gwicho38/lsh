@@ -7,8 +7,10 @@ import * as os from 'os';
 import * as path from 'path';
 import { getGitRepoInfo, ensureEnvInGitignore } from './git-utils.js';
 import { parseEnv, serializeEnv, upsertEnv } from './env-file.js';
+import { copySecretFileSync, writeSecretFileSync } from './secure-file-writer.js';
 import { ENV_BACKUP_SUFFIX_PATTERN } from '../constants/paths.js';
 import { ENV_VARS } from '../constants/config.js';
+import { ERRORS } from '../constants/errors.js';
 
 function homeDir(): string {
   return process.env[ENV_VARS.HOME] || process.env[ENV_VARS.USERPROFILE] || os.homedir();
@@ -44,7 +46,7 @@ export function ensureTargetGitignored(filePath: string): void {
 export function backupEnvFile(filePath: string): void {
   if (!fs.existsSync(filePath)) return;
   ensureTargetGitignored(filePath);
-  fs.copyFileSync(filePath, `${filePath}.backup.${Date.now()}`);
+  copySecretFileSync(filePath, `${filePath}.backup.${Date.now()}`);
 }
 
 export function readLocalEnv(filePath: string): Record<string, string> {
@@ -65,9 +67,15 @@ export function writeEnvUpdate(
   if (fs.existsSync(filePath)) {
     backupEnvFile(filePath);
     const raw = fs.readFileSync(filePath, 'utf8');
-    fs.writeFileSync(filePath, upsertEnv(raw, updates), { mode: 0o600 });
+    writeSecretFileSync(filePath, upsertEnv(raw, updates));
     return;
   }
+  // The secure writer creates missing parents for its own stores under ~/.lsh; a
+  // user-supplied --file path must not silently grow directories from a typo.
+  const parent = path.dirname(path.resolve(filePath));
+  if (!fs.existsSync(parent)) {
+    throw new Error(ERRORS.ENV_PARENT_DIR_MISSING.replace('${dirPath}', parent));
+  }
   ensureTargetGitignored(filePath);
-  fs.writeFileSync(filePath, serializeEnv(fullContent), { mode: 0o600 });
+  writeSecretFileSync(filePath, serializeEnv(fullContent));
 }

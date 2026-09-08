@@ -21,6 +21,7 @@ import { ENV_VARS } from '../constants/config.js';
 import { runDoctor } from '../lib/doctor.js';
 import { runSetupWizard } from '../lib/setup-wizard.js';
 import { SYNC_MESSAGES } from '../constants/ui.js';
+import { writeSecretFileSync } from '../lib/secure-file-writer.js';
 
 export interface SyncStatus {
   localExists: boolean;
@@ -178,7 +179,7 @@ export function importKey(value: string, force: boolean, global: boolean, file: 
   } else {
     content = `LSH_SECRETS_KEY=${value}\n`;
   }
-  fs.writeFileSync(envPath, content, { mode: 0o600 });
+  writeSecretFileSync(envPath, content);
   console.log(`${SYNC_MESSAGES.KEY_SAVED_PREFIX}${envPath}`);
 
   const effectiveAfter = findEncryptionKey();
